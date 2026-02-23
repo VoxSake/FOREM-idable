@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,7 +42,7 @@ export default function RootLayout({
             <main className="flex-1 overflow-x-hidden flex flex-col w-full min-h-screen">
               <header className="h-14 flex items-center border-b px-4 lg:hidden">
                 <SidebarTrigger />
-                <span className="ml-4 font-black text-rose-600">FOREM-idable</span>
+                <ForemIdableLogo className="ml-4 h-6" />
               </header>
               <div className="flex-1 p-4 lg:p-8 bg-muted/10">
                 {children}

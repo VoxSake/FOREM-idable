@@ -1,9 +1,10 @@
 "use client";
 
-import { Briefcase, Heart, Settings, BarChart3, Moon, Sun } from "lucide-react";
+import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 
 import {
     Sidebar,
@@ -19,11 +20,12 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const navItems = [
     { title: "Recherche", url: "/", icon: Briefcase },
     { title: "Favoris", url: "/favorites", icon: Heart },
-    { title: "Statistiques", url: "/stats", icon: BarChart3 },
+    { title: "À propos", url: "/about", icon: CircleHelp },
 ];
 
 export function AppSidebar() {
@@ -33,11 +35,10 @@ export function AppSidebar() {
     return (
         <Sidebar>
             <SidebarHeader className="p-4 border-b">
-                <div className="flex items-center gap-2 font-black text-xl text-rose-600">
-                    <Briefcase className="w-6 h-6" />
-                    <span>FOREM<span className="text-foreground">-idable</span></span>
+                <div className="flex items-center">
+                    <ForemIdableLogo className="h-7" />
                 </div>
-                <p className="text-xs text-muted-foreground font-medium italic mt-1">L'indexeur d'offres décomplexé</p>
+                <p className="text-xs text-muted-foreground font-medium italic mt-1">L&apos;indexeur d&apos;offres décomplexé</p>
             </SidebarHeader>
 
             <SidebarContent>
@@ -84,6 +85,16 @@ export function AppSidebar() {
                         <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                         <span className="sr-only">Toggle theme</span>
                     </Button>
+                </div>
+
+                <Separator />
+                <div className="rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+                    <p className="text-[11px] leading-4 text-muted-foreground">
+                        Copyright (c) 2026 Jordi Brisbois
+                    </p>
+                    <p className="text-[11px] leading-4 font-medium text-foreground/80">
+                        Licensed under MIT
+                    </p>
                 </div>
             </SidebarFooter>
             <SidebarRail />
