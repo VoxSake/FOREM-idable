@@ -1,65 +1,95 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { SearchEngine, SearchState } from "@/components/search/SearchEngine";
+import { JobTable } from "@/components/jobs/JobTable";
+import { jobService } from "@/services/jobs/jobService";
+import { Job } from "@/types/job";
+import { useSettings } from "@/hooks/useSettings";
+import { exportJobsToCSV } from "@/lib/exportCsv";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function DashboardPage() {
+  const { settings, isLoaded } = useSettings();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  const handleSearch = async (state: SearchState) => {
+    setIsSearching(true);
+    setHasSearched(true);
+    try {
+      const response = await jobService.searchJobs({
+        keywords: state.keywords,
+        location: state.location,
+        booleanMode: state.booleanMode,
+      });
+      setJobs(response.jobs);
+    } catch (error) {
+      console.error("Erreur lors de la recherche", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  if (!isLoaded) return null;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-6 max-w-6xl mx-auto animate-in fade-in duration-500">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-black tracking-tight text-foreground">
+          Trouvez votre prochain défi
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Recherchez parmi des milliers d'offres en Wallonie et au-delà.
+        </p>
+      </div>
+
+      <SearchEngine
+        onSearch={handleSearch}
+        initialState={{ booleanMode: settings.defaultSearchMode }}
+      />
+
+      {hasSearched && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2">Résultats de recherche</h2>
+              <span className="text-sm text-muted-foreground">
+                {jobs.length} offre{jobs.length > 1 ? 's' : ''} trouvée{jobs.length > 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {!isSearching && jobs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full shadow-sm"
+                onClick={() => exportJobsToCSV(jobs)}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            )}
+          </div>
+
+          {isSearching ? (
+            <div className="h-64 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-border/50">
+              <div className="w-8 h-8 rounded-full border-4 border-rose-500 border-t-transparent animate-spin" />
+              <p className="text-muted-foreground font-medium animate-pulse">Le FOREM-fouille analyse les offres...</p>
+            </div>
+          ) : (
+            <JobTable data={jobs} />
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      )}
+
+      {!hasSearched && (
+        <div className="h-64 flex flex-col items-center justify-center space-y-4 bg-card/50 rounded-xl border border-dashed border-border mt-8">
+          <p className="text-muted-foreground font-medium">Effectuez une recherche pour commencer.</p>
         </div>
-      </main>
+      )}
     </div>
   );
 }
