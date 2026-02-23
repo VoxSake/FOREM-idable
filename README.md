@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Optional Providers
+
+Adzuna support is available but disabled by default.
+
+1. Copy `env.example` to `.env.local`
+2. Set `ADZUNA_ENABLED=true`
+3. Add your `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`
+
+Forem remains the primary provider; Adzuna is merged in only when enabled.
+
 ## Getting Started
 
 First, run the development server:
