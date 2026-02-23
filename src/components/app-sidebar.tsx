@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
+import { FOOTER_QUOTES } from "@/data/footerQuotes";
+import { pickRandomItem } from "@/lib/random";
 
 import {
     Sidebar,
@@ -31,6 +34,15 @@ const navItems = [
 export function AppSidebar() {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
+    const [currentQuote, setCurrentQuote] = useState(() => FOOTER_QUOTES[0]);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setCurrentQuote(pickRandomItem(FOOTER_QUOTES));
+        }, 0);
+
+        return () => window.clearTimeout(timeoutId);
+    }, []);
 
     return (
         <Sidebar>
@@ -88,6 +100,17 @@ export function AppSidebar() {
                 </div>
 
                 <Separator />
+                <blockquote className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] leading-4 text-foreground/90 italic">
+                        « {currentQuote.text} »
+                    </p>
+                    {currentQuote.author && (
+                        <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
+                            — {currentQuote.author}
+                        </p>
+                    )}
+                </blockquote>
+
                 <div className="rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
                     <p className="text-[11px] leading-4 text-muted-foreground">
                         Copyright (c) 2026 Jordi Brisbois
