@@ -31,7 +31,7 @@ export default function SettingsPage() {
                     <Separator />
 
                     <div className="space-y-3">
-                        <Label className="text-base">Thème de l'application</Label>
+                        <Label className="text-base">Thème de l&apos;application</Label>
                         <RadioGroup
                             defaultValue={theme}
                             onValueChange={(val) => setTheme(val)}
@@ -61,7 +61,7 @@ export default function SettingsPage() {
                     <div className="space-y-3">
                         <Label className="text-base">Opérateur booléen par défaut</Label>
                         <p className="text-sm text-muted-foreground">
-                            Définit le lien initial entre vos mots-clés lors d'une nouvelle recherche.
+                            Définit le lien initial entre vos mots-clés lors d&apos;une nouvelle recherche.
                         </p>
                         <RadioGroup
                             defaultValue={settings.defaultSearchMode}

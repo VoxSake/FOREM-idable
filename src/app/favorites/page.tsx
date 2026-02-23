@@ -34,7 +34,7 @@ export default function FavoritesPage() {
                 <div className="h-96 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-dashed border-border mt-8">
                     <HeartCrack className="w-12 h-12 text-muted-foreground/30" />
                     <p className="text-muted-foreground font-medium text-lg">Aucun favori pour le moment.</p>
-                    <p className="text-sm text-muted-foreground/70">Cliquez sur le cœur d'une offre pour l'ajouter ici.</p>
+                    <p className="text-sm text-muted-foreground/70">Cliquez sur le cœur d&apos;une offre pour l&apos;ajouter ici.</p>
                 </div>
             )}
         </div>
