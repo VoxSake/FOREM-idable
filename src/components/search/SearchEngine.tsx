@@ -5,13 +5,11 @@ import { Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LocationAutocomplete } from "./LocationAutocomplete";
+import { LocationEntry } from "@/services/location/locationCache";
 import { cn } from "@/lib/utils";
+import { BooleanMode, SearchQuery } from "@/types/search";
 
-export interface SearchState {
-    keywords: string[];
-    location: string;
-    booleanMode: "AND" | "OR";
-}
+export type SearchState = SearchQuery;
 
 interface SearchEngineProps {
     onSearch: (state: SearchState) => void;
@@ -21,8 +19,8 @@ interface SearchEngineProps {
 export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
     const [keywords, setKeywords] = useState<string[]>(initialState?.keywords || []);
     const [inputValue, setInputValue] = useState("");
-    const [location, setLocation] = useState(initialState?.location || "");
-    const [booleanMode, setBooleanMode] = useState<"AND" | "OR">(initialState?.booleanMode || "OR");
+    const [selectedLocations, setSelectedLocations] = useState<LocationEntry[]>([]);
+    const [booleanMode, setBooleanMode] = useState<BooleanMode>(initialState?.booleanMode || "OR");
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -50,18 +48,22 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
         setBooleanMode((prev) => (prev === "OR" ? "AND" : "OR"));
     };
 
+    const displayBooleanMode = booleanMode === "OR" ? "OU" : "ET";
+    const selectedLocationsLabel = selectedLocations.length > 0 ? `${selectedLocations.length} lieu${selectedLocations.length > 1 ? "x" : ""}` : null;
+
     const triggerSearch = () => {
-        // If there's pending text, add it to keywords first
-        let finalKeywords = [...keywords];
         const pendingText = inputValue.trim();
+        const shouldAppendPending = pendingText && !keywords.includes(pendingText);
+        const finalKeywords = shouldAppendPending ? [...keywords, pendingText] : [...keywords];
+
         if (pendingText) {
-            if (!finalKeywords.includes(pendingText)) {
-                finalKeywords.push(pendingText);
-            }
             setInputValue("");
-            setKeywords(finalKeywords);
+            if (shouldAppendPending) {
+                setKeywords(finalKeywords);
+            }
         }
-        onSearch({ keywords: finalKeywords, location, booleanMode });
+
+        onSearch({ keywords: finalKeywords, locations: selectedLocations, booleanMode });
     };
 
     return (
@@ -97,7 +99,7 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
                                     )}
                                     title="Basculer OU/ET"
                                 >
-                                    {booleanMode}
+                                    {displayBooleanMode}
                                 </button>
                             )}
                         </div>
@@ -118,7 +120,10 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
 
                 {/* Location Dropdown */}
                 <div className="w-full lg:w-72 shrink-0">
-                    <LocationAutocomplete value={location} onChange={setLocation} />
+                    <LocationAutocomplete
+                        values={selectedLocations}
+                        onChange={setSelectedLocations}
+                    />
                 </div>
 
                 {/* Search Action */}
@@ -132,9 +137,16 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
             </div>
 
             {/* Boolean hint below the bar */}
-            <div className="flex justify-between items-center text-xs text-muted-foreground px-4">
+            <div className="flex flex-col gap-2 px-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                 <p>Astuce : Cliquez sur les <strong className="font-semibold text-foreground">OU / ET</strong> entre les mots-clés pour affiner la recherche.</p>
-                <p className="italic font-medium">Le FOREM-fouille cherche pour vous...</p>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {selectedLocationsLabel && (
+                        <Badge variant="outline" className="rounded-full border-border/70">
+                            Filtre lieu: {selectedLocationsLabel}
+                        </Badge>
+                    )}
+                    <p className="italic font-medium">Le FOREM-fouille cherche pour vous...</p>
+                </div>
             </div>
         </div>
     );

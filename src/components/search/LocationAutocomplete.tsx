@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown, MapPin } from "lucide-react";
+import { Check, ChevronDown, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,18 +21,70 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
 import { CATEGORIES_ORDER, locationCache, LocationEntry, LocationCategory } from "@/services/location/locationCache";
 
 export function LocationAutocomplete({
-    value,
+    values,
     onChange,
 }: {
-    value: string;
-    onChange: (value: string) => void;
+    values: LocationEntry[];
+    onChange: (values: LocationEntry[]) => void;
 }) {
     const [open, setOpen] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState("");
-    const locations = locationCache.getHierarchy();
+    const [locations, setLocations] = React.useState<LocationEntry[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const deferredSearch = React.useDeferredValue(searchQuery);
+    const normalizedSearch = deferredSearch.trim().toLowerCase();
+    const selectedIds = React.useMemo(() => new Set(values.map(v => v.id)), [values]);
+
+    React.useEffect(() => {
+        let mounted = true;
+        const load = async () => {
+            setIsLoading(true);
+            const data = await locationCache.getHierarchy();
+            if (mounted) {
+                setLocations(data);
+                setIsLoading(false);
+            }
+        };
+
+        void load();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const groupedLocations = React.useMemo(() => {
+        const groups = new Map<LocationCategory, LocationEntry[]>();
+        for (const category of CATEGORIES_ORDER) {
+            groups.set(category, []);
+        }
+
+        for (const item of locations) {
+            if (normalizedSearch && !item.name.toLowerCase().includes(normalizedSearch)) continue;
+            const list = groups.get(item.type);
+            if (list) list.push(item);
+        }
+
+        return groups;
+    }, [locations, normalizedSearch]);
+
+    const toggleLocation = React.useCallback((entry: LocationEntry) => {
+        const exists = values.some(v => v.id === entry.id);
+        if (exists) {
+            onChange(values.filter(v => v.id !== entry.id));
+        } else {
+            onChange([...values, entry]);
+        }
+    }, [values, onChange]);
+
+    const previewText = values.length === 0
+        ? "Ajouter un lieu de travail"
+        : values.length === 1
+            ? values[0].name
+            : `${values.length} lieux sélectionnés`;
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -45,11 +97,7 @@ export function LocationAutocomplete({
                 >
                     <div className="flex items-center gap-2 overflow-hidden text-muted-foreground w-full">
                         <MapPin className="h-4 w-4 shrink-0" />
-                        <span className="truncate flex-1">
-                            {value
-                                ? locations.find((l) => l.name === value)?.name || value
-                                : "Ajouter un lieu de travail"}
-                        </span>
+                        <span className="truncate flex-1">{previewText}</span>
                     </div>
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -62,22 +110,50 @@ export function LocationAutocomplete({
                         value={searchQuery}
                         onValueChange={setSearchQuery}
                     />
+                    {values.length > 0 && (
+                        <div className="px-2 py-2 border-b bg-muted/20">
+                            <div className="mb-2 flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground">
+                                    {values.length} sélection{values.length > 1 ? "s" : ""}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="text-xs font-medium text-primary hover:underline"
+                                    onClick={() => onChange([])}
+                                >
+                                    Tout effacer
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1 max-h-16 overflow-auto">
+                                {values.map((entry) => (
+                                    <Badge key={entry.id} variant="secondary" className="rounded-full">
+                                        <span className="max-w-[160px] truncate">{entry.name}</span>
+                                        <button
+                                            type="button"
+                                            className="ml-1 rounded-full hover:bg-muted/50"
+                                            onClick={() => toggleLocation(entry)}
+                                            aria-label={`Retirer ${entry.name}`}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <CommandList className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                        {isLoading && <CommandEmpty>Chargement des localisations...</CommandEmpty>}
                         {CATEGORIES_ORDER.map((category) => (
                             <LocationCategoryGroup
                                 key={category}
                                 category={category}
-                                items={locations.filter((l) => l.type === category)}
-                                selectedValue={value}
-                                searchQuery={searchQuery}
-                                onSelect={(currentValue) => {
-                                    onChange(currentValue === value ? "" : currentValue);
-                                    setOpen(false);
-                                    setSearchQuery("");
-                                }}
+                                items={groupedLocations.get(category) || []}
+                                selectedIds={selectedIds}
+                                searchQuery={normalizedSearch}
+                                onToggle={toggleLocation}
                             />
                         ))}
-                        {searchQuery && locations.filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                        {!isLoading && normalizedSearch && Array.from(groupedLocations.values()).every(items => items.length === 0) && (
                             <CommandEmpty>Aucun lieu trouvé.</CommandEmpty>
                         )}
                     </CommandList>
@@ -90,21 +166,20 @@ export function LocationAutocomplete({
 function LocationCategoryGroup({
     category,
     items,
-    selectedValue,
+    selectedIds,
     searchQuery,
-    onSelect,
+    onToggle,
 }: {
     category: LocationCategory;
     items: LocationEntry[];
-    selectedValue: string;
+    selectedIds: Set<string>;
     searchQuery: string;
-    onSelect: (value: string) => void;
+    onToggle: (entry: LocationEntry) => void;
 }) {
     const isSearching = searchQuery.trim().length > 0;
-    // If searching, show only matching items
-    const filteredItems = isSearching
-        ? items.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : items;
+    // Render cap to keep the dropdown snappy when no filter is typed.
+    const renderLimit = category === "Localités" || category === "Communes" ? 120 : 200;
+    const filteredItems = isSearching ? items : items.slice(0, renderLimit);
 
     // We keep the collapsible open automatically if there's a search, or if the category is "Localités" (by default open)
     const isDefaultOpen = category === "Localités";
@@ -140,18 +215,23 @@ function LocationCategoryGroup({
                     <CommandItem
                         key={loc.id}
                         value={loc.name}
-                        onSelect={onSelect}
+                        onSelect={() => onToggle(loc)}
                         className="rounded-md pl-6 cursor-pointer"
                     >
                         <Check
                             className={cn(
                                 "mr-2 h-4 w-4 text-primary",
-                                selectedValue === loc.name ? "opacity-100" : "opacity-0"
+                                selectedIds.has(loc.id) ? "opacity-100" : "opacity-0"
                             )}
                         />
                         {loc.name}
                     </CommandItem>
                 ))}
+                {!isSearching && items.length > renderLimit && (
+                    <p className="px-6 py-2 text-xs text-muted-foreground">
+                        {items.length - renderLimit} éléments masqués. Tapez pour filtrer.
+                    </p>
+                )}
             </CollapsibleContent>
         </Collapsible>
     );
