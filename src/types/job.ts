@@ -7,6 +7,6 @@ export interface Job {
   publicationDate: string;
   url: string;
   description?: string;
-  source: 'forem' | 'linkedin' | 'indeed';
+  source: 'forem' | 'linkedin' | 'indeed' | 'adzuna';
   pdfUrl?: string;
 }

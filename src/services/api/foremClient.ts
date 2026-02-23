@@ -1,10 +1,11 @@
 import { Job } from '@/types/job';
+import { LocationEntry, locationCache } from '@/services/location/locationCache';
 
 const FOREM_API_BASE = 'https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem/records';
 
 export interface ForemSearchParams {
     keywords?: string[];
-    location?: string;
+    locations?: LocationEntry[];
     limit?: number;
     offset?: number;
     booleanMode?: 'AND' | 'OR';
@@ -28,21 +29,14 @@ export async function fetchForemJobs(params: ForemSearchParams): Promise<{ jobs:
             filters.push(`(${keywordQuery})`);
         }
 
-        if (params.location) {
-            // Forem ODWD requires exact string matches for macro-regions
-            let mappedLocation = params.location;
-            if (mappedLocation === "Wallonie") mappedLocation = "RÉGION WALLONNE";
-            else if (mappedLocation === "Flandre") mappedLocation = "RÉGION FLAMANDE";
-            else if (mappedLocation === "Région de Bruxelles-Capitale") mappedLocation = "RÉGION DE BRUXELLES-CAPITALE";
-
-            // Clean location to match ODS search better
-            const cleanLocation = mappedLocation
-                .replace(/^\d+\s+/, '') // Remove postal codes
-                .replace(/^(Arrondissement de|Arrondissement d'|Province de|Province du)\s+/i, '')
-                .trim();
-
-            // ODS search() is highly resilient and matches the location accurately
-            filters.push(`search("${cleanLocation}")`);
+        if (params.locations && params.locations.length > 0) {
+            const locationClauses = await Promise.all(
+                params.locations.map((entry) => buildLocationFilter(entry.name, entry))
+            );
+            const effectiveClauses = locationClauses.filter(Boolean);
+            if (effectiveClauses.length > 0) {
+                filters.push(`(${effectiveClauses.join(" OR ")})`);
+            }
         }
 
         if (filters.length > 0) {
@@ -70,19 +64,119 @@ export async function fetchForemJobs(params: ForemSearchParams): Promise<{ jobs:
     }
 }
 
-function mapForemJobToStandard(record: any): Job {
-    const localites = record.lieuxtravaillocalite || [];
+function escapeOdsString(value: string): string {
+    return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function stripPostalPrefix(value: string): string {
+    return value.replace(/^\d{4}\s+/, '').trim();
+}
+
+function normalizeRegionLabel(label: string): string {
+    if (label === "Wallonie") return "RÉGION WALLONNE";
+    if (label === "Flandre") return "RÉGION FLAMANDE";
+    if (label === "Région de Bruxelles-Capitale") return "RÉGION DE BRUXELLES-CAPITALE";
+    return label;
+}
+
+function buildInClause(field: string, values: string[]): string | null {
+    const unique = Array.from(new Set(values.map(v => v.trim()).filter(Boolean)));
+    if (unique.length === 0) return null;
+    const quoted = unique.map(v => `"${escapeOdsString(v)}"`).join(",");
+    return `${field} in (${quoted})`;
+}
+
+async function buildArrondissementClause(locationEntry: LocationEntry): Promise<string | null> {
+    const entries = await locationCache.getHierarchy();
+    const arrondissementCode = locationEntry.code;
+    if (!arrondissementCode || !/^\d{5}$/.test(arrondissementCode)) return null;
+
+    const prefix = arrondissementCode.slice(0, 2);
+
+    const localityNames = entries
+        .filter((entry) =>
+            entry.type === "Localités" &&
+            entry.code &&
+            entry.code.startsWith(prefix) &&
+            entry.postalCode
+        )
+        .map((entry) => stripPostalPrefix(entry.name));
+
+    const postals = entries
+        .filter((entry) =>
+            entry.type === "Localités" &&
+            entry.code &&
+            entry.code.startsWith(prefix) &&
+            entry.postalCode
+        )
+        .map((entry) => entry.postalCode as string);
+
+    const localitiesClause = buildInClause("lieuxtravaillocalite", [
+        ...localityNames,
+        ...localityNames.map((name) => name.toUpperCase()),
+    ]);
+    const postalsClause = buildInClause("lieuxtravailcodepostal", postals);
+
+    if (localitiesClause && postalsClause) return `(${localitiesClause} OR ${postalsClause})`;
+    return localitiesClause || postalsClause;
+}
+
+async function buildLocationFilter(location: string, locationEntry?: LocationEntry): Promise<string> {
+    const cleanLocation = stripPostalPrefix(location);
+    const normalizedRegion = normalizeRegionLabel(cleanLocation);
+
+    if (!locationEntry) {
+        // Fallback for legacy values
+        return `search("${escapeOdsString(normalizedRegion)}")`;
+    }
+
+    if (locationEntry.type === "Pays") {
+        return `lieuxtravailregion in ("Belgique")`;
+    }
+
+    if (locationEntry.type === "Régions") {
+        return buildInClause("lieuxtravailregion", [normalizeRegionLabel(locationEntry.name)]) || `search("${escapeOdsString(normalizedRegion)}")`;
+    }
+
+    if (locationEntry.type === "Provinces") {
+        let provinceName = locationEntry.name.trim();
+        if (!/^Province\s+/i.test(provinceName)) {
+            provinceName = `Province de ${provinceName}`;
+        }
+        return buildInClause("lieuxtravailregion", [provinceName]) || `search("${escapeOdsString(normalizedRegion)}")`;
+    }
+
+    if (locationEntry.type === "Arrondissements") {
+        const arrClause = await buildArrondissementClause(locationEntry);
+        return arrClause || `search("${escapeOdsString(normalizedRegion)}")`;
+    }
+
+    if (locationEntry.type === "Communes" || locationEntry.type === "Localités") {
+        const localityName = stripPostalPrefix(locationEntry.name);
+        const localityClause = buildInClause("lieuxtravaillocalite", [localityName, localityName.toUpperCase()]);
+        const cp = locationEntry.postalCode || (locationEntry.name.match(/^(\d{4})\s+/)?.[1] ?? "");
+        const postalClause = cp ? buildInClause("lieuxtravailcodepostal", [cp]) : null;
+
+        if (localityClause && postalClause) return `(${localityClause} OR ${postalClause})`;
+        return localityClause || postalClause || `search("${escapeOdsString(normalizedRegion)}")`;
+    }
+
+    return `search("${escapeOdsString(normalizedRegion)}")`;
+}
+
+function mapForemJobToStandard(record: Record<string, unknown>): Job {
+    const localites = Array.isArray(record.lieuxtravaillocalite) ? record.lieuxtravaillocalite as string[] : [];
     const locationString = localites.length > 0 ? localites.join(', ') : 'Wallonie';
 
     return {
-        id: record.numerooffreforem || Math.random().toString(),
-        title: record.titreoffre || 'Poste non spécifié',
-        company: record.nomemployeur,
+        id: (record.numerooffreforem as string) || Math.random().toString(),
+        title: (record.titreoffre as string) || 'Poste non spécifié',
+        company: record.nomemployeur as string | undefined,
         location: locationString,
-        contractType: record.typecontrat || 'Non spécifié',
-        publicationDate: record.datedebutdiffusion || new Date().toISOString(),
-        url: record.url || `https://www.leforem.be/recherche-offres/offre-detail/${record.numerooffreforem}`,
-        description: record.metier || '',
+        contractType: (record.typecontrat as string) || 'Non spécifié',
+        publicationDate: (record.datedebutdiffusion as string) || new Date().toISOString(),
+        url: (record.url as string) || `https://www.leforem.be/recherche-offres/offre-detail/${record.numerooffreforem}`,
+        description: (record.metier as string) || '',
         source: 'forem',
         pdfUrl: undefined
     };

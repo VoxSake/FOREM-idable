@@ -1,13 +1,24 @@
-import { ForemSearchParams, fetchForemJobs } from '../api/foremClient';
+import { ForemSearchParams } from '../api/foremClient';
 import { Job } from '@/types/job';
+import { adzunaProvider } from './providers/adzunaProvider';
+import { foremProvider } from './providers/foremProvider';
+import { JobProvider } from './providers/types';
+import { dedupeAndSortJobs } from './utils/mergeJobs';
+
+const providers: JobProvider[] = [foremProvider, adzunaProvider];
 
 /**
  * JobService acts as an abstraction layer across multiple potential job indexers.
  */
 export const jobService = {
     searchJobs: async (params: ForemSearchParams): Promise<{ jobs: Job[]; total: number }> => {
-        // In the future, we could run multiple providers via Promise.all
-        // e.g. return await mergeProviders(fetchForemJobs(params), fetchLinkedIn(params));
-        return await fetchForemJobs(params);
+        const results = await Promise.all(providers.map((provider) => provider.search(params)));
+
+        const merged = dedupeAndSortJobs(results.flatMap((result) => result.jobs));
+
+        return {
+            jobs: merged,
+            total: merged.length,
+        };
     }
 };
