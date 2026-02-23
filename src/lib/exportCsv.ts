@@ -1,17 +1,40 @@
 import { Job } from "@/types/job";
 
-export function exportJobsToCSV(jobs: Job[], filename = "offres-foremidable.csv") {
-    if (!jobs || !jobs.length) return;
+export type ExportColumnKey =
+    | "title"
+    | "company"
+    | "location"
+    | "contractType"
+    | "publicationDate"
+    | "source"
+    | "url"
+    | "description";
 
-    const headers = [
-        "Titre",
-        "Entreprise",
-        "Lieu",
-        "Contrat",
-        "Date de publication",
-        "Lien",
-        "Aperçu description",
-    ];
+const EXPORT_COLUMNS: Record<ExportColumnKey, string> = {
+    title: "Titre",
+    company: "Entreprise",
+    location: "Lieu",
+    contractType: "Contrat",
+    publicationDate: "Date de publication",
+    source: "Source",
+    url: "Lien",
+    description: "Aperçu description",
+};
+
+interface ExportCsvOptions {
+    filename?: string;
+    columns?: ExportColumnKey[];
+    metadata?: Record<string, string>;
+}
+
+export function exportJobsToCSV(jobs: Job[], options: ExportCsvOptions = {}) {
+    if (!jobs || !jobs.length) return;
+    const filename = options.filename || "offres-foremidable.csv";
+    const columns = options.columns && options.columns.length > 0
+        ? options.columns
+        : (Object.keys(EXPORT_COLUMNS) as ExportColumnKey[]);
+
+    const headers = columns.map((column) => EXPORT_COLUMNS[column]);
 
     const escapeCSVCell = (cell: string) => {
         if (!cell) return '""';
@@ -19,19 +42,38 @@ export function exportJobsToCSV(jobs: Job[], filename = "offres-foremidable.csv"
         return `"${cellStr}"`;
     };
 
+    const valueByColumn = (job: Job, column: ExportColumnKey): string => {
+        switch (column) {
+            case "title":
+                return job.title;
+            case "company":
+                return job.company || "";
+            case "location":
+                return job.location;
+            case "contractType":
+                return job.contractType;
+            case "publicationDate":
+                return job.publicationDate;
+            case "source":
+                return job.source;
+            case "url":
+                return job.url;
+            case "description":
+                return job.description ? `${job.description.substring(0, 150)}...` : "";
+            default:
+                return "";
+        }
+    };
+
     const rows = jobs.map((job) => {
-        return [
-            escapeCSVCell(job.title),
-            escapeCSVCell(job.company || ""),
-            escapeCSVCell(job.location),
-            escapeCSVCell(job.contractType),
-            escapeCSVCell(job.publicationDate),
-            escapeCSVCell(job.url),
-            escapeCSVCell(job.description ? job.description.substring(0, 150) + "..." : ""),
-        ].join(",");
+        return columns.map((column) => escapeCSVCell(valueByColumn(job, column))).join(",");
     });
 
-    const csvContent = [headers.join(","), ...rows].join("\n");
+    const metadataRows = Object.entries(options.metadata || {}).map(([label, value]) =>
+        `${escapeCSVCell(label)},${escapeCSVCell(value)}`
+    );
+    const preamble = metadataRows.length > 0 ? [...metadataRows, ""] : [];
+    const csvContent = [...preamble, headers.join(","), ...rows].join("\n");
 
     // Create Blob and trigger download
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
