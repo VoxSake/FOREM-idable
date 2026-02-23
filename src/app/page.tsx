@@ -1,36 +1,49 @@
 "use client";
 
-import { useState } from "react";
 import { SearchEngine, SearchState } from "@/components/search/SearchEngine";
 import { JobTable } from "@/components/jobs/JobTable";
-import { jobService } from "@/services/jobs/jobService";
-import { Job } from "@/types/job";
 import { useSettings } from "@/hooks/useSettings";
-import { exportJobsToCSV } from "@/lib/exportCsv";
-import { Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useJobSearch } from "@/features/jobs/hooks/useJobSearch";
+import { useCompareJobs } from "@/features/jobs/hooks/useCompareJobs";
+import { useExportJobs } from "@/features/jobs/hooks/useExportJobs";
+import { SearchHistoryPanel } from "@/features/jobs/components/SearchHistoryPanel";
+import { ComparePanel } from "@/features/jobs/components/ComparePanel";
+import { ResultsToolbar } from "@/features/jobs/components/ResultsToolbar";
+import { ExportDialog } from "@/features/jobs/components/ExportDialog";
 
 export default function DashboardPage() {
   const { settings, isLoaded } = useSettings();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const {
+    jobs,
+    isSearching,
+    hasSearched,
+    lastSearchQuery,
+    executeSearch,
+    history,
+    clearHistory,
+    isHistoryLoaded,
+  } = useJobSearch();
+  const {
+    compareJobs,
+    selectedCompareIds,
+    canSelectMoreForCompare,
+    toggleCompare,
+    resetCompare,
+  } = useCompareJobs();
+  const {
+    isExportDialogOpen,
+    setIsExportDialogOpen,
+    exportTarget,
+    selectedExportColumns,
+    openExportDialog,
+    selectAllColumns,
+    toggleColumn,
+    applyExport,
+  } = useExportJobs();
 
   const handleSearch = async (state: SearchState) => {
-    setIsSearching(true);
-    setHasSearched(true);
-    try {
-      const response = await jobService.searchJobs({
-        keywords: state.keywords,
-        location: state.location,
-        booleanMode: state.booleanMode,
-      });
-      setJobs(response.jobs);
-    } catch (error) {
-      console.error("Erreur lors de la recherche", error);
-    } finally {
-      setIsSearching(false);
-    }
+    resetCompare();
+    await executeSearch(state);
   };
 
   if (!isLoaded) return null;
@@ -42,7 +55,7 @@ export default function DashboardPage() {
           Trouvez votre prochain défi
         </h1>
         <p className="text-muted-foreground text-lg">
-          Recherchez parmi des milliers d'offres en Wallonie et au-delà.
+          Recherchez parmi des milliers d&apos;offres en Wallonie et au-delà.
         </p>
       </div>
 
@@ -51,28 +64,28 @@ export default function DashboardPage() {
         initialState={{ booleanMode: settings.defaultSearchMode }}
       />
 
+      {isHistoryLoaded && (
+        <SearchHistoryPanel
+          history={history}
+          onReplay={async (query) => {
+            resetCompare();
+            await executeSearch(query, { persistInHistory: false });
+          }}
+          onClear={clearHistory}
+        />
+      )}
+
       {hasSearched && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">Résultats de recherche</h2>
-              <span className="text-sm text-muted-foreground">
-                {jobs.length} offre{jobs.length > 1 ? 's' : ''} trouvée{jobs.length > 1 ? 's' : ''}
-              </span>
-            </div>
+          <ComparePanel compareJobs={compareJobs} onReset={resetCompare} onRemove={toggleCompare} />
 
-            {!isSearching && jobs.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full shadow-sm"
-                onClick={() => exportJobsToCSV(jobs)}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-            )}
-          </div>
+          <ResultsToolbar
+            jobsCount={jobs.length}
+            compareCount={compareJobs.length}
+            isSearching={isSearching}
+            onExportAll={() => openExportDialog("all")}
+            onExportCompare={() => openExportDialog("compare")}
+          />
 
           {isSearching ? (
             <div className="h-64 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-border/50">
@@ -80,7 +93,12 @@ export default function DashboardPage() {
               <p className="text-muted-foreground font-medium animate-pulse">Le FOREM-fouille analyse les offres...</p>
             </div>
           ) : (
-            <JobTable data={jobs} />
+            <JobTable
+              data={jobs}
+              selectedCompareIds={selectedCompareIds}
+              onToggleCompare={toggleCompare}
+              canSelectMoreForCompare={canSelectMoreForCompare}
+            />
           )}
         </div>
       )}
@@ -90,6 +108,18 @@ export default function DashboardPage() {
           <p className="text-muted-foreground font-medium">Effectuez une recherche pour commencer.</p>
         </div>
       )}
+
+      <ExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        exportTarget={exportTarget}
+        jobsCount={jobs.length}
+        compareCount={compareJobs.length}
+        selectedColumns={selectedExportColumns}
+        onToggleColumn={toggleColumn}
+        onSelectAllColumns={selectAllColumns}
+        onExport={() => applyExport({ jobs, compareJobs, lastSearchQuery })}
+      />
     </div>
   );
 }
