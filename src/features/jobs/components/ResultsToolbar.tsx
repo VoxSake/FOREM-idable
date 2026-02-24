@@ -1,6 +1,7 @@
 "use client";
 
-import { Download, Scale } from "lucide-react";
+import { useState } from "react";
+import { Check, Download, Link2, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ResultsToolbarProps {
@@ -9,6 +10,8 @@ interface ResultsToolbarProps {
   isSearching: boolean;
   onExportAll: () => void;
   onExportCompare: () => void;
+  onCopySearchLink: () => Promise<void> | void;
+  canCopySearchLink: boolean;
 }
 
 export function ResultsToolbar({
@@ -17,7 +20,17 @@ export function ResultsToolbar({
   isSearching,
   onExportAll,
   onExportCompare,
+  onCopySearchLink,
+  canCopySearchLink,
 }: ResultsToolbarProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await onCopySearchLink();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
+  };
+
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -32,6 +45,16 @@ export function ResultsToolbar({
           <Button variant="outline" size="sm" className="rounded-full shadow-sm" onClick={onExportAll}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full shadow-sm"
+            onClick={handleCopy}
+            disabled={!canCopySearchLink}
+          >
+            {copied ? <Check className="w-4 h-4 mr-2" /> : <Link2 className="w-4 h-4 mr-2" />}
+            {copied ? "Lien copié" : "Copier lien"}
           </Button>
           {compareCount > 0 && (
             <Button
@@ -49,4 +72,3 @@ export function ResultsToolbar({
     </div>
   );
 }
-

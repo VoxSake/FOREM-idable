@@ -42,7 +42,7 @@ export default function RootLayout({
             <main className="flex-1 overflow-x-hidden flex flex-col w-full min-h-screen">
               <header className="h-14 flex items-center border-b px-4 lg:hidden">
                 <SidebarTrigger />
-                <ForemIdableLogo className="ml-4 h-6" />
+                <ForemIdableLogo className="ml-4 h-7" />
               </header>
               <div className="flex-1 p-4 lg:p-8 bg-muted/10">
                 {children}

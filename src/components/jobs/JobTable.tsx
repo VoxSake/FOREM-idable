@@ -20,14 +20,16 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Job } from "@/types/job";
-import { Heart, ExternalLink, FileText, Scale } from "lucide-react";
+import { Heart, ExternalLink, FileText, Scale, PanelRightOpen } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
+import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 
 interface JobTableProps {
     data: Job[];
     selectedCompareIds?: Set<string>;
     onToggleCompare?: (job: Job) => void;
     canSelectMoreForCompare?: boolean;
+    onOpenDetails?: (job: Job) => void;
 }
 
 const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
@@ -47,20 +49,11 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
         cell: "hidden lg:table-cell",
     },
     actions: {
-        head: "text-right w-[88px] sm:w-[180px]",
-        cell: "whitespace-nowrap w-[88px] sm:w-[180px]",
+        head: "text-right w-[124px] sm:w-[220px]",
+        cell: "whitespace-nowrap w-[124px] sm:w-[220px]",
     },
 };
-
-function getForemOfferId(job: Job): string | null {
-    if (job.id && /^\d+$/.test(job.id)) return job.id;
-
-    if (!job.url) return null;
-    const match = job.url.match(/offre-detail\/(\d+)/);
-    return match?.[1] ?? null;
-}
-
-export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectMoreForCompare = true }: JobTableProps) {
+export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectMoreForCompare = true, onOpenDetails }: JobTableProps) {
     const { isFavorite, addFavorite, removeFavorite, isLoaded } = useFavorites();
 
     const columns: ColumnDef<Job>[] = [
@@ -70,10 +63,11 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
             cell: ({ row }) => {
                 const title = row.getValue("title") as string;
                 const company = row.original.company;
+                const canOpenDetails = Boolean(onOpenDetails);
                 return (
                     <div className="w-full min-w-0">
                         <p
-                            className="font-semibold text-foreground leading-snug overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]"
+                            className={`font-semibold text-foreground leading-snug overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] ${canOpenDetails ? "cursor-pointer group-hover:underline underline-offset-2" : ""}`}
                             title={title}
                         >
                             {title}
@@ -125,13 +119,24 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
             cell: ({ row }) => {
                 const job = row.original;
                 const fav = isFavorite(job.id);
-                const offerId = getForemOfferId(job);
-                const pdfUrl = offerId ? `/api/pdf/${offerId}` : undefined;
+                const pdfUrl = getJobPdfUrl(job);
                 const isSelectedForCompare = selectedCompareIds?.has(job.id) ?? false;
                 const compareDisabled = !isSelectedForCompare && !canSelectMoreForCompare;
 
                 return (
-                    <div className="flex items-center gap-1 sm:gap-2 justify-end">
+                    <div className="flex items-center gap-1 sm:gap-2 justify-end" onClick={(event) => event.stopPropagation()}>
+                        {onOpenDetails && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground"
+                                onClick={() => onOpenDetails(job)}
+                                title="Voir les détails"
+                            >
+                                <PanelRightOpen className="w-4 h-4" />
+                            </Button>
+                        )}
+
                         {onToggleCompare && (
                             <Button
                                 variant={isSelectedForCompare ? "secondary" : "ghost"}
@@ -229,7 +234,8 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
-                                    className="hover:bg-muted/30 transition-colors group"
+                                    className={`hover:bg-muted/30 transition-colors group ${onOpenDetails ? "cursor-pointer" : ""}`}
+                                    onClick={onOpenDetails ? () => onOpenDetails(row.original) : undefined}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id} className={`py-2 px-1 sm:py-3 sm:px-2 ${COLUMN_CLASSES[cell.column.id]?.cell ?? ""}`}>

@@ -1,11 +1,23 @@
-<svg width="196" height="32" viewBox="0 0 196 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1" y="2" width="28" height="28" rx="8" fill="#FB7185"/>
-  <rect x="7" y="6.5" width="10" height="15" rx="2" fill="#4A1321"/>
-  <path d="M9.5 10H14.5" stroke="#FDA4AF" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M9.5 13H14.5" stroke="#FDA4AF" stroke-width="1.6" stroke-linecap="round"/>
-  <rect x="14.5" y="14" width="8.5" height="6.5" rx="1.8" fill="#3A0E19" stroke="#FDA4AF" stroke-width="1.2"/>
-  <path d="M17 14V12.8C17 11.9 17.7 11.2 18.6 11.2H18.9C19.8 11.2 20.5 11.9 20.5 12.8V14" stroke="#FFE4E6" stroke-width="1.2"/>
-  <circle cx="22.2" cy="8.9" r="3.2" stroke="#FFE4E6" stroke-width="1.8"/>
-  <path d="M24.3 11L26.4 13.1" stroke="#FFE4E6" stroke-width="1.8" stroke-linecap="round"/>
-  <text x="38" y="21" fill="#F8FAFC" font-family="Geist, ui-sans-serif, system-ui" font-size="15" font-weight="800">FOREM-idable</text>
+<svg width="220" height="40" viewBox="0 0 220 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgDark" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FB7185"/>
+      <stop offset="1" stop-color="#E11D48"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="32" height="32" rx="10" fill="url(#bgDark)"/>
+
+  <rect x="10" y="10" width="12" height="16" rx="2.4" fill="#3D0F1B"/>
+  <path d="M12.5 14H19.5" stroke="#FDA4AF" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M12.5 17H19.5" stroke="#FDA4AF" stroke-width="1.5" stroke-linecap="round"/>
+
+  <rect x="19.5" y="18" width="8.8" height="6.8" rx="1.8" fill="#4A1321" stroke="#FDA4AF" stroke-width="1.1"/>
+  <path d="M21.4 18V16.8C21.4 15.9 22.1 15.2 23 15.2H24.8C25.7 15.2 26.4 15.9 26.4 16.8V18" stroke="#FFE4E6" stroke-width="1.1"/>
+
+  <circle cx="26.4" cy="12.6" r="3.3" stroke="#FFE4E6" stroke-width="1.8"/>
+  <path d="M28.7 14.9L31.2 17.4" stroke="#FFE4E6" stroke-width="1.8" stroke-linecap="round"/>
+
+  <text x="45" y="25" fill="#F8FAFC" font-family="Sora, Manrope, Geist, ui-sans-serif, system-ui" font-size="18" font-weight="800" letter-spacing="0.3">FOREM</text>
+  <text x="112" y="25" fill="#CBD5E1" font-family="Sora, Manrope, Geist, ui-sans-serif, system-ui" font-size="17" font-weight="650">-idable</text>
 </svg>

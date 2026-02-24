@@ -30,8 +30,9 @@ export async function fetchForemJobs(params: ForemSearchParams): Promise<{ jobs:
         }
 
         if (params.locations && params.locations.length > 0) {
+            const resolvedLocations = await resolveLocations(params.locations);
             const locationClauses = await Promise.all(
-                params.locations.map((entry) => buildLocationFilter(entry.name, entry))
+                resolvedLocations.map((entry) => buildLocationFilter(entry.name, entry))
             );
             const effectiveClauses = locationClauses.filter(Boolean);
             if (effectiveClauses.length > 0) {
@@ -62,6 +63,25 @@ export async function fetchForemJobs(params: ForemSearchParams): Promise<{ jobs:
         console.error('Error fetching Forem jobs:', error);
         return { jobs: [], total: 0 };
     }
+}
+
+async function resolveLocations(input: LocationEntry[]): Promise<LocationEntry[]> {
+    const hierarchy = await locationCache.getHierarchy();
+    const byId = new Map(hierarchy.map((entry) => [entry.id, entry]));
+
+    return input.map((entry) => {
+        const fromCache = byId.get(entry.id);
+        if (!fromCache) return entry;
+
+        return {
+            ...fromCache,
+            ...entry,
+            code: entry.code || fromCache.code,
+            postalCode: entry.postalCode || fromCache.postalCode,
+            level: entry.level ?? fromCache.level,
+            parentId: entry.parentId || fromCache.parentId,
+        };
+    });
 }
 
 function escapeOdsString(value: string): string {

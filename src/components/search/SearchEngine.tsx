@@ -19,7 +19,7 @@ interface SearchEngineProps {
 export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
     const [keywords, setKeywords] = useState<string[]>(initialState?.keywords || []);
     const [inputValue, setInputValue] = useState("");
-    const [selectedLocations, setSelectedLocations] = useState<LocationEntry[]>([]);
+    const [selectedLocations, setSelectedLocations] = useState<LocationEntry[]>(initialState?.locations || []);
     const [booleanMode, setBooleanMode] = useState<BooleanMode>(initialState?.booleanMode || "OR");
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -137,15 +137,24 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
             </div>
 
             {/* Boolean hint below the bar */}
-            <div className="flex flex-col gap-2 px-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                <p>Astuce : Cliquez sur les <strong className="font-semibold text-foreground">OU / ET</strong> entre les mots-clés pour affiner la recherche.</p>
+            <div className="flex flex-col gap-3 px-4 text-xs text-muted-foreground">
+                <div className="space-y-2">
+                    <p>
+                        Astuce : cliquez sur <strong className="font-semibold text-foreground">OU / ET</strong> entre les mots-clés pour ajuster la recherche.
+                    </p>
+                    <p>
+                        <strong className="font-semibold text-foreground">OU</strong> = plus large (ex: <span className="font-mono">comptable OU aide-comptable</span>).
+                    </p>
+                    <p>
+                        <strong className="font-semibold text-foreground">ET</strong> = plus précis (ex: <span className="font-mono">comptable ET Bruxelles</span>).
+                    </p>
+                </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                     {selectedLocationsLabel && (
                         <Badge variant="outline" className="rounded-full border-border/70">
                             Filtre lieu: {selectedLocationsLabel}
                         </Badge>
                     )}
-                    <p className="italic font-medium">Le FOREM-fouille cherche pour vous...</p>
                 </div>
             </div>
         </div>

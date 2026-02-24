@@ -7,6 +7,7 @@ const mockUseSettings = vi.fn();
 const mockUseJobSearch = vi.fn();
 const mockUseCompareJobs = vi.fn();
 const mockUseExportJobs = vi.fn();
+const mockReplace = vi.fn();
 
 vi.mock("@/hooks/useSettings", () => ({
   useSettings: () => mockUseSettings(),
@@ -22,6 +23,12 @@ vi.mock("@/features/jobs/hooks/useCompareJobs", () => ({
 
 vi.mock("@/features/jobs/hooks/useExportJobs", () => ({
   useExportJobs: () => mockUseExportJobs(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: mockReplace }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/components/search/SearchEngine", () => ({
@@ -67,13 +74,18 @@ vi.mock("@/features/jobs/components/ResultsToolbar", () => ({
   ResultsToolbar: ({
     onExportAll,
     onExportCompare,
+    onCopySearchLink,
   }: {
     onExportAll: () => void;
     onExportCompare: () => void;
+    onCopySearchLink: () => void;
   }) => (
     <div>
       <button type="button" onClick={onExportAll}>
         export-all
+      </button>
+      <button type="button" onClick={onCopySearchLink}>
+        copy-link
       </button>
       <button type="button" onClick={onExportCompare}>
         export-compare
@@ -84,6 +96,10 @@ vi.mock("@/features/jobs/components/ResultsToolbar", () => ({
 
 vi.mock("@/features/jobs/components/ExportDialog", () => ({
   ExportDialog: () => <div>export-dialog</div>,
+}));
+
+vi.mock("@/features/jobs/components/JobDetailsSheet", () => ({
+  JobDetailsSheet: () => <div>job-details-sheet</div>,
 }));
 
 const sampleQuery: SearchQuery = {
@@ -190,4 +206,3 @@ describe("DashboardPage integration", () => {
     expect(openExportDialog).toHaveBeenNthCalledWith(2, "compare");
   });
 });
-

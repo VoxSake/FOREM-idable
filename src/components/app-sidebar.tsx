@@ -48,7 +48,7 @@ export function AppSidebar() {
         <Sidebar>
             <SidebarHeader className="p-4 border-b">
                 <div className="flex items-center">
-                    <ForemIdableLogo className="h-7" />
+                    <ForemIdableLogo className="h-8" />
                 </div>
                 <p className="text-xs text-muted-foreground font-medium italic mt-1">L&apos;indexeur d&apos;offres décomplexé</p>
             </SidebarHeader>
