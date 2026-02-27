@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Job } from "@/types/job";
-import { Heart, ExternalLink, FileText, Scale, PanelRightOpen } from "lucide-react";
+import { Heart, ExternalLink, FileText } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 
@@ -33,7 +33,6 @@ interface JobTableProps {
     onLoadMore?: () => void;
     selectedCompareIds?: Set<string>;
     onToggleCompare?: (job: Job) => void;
-    canSelectMoreForCompare?: boolean;
     onOpenDetails?: (job: Job) => void;
 }
 
@@ -66,7 +65,6 @@ export function JobTable({
     onLoadMore,
     selectedCompareIds,
     onToggleCompare,
-    canSelectMoreForCompare = true,
     onOpenDetails,
 }: JobTableProps) {
     const { isFavorite, addFavorite, removeFavorite, isLoaded } = useFavorites();
@@ -136,33 +134,23 @@ export function JobTable({
                 const fav = isFavorite(job.id);
                 const pdfUrl = getJobPdfUrl(job);
                 const isSelectedForCompare = selectedCompareIds?.has(job.id) ?? false;
-                const compareDisabled = !isSelectedForCompare && !canSelectMoreForCompare;
 
                 return (
                     <div className="flex items-center gap-1 sm:gap-2 justify-end" onClick={(event) => event.stopPropagation()}>
-                        {onOpenDetails && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground"
-                                onClick={() => onOpenDetails(job)}
-                                title="Voir les détails"
-                            >
-                                <PanelRightOpen className="w-4 h-4" />
-                            </Button>
-                        )}
-
                         {onToggleCompare && (
-                            <Button
-                                variant={isSelectedForCompare ? "secondary" : "ghost"}
-                                size="icon"
-                                className={isSelectedForCompare ? "text-primary" : "text-muted-foreground"}
-                                onClick={() => onToggleCompare(job)}
-                                title={isSelectedForCompare ? "Retirer du comparateur" : "Ajouter au comparateur"}
-                                disabled={compareDisabled}
+                            <label
+                                className="inline-flex h-8 items-center gap-2 rounded-full border px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                                title={isSelectedForCompare ? "Retirer de la sélection" : "Ajouter à la sélection"}
                             >
-                                <Scale className={`w-4 h-4 ${isSelectedForCompare ? "fill-current" : ""}`} />
-                            </Button>
+                                <input
+                                    type="checkbox"
+                                    className="h-3.5 w-3.5 accent-primary"
+                                    checked={isSelectedForCompare}
+                                    onChange={() => onToggleCompare(job)}
+                                    aria-label="Sélectionner l'offre"
+                                />
+                                <span className="hidden sm:inline">Sélection</span>
+                            </label>
                         )}
 
                         <Button

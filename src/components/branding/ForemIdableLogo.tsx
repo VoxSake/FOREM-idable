@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface ForemIdableLogoProps {
   className?: string;
@@ -6,23 +6,11 @@ interface ForemIdableLogoProps {
 
 export function ForemIdableLogo({ className }: ForemIdableLogoProps) {
   return (
-    <div className={className}>
-      <Image
-        src="/forem-idable-logo-light.svg"
-        alt="FOREM-idable"
-        width={156}
-        height={28}
-        className="h-full w-auto block dark:hidden"
-        priority
-      />
-      <Image
-        src="/forem-idable-logo-dark.svg"
-        alt="FOREM-idable"
-        width={156}
-        height={28}
-        className="h-full w-auto hidden dark:block"
-        priority
-      />
+    <div className={cn("inline-flex h-full items-center", className)}>
+      <span className="[font-family:var(--font-brand)] text-[1.45rem] leading-none font-semibold tracking-[-0.025em] text-foreground">
+        FOREM
+        <span className="text-primary">-idable</span>
+      </span>
     </div>
   );
 }

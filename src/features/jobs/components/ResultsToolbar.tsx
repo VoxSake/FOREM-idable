@@ -1,25 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Download, Link2, Scale } from "lucide-react";
+import { Check, CheckSquare, Download, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ResultsToolbarProps {
   jobsCount: number;
-  compareCount: number;
+  selectedCount: number;
   isSearching: boolean;
   onExportAll: () => void;
-  onExportCompare: () => void;
+  onExportSelected: () => void;
   onCopySearchLink: () => Promise<void> | void;
   canCopySearchLink: boolean;
 }
 
 export function ResultsToolbar({
   jobsCount,
-  compareCount,
+  selectedCount,
   isSearching,
   onExportAll,
-  onExportCompare,
+  onExportSelected,
   onCopySearchLink,
   canCopySearchLink,
 }: ResultsToolbarProps) {
@@ -56,15 +56,15 @@ export function ResultsToolbar({
             {copied ? <Check className="w-4 h-4 mr-2" /> : <Link2 className="w-4 h-4 mr-2" />}
             {copied ? "Lien copié" : "Copier lien"}
           </Button>
-          {compareCount > 0 && (
+          {selectedCount > 0 && (
             <Button
               variant="outline"
               size="sm"
               className="rounded-full shadow-sm"
-              onClick={onExportCompare}
+              onClick={onExportSelected}
             >
-              <Scale className="w-4 h-4 mr-2" />
-              Export comparateur
+              <CheckSquare className="w-4 h-4 mr-2" />
+              Export sélection
             </Button>
           )}
         </div>

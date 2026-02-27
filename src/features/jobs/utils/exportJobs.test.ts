@@ -17,14 +17,14 @@ function makeJob(id: string): Job {
 describe("getExportScopeJobs", () => {
   it("returns all jobs for target all", () => {
     const all = [makeJob("1"), makeJob("2")];
-    const compare = [makeJob("2")];
-    expect(getExportScopeJobs("all", all, compare)).toEqual(all);
+    const selected = [makeJob("2")];
+    expect(getExportScopeJobs("all", all, selected)).toEqual(all);
   });
 
-  it("returns compare jobs for target compare", () => {
+  it("returns selected jobs for target selected", () => {
     const all = [makeJob("1"), makeJob("2")];
-    const compare = [makeJob("2")];
-    expect(getExportScopeJobs("compare", all, compare)).toEqual(compare);
+    const selected = [makeJob("2")];
+    expect(getExportScopeJobs("selected", all, selected)).toEqual(selected);
   });
 });
 
@@ -37,7 +37,7 @@ describe("buildExportMetadata", () => {
     };
 
     const metadata = buildExportMetadata({
-      target: "compare",
+      target: "selected",
       jobsCount: 3,
       searchQuery: query,
       now: new Date("2026-02-23T12:00:00Z"),
@@ -46,8 +46,7 @@ describe("buildExportMetadata", () => {
     expect(metadata["Mots-clés"]).toBe("dev AND react");
     expect(metadata["Mode booléen"]).toBe("ET");
     expect(metadata["Nombre d'offres"]).toBe("3");
-    expect(metadata["Portée export"]).toBe("Comparateur");
+    expect(metadata["Portée export"]).toBe("Sélection");
     expect(metadata["Lieux"]).toContain("4000 Liège");
   });
 });
-

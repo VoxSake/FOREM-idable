@@ -39,7 +39,6 @@ function DashboardPageContent() {
   const {
     compareJobs,
     selectedCompareIds,
-    canSelectMoreForCompare,
     toggleCompare,
     resetCompare,
   } = useCompareJobs();
@@ -128,10 +127,10 @@ function DashboardPageContent() {
 
           <ResultsToolbar
             jobsCount={jobs.length}
-            compareCount={compareJobs.length}
+            selectedCount={compareJobs.length}
             isSearching={isSearching}
             onExportAll={() => openExportDialog("all")}
-            onExportCompare={() => openExportDialog("compare")}
+            onExportSelected={() => openExportDialog("selected")}
             onCopySearchLink={handleCopySearchLink}
             canCopySearchLink={Boolean(lastSearchQuery)}
           />
@@ -150,7 +149,6 @@ function DashboardPageContent() {
               onLoadMore={loadMore}
               selectedCompareIds={selectedCompareIds}
               onToggleCompare={toggleCompare}
-              canSelectMoreForCompare={canSelectMoreForCompare}
               onOpenDetails={(job) => {
                 setSelectedJob(job);
                 setIsDetailsOpen(true);
@@ -171,11 +169,11 @@ function DashboardPageContent() {
         onOpenChange={setIsExportDialogOpen}
         exportTarget={exportTarget}
         jobsCount={jobs.length}
-        compareCount={compareJobs.length}
+        selectedCount={compareJobs.length}
         selectedColumns={selectedExportColumns}
         onToggleColumn={toggleColumn}
         onSelectAllColumns={selectAllColumns}
-        onExport={() => applyExport({ jobs, compareJobs, lastSearchQuery })}
+        onExport={() => applyExport({ jobs, selectedJobs: compareJobs, lastSearchQuery })}
       />
 
       <JobDetailsSheet

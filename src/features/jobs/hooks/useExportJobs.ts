@@ -38,10 +38,10 @@ export function useExportJobs() {
 
   const applyExport = (options: {
     jobs: Job[];
-    compareJobs: Job[];
+    selectedJobs: Job[];
     lastSearchQuery: SearchQuery | null;
   }) => {
-    const exportJobs = getExportScopeJobs(exportTarget, options.jobs, options.compareJobs);
+    const exportJobs = getExportScopeJobs(exportTarget, options.jobs, options.selectedJobs);
     if (exportJobs.length === 0) return;
 
     const metadata = buildExportMetadata({

@@ -15,9 +15,9 @@ import {
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  exportTarget: "all" | "compare";
+  exportTarget: "all" | "selected";
   jobsCount: number;
-  compareCount: number;
+  selectedCount: number;
   selectedColumns: ExportColumnKey[];
   onToggleColumn: (column: ExportColumnKey, checked: boolean) => void;
   onSelectAllColumns: () => void;
@@ -29,7 +29,7 @@ export function ExportDialog({
   onOpenChange,
   exportTarget,
   jobsCount,
-  compareCount,
+  selectedCount,
   selectedColumns,
   onToggleColumn,
   onSelectAllColumns,
@@ -45,8 +45,8 @@ export function ExportDialog({
           </DialogDescription>
           <p className="text-xs text-muted-foreground">
             Portée:{" "}
-            {exportTarget === "compare"
-              ? `Comparateur (${compareCount} offre${compareCount > 1 ? "s" : ""})`
+            {exportTarget === "selected"
+              ? `Sélection (${selectedCount} offre${selectedCount > 1 ? "s" : ""})`
               : `Tous les résultats (${jobsCount})`}
           </p>
         </DialogHeader>
@@ -79,4 +79,3 @@ export function ExportDialog({
     </Dialog>
   );
 }
-

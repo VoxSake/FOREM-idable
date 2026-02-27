@@ -1,6 +1,6 @@
 "use client";
 
-import { Scale, X } from "lucide-react";
+import { CheckSquare, X } from "lucide-react";
 import { Job } from "@/types/job";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +18,8 @@ export function ComparePanel({ compareJobs, onReset, onRemove }: ComparePanelPro
     <div className="rounded-xl border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold flex items-center gap-2">
-          <Scale className="w-4 h-4" />
-          Comparateur ({compareJobs.length}/3)
+          <CheckSquare className="w-4 h-4" />
+          S\u00e9lection ({compareJobs.length})
         </h2>
         <Button variant="ghost" size="sm" onClick={onReset}>
           Réinitialiser
@@ -34,7 +34,7 @@ export function ComparePanel({ compareJobs, onReset, onRemove }: ComparePanelPro
                 type="button"
                 onClick={() => onRemove(job)}
                 className="text-muted-foreground hover:text-foreground"
-                aria-label="Retirer du comparateur"
+                aria-label="Retirer de la s\u00e9lection"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -58,4 +58,3 @@ export function ComparePanel({ compareJobs, onReset, onRemove }: ComparePanelPro
     </div>
   );
 }
-

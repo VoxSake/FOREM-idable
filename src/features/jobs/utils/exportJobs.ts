@@ -1,14 +1,14 @@
 import { Job } from "@/types/job";
 import { SearchQuery } from "@/types/search";
 
-export type ExportTarget = "all" | "compare";
+export type ExportTarget = "all" | "selected";
 
 export function getExportScopeJobs(
   target: ExportTarget,
   jobs: Job[],
-  compareJobs: Job[]
+  selectedJobs: Job[]
 ): Job[] {
-  return target === "compare" ? compareJobs : jobs;
+  return target === "selected" ? selectedJobs : jobs;
 }
 
 export function buildExportMetadata(options: {
@@ -30,7 +30,6 @@ export function buildExportMetadata(options: {
       options.searchQuery?.booleanMode === "AND" ? "ET" : "OU",
     "Nombre d'offres": String(options.jobsCount),
     "Portée export":
-      options.target === "compare" ? "Comparateur" : "Tous les résultats",
+      options.target === "selected" ? "Sélection" : "Tous les résultats",
   };
 }
-

@@ -73,11 +73,11 @@ vi.mock("@/features/jobs/components/ComparePanel", () => ({
 vi.mock("@/features/jobs/components/ResultsToolbar", () => ({
   ResultsToolbar: ({
     onExportAll,
-    onExportCompare,
+    onExportSelected,
     onCopySearchLink,
   }: {
     onExportAll: () => void;
-    onExportCompare: () => void;
+    onExportSelected: () => void;
     onCopySearchLink: () => void;
   }) => (
     <div>
@@ -87,8 +87,8 @@ vi.mock("@/features/jobs/components/ResultsToolbar", () => ({
       <button type="button" onClick={onCopySearchLink}>
         copy-link
       </button>
-      <button type="button" onClick={onExportCompare}>
-        export-compare
+      <button type="button" onClick={onExportSelected}>
+        export-selected
       </button>
     </div>
   ),
@@ -141,7 +141,6 @@ describe("DashboardPage integration", () => {
     mockUseCompareJobs.mockReturnValue({
       compareJobs: [sampleJob],
       selectedCompareIds: new Set(["1"]),
-      canSelectMoreForCompare: true,
       toggleCompare: vi.fn(),
       resetCompare: vi.fn(),
     });
@@ -192,17 +191,17 @@ describe("DashboardPage integration", () => {
     });
   });
 
-  it("opens export dialog for all and compare targets", async () => {
+  it("opens export dialog for all and selected targets", async () => {
     render(<DashboardPage />);
 
     fireEvent.click(screen.getByText("export-all"));
-    fireEvent.click(screen.getByText("export-compare"));
+    fireEvent.click(screen.getByText("export-selected"));
 
     const { openExportDialog } = mockUseExportJobs.mock.results[0].value as {
       openExportDialog: ReturnType<typeof vi.fn>;
     };
 
     expect(openExportDialog).toHaveBeenNthCalledWith(1, "all");
-    expect(openExportDialog).toHaveBeenNthCalledWith(2, "compare");
+    expect(openExportDialog).toHaveBeenNthCalledWith(2, "selected");
   });
 });
