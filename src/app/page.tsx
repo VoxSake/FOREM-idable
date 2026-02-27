@@ -25,9 +25,13 @@ function DashboardPageContent() {
   const {
     jobs,
     isSearching,
+    isLoadingMore,
+    hasMoreResults,
+    searchSessionId,
     hasSearched,
     lastSearchQuery,
     executeSearch,
+    loadMore,
     history,
     clearHistory,
     isHistoryLoaded,
@@ -140,6 +144,10 @@ function DashboardPageContent() {
           ) : (
             <JobTable
               data={jobs}
+              resetPaginationToken={searchSessionId}
+              isLoadingMore={isLoadingMore}
+              hasMoreResults={hasMoreResults}
+              onLoadMore={loadMore}
               selectedCompareIds={selectedCompareIds}
               onToggleCompare={toggleCompare}
               canSelectMoreForCompare={canSelectMoreForCompare}

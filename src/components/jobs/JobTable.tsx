@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -26,6 +27,10 @@ import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 
 interface JobTableProps {
     data: Job[];
+    resetPaginationToken?: number;
+    isLoadingMore?: boolean;
+    hasMoreResults?: boolean;
+    onLoadMore?: () => void;
     selectedCompareIds?: Set<string>;
     onToggleCompare?: (job: Job) => void;
     canSelectMoreForCompare?: boolean;
@@ -53,7 +58,17 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
         cell: "whitespace-nowrap w-[124px] sm:w-[220px]",
     },
 };
-export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectMoreForCompare = true, onOpenDetails }: JobTableProps) {
+export function JobTable({
+    data,
+    resetPaginationToken,
+    isLoadingMore = false,
+    hasMoreResults = false,
+    onLoadMore,
+    selectedCompareIds,
+    onToggleCompare,
+    canSelectMoreForCompare = true,
+    onOpenDetails,
+}: JobTableProps) {
     const { isFavorite, addFavorite, removeFavorite, isLoaded } = useFavorites();
 
     const columns: ColumnDef<Job>[] = [
@@ -194,6 +209,7 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
     const table = useReactTable({
         data,
         columns,
+        autoResetPageIndex: false,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
@@ -202,6 +218,17 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
             },
         },
     });
+
+    useEffect(() => {
+        table.setPageIndex(0);
+    }, [resetPaginationToken, table]);
+
+    const currentPage = table.getState().pagination.pageIndex + 1;
+    const pageCount = table.getPageCount();
+    const paginationItems = useMemo(
+        () => buildPaginationItems(currentPage, pageCount, 1),
+        [currentPage, pageCount]
+    );
 
     return (
         <div className="space-y-4">
@@ -262,13 +289,22 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
             </div>
 
             {/* Pagination Controls */}
-            {table.getPageCount() > 1 && (
-                <div className="flex items-center justify-between px-2">
+            {pageCount > 1 && (
+                <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-sm text-muted-foreground">
-                        Page {table.getState().pagination.pageIndex + 1} sur{" "}
-                        {table.getPageCount()}
+                        Page {currentPage} sur {pageCount}
+                        {isLoadingMore && " · Chargement..."}
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.setPageIndex(0)}
+                            disabled={!table.getCanPreviousPage()}
+                            className="rounded-full"
+                        >
+                            Première
+                        </Button>
                         <Button
                             variant="outline"
                             size="sm"
@@ -278,6 +314,27 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
                         >
                             Précédent
                         </Button>
+                        {paginationItems.map((item, index) => (
+                            item === "ellipsis" ? (
+                                <span
+                                    key={`ellipsis-${index}`}
+                                    className="px-2 text-sm text-muted-foreground"
+                                    aria-hidden="true"
+                                >
+                                    ...
+                                </span>
+                            ) : (
+                                <Button
+                                    key={`page-${item}`}
+                                    variant={item === currentPage ? "default" : "outline"}
+                                    size="sm"
+                                    className="min-w-9 rounded-full"
+                                    onClick={() => table.setPageIndex(item - 1)}
+                                >
+                                    {item}
+                                </Button>
+                            )
+                        ))}
                         <Button
                             variant="outline"
                             size="sm"
@@ -285,11 +342,59 @@ export function JobTable({ data, selectedCompareIds, onToggleCompare, canSelectM
                             disabled={!table.getCanNextPage()}
                             className="rounded-full"
                         >
-                            Suivant
+                            Suivante
                         </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.setPageIndex(pageCount - 1)}
+                            disabled={!table.getCanNextPage()}
+                            className="rounded-full"
+                        >
+                            Dernière
+                        </Button>
+                        {hasMoreResults && currentPage === pageCount && onLoadMore && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={onLoadMore}
+                                disabled={isLoadingMore}
+                                className="rounded-full"
+                            >
+                                {isLoadingMore ? "Chargement..." : "Charger plus"}
+                            </Button>
+                        )}
                     </div>
                 </div>
             )}
         </div>
     );
+}
+
+type PaginationItem = number | "ellipsis";
+
+function buildPaginationItems(currentPage: number, totalPages: number, siblingCount = 1): PaginationItem[] {
+    if (totalPages <= 0) return [];
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const startPage = Math.max(2, currentPage - siblingCount);
+    const endPage = Math.min(totalPages - 1, currentPage + siblingCount);
+    const items: PaginationItem[] = [1];
+
+    if (startPage > 2) {
+        items.push("ellipsis");
+    }
+
+    for (let page = startPage; page <= endPage; page += 1) {
+        items.push(page);
+    }
+
+    if (endPage < totalPages - 1) {
+        items.push("ellipsis");
+    }
+
+    items.push(totalPages);
+    return items;
 }

@@ -2,6 +2,10 @@ import { Job } from '@/types/job';
 import { LocationEntry, locationCache } from '@/services/location/locationCache';
 
 const FOREM_API_BASE = 'https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem/records';
+const FOREM_API_PAGE_SIZE = 100;
+const FOREM_DEFAULT_FETCH_LIMIT = 1000;
+const FOREM_MAX_FETCH_LIMIT = 9900;
+const FOREM_API_PARALLEL_REQUESTS = 4;
 
 export interface ForemSearchParams {
     keywords?: string[];
@@ -13,56 +17,127 @@ export interface ForemSearchParams {
 
 export async function fetchForemJobs(params: ForemSearchParams): Promise<{ jobs: Job[]; total: number }> {
     try {
-        const url = new URL(FOREM_API_BASE);
-        // L'API ODWB permet -1 pour récupérer tous les résultats de la recherche d'un coup
-        url.searchParams.append('limit', (params.limit !== undefined ? params.limit : -1).toString());
-        url.searchParams.append('offset', (params.offset || 0).toString());
-
-        // Forem ODWB dataset uses specific text search
-        // We can use the 'where' clause for opendatasoft API (v2.1)
-        const filters: string[] = [];
-
-        if (params.keywords && params.keywords.length > 0) {
-            // Create search query for each keyword. We search broadly across all fields using "search" function
-            const joiner = params.booleanMode === 'AND' ? ' AND ' : ' OR ';
-            const keywordQuery = params.keywords.map(kw => `search("${kw}")`).join(joiner);
-            filters.push(`(${keywordQuery})`);
-        }
-
-        if (params.locations && params.locations.length > 0) {
-            const resolvedLocations = await resolveLocations(params.locations);
-            const locationClauses = await Promise.all(
-                resolvedLocations.map((entry) => buildLocationFilter(entry.name, entry))
-            );
-            const effectiveClauses = locationClauses.filter(Boolean);
-            if (effectiveClauses.length > 0) {
-                filters.push(`(${effectiveClauses.join(" OR ")})`);
-            }
-        }
-
-        if (filters.length > 0) {
-            url.searchParams.append('where', filters.join(' AND '));
-        }
-
-        const response = await fetch(url.toString(), {
-            // In Next.js App Router, we can configure cache behaviors here. Default is fine for now.
-            method: "GET"
+        const whereClause = await buildWhereClause(params);
+        const targetLimit = clampRequestedLimit(params.limit);
+        const startOffset = Math.max(params.offset || 0, 0);
+        const firstPageLimit = Math.min(FOREM_API_PAGE_SIZE, targetLimit);
+        const firstPage = await fetchForemPage({
+            where: whereClause,
+            limit: firstPageLimit,
+            offset: startOffset,
         });
 
-        if (!response.ok) {
-            console.error(`Forem API error: ${response.status} ${response.statusText}`);
+        if (!firstPage) {
             return { jobs: [], total: 0 };
         }
 
-        const data = await response.json();
+        const jobs: Job[] = [...firstPage.jobs];
+        const totalCount = firstPage.total;
+
+        const cappedTotal = totalCount > 0
+            ? Math.min(Math.max(totalCount - startOffset, 0), targetLimit)
+            : targetLimit;
+
+        if (jobs.length >= cappedTotal || firstPage.jobs.length < firstPageLimit) {
+            return {
+                jobs: jobs.slice(0, cappedTotal),
+                total: totalCount || jobs.length,
+            };
+        }
+
+        const offsets: number[] = [];
+        for (
+            let offset = startOffset + firstPageLimit;
+            offset < startOffset + cappedTotal && offset < FOREM_MAX_FETCH_LIMIT;
+            offset += FOREM_API_PAGE_SIZE
+        ) {
+            offsets.push(offset);
+        }
+
+        for (let index = 0; index < offsets.length; index += FOREM_API_PARALLEL_REQUESTS) {
+            const chunk = offsets.slice(index, index + FOREM_API_PARALLEL_REQUESTS);
+            const pageResults = await Promise.all(
+                chunk.map(async (offset) => {
+                    const remaining = cappedTotal - (offset - startOffset);
+                    const limit = Math.min(FOREM_API_PAGE_SIZE, remaining);
+                    return fetchForemPage({ where: whereClause, limit, offset });
+                })
+            );
+
+            for (const page of pageResults) {
+                if (!page) continue;
+                jobs.push(...page.jobs);
+            }
+        }
+
         return {
-            jobs: data.results ? data.results.map(mapForemJobToStandard) : [],
-            total: data.total_count || 0
+            jobs: jobs.slice(0, cappedTotal),
+            total: totalCount || jobs.length,
         };
     } catch (error) {
         console.error('Error fetching Forem jobs:', error);
         return { jobs: [], total: 0 };
     }
+}
+
+function clampRequestedLimit(limit?: number): number {
+    if (typeof limit !== "number" || limit <= 0) return FOREM_DEFAULT_FETCH_LIMIT;
+    return Math.min(limit, FOREM_MAX_FETCH_LIMIT);
+}
+
+async function buildWhereClause(params: ForemSearchParams): Promise<string | null> {
+    const filters: string[] = [];
+
+    if (params.keywords && params.keywords.length > 0) {
+        const joiner = params.booleanMode === 'AND' ? ' AND ' : ' OR ';
+        const keywordQuery = params.keywords.map(kw => `search("${kw}")`).join(joiner);
+        filters.push(`(${keywordQuery})`);
+    }
+
+    if (params.locations && params.locations.length > 0) {
+        const resolvedLocations = await resolveLocations(params.locations);
+        const locationClauses = await Promise.all(
+            resolvedLocations.map((entry) => buildLocationFilter(entry.name, entry))
+        );
+        const effectiveClauses = locationClauses.filter(Boolean);
+        if (effectiveClauses.length > 0) {
+            filters.push(`(${effectiveClauses.join(" OR ")})`);
+        }
+    }
+
+    return filters.length > 0 ? filters.join(' AND ') : null;
+}
+
+function buildForemSearchUrl(options: { where: string | null; limit: number; offset: number }): URL {
+    const url = new URL(FOREM_API_BASE);
+    url.searchParams.append("limit", String(options.limit));
+    url.searchParams.append("offset", String(options.offset));
+    url.searchParams.append("order_by", "datedebutdiffusion desc");
+
+    if (options.where) {
+        url.searchParams.append("where", options.where);
+    }
+
+    return url;
+}
+
+async function fetchForemPage(options: { where: string | null; limit: number; offset: number }): Promise<{ jobs: Job[]; total: number } | null> {
+    const url = buildForemSearchUrl(options);
+    const response = await fetch(url.toString(), { method: "GET" });
+
+    if (!response.ok) {
+        console.error(`Forem API error: ${response.status} ${response.statusText}`);
+        return null;
+    }
+
+    const data = (await response.json()) as { results?: Record<string, unknown>[]; total_count?: number };
+    const results = Array.isArray(data.results) ? data.results : [];
+    const total = Number.isFinite(data.total_count) ? (data.total_count as number) : 0;
+
+    return {
+        jobs: results.map(mapForemJobToStandard),
+        total,
+    };
 }
 
 async function resolveLocations(input: LocationEntry[]): Promise<LocationEntry[]> {
