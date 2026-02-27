@@ -6,10 +6,10 @@ import { SearchEngine, SearchState } from "@/components/search/SearchEngine";
 import { JobTable } from "@/components/jobs/JobTable";
 import { useSettings } from "@/hooks/useSettings";
 import { useJobSearch } from "@/features/jobs/hooks/useJobSearch";
-import { useCompareJobs } from "@/features/jobs/hooks/useCompareJobs";
+import { useSelectionJobs } from "@/features/jobs/hooks/useSelectionJobs";
 import { useExportJobs } from "@/features/jobs/hooks/useExportJobs";
 import { SearchHistoryPanel } from "@/features/jobs/components/SearchHistoryPanel";
-import { ComparePanel } from "@/features/jobs/components/ComparePanel";
+import { SelectionPanel } from "@/features/jobs/components/SelectionPanel";
 import { ResultsToolbar } from "@/features/jobs/components/ResultsToolbar";
 import { ExportDialog } from "@/features/jobs/components/ExportDialog";
 import { fromSearchParams, toSearchPath } from "@/features/jobs/utils/searchUrl";
@@ -37,11 +37,11 @@ function DashboardPageContent() {
     isHistoryLoaded,
   } = useJobSearch();
   const {
-    compareJobs,
-    selectedCompareIds,
-    toggleCompare,
-    resetCompare,
-  } = useCompareJobs();
+    selectedJobs,
+    selectedJobIds,
+    toggleSelection,
+    resetSelection,
+  } = useSelectionJobs();
   const {
     isExportDialogOpen,
     setIsExportDialogOpen,
@@ -86,7 +86,7 @@ function DashboardPageContent() {
   }, [urlQuery, executeSearch]);
 
   const handleSearch = async (state: SearchState) => {
-    resetCompare();
+    resetSelection();
     updateUrlFromQuery(state);
     await executeSearch(state);
   };
@@ -113,7 +113,7 @@ function DashboardPageContent() {
         <SearchHistoryPanel
           history={history}
           onReplay={async (query) => {
-            resetCompare();
+            resetSelection();
             updateUrlFromQuery(query);
             await executeSearch(query, { persistInHistory: false });
           }}
@@ -123,11 +123,11 @@ function DashboardPageContent() {
 
       {hasSearched && (
         <div className="space-y-4">
-          <ComparePanel compareJobs={compareJobs} onReset={resetCompare} onRemove={toggleCompare} />
+          <SelectionPanel selectedJobs={selectedJobs} onReset={resetSelection} onRemove={toggleSelection} />
 
           <ResultsToolbar
             jobsCount={jobs.length}
-            selectedCount={compareJobs.length}
+            selectedCount={selectedJobs.length}
             isSearching={isSearching}
             onExportAll={() => openExportDialog("all")}
             onExportSelected={() => openExportDialog("selected")}
@@ -147,8 +147,8 @@ function DashboardPageContent() {
               isLoadingMore={isLoadingMore}
               hasMoreResults={hasMoreResults}
               onLoadMore={loadMore}
-              selectedCompareIds={selectedCompareIds}
-              onToggleCompare={toggleCompare}
+              selectedJobIds={selectedJobIds}
+              onToggleSelection={toggleSelection}
               onOpenDetails={(job) => {
                 setSelectedJob(job);
                 setIsDetailsOpen(true);
@@ -169,11 +169,11 @@ function DashboardPageContent() {
         onOpenChange={setIsExportDialogOpen}
         exportTarget={exportTarget}
         jobsCount={jobs.length}
-        selectedCount={compareJobs.length}
+        selectedCount={selectedJobs.length}
         selectedColumns={selectedExportColumns}
         onToggleColumn={toggleColumn}
         onSelectAllColumns={selectAllColumns}
-        onExport={() => applyExport({ jobs, selectedJobs: compareJobs, lastSearchQuery })}
+        onExport={() => applyExport({ jobs, selectedJobs, lastSearchQuery })}
       />
 
       <JobDetailsSheet

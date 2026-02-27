@@ -31,8 +31,8 @@ interface JobTableProps {
     isLoadingMore?: boolean;
     hasMoreResults?: boolean;
     onLoadMore?: () => void;
-    selectedCompareIds?: Set<string>;
-    onToggleCompare?: (job: Job) => void;
+    selectedJobIds?: Set<string>;
+    onToggleSelection?: (job: Job) => void;
     onOpenDetails?: (job: Job) => void;
 }
 
@@ -63,8 +63,8 @@ export function JobTable({
     isLoadingMore = false,
     hasMoreResults = false,
     onLoadMore,
-    selectedCompareIds,
-    onToggleCompare,
+    selectedJobIds,
+    onToggleSelection,
     onOpenDetails,
 }: JobTableProps) {
     const { isFavorite, addFavorite, removeFavorite, isLoaded } = useFavorites();
@@ -133,24 +133,19 @@ export function JobTable({
                 const job = row.original;
                 const fav = isFavorite(job.id);
                 const pdfUrl = getJobPdfUrl(job);
-                const isSelectedForCompare = selectedCompareIds?.has(job.id) ?? false;
+                const isSelected = selectedJobIds?.has(job.id) ?? false;
 
                 return (
                     <div className="flex items-center gap-1 sm:gap-2 justify-end" onClick={(event) => event.stopPropagation()}>
-                        {onToggleCompare && (
-                            <label
-                                className="inline-flex h-8 items-center gap-2 rounded-full border px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                                title={isSelectedForCompare ? "Retirer de la sélection" : "Ajouter à la sélection"}
-                            >
-                                <input
-                                    type="checkbox"
-                                    className="h-3.5 w-3.5 accent-primary"
-                                    checked={isSelectedForCompare}
-                                    onChange={() => onToggleCompare(job)}
-                                    aria-label="Sélectionner l'offre"
-                                />
-                                <span className="hidden sm:inline">Sélection</span>
-                            </label>
+                        {onToggleSelection && (
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 accent-primary cursor-pointer"
+                                checked={isSelected}
+                                onChange={() => onToggleSelection(job)}
+                                title={isSelected ? "Retirer de la sélection" : "Ajouter à la sélection"}
+                                aria-label="Sélectionner l'offre"
+                            />
                         )}
 
                         <Button

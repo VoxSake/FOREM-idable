@@ -5,7 +5,7 @@ import { Job } from "@/types/job";
 
 const mockUseSettings = vi.fn();
 const mockUseJobSearch = vi.fn();
-const mockUseCompareJobs = vi.fn();
+const mockUseSelectionJobs = vi.fn();
 const mockUseExportJobs = vi.fn();
 const mockReplace = vi.fn();
 
@@ -17,8 +17,8 @@ vi.mock("@/features/jobs/hooks/useJobSearch", () => ({
   useJobSearch: () => mockUseJobSearch(),
 }));
 
-vi.mock("@/features/jobs/hooks/useCompareJobs", () => ({
-  useCompareJobs: () => mockUseCompareJobs(),
+vi.mock("@/features/jobs/hooks/useSelectionJobs", () => ({
+  useSelectionJobs: () => mockUseSelectionJobs(),
 }));
 
 vi.mock("@/features/jobs/hooks/useExportJobs", () => ({
@@ -66,8 +66,8 @@ vi.mock("@/features/jobs/components/SearchHistoryPanel", () => ({
   ),
 }));
 
-vi.mock("@/features/jobs/components/ComparePanel", () => ({
-  ComparePanel: () => <div>compare-panel</div>,
+vi.mock("@/features/jobs/components/SelectionPanel", () => ({
+  SelectionPanel: () => <div>selection-panel</div>,
 }));
 
 vi.mock("@/features/jobs/components/ResultsToolbar", () => ({
@@ -138,11 +138,11 @@ describe("DashboardPage integration", () => {
       isHistoryLoaded: true,
     });
 
-    mockUseCompareJobs.mockReturnValue({
-      compareJobs: [sampleJob],
-      selectedCompareIds: new Set(["1"]),
-      toggleCompare: vi.fn(),
-      resetCompare: vi.fn(),
+    mockUseSelectionJobs.mockReturnValue({
+      selectedJobs: [sampleJob],
+      selectedJobIds: new Set(["1"]),
+      toggleSelection: vi.fn(),
+      resetSelection: vi.fn(),
     });
 
     mockUseExportJobs.mockReturnValue({
@@ -157,7 +157,7 @@ describe("DashboardPage integration", () => {
     });
   });
 
-  it("executes search and resets compare when SearchEngine emits a query", async () => {
+  it("executes search and resets selection when SearchEngine emits a query", async () => {
     render(<DashboardPage />);
 
     fireEvent.click(screen.getByText("trigger-search"));
@@ -165,15 +165,15 @@ describe("DashboardPage integration", () => {
     const { executeSearch } = mockUseJobSearch.mock.results[0].value as {
       executeSearch: ReturnType<typeof vi.fn>;
     };
-    const { resetCompare } = mockUseCompareJobs.mock.results[0].value as {
-      resetCompare: ReturnType<typeof vi.fn>;
+    const { resetSelection } = mockUseSelectionJobs.mock.results[0].value as {
+      resetSelection: ReturnType<typeof vi.fn>;
     };
 
-    expect(resetCompare).toHaveBeenCalledTimes(1);
+    expect(resetSelection).toHaveBeenCalledTimes(1);
     expect(executeSearch).toHaveBeenCalledWith(sampleQuery);
   });
 
-  it("replays history with persistInHistory=false and resets compare", async () => {
+  it("replays history with persistInHistory=false and resets selection", async () => {
     render(<DashboardPage />);
 
     fireEvent.click(screen.getByText("replay-history"));
@@ -181,11 +181,11 @@ describe("DashboardPage integration", () => {
     const { executeSearch } = mockUseJobSearch.mock.results[0].value as {
       executeSearch: ReturnType<typeof vi.fn>;
     };
-    const { resetCompare } = mockUseCompareJobs.mock.results[0].value as {
-      resetCompare: ReturnType<typeof vi.fn>;
+    const { resetSelection } = mockUseSelectionJobs.mock.results[0].value as {
+      resetSelection: ReturnType<typeof vi.fn>;
     };
 
-    expect(resetCompare).toHaveBeenCalledTimes(1);
+    expect(resetSelection).toHaveBeenCalledTimes(1);
     expect(executeSearch).toHaveBeenCalledWith(sampleQuery, {
       persistInHistory: false,
     });

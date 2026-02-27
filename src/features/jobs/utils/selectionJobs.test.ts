@@ -1,4 +1,4 @@
-import { toggleCompareJobs } from "./compareJobs";
+import { toggleSelectionJob } from "./selectionJobs";
 import { Job } from "@/types/job";
 
 function makeJob(id: string): Job {
@@ -13,20 +13,20 @@ function makeJob(id: string): Job {
   };
 }
 
-describe("toggleCompareJobs", () => {
+describe("toggleSelectionJob", () => {
   it("adds a job when absent", () => {
-    const result = toggleCompareJobs([], makeJob("1"));
+    const result = toggleSelectionJob([], makeJob("1"));
     expect(result.map((job) => job.id)).toEqual(["1"]);
   });
 
   it("removes a job when already selected", () => {
-    const result = toggleCompareJobs([makeJob("1"), makeJob("2")], makeJob("1"));
+    const result = toggleSelectionJob([makeJob("1"), makeJob("2")], makeJob("1"));
     expect(result.map((job) => job.id)).toEqual(["2"]);
   });
 
   it("adds beyond three items when selection keeps growing", () => {
     const seed = [makeJob("1"), makeJob("2"), makeJob("3")];
-    const result = toggleCompareJobs(seed, makeJob("999"));
+    const result = toggleSelectionJob(seed, makeJob("999"));
     expect(result).toHaveLength(4);
     expect(result.map((job) => job.id)).toContain("999");
   });
