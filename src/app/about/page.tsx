@@ -91,6 +91,24 @@ export default function AboutPage() {
         </p>
       </section>
 
+      <section className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
+        <h2 className="text-xl font-bold">Nouveautés récentes</h2>
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            <span className="font-semibold text-foreground">Février 2026</span> - Recherche élargie avec plus
+            de résultats chargés par défaut.
+          </p>
+          <p>
+            <span className="font-semibold text-foreground">Février 2026</span> - Pagination enrichie avec
+            navigation rapide (première, dernière et plage dynamique de pages).
+          </p>
+          <p>
+            <span className="font-semibold text-foreground">Février 2026</span> - Chargement progressif des
+            résultats supplémentaires via le bouton &quot;Charger plus&quot;.
+          </p>
+        </div>
+      </section>
+
       <section className="bg-card rounded-xl border shadow-sm p-6 space-y-2">
         <h2 className="text-xl font-bold">Licence</h2>
         <p className="text-sm text-muted-foreground">
@@ -103,4 +121,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
