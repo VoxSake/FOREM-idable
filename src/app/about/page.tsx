@@ -1,3 +1,30 @@
+const RECENT_UPDATES = [
+  {
+    month: "Mars 2026",
+    text: "Tracking optionnel via Umami, activable par variables d'environnement.",
+  },
+  {
+    month: "Mars 2026",
+    text: "Documentation de configuration enrichie (`README` + `env.example`) pour les variables Umami.",
+  },
+  {
+    month: "Mars 2026",
+    text: "Nettoyage du lint sur la table des offres avec une règle ciblée de compatibilité React Compiler/TanStack.",
+  },
+  {
+    month: "Février 2026",
+    text: "Recherche élargie avec plus de résultats chargés par défaut.",
+  },
+  {
+    month: "Février 2026",
+    text: "Pagination enrichie avec navigation rapide (première, dernière et plage dynamique de pages).",
+  },
+  {
+    month: "Février 2026",
+    text: "Chargement progressif des résultats supplémentaires via le bouton \"Charger plus\".",
+  },
+];
+
 export default function AboutPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-500">
@@ -94,18 +121,11 @@ export default function AboutPage() {
       <section className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
         <h2 className="text-xl font-bold">Nouveautés récentes</h2>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            <span className="font-semibold text-foreground">Février 2026</span> - Recherche élargie avec plus
-            de résultats chargés par défaut.
-          </p>
-          <p>
-            <span className="font-semibold text-foreground">Février 2026</span> - Pagination enrichie avec
-            navigation rapide (première, dernière et plage dynamique de pages).
-          </p>
-          <p>
-            <span className="font-semibold text-foreground">Février 2026</span> - Chargement progressif des
-            résultats supplémentaires via le bouton &quot;Charger plus&quot;.
-          </p>
+          {RECENT_UPDATES.map((update) => (
+            <p key={`${update.month}-${update.text}`}>
+              <span className="font-semibold text-foreground">{update.month}</span> - {update.text}
+            </p>
+          ))}
         </div>
       </section>
 

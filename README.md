@@ -40,11 +40,20 @@ cp env.example .env.local
 - `ADZUNA_ENABLED=false` par défaut
 - `ADZUNA_APP_ID=...`
 - `ADZUNA_APP_KEY=...`
+- `UMAMI_ENABLED=false` par défaut
+- `NEXT_PUBLIC_UMAMI_WEBSITE_ID=...`
+- `NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js` (optionnel)
 
 Pour activer Adzuna:
 
 1. Mettre `ADZUNA_ENABLED=true`
 2. Renseigner `ADZUNA_APP_ID` et `ADZUNA_APP_KEY`
+
+Pour activer Umami:
+
+1. Mettre `UMAMI_ENABLED=true`
+2. Renseigner `NEXT_PUBLIC_UMAMI_WEBSITE_ID`
+3. Laisser `NEXT_PUBLIC_UMAMI_SCRIPT_URL` tel quel (cloud) ou pointer vers votre script self-hosted
 
 ## Lancer le projet
 

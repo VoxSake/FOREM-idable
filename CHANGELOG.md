@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2026-02-27
+## [Unreleased] - 2026-03-01
+
+### Added
+- Added optional Umami analytics integration controlled by environment variables.
+- Added Umami configuration examples to `env.example` and setup steps in `README.md`.
+
+### Fixed
+- Removed React Compiler/TanStack compatibility lint warning in `JobTable` with a targeted rule suppression.
 
 ### Changed
 - Replaced SVG branding logo with a text wordmark using `Space Grotesk`, with theme-aware colors for light/dark mode.

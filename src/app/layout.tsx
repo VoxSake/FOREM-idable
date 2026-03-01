@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
+import { runtimeConfig } from "@/config/runtime";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +34,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const umamiEnabled =
+    runtimeConfig.umami.enabled &&
+    runtimeConfig.umami.websiteId.length > 0 &&
+    runtimeConfig.umami.scriptUrl.length > 0;
+
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
@@ -56,6 +63,13 @@ export default function RootLayout({
             </main>
           </SidebarProvider>
         </ThemeProvider>
+        {umamiEnabled ? (
+          <Script
+            src={runtimeConfig.umami.scriptUrl}
+            data-website-id={runtimeConfig.umami.websiteId}
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );

@@ -189,6 +189,8 @@ export function JobTable({
         },
     ];
 
+    // TanStack Table exposes mutable callbacks; React Compiler can't safely memoize it yet.
+    // eslint-disable-next-line react-hooks/incompatible-library
     const table = useReactTable({
         data,
         columns,
