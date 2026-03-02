@@ -99,10 +99,10 @@ export default function SettingsPage() {
                             Statut actuel:{" "}
                             <span className="font-semibold">
                                 {analyticsConsent === "accepted"
-                                    ? "Accept&eacute;"
+                                    ? "Accepté"
                                     : analyticsConsent === "rejected"
-                                        ? "Refus&eacute;"
-                                        : "Non d&eacute;fini"}
+                                        ? "Refusé"
+                                        : "Non défini"}
                             </span>
                         </p>
                         <div className="flex flex-wrap gap-2">
