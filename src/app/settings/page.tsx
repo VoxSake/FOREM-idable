@@ -6,10 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import {
+    setAnalyticsConsentChoice,
+    useAnalyticsConsentChoice,
+} from "@/features/consent/analyticsConsent";
 
 export default function SettingsPage() {
     const { settings, updateSettings, isLoaded } = useSettings();
     const { theme, setTheme } = useTheme();
+    const analyticsConsent = useAnalyticsConsentChoice();
 
     if (!isLoaded) return null;
 
@@ -77,6 +82,44 @@ export default function SettingsPage() {
                                 <Label htmlFor="mode-and" className="font-normal">ET (Recherche restrictive, plus précis)</Label>
                             </div>
                         </RadioGroup>
+                    </div>
+                </div>
+
+                {/* Statistiques */}
+                <div className="space-y-4">
+                    <h2 className="text-xl font-bold">Statistiques</h2>
+                    <Separator />
+
+                    <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                            G&eacute;rez votre choix pour les statistiques anonymes (Umami).
+                            Vous pouvez l&apos;accepter ou le refuser &agrave; tout moment.
+                        </p>
+                        <p className="text-sm">
+                            Statut actuel:{" "}
+                            <span className="font-semibold">
+                                {analyticsConsent === "accepted"
+                                    ? "Accept&eacute;"
+                                    : analyticsConsent === "rejected"
+                                        ? "Refus&eacute;"
+                                        : "Non d&eacute;fini"}
+                            </span>
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                onClick={() => setAnalyticsConsentChoice("accepted")}
+                            >
+                                Accepter
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setAnalyticsConsentChoice("rejected")}
+                            >
+                                Refuser
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
