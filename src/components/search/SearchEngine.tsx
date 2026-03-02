@@ -70,7 +70,10 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
         <div className="flex flex-col gap-4 p-4 lg:p-6 bg-card rounded-3xl shadow-sm border border-border/50 transition-all hover:shadow-md">
             <div className="flex flex-col lg:flex-row gap-3 items-center w-full">
                 {/* Keywords Input Wrapper */}
-                <div className="flex-1 flex items-center flex-wrap gap-2 min-h-12 w-full p-2 px-4 rounded-full border border-border bg-muted/20 focus-within:ring-2 focus-within:ring-primary/20 transition-all cursor-text"
+                <div className={cn(
+                    "flex-1 flex items-center flex-wrap gap-2 min-h-12 w-full p-2 px-4 border border-border bg-muted/20 focus-within:ring-2 focus-within:ring-primary/20 transition-all cursor-text",
+                    keywords.length > 0 ? "rounded-2xl" : "rounded-full"
+                )}
                     onClick={() => inputRef.current?.focus()}>
 
                     <Search className="w-5 h-5 text-muted-foreground shrink-0 mr-1" />
@@ -113,7 +116,7 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        className="flex-1 min-w-[120px] bg-transparent outline-none text-foreground placeholder:text-muted-foreground/70"
+                        className="flex-1 min-w-[80px] bg-transparent outline-none text-foreground placeholder:text-muted-foreground/70"
                         placeholder={keywords.length === 0 ? "Ex: Développeur, Comptable..." : "Ajouter un mot-clé..."}
                     />
                 </div>
@@ -129,10 +132,10 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
                 {/* Search Action */}
                 <Button
                     onClick={triggerSearch}
-                    className="w-full lg:w-14 h-12 rounded-full bg-rose-500 hover:bg-rose-600 text-white shrink-0 shadow-sm"
+                    className="w-full lg:w-14 h-12 rounded-full bg-rose-500 hover:bg-rose-600 text-white shrink-0 shadow-sm flex items-center justify-center gap-2"
                 >
-                    <Search className="w-5 h-5 mx-auto" />
-                    <span className="lg:hidden ml-2">Rechercher</span>
+                    <Search className="w-5 h-5 shrink-0" />
+                    <span className="lg:hidden">Rechercher</span>
                 </Button>
             </div>
 
