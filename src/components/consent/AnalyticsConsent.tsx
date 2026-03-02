@@ -81,14 +81,12 @@ export function AnalyticsConsent({
           className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-3xl rounded-xl border bg-card/95 p-4 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-card/85"
         >
           <p className="text-sm leading-relaxed text-card-foreground">
-            Nous utilisons des donn&eacute;es locales n&eacute;cessaires au fonctionnement de
-            l&apos;application (favoris, pr&eacute;f&eacute;rences, historique). Souhaitez-vous
-            aussi autoriser des statistiques anonymes de fr&eacute;quentation (Umami) pour
-            am&eacute;liorer le service ?
+            Ce site enregistre vos r&eacute;glages sur votre appareil. Voulez-vous autoriser
+            les statistiques anonymes pour am&eacute;liorer l&apos;exp&eacute;rience ?
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button type="button" variant="default" onClick={handleAccept}>
-              Accepter les statistiques
+              Accepter
             </Button>
             <Button type="button" variant="outline" onClick={handleReject}>
               Refuser
