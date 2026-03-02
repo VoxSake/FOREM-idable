@@ -54,6 +54,7 @@ Pour activer Umami:
 1. Mettre `UMAMI_ENABLED=true`
 2. Renseigner `NEXT_PUBLIC_UMAMI_WEBSITE_ID`
 3. Laisser `NEXT_PUBLIC_UMAMI_SCRIPT_URL` tel quel (cloud) ou pointer vers votre script self-hosted
+4. Le script Umami n'est charg&eacute; qu'apr&egrave;s consentement explicite via la banni&egrave;re RGPD
 
 ## Lancer le projet
 

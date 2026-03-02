@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
-import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 import { runtimeConfig } from "@/config/runtime";
+import { AnalyticsConsent } from "@/components/consent/AnalyticsConsent";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -63,13 +63,11 @@ export default function RootLayout({
             </main>
           </SidebarProvider>
         </ThemeProvider>
-        {umamiEnabled ? (
-          <Script
-            src={runtimeConfig.umami.scriptUrl}
-            data-website-id={runtimeConfig.umami.websiteId}
-            strategy="afterInteractive"
-          />
-        ) : null}
+        <AnalyticsConsent
+          umamiEnabled={umamiEnabled}
+          umamiWebsiteId={runtimeConfig.umami.websiteId}
+          umamiScriptUrl={runtimeConfig.umami.scriptUrl}
+        />
       </body>
     </html>
   );
