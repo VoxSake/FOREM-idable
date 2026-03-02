@@ -108,13 +108,16 @@ export default function SettingsPage() {
                         <div className="flex flex-wrap gap-2">
                             <Button
                                 type="button"
+                                variant={analyticsConsent === "accepted" ? "default" : "outline"}
+                                aria-pressed={analyticsConsent === "accepted"}
                                 onClick={() => setAnalyticsConsentChoice("accepted")}
                             >
                                 Accepter
                             </Button>
                             <Button
                                 type="button"
-                                variant="outline"
+                                variant={analyticsConsent === "rejected" ? "default" : "outline"}
+                                aria-pressed={analyticsConsent === "rejected"}
                                 onClick={() => setAnalyticsConsentChoice("rejected")}
                             >
                                 Refuser
