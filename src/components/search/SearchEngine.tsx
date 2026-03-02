@@ -1,9 +1,54 @@
-                {/* Search Action */}
-                <Button
-                    onClick={triggerSearch}
-                    className="w-full lg:w-14 h-12 rounded-full bg-rose-500 hover:bg-rose-600 text-white shrink-0 shadow-sm grid grid-cols-[20px_1fr_20px] items-center px-4 lg:flex lg:items-center lg:justify-center lg:px-0"
-                >
-                    <Search className="w-5 h-5" />
-                    <span className="lg:hidden text-center font-medium">Rechercher</span>
-                    <span className="w-5 h-5 lg:hidden" aria-hidden />
-                </Button>
+"use client";
+
+import * as React from "react";
+import { SearchButton } from "./SearchButton";
+
+export type SearchState = {
+  q: string;
+  locations: string[];
+};
+
+type SearchEngineProps = {
+  onSearch?: (state: SearchState) => void;
+  initialState?: Partial<SearchState>;
+};
+
+export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
+  const [q, setQ] = React.useState(initialState?.q ?? "");
+  const [locations, setLocations] = React.useState<string[]>(
+    initialState?.locations ?? []
+  );
+
+  const triggerSearch = React.useCallback(() => {
+    onSearch?.({ q, locations });
+  }, [onSearch, q, locations]);
+
+  return (
+    <div className="w-full rounded-2xl border bg-card p-4 space-y-3">
+      <input
+        type="text"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Ex: Développeur, Comptable..."
+        className="w-full h-12 rounded-full border px-4"
+      />
+
+      <input
+        type="text"
+        value={locations.join(", ")}
+        onChange={(e) =>
+          setLocations(
+            e.target.value
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          )
+        }
+        placeholder="Ajouter un lieu de travail"
+        className="w-full h-12 rounded-full border px-4"
+      />
+
+      <SearchButton onClick={triggerSearch} />
+    </div>
+  );
+}
