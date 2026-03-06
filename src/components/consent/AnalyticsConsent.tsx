@@ -22,7 +22,10 @@ export function AnalyticsConsent({
 
   const shouldShowBanner = umamiEnabled && effectiveChoice === null;
   const shouldLoadUmami =
-    umamiEnabled && effectiveChoice === "accepted" && umamiWebsiteId.length > 0;
+    umamiEnabled &&
+    effectiveChoice === "accepted" &&
+    umamiWebsiteId.length > 0 &&
+    umamiScriptUrl.length > 0;
 
   const handleAccept = () => {
     setAnalyticsConsentChoice("accepted");

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isValidForemOfferId } from "@/lib/forem";
 
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -10,6 +11,10 @@ export async function GET(
 
         if (!id) {
             return new NextResponse("Missing job ID", { status: 400 });
+        }
+
+        if (!isValidForemOfferId(id)) {
+            return new NextResponse("Invalid job ID", { status: 400 });
         }
 
         const candidateUrls = [

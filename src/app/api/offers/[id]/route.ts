@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isValidForemOfferId } from "@/lib/forem";
 
 interface OfferHighlight {
   label: string;
@@ -224,6 +225,9 @@ export async function GET(
   try {
     const { id } = await context.params;
     if (!id) return new NextResponse("Missing offer id", { status: 400 });
+    if (!isValidForemOfferId(id)) {
+      return new NextResponse("Invalid offer id", { status: 400 });
+    }
 
     const detailCandidates = [
       `https://www.leforem.be/recherche-offres/api/offre-detail/${id}`,

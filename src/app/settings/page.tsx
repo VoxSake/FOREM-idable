@@ -10,6 +10,7 @@ import {
     setAnalyticsConsentChoice,
     useAnalyticsConsentChoice,
 } from "@/features/consent/analyticsConsent";
+import { ALL_STORAGE_KEYS } from "@/lib/storageKeys";
 
 export default function SettingsPage() {
     const { settings, updateSettings, isLoaded } = useSettings();
@@ -133,14 +134,15 @@ export default function SettingsPage() {
 
                     <div className="space-y-3">
                         <p className="text-sm text-muted-foreground">
-                            Les données (favoris, paramètres) sont stockées localement dans votre navigateur.
+                            Les données de l&apos;application (favoris, paramètres, historique et consentement)
+                            sont stockées localement dans votre navigateur.
                             Vous pouvez les purger à tout moment.
                         </p>
                         <Button
                             variant="destructive"
                             onClick={() => {
-                                if (confirm("Êtes-vous sûr de vouloir supprimer toutes vos données (favoris et paramètres) ?")) {
-                                    localStorage.clear();
+                                if (confirm("Êtes-vous sûr de vouloir supprimer toutes les données locales de l'application ?")) {
+                                    ALL_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
                                     window.location.reload();
                                 }
                             }}
