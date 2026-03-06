@@ -123,7 +123,9 @@ export function JobTable({
             cell: ({ row }) => {
                 const dateStr = row.getValue("publicationDate") as string;
                 if (!dateStr) return "N/A";
-                return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
+                const parsedDate = new Date(dateStr);
+                if (Number.isNaN(parsedDate.getTime())) return "N/A";
+                return format(parsedDate, 'dd MMM yyyy', { locale: fr });
             }
         },
         {

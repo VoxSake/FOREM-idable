@@ -262,17 +262,47 @@ async function buildLocationFilter(location: string, locationEntry?: LocationEnt
 function mapForemJobToStandard(record: Record<string, unknown>): Job {
     const localites = Array.isArray(record.lieuxtravaillocalite) ? record.lieuxtravaillocalite as string[] : [];
     const locationString = localites.length > 0 ? localites.join(', ') : 'Wallonie';
+    const url = (record.url as string) || `https://www.leforem.be/recherche-offres/offre-detail/${record.numerooffreforem}`;
+    const title = (record.titreoffre as string) || 'Poste non spécifié';
+    const company = record.nomemployeur as string | undefined;
+    const fallbackId = buildStableForemFallbackId({
+        url,
+        title,
+        company,
+        location: locationString,
+    });
 
     return {
-        id: (record.numerooffreforem as string) || Math.random().toString(),
-        title: (record.titreoffre as string) || 'Poste non spécifié',
-        company: record.nomemployeur as string | undefined,
+        id: (record.numerooffreforem as string) || fallbackId,
+        title,
+        company,
         location: locationString,
         contractType: (record.typecontrat as string) || 'Non spécifié',
         publicationDate: (record.datedebutdiffusion as string) || new Date().toISOString(),
-        url: (record.url as string) || `https://www.leforem.be/recherche-offres/offre-detail/${record.numerooffreforem}`,
+        url,
         description: (record.metier as string) || '',
         source: 'forem',
         pdfUrl: undefined
     };
+}
+
+function buildStableForemFallbackId(parts: {
+    url: string;
+    title: string;
+    company?: string;
+    location: string;
+}): string {
+    const signature = [
+        parts.url.trim().toLowerCase(),
+        parts.title.trim().toLowerCase(),
+        (parts.company || '').trim().toLowerCase(),
+        parts.location.trim().toLowerCase(),
+    ].join('|');
+
+    let hash = 5381;
+    for (let index = 0; index < signature.length; index += 1) {
+        hash = ((hash << 5) + hash) ^ signature.charCodeAt(index);
+    }
+
+    return `forem-fallback-${Math.abs(hash >>> 0).toString(36)}`;
 }

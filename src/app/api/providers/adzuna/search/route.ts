@@ -23,6 +23,8 @@ interface AdzunaApiResponse {
 }
 
 const ADZUNA_BASE_URL = "https://api.adzuna.com/v1/api/jobs";
+const ADZUNA_RESULTS_PER_PAGE = 50;
+const ADZUNA_MAX_RESULTS_WINDOW = 150;
 
 function sanitizeLocationName(entry: LocationEntry): string {
   const raw = entry.name.trim();
@@ -100,19 +102,29 @@ function dedupeJobs(jobs: Job[]): Job[] {
   return unique;
 }
 
+function sortJobsByPublicationDate(jobs: Job[]): Job[] {
+  return [...jobs].sort((a, b) => {
+    const aDate = Date.parse(a.publicationDate || "");
+    const bDate = Date.parse(b.publicationDate || "");
+    const safeA = Number.isFinite(aDate) ? aDate : 0;
+    const safeB = Number.isFinite(bDate) ? bDate : 0;
+    return safeB - safeA;
+  });
+}
+
 async function fetchAdzunaPage(options: {
   appId: string;
   appKey: string;
   where?: string;
   keywords?: string[];
-  resultsPerPage: number;
+  page: number;
 }): Promise<AdzunaApiResponse> {
   const searchUrl = new URL(
-    `${ADZUNA_BASE_URL}/${runtimeConfig.adzuna.country}/search/1`
+    `${ADZUNA_BASE_URL}/${runtimeConfig.adzuna.country}/search/${options.page}`
   );
   searchUrl.searchParams.set("app_id", options.appId);
   searchUrl.searchParams.set("app_key", options.appKey);
-  searchUrl.searchParams.set("results_per_page", String(options.resultsPerPage));
+  searchUrl.searchParams.set("results_per_page", String(ADZUNA_RESULTS_PER_PAGE));
   searchUrl.searchParams.set("content-type", "application/json");
 
   if (options.keywords && options.keywords.length > 0) {
@@ -146,22 +158,39 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json()) as ForemSearchParams;
     const keywords = Array.isArray(body.keywords) ? body.keywords : [];
+    const requestedOffset = typeof body.offset === "number" && body.offset > 0 ? body.offset : 0;
     const requestedLimit = typeof body.limit === "number" && body.limit > 0 ? body.limit : 50;
-    const resultsPerPage = Math.min(Math.max(requestedLimit, 10), 50);
     const locations = Array.isArray(body.locations) ? body.locations : [];
+    const effectiveOffset = Math.min(requestedOffset, ADZUNA_MAX_RESULTS_WINDOW);
+    const effectiveLimit = Math.min(requestedLimit, ADZUNA_MAX_RESULTS_WINDOW);
+    const windowEndExclusive = Math.min(
+      effectiveOffset + effectiveLimit,
+      ADZUNA_MAX_RESULTS_WINDOW
+    );
+    const firstPage = Math.floor(effectiveOffset / ADZUNA_RESULTS_PER_PAGE) + 1;
+    const lastPage = Math.max(
+      firstPage,
+      Math.ceil(windowEndExclusive / ADZUNA_RESULTS_PER_PAGE)
+    );
+    const pages = Array.from(
+      { length: lastPage - firstPage + 1 },
+      (_, index) => firstPage + index
+    );
 
     const locationQueries = buildLocationQueries(locations);
     const whereQueries = locationQueries.length > 0 ? locationQueries : [undefined];
 
     const responses = await Promise.all(
-      whereQueries.map((where) =>
-        fetchAdzunaPage({
-          appId,
-          appKey,
-          where,
-          keywords,
-          resultsPerPage,
-        })
+      whereQueries.flatMap((where) =>
+        pages.map((page) =>
+          fetchAdzunaPage({
+            appId,
+            appKey,
+            where,
+            keywords,
+            page,
+          })
+        )
       )
     );
 
@@ -170,11 +199,12 @@ export async function POST(request: NextRequest) {
       .map(mapAdzunaResultToJob)
       .filter((job): job is Job => Boolean(job));
 
-    const deduped = dedupeJobs(mapped);
+    const deduped = sortJobsByPublicationDate(dedupeJobs(mapped));
+    const sliced = deduped.slice(effectiveOffset, windowEndExclusive);
     const total = deduped.length;
 
     return NextResponse.json({
-      jobs: deduped,
+      jobs: sliced,
       total,
       enabled: true,
     });
