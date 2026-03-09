@@ -23,8 +23,61 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
     const [booleanMode, setBooleanMode] = useState<BooleanMode>(initialState?.booleanMode || "OR");
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const splitKeywords = (value: string) => value
+        .split(/[,\s]+/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    const appendKeywords = (currentKeywords: string[], rawValue: string) => {
+        const nextKeywords = splitKeywords(rawValue)
+            .filter((item) => !currentKeywords.includes(item));
+
+        if (nextKeywords.length === 0) {
+            return currentKeywords;
+        }
+
+        return [...currentKeywords, ...nextKeywords];
+    };
+
+    const extractCommittedKeywords = (value: string) => {
+        if (!/[,\s]/.test(value)) {
+            return { committed: [], remainder: value };
+        }
+
+        const hasTrailingSeparator = /[,\s]+$/.test(value);
+        const parts = value
+            .split(/[,\s]+/)
+            .map((part) => part.trim())
+            .filter(Boolean);
+
+        if (parts.length === 0) {
+            return { committed: [], remainder: "" };
+        }
+
+        if (hasTrailingSeparator) {
+            return { committed: parts, remainder: "" };
+        }
+
+        return {
+            committed: parts.slice(0, -1),
+            remainder: parts[parts.length - 1] ?? "",
+        };
+    };
+
+    const handleInputValueChange = (value: string) => {
+        const { committed, remainder } = extractCommittedKeywords(value);
+
+        if (committed.length === 0) {
+            setInputValue(value);
+            return;
+        }
+
+        setKeywords((currentKeywords) => appendKeywords(currentKeywords, committed.join(",")));
+        setInputValue(remainder);
+    };
+
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-        if ((e.key === "Enter" || e.key === " ") && inputValue.trim()) {
+        if ((e.key === "Enter" || e.key === " " || e.key === ",") && inputValue.trim()) {
             e.preventDefault();
             addKeyword(inputValue);
         } else if (e.key === "Backspace" && !inputValue && keywords.length > 0) {
@@ -33,10 +86,8 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
     };
 
     const addKeyword = (kw: string) => {
-        const trimmed = kw.trim();
-        if (trimmed && !keywords.includes(trimmed)) {
-            setKeywords([...keywords, trimmed]);
-        }
+        setKeywords((currentKeywords) => appendKeywords(currentKeywords, kw));
+
         setInputValue("");
     };
 
@@ -53,12 +104,15 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
 
     const triggerSearch = () => {
         const pendingText = inputValue.trim();
-        const shouldAppendPending = pendingText && !keywords.includes(pendingText);
-        const finalKeywords = shouldAppendPending ? [...keywords, pendingText] : [...keywords];
+        const pendingKeywords = splitKeywords(pendingText)
+            .filter((item) => !keywords.includes(item));
+        const finalKeywords = pendingKeywords.length > 0
+            ? [...keywords, ...pendingKeywords]
+            : [...keywords];
 
         if (pendingText) {
             setInputValue("");
-            if (shouldAppendPending) {
+            if (pendingKeywords.length > 0) {
                 setKeywords(finalKeywords);
             }
         }
@@ -114,8 +168,13 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
                         ref={inputRef}
                         type="text"
                         value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
+                        onChange={(e) => handleInputValueChange(e.target.value)}
                         onKeyDown={handleKeyDown}
+                        onBlur={() => {
+                            if (inputValue.trim()) {
+                                addKeyword(inputValue);
+                            }
+                        }}
                         className="flex-1 min-w-[80px] bg-transparent outline-none text-foreground placeholder:text-muted-foreground/70"
                         placeholder={keywords.length === 0 ? "Ex: Développeur, Comptable..." : "Ajouter un mot-clé..."}
                     />
