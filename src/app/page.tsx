@@ -137,7 +137,7 @@ function DashboardPageContent() {
 
           {isSearching ? (
             <div className="h-64 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-border/50">
-              <div className="w-8 h-8 rounded-full border-4 border-rose-500 border-t-transparent animate-spin" />
+              <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
               <p className="text-muted-foreground font-medium animate-pulse">Le FOREM-fouille analyse les offres...</p>
             </div>
           ) : (

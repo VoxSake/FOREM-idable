@@ -191,7 +191,7 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
                 {/* Search Action */}
                 <Button
                     onClick={triggerSearch}
-                    className="w-full lg:w-14 h-12 rounded-full bg-rose-500 hover:bg-rose-600 text-white shrink-0 shadow-sm flex items-center justify-center gap-2"
+                    className="w-full lg:w-14 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 shadow-sm flex items-center justify-center gap-2"
                 >
                     <Search className="w-5 h-5 shrink-0" />
                     <span className="lg:hidden">Rechercher</span>

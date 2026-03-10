@@ -24,6 +24,7 @@ import { Job } from "@/types/job";
 import { Heart, ExternalLink, FileText } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { getContractBadgeClass } from "@/features/jobs/utils/contractBadge";
 
 interface JobTableProps {
     data: Job[];
@@ -80,7 +81,7 @@ export function JobTable({
                 return (
                     <div className="w-full min-w-0">
                         <p
-                            className={`font-semibold text-foreground leading-snug overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] ${canOpenDetails ? "cursor-pointer group-hover:underline underline-offset-2" : ""}`}
+                            className={`font-bold text-foreground leading-snug overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] ${canOpenDetails ? "cursor-pointer group-hover:text-primary group-hover:underline underline-offset-2" : ""}`}
                             title={title}
                         >
                             {title}
@@ -110,7 +111,7 @@ export function JobTable({
                 return (
                     <span
                         title={type}
-                        className="inline-flex max-w-[180px] items-center rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[11px] leading-none font-medium text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/40 dark:text-amber-300 whitespace-nowrap overflow-hidden text-ellipsis"
+                        className={`inline-flex max-w-[180px] items-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-medium whitespace-nowrap overflow-hidden text-ellipsis ${getContractBadgeClass(type)}`}
                     >
                         {type}
                     </span>
@@ -248,7 +249,7 @@ export function JobTable({
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
-                                    className={`hover:bg-muted/30 transition-colors group ${onOpenDetails ? "cursor-pointer" : ""}`}
+                                    className={`border-b border-border/70 hover:bg-primary/5 data-[state=selected]:bg-primary/8 transition-colors group ${onOpenDetails ? "cursor-pointer" : ""}`}
                                     onClick={onOpenDetails ? () => onOpenDetails(row.original) : undefined}
                                 >
                                     {row.getVisibleCells().map((cell) => (
