@@ -32,14 +32,9 @@ export function ResultsToolbar({
   };
 
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex items-center justify-between">
       <div>
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          Résultats de recherche
-          <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800 dark:border-orange-800/60 dark:bg-orange-900/40 dark:text-orange-300">
-            {jobsCount}
-          </span>
-        </h2>
+        <h2 className="text-xl font-bold flex items-center gap-2">Résultats de recherche</h2>
         <span className="text-sm text-muted-foreground">
           {jobsCount} offre{jobsCount > 1 ? "s" : ""} trouvée{jobsCount > 1 ? "s" : ""}
         </span>
@@ -47,12 +42,7 @@ export function ResultsToolbar({
 
       {!isSearching && jobsCount > 0 && (
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full border-orange-200 bg-orange-50 text-orange-900 shadow-sm hover:bg-orange-100 hover:text-orange-900 dark:border-orange-800/60 dark:bg-orange-950/30 dark:text-orange-200 dark:hover:bg-orange-900/40"
-            onClick={onExportAll}
-          >
+          <Button variant="outline" size="sm" className="rounded-full shadow-sm" onClick={onExportAll}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
@@ -68,7 +58,7 @@ export function ResultsToolbar({
           </Button>
           {selectedCount > 0 && (
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
               className="rounded-full shadow-sm"
               onClick={onExportSelected}

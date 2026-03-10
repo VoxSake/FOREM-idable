@@ -97,7 +97,7 @@ function DashboardPageContent() {
     <div className="space-y-6 max-w-6xl mx-auto animate-in fade-in duration-500">
       <div className="space-y-2">
         <h1 className="text-3xl font-black tracking-tight text-foreground">
-          Trouvez votre prochain <span className="text-orange-600 dark:text-orange-300">défi</span>
+          Trouvez votre prochain défi
         </h1>
         <p className="text-muted-foreground text-lg">
           Recherchez parmi des milliers d&apos;offres en Wallonie et au-delà.
@@ -159,8 +159,7 @@ function DashboardPageContent() {
       )}
 
       {!hasSearched && (
-        <div className="h-64 flex flex-col items-center justify-center space-y-4 rounded-xl border border-dashed border-orange-200/80 bg-gradient-to-br from-card via-card to-orange-50/60 dark:border-orange-900/60 dark:to-orange-950/20 mt-8">
-          <div className="h-3 w-20 rounded-full bg-gradient-to-r from-primary via-primary/70 to-orange-400 dark:to-orange-300" />
+        <div className="h-64 flex flex-col items-center justify-center space-y-4 bg-card/50 rounded-xl border border-dashed border-border mt-8">
           <p className="text-muted-foreground font-medium">Effectuez une recherche pour commencer.</p>
         </div>
       )}
