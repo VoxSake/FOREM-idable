@@ -37,7 +37,7 @@ export function JobDetailsActions({ mailtoHref, pdfUrl, jobUrl }: JobDetailsActi
       <Button
         asChild
         size="lg"
-        className="w-full sm:w-auto whitespace-normal h-auto bg-orange-500 py-2.5 px-3 text-center font-semibold text-white hover:bg-orange-600 dark:bg-orange-500 dark:text-white dark:hover:bg-orange-400"
+        className="w-full sm:w-auto whitespace-normal h-auto py-2.5 px-3 text-center font-semibold"
       >
         <a href={jobUrl} target="_blank" rel="noopener noreferrer">
           <ExternalLink className="w-4 h-4 mr-2" />
