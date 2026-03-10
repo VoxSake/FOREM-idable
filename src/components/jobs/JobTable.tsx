@@ -110,7 +110,7 @@ export function JobTable({
                 return (
                     <span
                         title={type}
-                        className="inline-flex max-w-[180px] items-center rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[11px] leading-none font-medium text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/40 dark:text-amber-300 whitespace-nowrap overflow-hidden text-ellipsis"
+                        className="inline-flex max-w-[180px] items-center rounded-full border border-orange-200 bg-orange-100 px-2.5 py-1 text-[11px] leading-none font-medium text-orange-800 dark:border-orange-800/60 dark:bg-orange-900/40 dark:text-orange-300 whitespace-nowrap overflow-hidden text-ellipsis"
                     >
                         {type}
                     </span>
@@ -153,7 +153,7 @@ export function JobTable({
                         <Button
                             variant={fav ? "secondary" : "ghost"}
                             size="icon"
-                            className={fav ? "text-rose-500 hover:text-rose-600 bg-rose-100/50 hover:bg-rose-100 dark:bg-rose-950/50" : "text-muted-foreground transition-colors hover:text-rose-500"}
+                            className={fav ? "text-teal-600 hover:text-teal-700 bg-teal-100/70 hover:bg-teal-100 dark:bg-teal-950/50" : "text-muted-foreground transition-colors hover:text-teal-600"}
                             onClick={() => fav ? removeFavorite(job.id) : addFavorite(job)}
                             title={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
                             disabled={!isLoaded}
