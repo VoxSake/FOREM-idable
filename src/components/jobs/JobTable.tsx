@@ -178,7 +178,7 @@ export function JobTable({
                         <Button
                             size="sm"
                             asChild
-                            className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 gap-1 whitespace-nowrap"
+                            className="rounded-full h-8 w-8 bg-orange-500 p-0 text-white hover:bg-orange-600 sm:h-8 sm:w-auto sm:px-3 gap-1 whitespace-nowrap dark:bg-orange-500 dark:text-white dark:hover:bg-orange-400"
                         >
                             <a href={job.url} target="_blank" rel="noopener noreferrer">
                                 <span className="hidden sm:inline">Voir l&apos;offre</span>
