@@ -9,7 +9,6 @@ import {
   FileText,
   FolderPlus,
   LoaderCircle,
-  ShieldPlus,
   Trash2,
   UserRoundPlus,
   X,
@@ -37,7 +36,7 @@ import {
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { exportCoachApplicationsToCSV } from "@/lib/exportCoachApplicationsCsv";
 import { JobApplication } from "@/types/application";
-import { CoachDashboardData } from "@/types/coach";
+import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 
 function formatDate(value?: string | null, withTime = false) {
   if (!value) return "N/A";
@@ -70,7 +69,6 @@ export default function CoachPage() {
   const [groupName, setGroupName] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [memberPickerGroupId, setMemberPickerGroupId] = useState<number | null>(null);
-  const [coachPickerOpen, setCoachPickerOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [removeMembership, setRemoveMembership] = useState<{
     groupId: number;
@@ -123,19 +121,30 @@ export default function CoachPage() {
     [dashboard, selectedUserId]
   );
 
-  const memberPickerGroup =
-    dashboard?.groups.find((group) => group.id === memberPickerGroupId) ?? null;
+  const memberPickerGroup = useMemo(
+    () =>
+      dashboard?.groups.find((group) => group.id === memberPickerGroupId) ??
+      (memberPickerGroupId === -2
+        ? {
+            id: -2,
+            name: "Coaches",
+            createdAt: "",
+            createdBy: { id: 0, email: "" },
+            members: [],
+          }
+        : null),
+    [dashboard, memberPickerGroupId]
+  );
 
   const assignableUsers = useMemo(() => {
     if (!dashboard || !memberPickerGroup) return [];
+    if (memberPickerGroup.id === -2) {
+      return dashboard.users.filter((entry) => entry.role === "user");
+    }
+
     const memberIds = new Set(memberPickerGroup.members.map((entry) => entry.id));
     return dashboard.users.filter((entry) => entry.role === "user" && !memberIds.has(entry.id));
   }, [dashboard, memberPickerGroup]);
-
-  const promotableUsers = useMemo(
-    () => (dashboard?.users ?? []).filter((entry) => entry.role === "user"),
-    [dashboard]
-  );
 
   const groupedUsers = useMemo(() => {
     if (!dashboard) return [];
@@ -188,7 +197,7 @@ export default function CoachPage() {
         id: -2,
         name: "Coaches",
         createdByEmail: null,
-        canAddMembers: false,
+        canAddMembers: user?.role === "admin",
         kind: "coaches" as const,
         totalApplications: allCoachMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
         totalInterviews: allCoachMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
@@ -199,7 +208,7 @@ export default function CoachPage() {
     return [...standardGroups, ...syntheticGroups].filter(
       (group) => group.members.length > 0 || !normalized
     );
-  }, [dashboard, deferredSearch]);
+  }, [dashboard, deferredSearch, user?.role]);
 
   const createGroup = async () => {
     if (!groupName.trim()) return;
@@ -221,6 +230,11 @@ export default function CoachPage() {
   };
 
   const addMember = async (groupId: number, userId: number) => {
+    if (groupId === -2) {
+      await promoteCoach(userId);
+      return;
+    }
+
     const response = await fetch(`/api/coach/groups/${groupId}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -302,7 +316,7 @@ export default function CoachPage() {
     });
   };
 
-  const exportGroupApplications = (groupName: string, members: typeof dashboard.users) => {
+  const exportGroupApplications = (groupName: string, members: CoachUserSummary[]) => {
     const rows = members.flatMap((entry) =>
       entry.applications.map((application) => ({
         userEmail: entry.email,
@@ -389,12 +403,6 @@ export default function CoachPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {user.role === "admin" && (
-              <Button type="button" variant="outline" onClick={() => setCoachPickerOpen(true)}>
-                <ShieldPlus className="mr-2 h-4 w-4" />
-                Ajouter un coach
-              </Button>
-            )}
             <Button type="button" onClick={() => setIsCreateGroupOpen(true)}>
               <FolderPlus className="mr-2 h-4 w-4" />
               Créer un groupe
@@ -526,19 +534,6 @@ export default function CoachPage() {
                               }}
                             >
                               Retirer coach
-                            </Button>
-                          )}
-                          {user.role === "admin" && entry.role === "user" && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void promoteCoach(entry.id);
-                              }}
-                            >
-                              Coach
                             </Button>
                           )}
                         </div>
@@ -721,17 +716,6 @@ export default function CoachPage() {
         onSelect={(entry) => {
           if (!memberPickerGroup) return;
           void addMember(memberPickerGroup.id, entry.id);
-        }}
-      />
-
-      <UserPickerDialog
-        open={coachPickerOpen}
-        onOpenChange={setCoachPickerOpen}
-        title="Ajouter un coach"
-        description="Seuls les admins peuvent promouvoir un utilisateur en coach."
-        users={promotableUsers}
-        onSelect={(entry) => {
-          void promoteCoach(entry.id);
         }}
       />
 
