@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp, Send, Users, UserRound } from "lucide-react";
+import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp, Send, Users, UserRound, ShieldCheck } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -99,6 +99,14 @@ export function AppSidebar() {
 
             <SidebarFooter className="border-t p-4 flex flex-col gap-4">
                 <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive={pathname === "/privacy"}>
+                            <Link href="/privacy">
+                                <ShieldCheck className="w-4 h-4" />
+                                <span>Confidentialité</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild isActive={pathname === "/settings"}>
                             <Link href="/settings">

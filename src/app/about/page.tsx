@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const RECENT_UPDATES = [
   {
     month: "Mars 2026",
@@ -136,6 +138,12 @@ export default function AboutPage() {
         </p>
         <p className="text-sm text-muted-foreground">
           Ce projet est distribué sous licence MIT.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          La politique de confidentialité est disponible sur{" "}
+          <Link href="/privacy" className="text-primary hover:underline">
+            la page Confidentialité
+          </Link>.
         </p>
       </section>
     </div>

@@ -47,6 +47,10 @@ cp env.example .env.local
 - `UMAMI_ENABLED=false` par défaut
 - `NEXT_PUBLIC_UMAMI_WEBSITE_ID=...`
 - `NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js` (optionnel)
+- `PRIVACY_CONTROLLER_NAME=...`
+- `PRIVACY_CONTACT_EMAIL=...`
+- `PRIVACY_PROJECT_LABEL=...`
+- `PRIVACY_SOURCE_URL=...`
 
 Pour activer Adzuna:
 
@@ -59,6 +63,12 @@ Pour activer Umami:
 2. Renseigner `NEXT_PUBLIC_UMAMI_WEBSITE_ID`
 3. Laisser `NEXT_PUBLIC_UMAMI_SCRIPT_URL` tel quel (cloud) ou pointer vers votre script self-hosted
 4. Le script Umami n'est charg&eacute; qu'apr&egrave;s consentement explicite via la banni&egrave;re RGPD
+
+Pour personnaliser la page `Confidentialité`:
+
+1. Définir `PRIVACY_CONTROLLER_NAME`
+2. Définir `PRIVACY_CONTACT_EMAIL`
+3. Ajuster au besoin `PRIVACY_PROJECT_LABEL` et `PRIVACY_SOURCE_URL`
 
 ## Lancer le projet
 

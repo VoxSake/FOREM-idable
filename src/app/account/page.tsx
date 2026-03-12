@@ -281,25 +281,27 @@ export default function AccountPage() {
           <p className="text-sm text-muted-foreground">Choisissez un mot de passe de 8 caractères minimum.</p>
         </div>
         <Separator className="my-4" />
-        <div className="mt-4 space-y-3">
-          <Label htmlFor="account-password">Nouveau mot de passe</Label>
-          <Input
-            id="account-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="8 caractères minimum"
-          />
-        </div>
-        <div className="space-y-3">
-          <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
-          <Input
-            id="account-password-confirm"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Ressaisir le mot de passe"
-          />
+        <div className="mt-4 space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="account-password">Nouveau mot de passe</Label>
+            <Input
+              id="account-password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="8 caractères minimum"
+            />
+          </div>
+          <div className="space-y-2 border-t border-border/60 pt-4">
+            <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
+            <Input
+              id="account-password-confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Ressaisir le mot de passe"
+            />
+          </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button

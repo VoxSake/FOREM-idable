@@ -55,6 +55,9 @@ export default function SettingsPage() {
                             <Button asChild type="button">
                                 <Link href="/account">Ouvrir Mon compte</Link>
                             </Button>
+                            <Button asChild type="button" variant="outline">
+                                <Link href="/privacy">Confidentialité</Link>
+                            </Button>
                         </div>
                     </div>
                 ) : (
@@ -128,6 +131,13 @@ export default function SettingsPage() {
                         <p className="text-sm text-muted-foreground">
                             G&eacute;rez votre choix pour les statistiques anonymes (Umami).
                             Vous pouvez l&apos;accepter ou le refuser &agrave; tout moment.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            Les donn&eacute;es locales, la synchronisation de compte et les droits RGPD sont
+                            d&eacute;taill&eacute;s dans la page{" "}
+                            <Link className="text-primary hover:underline" href="/privacy">
+                                Confidentialit&eacute;
+                            </Link>.
                         </p>
                         <p className="text-sm">
                             Statut actuel:{" "}
