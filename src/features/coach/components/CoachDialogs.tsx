@@ -39,7 +39,9 @@ interface CoachDialogsProps {
   onConfirmRemoveGroup: () => void;
   passwordTarget: CoachPasswordTarget | null;
   newPassword: string;
+  confirmNewPassword: string;
   onNewPasswordChange: (value: string) => void;
+  onConfirmNewPasswordChange: (value: string) => void;
   onPasswordOpenChange: (open: boolean) => void;
   onConfirmPasswordChange: () => void;
   profileTarget: CoachProfileTarget | null;
@@ -72,7 +74,9 @@ export function CoachDialogs({
   onConfirmRemoveGroup,
   passwordTarget,
   newPassword,
+  confirmNewPassword,
   onNewPasswordChange,
+  onConfirmNewPasswordChange,
   onPasswordOpenChange,
   onConfirmPasswordChange,
   profileTarget,
@@ -179,11 +183,25 @@ export function CoachDialogs({
             onChange={(event) => onNewPasswordChange(event.target.value)}
             placeholder="8 caractères minimum"
           />
+          <Input
+            type="password"
+            value={confirmNewPassword}
+            onChange={(event) => onConfirmNewPasswordChange(event.target.value)}
+            placeholder="Confirmer le mot de passe"
+          />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onPasswordOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="button" onClick={onConfirmPasswordChange} disabled={newPassword.length < 8}>
+            <Button
+              type="button"
+              onClick={onConfirmPasswordChange}
+              disabled={
+                newPassword.length < 8 ||
+                confirmNewPassword.length < 8 ||
+                newPassword !== confirmNewPassword
+              }
+            >
               Enregistrer
             </Button>
           </DialogFooter>

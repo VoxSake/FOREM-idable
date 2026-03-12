@@ -15,6 +15,7 @@ export default function AccountPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [profileFeedback, setProfileFeedback] = useState<string | null>(null);
   const [passwordFeedback, setPasswordFeedback] = useState<string | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKeySummary[]>([]);
@@ -103,6 +104,11 @@ export default function AccountPage() {
   };
 
   const savePassword = async () => {
+    if (password !== confirmPassword) {
+      setPasswordFeedback("Les mots de passe ne correspondent pas.");
+      return;
+    }
+
     setIsSavingPassword(true);
     setPasswordFeedback(null);
 
@@ -120,6 +126,7 @@ export default function AccountPage() {
       }
 
       setPassword("");
+      setConfirmPassword("");
       setPasswordFeedback("Mot de passe mis à jour.");
     } catch {
       setPasswordFeedback("Mise à jour impossible.");
@@ -284,12 +291,27 @@ export default function AccountPage() {
             placeholder="8 caractères minimum"
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
+          <Input
+            id="account-password-confirm"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            placeholder="Ressaisir le mot de passe"
+          />
+        </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => void savePassword()}
-            disabled={isSavingPassword || password.length < 8}
+            disabled={
+              isSavingPassword ||
+              password.length < 8 ||
+              confirmPassword.length < 8 ||
+              password !== confirmPassword
+            }
           >
             Changer le mot de passe
           </Button>

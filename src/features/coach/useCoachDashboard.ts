@@ -38,6 +38,7 @@ export function useCoachDashboard() {
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
   const [profileTarget, setProfileTarget] = useState<CoachProfileTarget | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [editedFirstName, setEditedFirstName] = useState("");
   const [editedLastName, setEditedLastName] = useState("");
   const [search, setSearch] = useState("");
@@ -206,7 +207,7 @@ export function useCoachDashboard() {
   };
 
   const changeUserPassword = async () => {
-    if (!passwordTarget || newPassword.length < 8) {
+    if (!passwordTarget || newPassword.length < 8 || newPassword !== confirmNewPassword) {
       setFeedback("Mot de passe invalide.");
       return;
     }
@@ -226,6 +227,7 @@ export function useCoachDashboard() {
     setFeedback(`Mot de passe mis à jour pour ${passwordTarget.email}.`);
     setPasswordTarget(null);
     setNewPassword("");
+    setConfirmNewPassword("");
   };
 
   const updateUserProfile = async () => {
@@ -334,6 +336,8 @@ export function useCoachDashboard() {
     setProfileTarget,
     newPassword,
     setNewPassword,
+    confirmNewPassword,
+    setConfirmNewPassword,
     editedFirstName,
     setEditedFirstName,
     editedLastName,

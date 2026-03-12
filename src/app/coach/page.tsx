@@ -128,11 +128,14 @@ export default function CoachPage() {
         }}
         passwordTarget={coach.passwordTarget}
         newPassword={coach.newPassword}
+        confirmNewPassword={coach.confirmNewPassword}
         onNewPasswordChange={coach.setNewPassword}
+        onConfirmNewPasswordChange={coach.setConfirmNewPassword}
         onPasswordOpenChange={(open) => {
           if (!open) {
             coach.setPasswordTarget(null);
             coach.setNewPassword("");
+            coach.setConfirmNewPassword("");
           }
         }}
         onConfirmPasswordChange={() => void coach.changeUserPassword()}
