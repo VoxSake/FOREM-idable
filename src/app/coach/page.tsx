@@ -6,6 +6,7 @@ import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
 import { CoachGroupsSection } from "@/features/coach/components/CoachGroupsSection";
 import { CoachSummaryCards } from "@/features/coach/components/CoachSummaryCards";
 import { CoachUserSheet } from "@/features/coach/components/CoachUserSheet";
+import { CoachWatchlist } from "@/features/coach/components/CoachWatchlist";
 import { useCoachDashboard } from "@/features/coach/useCoachDashboard";
 
 export default function CoachPage() {
@@ -53,6 +54,16 @@ export default function CoachPage() {
         totalApplications={coach.totalApplications}
         totalInterviews={coach.totalInterviews}
         totalDue={coach.totalDue}
+        totalAccepted={coach.totalAccepted}
+        totalRejected={coach.totalRejected}
+      />
+
+      <CoachWatchlist
+        noApplicationsUsers={coach.noApplicationsUsers}
+        dueUsers={coach.dueUsers}
+        noInterviewUsers={coach.noInterviewUsers}
+        inactiveUsers={coach.inactiveUsers}
+        onOpenUser={coach.setSelectedUserId}
       />
 
       <CoachGroupsSection

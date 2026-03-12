@@ -37,5 +37,8 @@ export interface CoachGroupedUserGroup {
   kind: CoachGroupedGroupKind;
   totalApplications: number;
   totalInterviews: number;
+  totalDue: number;
+  totalAccepted: number;
+  totalRejected: number;
   members: CoachUserSummary[];
 }

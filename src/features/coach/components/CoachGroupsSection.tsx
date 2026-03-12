@@ -65,6 +65,9 @@ export function CoachGroupsSection({
                   <p className="font-semibold">{group.name}</p>
                   <Badge variant="outline">{group.totalApplications} candidatures</Badge>
                   <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
+                  {group.totalDue > 0 && <Badge variant="destructive">{group.totalDue} relance(s)</Badge>}
+                  {group.totalAccepted > 0 && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">{group.totalAccepted} acceptée(s)</Badge>}
+                  {group.totalRejected > 0 && <Badge className="bg-rose-600 text-white hover:bg-rose-600">{group.totalRejected} refusée(s)</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {group.members.length} membre{group.members.length > 1 ? "s" : ""}

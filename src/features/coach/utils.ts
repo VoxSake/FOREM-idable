@@ -90,6 +90,9 @@ export function buildGroupedUsers(input: {
       kind: "standard" as const,
       totalApplications: members.reduce((sum, entry) => sum + entry.applicationCount, 0),
       totalInterviews: members.reduce((sum, entry) => sum + entry.interviewCount, 0),
+      totalDue: members.reduce((sum, entry) => sum + entry.dueCount, 0),
+      totalAccepted: members.reduce((sum, entry) => sum + entry.acceptedCount, 0),
+      totalRejected: members.reduce((sum, entry) => sum + entry.rejectedCount, 0),
       members: visibleMembers,
     };
   });
@@ -116,6 +119,9 @@ export function buildGroupedUsers(input: {
       kind: "ungrouped",
       totalApplications: allUngroupedMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
       totalInterviews: allUngroupedMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
+      totalDue: allUngroupedMembers.reduce((sum, entry) => sum + entry.dueCount, 0),
+      totalAccepted: allUngroupedMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
+      totalRejected: allUngroupedMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
       members: ungroupedMembers,
     },
     {
@@ -126,6 +132,9 @@ export function buildGroupedUsers(input: {
       kind: "coaches",
       totalApplications: allCoachMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
       totalInterviews: allCoachMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
+      totalDue: allCoachMembers.reduce((sum, entry) => sum + entry.dueCount, 0),
+      totalAccepted: allCoachMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
+      totalRejected: allCoachMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
       members: coachMembers,
     },
   ];

@@ -109,11 +109,31 @@ export function useCoachDashboard() {
   const totalApplications = dashboard?.users.reduce((sum, entry) => sum + entry.applicationCount, 0) ?? 0;
   const totalInterviews = dashboard?.users.reduce((sum, entry) => sum + entry.interviewCount, 0) ?? 0;
   const totalDue = dashboard?.users.reduce((sum, entry) => sum + entry.dueCount, 0) ?? 0;
+  const totalAccepted = dashboard?.users.reduce((sum, entry) => sum + entry.acceptedCount, 0) ?? 0;
+  const totalRejected = dashboard?.users.reduce((sum, entry) => sum + entry.rejectedCount, 0) ?? 0;
   const canEditSelectedUser = useMemo(() => {
     if (!selectedUser || !user) return false;
     if (user.role === "admin") return true;
     return selectedUser.role === "user";
   }, [selectedUser, user]);
+  const noApplicationsUsers = useMemo(
+    () => dashboard?.users.filter((entry) => entry.applicationCount === 0) ?? [],
+    [dashboard?.users]
+  );
+  const dueUsers = useMemo(
+    () => dashboard?.users.filter((entry) => entry.dueCount > 0).sort((a, b) => b.dueCount - a.dueCount) ?? [],
+    [dashboard?.users]
+  );
+  const noInterviewUsers = useMemo(
+    () =>
+      dashboard?.users.filter((entry) => entry.applicationCount > 0 && entry.interviewCount === 0) ?? [],
+    [dashboard?.users]
+  );
+  const inactiveUsers = useMemo(
+    () =>
+      dashboard?.users.filter((entry) => entry.applicationCount > 0 && !entry.latestActivityAt) ?? [],
+    [dashboard?.users]
+  );
 
   const createGroup = async () => {
     if (!groupName.trim()) return;
@@ -337,6 +357,12 @@ export function useCoachDashboard() {
     totalApplications,
     totalInterviews,
     totalDue,
+    totalAccepted,
+    totalRejected,
+    noApplicationsUsers,
+    dueUsers,
+    noInterviewUsers,
+    inactiveUsers,
     loadDashboard,
     createGroup,
     addMember,
