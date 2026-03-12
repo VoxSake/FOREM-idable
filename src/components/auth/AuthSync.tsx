@@ -16,6 +16,8 @@ export function AuthSync() {
   useEffect(() => {
     if (isLoading || !user) return;
 
+    const remoteStateKey = `forem-idable-remote-state-${user.id}`;
+
     const pullState = async () => {
       try {
         const response = await fetch("/api/state", { cache: "no-store" });
@@ -27,27 +29,44 @@ export function AuthSync() {
         const localSnapshot = createSyncSnapshot(window.localStorage);
         const remoteValues = data.state?.values ?? {};
         const localValues = localSnapshot.values;
+        const remoteUpdatedAt = data.state?.updatedAt ?? null;
+        const knownRemoteUpdatedAt = remoteUpdatedAt
+          ? sessionStorage.getItem(remoteStateKey)
+          : null;
 
         if (hasValues(remoteValues)) {
           const localSerialized = JSON.stringify(localValues);
           const remoteSerialized = JSON.stringify(remoteValues);
 
-          if (localSerialized !== remoteSerialized) {
+          if (localSerialized !== remoteSerialized && remoteUpdatedAt !== knownRemoteUpdatedAt) {
             isApplyingRemote.current = true;
             applySyncSnapshot(window.localStorage, {
               version: 1,
-              createdAt: data.state?.updatedAt || new Date().toISOString(),
+              createdAt: remoteUpdatedAt || new Date().toISOString(),
               values: remoteValues,
             });
+            if (remoteUpdatedAt) {
+              sessionStorage.setItem(remoteStateKey, remoteUpdatedAt);
+            }
             window.location.reload();
             return;
           }
         } else if (hasValues(localValues)) {
-          await fetch("/api/state", {
+          const pushResponse = await fetch("/api/state", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ values: localValues }),
           });
+          if (pushResponse.ok) {
+            const pushData = (await pushResponse.json()) as {
+              state?: { updatedAt?: string };
+            };
+            if (pushData.state?.updatedAt) {
+              sessionStorage.setItem(remoteStateKey, pushData.state.updatedAt);
+            }
+          }
+        } else if (remoteUpdatedAt) {
+          sessionStorage.setItem(remoteStateKey, remoteUpdatedAt);
         }
       } catch {
         // Keep local-only behavior on sync failures
@@ -72,6 +91,8 @@ export function AuthSync() {
   useEffect(() => {
     if (!user) return;
 
+    const remoteStateKey = `forem-idable-remote-state-${user.id}`;
+
     const pushState = () => {
       if (isApplyingRemote.current) {
         isApplyingRemote.current = false;
@@ -88,7 +109,19 @@ export function AuthSync() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ values: snapshot.values }),
-        });
+        })
+          .then(async (response) => {
+            if (!response.ok) return;
+            const data = (await response.json()) as {
+              state?: { updatedAt?: string };
+            };
+            if (data.state?.updatedAt) {
+              sessionStorage.setItem(remoteStateKey, data.state.updatedAt);
+            }
+          })
+          .catch(() => {
+            // Ignore sync failures and keep local behavior
+          });
       }, 600);
     };
 
