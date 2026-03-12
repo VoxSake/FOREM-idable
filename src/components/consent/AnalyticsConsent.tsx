@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { Button } from "@/components/ui/button";
@@ -14,15 +15,21 @@ interface AnalyticsConsentProps {
   umamiScriptUrl: string;
 }
 
+function subscribeHydration() {
+  return () => {};
+}
+
 export function AnalyticsConsent({
   umamiEnabled,
   umamiWebsiteId,
   umamiScriptUrl,
 }: AnalyticsConsentProps) {
   const effectiveChoice = useAnalyticsConsentChoice();
+  const isHydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
 
-  const shouldShowBanner = umamiEnabled && effectiveChoice === null;
+  const shouldShowBanner = isHydrated && umamiEnabled && effectiveChoice === null;
   const shouldLoadUmami =
+    isHydrated &&
     umamiEnabled &&
     effectiveChoice === "accepted" &&
     umamiWebsiteId.length > 0 &&

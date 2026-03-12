@@ -384,7 +384,7 @@ export default function ApplicationsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <ContractTypeBadge contractType={entry.job.contractType || "N/A"} />
                         {isManualApplication(entry) && (
-                          <Badge className="border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                          <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
                             MANUEL
                           </Badge>
                         )}

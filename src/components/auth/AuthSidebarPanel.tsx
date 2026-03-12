@@ -148,7 +148,7 @@ export function AuthSidebarPanel() {
           )}
         </div>
 
-        {!user ? (
+        {!user && !isLoading ? (
           <div className="grid gap-2">
             <Button
               type="button"
@@ -169,6 +169,13 @@ export function AuthSidebarPanel() {
               <UserPlus className="mr-2 h-4 w-4" />
               Créer un compte
             </Button>
+          </div>
+        ) : null}
+
+        {!user && isLoading ? (
+          <div className="space-y-2">
+            <div className="h-8 rounded-md bg-muted/60" />
+            <div className="h-8 rounded-md bg-muted/40" />
           </div>
         ) : null}
 
