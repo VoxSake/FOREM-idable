@@ -3,11 +3,23 @@
 import { useState } from "react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
-import { BriefcaseBusiness, Clock3, Download, Plus, Trash2 } from "lucide-react";
-import { useApplications } from "@/hooks/useApplications";
+import {
+  BriefcaseBusiness,
+  Clock3,
+  Download,
+  ExternalLink,
+  FileText,
+  NotebookPen,
+  Plus,
+  ShieldAlert,
+  Trash2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useApplications } from "@/hooks/useApplications";
+import { getContractBadgeClass } from "@/features/jobs/utils/contractBadge";
+import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import {
   Dialog,
   DialogContent,
@@ -33,20 +45,6 @@ function formatDate(value: string) {
   return format(date, "dd MMM yyyy", { locale: fr });
 }
 
-function getStatusLabel(status: ApplicationStatus) {
-  switch (status) {
-    case "accepted":
-      return "Acceptée";
-    case "rejected":
-      return "Refusée";
-    case "follow_up":
-      return "Relance à faire";
-    case "in_progress":
-    default:
-      return "En cours";
-  }
-}
-
 export default function ApplicationsPage() {
   const {
     applications,
@@ -63,6 +61,11 @@ export default function ApplicationsPage() {
   } = useApplications();
   const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editorState, setEditorState] = useState<{
+    jobId: string;
+    field: "notes" | "proofs";
+    value: string;
+  } | null>(null);
   const [manualForm, setManualForm] = useState({
     company: "",
     title: "",
@@ -136,6 +139,22 @@ export default function ApplicationsPage() {
     setIsCreateOpen(false);
   };
 
+  const openEditor = (jobId: string, field: "notes" | "proofs", value: string) => {
+    setEditorState({ jobId, field, value });
+  };
+
+  const saveEditor = () => {
+    if (!editorState) return;
+
+    if (editorState.field === "notes") {
+      saveNotes(editorState.jobId, editorState.value);
+    } else {
+      saveProofs(editorState.jobId, editorState.value);
+    }
+
+    setEditorState(null);
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto animate-in fade-in duration-500">
       <div className="space-y-2">
@@ -194,8 +213,8 @@ export default function ApplicationsPage() {
                 <TableHead className="hidden lg:table-cell">Relance</TableHead>
                 <TableHead className="hidden xl:table-cell">Notes</TableHead>
                 <TableHead className="hidden xl:table-cell">Preuves</TableHead>
-                <TableHead className="hidden 2xl:table-cell">Offre</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Offre</TableHead>
+                <TableHead className="text-right w-[110px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -209,6 +228,7 @@ export default function ApplicationsPage() {
                   (entry.status === "in_progress" || entry.status === "follow_up") &&
                   isAfter(followUpDue, now) &&
                   isBefore(followUpDue, addDays(now, 2));
+                const pdfUrl = getJobPdfUrl(entry.job);
 
                 return (
                   <TableRow
@@ -233,38 +253,31 @@ export default function ApplicationsPage() {
                         <p className="text-xs text-muted-foreground">{entry.job.location}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="align-top">{entry.job.contractType || "N/A"}</TableCell>
+                    <TableCell className="align-top">
+                      <span
+                        className={`inline-flex max-w-[180px] items-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-medium whitespace-nowrap overflow-hidden text-ellipsis ${getContractBadgeClass(entry.job.contractType || "")}`}
+                      >
+                        {entry.job.contractType || "N/A"}
+                      </span>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{formatDate(entry.appliedAt)}</TableCell>
                     <TableCell className="align-top">
-                      <div className="flex flex-col gap-2">
-                        <Badge
-                          variant={
-                            entry.status === "accepted"
-                              ? "default"
-                              : entry.status === "rejected"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                        >
-                          {getStatusLabel(entry.status)}
-                        </Badge>
-                        <select
-                          className="h-9 rounded-md border bg-background px-3 text-sm"
-                          value={entry.status}
-                          onChange={(event) => {
-                            const nextStatus = event.target.value as ApplicationStatus;
-                            if (nextStatus === "accepted") markAsAccepted(entry.job.id);
-                            else if (nextStatus === "rejected") markAsRejected(entry.job.id);
-                            else if (nextStatus === "follow_up") markAsFollowUp(entry.job.id);
-                            else markAsInProgress(entry.job.id);
-                          }}
-                        >
-                          <option value="in_progress">En cours</option>
-                          <option value="follow_up">Relance à faire</option>
-                          <option value="accepted">Acceptée</option>
-                          <option value="rejected">Refusée</option>
-                        </select>
-                      </div>
+                      <select
+                        className="h-9 min-w-[150px] rounded-md border bg-background px-3 text-sm"
+                        value={entry.status}
+                        onChange={(event) => {
+                          const nextStatus = event.target.value as ApplicationStatus;
+                          if (nextStatus === "accepted") markAsAccepted(entry.job.id);
+                          else if (nextStatus === "rejected") markAsRejected(entry.job.id);
+                          else if (nextStatus === "follow_up") markAsFollowUp(entry.job.id);
+                          else markAsInProgress(entry.job.id);
+                        }}
+                      >
+                        <option value="in_progress">En cours</option>
+                        <option value="follow_up">Relance à faire</option>
+                        <option value="accepted">Acceptée</option>
+                        <option value="rejected">Refusée</option>
+                      </select>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <div className="space-y-1">
@@ -283,55 +296,97 @@ export default function ApplicationsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden xl:table-cell align-top">
-                      <textarea
-                        className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={entry.notes ?? ""}
-                        onChange={(event) => saveNotes(entry.job.id, event.target.value)}
-                        placeholder="Infos utiles, contact RH, salaire, retour..."
-                      />
+                      <button
+                        type="button"
+                        onClick={() => openEditor(entry.job.id, "notes", entry.notes ?? "")}
+                        className="w-full text-left"
+                      >
+                        <p className="line-clamp-3 text-sm text-foreground/90">
+                          {entry.notes?.trim() || "Ajouter des notes"}
+                        </p>
+                      </button>
                     </TableCell>
                     <TableCell className="hidden xl:table-cell align-top">
-                      <textarea
-                        className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={entry.proofs ?? ""}
-                        onChange={(event) => saveProofs(entry.job.id, event.target.value)}
-                        placeholder="Preuve d'envoi, refus, lien mail, capture..."
-                      />
+                      <button
+                        type="button"
+                        onClick={() => openEditor(entry.job.id, "proofs", entry.proofs ?? "")}
+                        className="w-full text-left"
+                      >
+                        <p className="line-clamp-3 text-sm text-foreground/90">
+                          {entry.proofs?.trim() || "Ajouter des preuves"}
+                        </p>
+                      </button>
                     </TableCell>
-                    <TableCell className="hidden 2xl:table-cell align-top">
-                      {entry.job.url !== "#" ? (
-                        <a
-                          href={entry.job.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary underline-offset-2 hover:underline"
-                        >
-                          Voir l&apos;offre
-                        </a>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Ajout manuel</span>
-                      )}
+                    <TableCell className="align-top">
+                      <div className="flex items-center gap-2">
+                        {pdfUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 whitespace-nowrap"
+                          >
+                            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                              <span className="hidden sm:inline">PDF</span>
+                              <FileText className="w-3 h-3 flex-shrink-0" />
+                            </a>
+                          </Button>
+                        )}
+                        {entry.job.url !== "#" ? (
+                          <Button
+                            size="sm"
+                            asChild
+                            className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 gap-1 whitespace-nowrap"
+                          >
+                            <a href={entry.job.url} target="_blank" rel="noopener noreferrer">
+                              <span className="hidden sm:inline">Voir l&apos;offre</span>
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                            </a>
+                          </Button>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Ajout manuel</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right align-top">
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => markFollowUpDone(entry.job.id)}
-                          disabled={entry.status === "accepted" || entry.status === "rejected"}
+                          size="icon"
+                          variant="ghost"
+                          title="Éditer les notes"
+                          onClick={() => openEditor(entry.job.id, "notes", entry.notes ?? "")}
                         >
-                          Relance faite
+                          <NotebookPen className="h-4 w-4" />
                         </Button>
                         <Button
                           type="button"
-                          size="sm"
+                          size="icon"
+                          variant="ghost"
+                          title="Éditer les preuves"
+                          onClick={() => openEditor(entry.job.id, "proofs", entry.proofs ?? "")}
+                        >
+                          <ShieldAlert className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          title="Relance faite"
+                          onClick={() => markFollowUpDone(entry.job.id)}
+                          disabled={entry.status === "accepted" || entry.status === "rejected"}
+                        >
+                          <Clock3 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
                           variant="ghost"
                           className="text-destructive hover:text-destructive"
+                          title="Supprimer"
                           onClick={() => removeApplication(entry.job.id)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Supprimer
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -471,6 +526,43 @@ export default function ApplicationsPage() {
               disabled={!manualForm.company.trim() || !manualForm.title.trim()}
             >
               Ajouter la candidature
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editorState !== null} onOpenChange={(open) => !open && setEditorState(null)}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editorState?.field === "notes" ? "Notes de candidature" : "Preuves et références"}
+            </DialogTitle>
+            <DialogDescription>
+              {editorState?.field === "notes"
+                ? "Ajoutez ici les informations utiles de suivi."
+                : "Conservez ici les preuves d'envoi, réponses ou refus."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <textarea
+            className="min-h-56 w-full rounded-md border bg-background px-3 py-2 text-sm"
+            value={editorState?.value ?? ""}
+            onChange={(event) =>
+              setEditorState((prev) => (prev ? { ...prev, value: event.target.value } : prev))
+            }
+            placeholder={
+              editorState?.field === "notes"
+                ? "Contexte, contact RH, retour, salaire..."
+                : "Lien mail, capture, référence de refus..."
+            }
+          />
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditorState(null)}>
+              Annuler
+            </Button>
+            <Button type="button" onClick={saveEditor}>
+              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
