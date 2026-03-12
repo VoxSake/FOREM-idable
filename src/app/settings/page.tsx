@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useSettings } from "@/hooks/useSettings";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
@@ -11,11 +13,17 @@ import {
     useAnalyticsConsentChoice,
 } from "@/features/consent/analyticsConsent";
 import { ALL_STORAGE_KEYS } from "@/lib/storageKeys";
+import { applySyncSnapshot, createSyncSnapshot, decodeSyncToken, encodeSyncToken } from "@/lib/syncToken";
 
 export default function SettingsPage() {
     const { settings, updateSettings, isLoaded } = useSettings();
     const { theme, setTheme } = useTheme();
     const analyticsConsent = useAnalyticsConsentChoice();
+    const [syncToken, setSyncToken] = useState("");
+    const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+    const generatedToken = typeof window === "undefined"
+        ? ""
+        : encodeSyncToken(createSyncSnapshot(window.localStorage));
 
     if (!isLoaded) return null;
 
@@ -128,6 +136,66 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Données locales */}
+                <div className="space-y-4">
+                    <h2 className="text-xl font-bold">Synchronisation</h2>
+                    <Separator />
+
+                    <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                            Générez un jeton unique contenant vos favoris, candidatures, paramètres,
+                            recherches, consentement et cache local, puis importez-le sur un autre appareil.
+                        </p>
+                        <Label htmlFor="sync-token-output" className="text-base">Jeton d&apos;export</Label>
+                        <Input id="sync-token-output" readOnly value={generatedToken} />
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                onClick={async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(generatedToken);
+                                        setSyncFeedback("Jeton copié dans le presse-papiers.");
+                                    } catch {
+                                        setSyncFeedback("Copie impossible. Le jeton reste affiché ci-dessus.");
+                                    }
+                                }}
+                            >
+                                Copier le jeton
+                            </Button>
+                        </div>
+
+                        <Label htmlFor="sync-token-input" className="text-base">Importer un jeton</Label>
+                        <Input
+                            id="sync-token-input"
+                            value={syncToken}
+                            onChange={(event) => setSyncToken(event.target.value)}
+                            placeholder="Collez ici un jeton de synchronisation"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    try {
+                                        const snapshot = decodeSyncToken(syncToken);
+                                        applySyncSnapshot(window.localStorage, snapshot);
+                                        setSyncFeedback("Jeton importé. Rechargement en cours.");
+                                        window.location.reload();
+                                    } catch {
+                                        setSyncFeedback("Jeton invalide ou corrompu.");
+                                    }
+                                }}
+                                disabled={syncToken.trim().length === 0}
+                            >
+                                Importer le jeton
+                            </Button>
+                        </div>
+
+                        {syncFeedback && (
+                            <p className="text-sm text-muted-foreground">{syncFeedback}</p>
+                        )}
+                    </div>
+                </div>
+
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold text-destructive">Zone de danger</h2>
                     <Separator />

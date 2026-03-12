@@ -1,17 +1,33 @@
 "use client";
 
-import { ExternalLink, FileText, Mail } from "lucide-react";
+import { ExternalLink, FileText, Mail, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useApplications } from "@/hooks/useApplications";
+import { Job } from "@/types/job";
 
 interface JobDetailsActionsProps {
   mailtoHref: string;
   pdfUrl: string | null;
   jobUrl: string;
+  job: Job;
 }
 
-export function JobDetailsActions({ mailtoHref, pdfUrl, jobUrl }: JobDetailsActionsProps) {
+export function JobDetailsActions({ mailtoHref, pdfUrl, jobUrl, job }: JobDetailsActionsProps) {
+  const { addApplication, isApplied, isLoaded } = useApplications();
+  const applied = isApplied(job.id);
+
   return (
     <>
+      <Button
+        variant={applied ? "secondary" : "outline"}
+        type="button"
+        onClick={() => addApplication(job)}
+        disabled={!isLoaded}
+        className="w-full sm:w-auto whitespace-normal h-auto py-2.5 px-3 text-center"
+      >
+        <Send className="w-4 h-4 mr-2" />
+        {applied ? "Candidature suivie" : "Marquer comme candidature envoyée"}
+      </Button>
       <Button
         variant="outline"
         asChild

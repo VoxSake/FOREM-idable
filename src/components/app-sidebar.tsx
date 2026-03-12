@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp } from "lucide-react";
+import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp, Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 const navItems = [
     { title: "Recherche", url: "/", icon: Briefcase },
     { title: "Favoris", url: "/favorites", icon: Heart },
+    { title: "Candidatures", url: "/applications", icon: Send },
     { title: "À propos", url: "/about", icon: CircleHelp },
 ];
 

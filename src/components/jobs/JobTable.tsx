@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Job } from "@/types/job";
-import { Heart, ExternalLink, FileText } from "lucide-react";
+import { Heart, ExternalLink, FileText, Send } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useApplications } from "@/hooks/useApplications";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { getContractBadgeClass } from "@/features/jobs/utils/contractBadge";
 
@@ -69,6 +70,11 @@ export function JobTable({
     onOpenDetails,
 }: JobTableProps) {
     const { isFavorite, addFavorite, removeFavorite, isLoaded } = useFavorites();
+    const {
+        isApplied,
+        addApplication,
+        isLoaded: isApplicationsLoaded,
+    } = useApplications();
 
     const columns: ColumnDef<Job>[] = [
         {
@@ -135,6 +141,7 @@ export function JobTable({
             cell: ({ row }) => {
                 const job = row.original;
                 const fav = isFavorite(job.id);
+                const applied = isApplied(job.id);
                 const pdfUrl = getJobPdfUrl(job);
                 const isSelected = selectedJobIds?.has(job.id) ?? false;
 
@@ -160,6 +167,17 @@ export function JobTable({
                             disabled={!isLoaded}
                         >
                             <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
+                        </Button>
+
+                        <Button
+                            variant={applied ? "secondary" : "ghost"}
+                            size="icon"
+                            className={applied ? "text-emerald-600 hover:text-emerald-700 bg-emerald-100/60 hover:bg-emerald-100 dark:bg-emerald-950/40" : "text-muted-foreground transition-colors hover:text-emerald-600"}
+                            onClick={() => addApplication(job)}
+                            title={applied ? "Candidature déjà suivie" : "Marquer comme candidature envoyée"}
+                            disabled={!isApplicationsLoaded}
+                        >
+                            <Send className={`w-4 h-4 ${applied ? "fill-current" : ""}`} />
                         </Button>
 
                         {pdfUrl && (

@@ -93,6 +93,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
 
         <SheetFooter className="border-t bg-background/95 p-4">
           <JobDetailsActions
+            job={job}
             mailtoHref={mailtoHref}
             pdfUrl={pdfUrl}
             jobUrl={job.url}
