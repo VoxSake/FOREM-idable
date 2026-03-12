@@ -335,21 +335,25 @@ export default function CoachPage() {
   };
 
   const exportGroupApplications = (groupName: string, members: CoachUserSummary[]) => {
-    const rows: CoachApplicationExportRow[] = members.flatMap((entry) =>
-      entry.applications.length > 0
-        ? entry.applications.map((application) => ({
+    const rows: CoachApplicationExportRow[] = [];
+
+    for (const entry of members) {
+      if (entry.applications.length > 0) {
+        for (const application of entry.applications) {
+          rows.push({
             userEmail: entry.email,
             groupName,
             application,
-          }))
-        : [
-            {
-              userEmail: entry.email,
-              groupName,
-              message: "Aucune candidature pour cet utilisateur dans ce groupe.",
-            },
-          ]
-    );
+          });
+        }
+      } else {
+        rows.push({
+          userEmail: entry.email,
+          groupName,
+          message: "Aucune candidature pour cet utilisateur dans ce groupe.",
+        });
+      }
+    }
 
     exportCoachApplicationsToCSV({
       filenamePrefix: `groupe-${groupName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
@@ -459,8 +463,8 @@ export default function CoachPage() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
-                    variant="outline"
                     size="sm"
+                    className="bg-emerald-600 text-white hover:bg-emerald-700"
                     onClick={() => exportGroupApplications(group.name, group.members)}
                   >
                     <Download className="mr-2 h-4 w-4" />
@@ -594,7 +598,12 @@ export default function CoachPage() {
                   <Badge variant="outline">{selectedUser.applicationCount} candidatures</Badge>
                   <Badge variant="outline">{selectedUser.interviewCount} entretien(s)</Badge>
                   <Badge variant="outline">{selectedUser.dueCount} relance(s) dues</Badge>
-                  <Button type="button" size="sm" variant="outline" onClick={exportUserApplications}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="bg-emerald-600 text-white hover:bg-emerald-700"
+                    onClick={exportUserApplications}
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Export CSV
                   </Button>
