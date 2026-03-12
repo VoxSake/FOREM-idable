@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { applySyncSnapshot, createSyncSnapshot } from "@/lib/syncToken";
 
-function hasValues(values: Record<string, string> | undefined) {
+function hasValues(values: Partial<Record<string, string>> | undefined) {
   return Boolean(values && Object.keys(values).length > 0);
 }
 
