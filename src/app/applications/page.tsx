@@ -230,12 +230,15 @@ export default function ApplicationsPage() {
     const pdfUrl = getJobPdfUrl(entry.job);
 
     return (
-      <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+        onClick={(event) => event.stopPropagation()}
+      >
         {entry.job.url !== "#" ? (
           <Button
             size="sm"
             asChild
-            className="rounded-full h-8 px-3 gap-1 whitespace-nowrap"
+            className="h-8 w-full gap-1 whitespace-nowrap"
           >
             <a href={entry.job.url} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-3 w-3" />
@@ -250,7 +253,7 @@ export default function ApplicationsPage() {
             variant="outline"
             size="sm"
             asChild
-            className="rounded-full h-8 px-3 whitespace-nowrap"
+            className="h-8 w-full whitespace-nowrap"
           >
             <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
               <FileText className="mr-1 h-3 w-3" />
@@ -392,13 +395,14 @@ export default function ApplicationsPage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2 lg:items-end">
-                        <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <div className="flex flex-col gap-2 lg:w-[260px]">
+                        <div className="space-y-2">
                           {renderOfferButtons(entry)}
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
+                            className="h-8 w-full"
                             onClick={(event) => {
                               event.stopPropagation();
                               setDetailsJobId(entry.job.id);
@@ -408,11 +412,12 @@ export default function ApplicationsPage() {
                           </Button>
                         </div>
 
-                        <div className="flex items-center gap-1 lg:justify-end">
+                        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
+                            className="h-8 w-full"
                             onClick={(event) => {
                               event.stopPropagation();
                               markFollowUpDone(entry.job.id);
@@ -420,12 +425,13 @@ export default function ApplicationsPage() {
                             disabled={entry.status === "accepted" || entry.status === "rejected"}
                           >
                             <Clock3 className="mr-2 h-4 w-4" />
-                            Relance faite
+                            Relancer
                           </Button>
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
+                            className="h-8 w-full"
                             onClick={(event) => {
                               event.stopPropagation();
                               openInterviewModal(entry);
@@ -439,7 +445,7 @@ export default function ApplicationsPage() {
                             type="button"
                             size="icon"
                             variant="ghost"
-                            className="text-destructive hover:text-destructive"
+                            className="h-8 w-8 self-center text-destructive hover:text-destructive"
                             title="Supprimer"
                             onClick={(event) => {
                               event.stopPropagation();
@@ -554,19 +560,21 @@ export default function ApplicationsPage() {
               </div>
 
               <SheetFooter className="border-t bg-background/95 p-4">
-                <div className="flex flex-wrap gap-2">
+                <div className="grid w-full gap-2 sm:grid-cols-2">
                   {renderOfferButtons(selectedApplication)}
                   <Button
                     type="button"
                     variant="outline"
+                    className="w-full"
                     onClick={() => markFollowUpDone(selectedApplication.job.id)}
                     disabled={selectedApplication.status === "accepted" || selectedApplication.status === "rejected"}
                   >
-                    Relance faite
+                    Relancer
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
+                    className="w-full"
                     onClick={() => openInterviewModal(selectedApplication)}
                     disabled={selectedApplication.status === "accepted" || selectedApplication.status === "rejected"}
                   >
