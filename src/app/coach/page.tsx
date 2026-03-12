@@ -143,7 +143,7 @@ export default function CoachPage() {
     }
 
     const memberIds = new Set(memberPickerGroup.members.map((entry) => entry.id));
-    return dashboard.users.filter((entry) => entry.role === "user" && !memberIds.has(entry.id));
+    return dashboard.users.filter((entry) => !memberIds.has(entry.id));
   }, [dashboard, memberPickerGroup]);
 
   const groupedUsers = useMemo(() => {
