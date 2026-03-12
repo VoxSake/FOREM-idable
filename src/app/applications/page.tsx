@@ -59,6 +59,10 @@ function shouldShowFollowUpDetails(status: ApplicationStatus) {
   return status !== "rejected" && status !== "accepted" && status !== "interview";
 }
 
+function isManualApplication(entry: JobApplication) {
+  return entry.job.url === "#" || entry.job.id.startsWith("manual-");
+}
+
 function statusLabel(status: ApplicationStatus) {
   switch (status) {
     case "accepted":
@@ -264,11 +268,7 @@ export default function ApplicationsPage() {
               WEB
             </a>
           </Button>
-        ) : (
-          <div className="flex h-8 items-center justify-center rounded-md border border-dashed border-border bg-muted/30 px-3 text-xs font-medium text-muted-foreground">
-            Manuel
-          </div>
-        )}
+        ) : null}
         {pdfUrl && (
           <Button
             variant="outline"
@@ -383,6 +383,11 @@ export default function ApplicationsPage() {
 
                       <div className="flex flex-wrap items-center gap-2">
                         <ContractTypeBadge contractType={entry.job.contractType || "N/A"} />
+                        {isManualApplication(entry) && (
+                          <Badge className="border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                            MANUEL
+                          </Badge>
+                        )}
                         <Badge variant={isDue ? "destructive" : "secondary"}>
                           {statusLabel(entry.status)}
                         </Badge>
