@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createCoachGroup, requireCoachAccess } from "@/lib/server/coach";
+import { createCoachGroup, deleteCoachGroup, requireCoachAccess } from "@/lib/server/coach";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,5 +18,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ group });
   } catch {
     return NextResponse.json({ error: "Création de groupe impossible." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await requireCoachAccess();
+    if (!user) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const groupId = Number(request.nextUrl.searchParams.get("groupId"));
+    if (!Number.isInteger(groupId) || groupId <= 0) {
+      return NextResponse.json({ error: "Groupe invalide." }, { status: 400 });
+    }
+
+    await deleteCoachGroup(groupId);
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Suppression du groupe impossible." }, { status: 500 });
   }
 }

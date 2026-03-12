@@ -80,6 +80,7 @@ export default function ApplicationsPage() {
     markAsRejected,
     markAsFollowUp,
     scheduleInterview,
+    clearInterview,
     saveNotes,
     saveProofs,
     markFollowUpDone,
@@ -219,6 +220,17 @@ export default function ApplicationsPage() {
       interviewAt.toISOString(),
       interviewForm.interviewDetails.trim()
     );
+    setInterviewJobId(null);
+    setInterviewForm({
+      interviewAt: "",
+      interviewDetails: "",
+    });
+  };
+
+  const removeInterview = () => {
+    if (!interviewApplication) return;
+
+    clearInterview(interviewApplication.job.id);
     setInterviewJobId(null);
     setInterviewForm({
       interviewAt: "",
@@ -762,6 +774,14 @@ export default function ApplicationsPage() {
           </div>
 
           <DialogFooter>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={removeInterview}
+              disabled={!interviewApplication?.interviewAt}
+            >
+              Supprimer l&apos;entretien
+            </Button>
             <Button
               type="button"
               variant="outline"

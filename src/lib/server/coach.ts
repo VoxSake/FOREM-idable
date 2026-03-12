@@ -176,6 +176,17 @@ export async function createCoachGroup(name: string, createdBy: number) {
   return result.rows[0];
 }
 
+export async function deleteCoachGroup(groupId: number) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  await db.query(
+    `DELETE FROM coach_groups
+     WHERE id = $1`,
+    [groupId]
+  );
+}
+
 export async function addUserToCoachGroup(groupId: number, userId: number) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");

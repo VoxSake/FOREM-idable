@@ -148,6 +148,8 @@ export function useApplications() {
     updateApplication(jobId, (entry) => ({
       ...entry,
       status: "rejected",
+      interviewAt: undefined,
+      interviewDetails: undefined,
     }));
   };
 
@@ -155,6 +157,8 @@ export function useApplications() {
     updateApplication(jobId, (entry) => ({
       ...entry,
       status: "in_progress",
+      interviewAt: undefined,
+      interviewDetails: undefined,
     }));
   };
 
@@ -162,6 +166,8 @@ export function useApplications() {
     updateApplication(jobId, (entry) => ({
       ...entry,
       status: "accepted",
+      interviewAt: undefined,
+      interviewDetails: undefined,
     }));
   };
 
@@ -169,6 +175,8 @@ export function useApplications() {
     updateApplication(jobId, (entry) => ({
       ...entry,
       status: "follow_up",
+      interviewAt: undefined,
+      interviewDetails: undefined,
     }));
   };
 
@@ -178,6 +186,15 @@ export function useApplications() {
       status: "interview",
       interviewAt,
       interviewDetails,
+    }));
+  };
+
+  const clearInterview = (jobId: string) => {
+    updateApplication(jobId, (entry) => ({
+      ...entry,
+      status: entry.status === "interview" ? "in_progress" : entry.status,
+      interviewAt: undefined,
+      interviewDetails: undefined,
     }));
   };
 
@@ -221,6 +238,7 @@ export function useApplications() {
     markAsAccepted,
     markAsFollowUp,
     scheduleInterview,
+    clearInterview,
     saveNotes,
     saveProofs,
     markFollowUpDone,

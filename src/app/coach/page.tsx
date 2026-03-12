@@ -4,11 +4,13 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { format, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  Download,
   ExternalLink,
   FileText,
   FolderPlus,
   LoaderCircle,
   ShieldPlus,
+  Trash2,
   UserRoundPlus,
   X,
 } from "lucide-react";
@@ -33,6 +35,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { exportCoachApplicationsToCSV } from "@/lib/exportCoachApplicationsCsv";
 import { JobApplication } from "@/types/application";
 import { CoachDashboardData } from "@/types/coach";
 
@@ -73,6 +76,10 @@ export default function CoachPage() {
     groupId: number;
     userId: number;
     userEmail: string;
+    groupName: string;
+  } | null>(null);
+  const [removeGroup, setRemoveGroup] = useState<{
+    groupId: number;
     groupName: string;
   } | null>(null);
   const [search, setSearch] = useState("");
@@ -269,6 +276,52 @@ export default function CoachPage() {
     await loadDashboard();
   };
 
+  const deleteGroup = async (groupId: number) => {
+    const response = await fetch(`/api/coach/groups?groupId=${groupId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      setFeedback("Suppression du groupe impossible.");
+      return;
+    }
+
+    await loadDashboard();
+  };
+
+  const exportUserApplications = () => {
+    if (!selectedUser || selectedUser.applications.length === 0) return;
+
+    exportCoachApplicationsToCSV({
+      filenamePrefix: `candidatures-${selectedUser.email.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
+      rows: selectedUser.applications.map((application) => ({
+        userEmail: selectedUser.email,
+        groupName: selectedUser.groupNames[0] ?? "",
+        application,
+      })),
+    });
+  };
+
+  const exportGroupApplications = (groupName: string, members: typeof dashboard.users) => {
+    const rows = members.flatMap((entry) =>
+      entry.applications.map((application) => ({
+        userEmail: entry.email,
+        groupName,
+        application,
+      }))
+    );
+
+    if (!rows.length) {
+      setFeedback("Aucune candidature à exporter pour ce groupe.");
+      return;
+    }
+
+    exportCoachApplicationsToCSV({
+      filenamePrefix: `groupe-${groupName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
+      rows,
+    });
+  };
+
   if (isAuthLoading || isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -370,17 +423,40 @@ export default function CoachPage() {
                     {group.createdByEmail ? ` • créé par ${group.createdByEmail}` : ""}
                   </p>
                 </div>
-                {group.canAddMembers && (
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setMemberPickerGroupId(group.id)}
+                    onClick={() => exportGroupApplications(group.name, group.members)}
                   >
-                    <UserRoundPlus className="mr-2 h-4 w-4" />
-                    Ajouter
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
                   </Button>
-                )}
+                  {group.canAddMembers && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMemberPickerGroupId(group.id)}
+                    >
+                      <UserRoundPlus className="mr-2 h-4 w-4" />
+                      Ajouter
+                    </Button>
+                  )}
+                  {group.kind === "standard" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setRemoveGroup({ groupId: group.id, groupName: group.name })}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Supprimer
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -498,6 +574,10 @@ export default function CoachPage() {
                   <Badge variant="outline">{selectedUser.applicationCount} candidatures</Badge>
                   <Badge variant="outline">{selectedUser.interviewCount} entretien(s)</Badge>
                   <Badge variant="outline">{selectedUser.dueCount} relance(s) dues</Badge>
+                  <Button type="button" size="sm" variant="outline" onClick={exportUserApplications}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
+                  </Button>
                 </div>
               </SheetHeader>
 
@@ -679,6 +759,35 @@ export default function CoachPage() {
               }}
             >
               Retirer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(removeGroup)} onOpenChange={(open) => !open && setRemoveGroup(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer ce groupe ?</DialogTitle>
+            <DialogDescription>
+              {removeGroup
+                ? `Le groupe ${removeGroup.groupName} sera supprimé avec ses affectations.`
+                : "Le groupe sera supprimé."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRemoveGroup(null)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (!removeGroup) return;
+                void deleteGroup(removeGroup.groupId);
+                setRemoveGroup(null);
+              }}
+            >
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
