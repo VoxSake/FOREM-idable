@@ -232,7 +232,7 @@ export default function ApplicationsPage() {
       </div>
 
       {applications.length > 0 ? (
-        <div className="space-y-3">
+        <div className="grid gap-3 xl:grid-cols-2">
           {applications.map((entry) => {
             const isSelected = selectedJobIds.has(entry.job.id);
             const followUpDue = new Date(entry.followUpDueAt);
@@ -257,7 +257,7 @@ export default function ApplicationsPage() {
                   />
 
                   <div className="min-w-0 flex-1 space-y-3">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex flex-col gap-3">
                       <button
                         type="button"
                         className="min-w-0 text-left"
@@ -270,7 +270,7 @@ export default function ApplicationsPage() {
                         <p className="text-xs text-muted-foreground">{entry.job.location}</p>
                       </button>
 
-                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                      <div className="flex flex-wrap items-center gap-2">
                         <ContractTypeBadge contractType={entry.job.contractType || "N/A"} />
                         <Badge variant={isDue ? "destructive" : "secondary"}>
                           {statusLabel(entry.status)}
@@ -279,8 +279,8 @@ export default function ApplicationsPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                      <div className="space-y-3">
                         <select
                           className="h-9 w-full rounded-md border bg-background px-3 text-sm sm:w-[180px]"
                           value={entry.status}
@@ -298,46 +298,48 @@ export default function ApplicationsPage() {
                           <option value="rejected">Refusée</option>
                         </select>
 
-                        <div className="text-xs text-muted-foreground">
+                        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                           <p>Relance: {formatDate(entry.followUpDueAt)}</p>
                           {isSoon && <p>Bientôt</p>}
                           {entry.lastFollowUpAt && <p>Dernière: {formatDate(entry.lastFollowUpAt)}</p>}
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        {renderOfferButtons(entry)}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setDetailsJobId(entry.job.id)}
-                        >
-                          Détails
-                        </Button>
-                      </div>
+                      <div className="flex flex-col gap-2 lg:items-end">
+                        <div className="flex flex-wrap gap-2 lg:justify-end">
+                          {renderOfferButtons(entry)}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDetailsJobId(entry.job.id)}
+                          >
+                            Détails
+                          </Button>
+                        </div>
 
-                      <div className="flex items-center gap-1 xl:justify-end">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          title="Relance faite"
-                          onClick={() => markFollowUpDone(entry.job.id)}
-                          disabled={entry.status === "accepted" || entry.status === "rejected"}
-                        >
-                          <Clock3 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          title="Supprimer"
-                          onClick={() => removeApplication(entry.job.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1 lg:justify-end">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            title="Relance faite"
+                            onClick={() => markFollowUpDone(entry.job.id)}
+                            disabled={entry.status === "accepted" || entry.status === "rejected"}
+                          >
+                            <Clock3 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            title="Supprimer"
+                            onClick={() => removeApplication(entry.job.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
