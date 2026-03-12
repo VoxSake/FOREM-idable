@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ExternalLink, FilePenLine, FileText, Trash2 } from "lucide-react";
+import { Download, ExternalLink, FileKey2, FilePenLine, FileText, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +23,12 @@ interface CoachUserSheetProps {
   currentUserId: number | undefined;
   isAdmin: boolean;
   canEditUser: boolean;
+  canManageApiKeys: boolean;
   open: boolean;
   user: CoachUserSummary | null;
   onOpenChange: (open: boolean) => void;
   onExport: () => void;
+  onOpenApiKeys: () => void;
   onEdit: () => void;
   onDeleteUser: () => void;
 }
@@ -35,10 +37,12 @@ export function CoachUserSheet({
   currentUserId,
   isAdmin,
   canEditUser,
+  canManageApiKeys,
   open,
   user,
   onOpenChange,
   onExport,
+  onOpenApiKeys,
   onEdit,
   onDeleteUser,
 }: CoachUserSheetProps) {
@@ -71,6 +75,12 @@ export function CoachUserSheet({
                   <Download className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
+                {canManageApiKeys && (
+                  <Button type="button" size="sm" variant="outline" onClick={onOpenApiKeys}>
+                    <FileKey2 className="mr-2 h-4 w-4" />
+                    API
+                  </Button>
+                )}
                 {canEditUser && (
                   <>
                     <Button type="button" size="sm" variant="outline" onClick={onEdit}>

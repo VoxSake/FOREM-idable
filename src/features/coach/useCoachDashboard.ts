@@ -6,12 +6,15 @@ import {
   CoachApplicationExportRow,
   exportCoachApplicationsToCSV,
 } from "@/lib/exportCoachApplicationsCsv";
+import { ApiKeySummary } from "@/types/externalApi";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import {
+  CoachApiKeysTarget,
   CoachDeleteUserTarget,
   CoachEditTarget,
   CoachGroupedUserGroup,
   CoachMemberPickerGroup,
+  CoachRevokeApiKeyTarget,
   CoachRemoveGroupTarget,
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
@@ -34,6 +37,11 @@ export function useCoachDashboard() {
   const [removeMembership, setRemoveMembership] = useState<CoachRemoveMembershipTarget | null>(null);
   const [removeGroup, setRemoveGroup] = useState<CoachRemoveGroupTarget | null>(null);
   const [editTarget, setEditTarget] = useState<CoachEditTarget | null>(null);
+  const [apiKeysTarget, setApiKeysTarget] = useState<CoachApiKeysTarget | null>(null);
+  const [managedApiKeys, setManagedApiKeys] = useState<ApiKeySummary[]>([]);
+  const [apiKeysFeedback, setApiKeysFeedback] = useState<string | null>(null);
+  const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
+  const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<CoachRevokeApiKeyTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -116,6 +124,13 @@ export function useCoachDashboard() {
     if (user.role === "admin") return true;
     return selectedUser.role === "user";
   }, [selectedUser, user]);
+  const canManageSelectedUserApiKeys = useMemo(
+    () =>
+      user?.role === "admin" &&
+      Boolean(selectedUser) &&
+      (selectedUser?.role === "coach" || selectedUser?.role === "admin"),
+    [selectedUser, user?.role]
+  );
 
   const createGroup = async () => {
     if (!groupName.trim()) return;
@@ -268,6 +283,62 @@ export function useCoachDashboard() {
     await loadDashboard();
   };
 
+  const openManagedUserApiKeys = async () => {
+    if (!selectedUser || user?.role !== "admin") return;
+    if (selectedUser.role !== "coach" && selectedUser.role !== "admin") return;
+
+    setApiKeysTarget({
+      userId: selectedUser.id,
+      email: selectedUser.email,
+      role: selectedUser.role,
+    });
+    setManagedApiKeys([]);
+    setApiKeysFeedback(null);
+    setIsApiKeysLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}/api-keys`, {
+        cache: "no-store",
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        apiKeys?: ApiKeySummary[];
+      };
+
+      if (!response.ok || !data.apiKeys) {
+        setApiKeysFeedback(data.error || "Chargement des clés API impossible.");
+        return;
+      }
+
+      setManagedApiKeys(data.apiKeys);
+    } catch {
+      setApiKeysFeedback("Chargement des clés API impossible.");
+    } finally {
+      setIsApiKeysLoading(false);
+    }
+  };
+
+  const revokeManagedApiKey = async () => {
+    if (!revokeApiKeyTarget) return;
+
+    const response = await fetch(
+      `/api/admin/users/${revokeApiKeyTarget.userId}/api-keys/${revokeApiKeyTarget.keyId}`,
+      { method: "DELETE" }
+    );
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+
+    if (!response.ok) {
+      setApiKeysFeedback(data.error || "Révocation impossible.");
+      return;
+    }
+
+    setManagedApiKeys((current) =>
+      current.filter((entry) => entry.id !== revokeApiKeyTarget.keyId)
+    );
+    setApiKeysFeedback(`Clé API révoquée: ${revokeApiKeyTarget.keyName}.`);
+    setRevokeApiKeyTarget(null);
+  };
+
   const exportRows = (filenamePrefix: string, rows: CoachApplicationExportRow[]) => {
     exportCoachApplicationsToCSV({
       filenamePrefix,
@@ -319,6 +390,13 @@ export function useCoachDashboard() {
     setRemoveGroup,
     editTarget,
     setEditTarget,
+    apiKeysTarget,
+    setApiKeysTarget,
+    managedApiKeys,
+    apiKeysFeedback,
+    isApiKeysLoading,
+    revokeApiKeyTarget,
+    setRevokeApiKeyTarget,
     deleteUserTarget,
     setDeleteUserTarget,
     newPassword,
@@ -333,6 +411,7 @@ export function useCoachDashboard() {
     setSearch,
     selectedUser,
     canEditSelectedUser,
+    canManageSelectedUserApiKeys,
     memberPickerGroup,
     assignableUsers,
     groupedUsers,
@@ -348,6 +427,8 @@ export function useCoachDashboard() {
     demoteCoach,
     deleteGroup,
     updateManagedUser,
+    openManagedUserApiKeys,
+    revokeManagedApiKey,
     deleteUser,
     exportUserApplications,
     exportGroupApplications,

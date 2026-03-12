@@ -74,10 +74,12 @@ export default function CoachPage() {
         currentUserId={coach.user.id}
         isAdmin={coach.user.role === "admin"}
         canEditUser={coach.canEditSelectedUser}
+        canManageApiKeys={Boolean(coach.canManageSelectedUserApiKeys)}
         open={Boolean(coach.selectedUser)}
         user={coach.selectedUser}
         onOpenChange={(open) => !open && coach.setSelectedUserId(null)}
         onExport={coach.exportUserApplications}
+        onOpenApiKeys={() => void coach.openManagedUserApiKeys()}
         onEdit={() => {
           if (!coach.selectedUser) return;
           coach.setEditTarget({
@@ -144,6 +146,32 @@ export default function CoachPage() {
           }
         }}
         onConfirmEdit={() => void coach.updateManagedUser()}
+        apiKeysTarget={coach.apiKeysTarget}
+        apiKeys={coach.managedApiKeys}
+        apiKeysFeedback={coach.apiKeysFeedback}
+        isApiKeysLoading={coach.isApiKeysLoading}
+        onApiKeysOpenChange={(open) => {
+          if (!open) {
+            coach.setApiKeysTarget(null);
+            coach.setRevokeApiKeyTarget(null);
+          }
+        }}
+        onRequestRevokeApiKey={(apiKey) => {
+          if (!coach.apiKeysTarget) return;
+          coach.setRevokeApiKeyTarget({
+            userId: coach.apiKeysTarget.userId,
+            keyId: apiKey.id,
+            keyName: apiKey.name,
+            email: coach.apiKeysTarget.email,
+          });
+        }}
+        revokeApiKeyTarget={coach.revokeApiKeyTarget}
+        onRevokeApiKeyOpenChange={(open) => {
+          if (!open) {
+            coach.setRevokeApiKeyTarget(null);
+          }
+        }}
+        onConfirmRevokeApiKey={() => void coach.revokeManagedApiKey()}
         deleteUserTarget={coach.deleteUserTarget}
         onDeleteUserOpenChange={(open) => !open && coach.setDeleteUserTarget(null)}
         onConfirmDeleteUser={() => void coach.deleteUser()}

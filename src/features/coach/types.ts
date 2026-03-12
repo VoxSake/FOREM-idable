@@ -27,6 +27,19 @@ export interface CoachDeleteUserTarget {
   email: string;
 }
 
+export interface CoachApiKeysTarget {
+  userId: number;
+  email: string;
+  role: CoachUserSummary["role"];
+}
+
+export interface CoachRevokeApiKeyTarget {
+  userId: number;
+  keyId: number;
+  keyName: string;
+  email: string;
+}
+
 export type CoachMemberPickerGroup = CoachGroupSummary;
 
 export interface CoachGroupedUserGroup {
