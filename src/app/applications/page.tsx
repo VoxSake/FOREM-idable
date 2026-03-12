@@ -154,7 +154,7 @@ export default function ApplicationsPage() {
     const pdfUrl = getJobPdfUrl(entry.job);
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
         {pdfUrl && (
           <Button
             variant="outline"
@@ -245,7 +245,8 @@ export default function ApplicationsPage() {
             return (
               <div
                 key={entry.job.id}
-                className={`rounded-xl border bg-card p-4 shadow-sm ${isDue ? "border-amber-400/70" : ""}`}
+                className={`rounded-xl border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/20 ${isDue ? "border-amber-400/70" : ""}`}
+                onClick={() => setDetailsJobId(entry.job.id)}
               >
                 <div className="flex items-start gap-3">
                   <input
@@ -253,22 +254,19 @@ export default function ApplicationsPage() {
                     className="mt-1 h-4 w-4 shrink-0 accent-primary cursor-pointer"
                     checked={isSelected}
                     onChange={() => toggleSelection(entry.job.id)}
+                    onClick={(event) => event.stopPropagation()}
                     aria-label="Sélectionner la candidature"
                   />
 
                   <div className="min-w-0 flex-1 space-y-3">
                     <div className="flex flex-col gap-3">
-                      <button
-                        type="button"
-                        className="min-w-0 text-left"
-                        onClick={() => setDetailsJobId(entry.job.id)}
-                      >
+                      <div className="min-w-0 text-left">
                         <p className="truncate font-semibold leading-snug hover:text-primary">
                           {entry.job.company || "Entreprise non précisée"}
                         </p>
                         <p className="line-clamp-2 text-sm text-muted-foreground">{entry.job.title}</p>
                         <p className="text-xs text-muted-foreground">{entry.job.location}</p>
-                      </button>
+                      </div>
 
                       <div className="flex flex-wrap items-center gap-2">
                         <ContractTypeBadge contractType={entry.job.contractType || "N/A"} />
@@ -284,6 +282,7 @@ export default function ApplicationsPage() {
                         <select
                           className="h-9 w-full rounded-md border bg-background px-3 text-sm sm:w-[180px]"
                           value={entry.status}
+                          onClick={(event) => event.stopPropagation()}
                           onChange={(event) => {
                             const nextStatus = event.target.value as ApplicationStatus;
                             if (nextStatus === "accepted") markAsAccepted(entry.job.id);
@@ -312,7 +311,10 @@ export default function ApplicationsPage() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => setDetailsJobId(entry.job.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setDetailsJobId(entry.job.id);
+                            }}
                           >
                             Détails
                           </Button>
@@ -324,7 +326,10 @@ export default function ApplicationsPage() {
                             size="icon"
                             variant="ghost"
                             title="Relance faite"
-                            onClick={() => markFollowUpDone(entry.job.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              markFollowUpDone(entry.job.id);
+                            }}
                             disabled={entry.status === "accepted" || entry.status === "rejected"}
                           >
                             <Clock3 className="h-4 w-4" />
@@ -335,7 +340,10 @@ export default function ApplicationsPage() {
                             variant="ghost"
                             className="text-destructive hover:text-destructive"
                             title="Supprimer"
-                            onClick={() => removeApplication(entry.job.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              removeApplication(entry.job.id);
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
