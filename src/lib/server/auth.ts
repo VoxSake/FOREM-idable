@@ -1,14 +1,10 @@
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from "crypto";
 import { cookies } from "next/headers";
 import { db, ensureDatabase } from "@/lib/server/db";
+import { AuthUser } from "@/types/auth";
 
 const SESSION_COOKIE = "forem_idable_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
-
-export interface AuthUser {
-  id: number;
-  email: string;
-}
 
 function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
   const derived = scryptSync(password, salt, 64).toString("hex");
@@ -43,7 +39,7 @@ export async function createUser(email: string, password: string) {
   const result = await db.query<AuthUser>(
     `INSERT INTO users (email, password_hash)
      VALUES ($1, $2)
-     RETURNING id, email`,
+     RETURNING id, email, role`,
     [normalizedEmail, passwordHash]
   );
 
@@ -58,9 +54,10 @@ export async function authenticateUser(email: string, password: string) {
   const result = await db.query<{
     id: number;
     email: string;
+    role: AuthUser["role"];
     password_hash: string;
   }>(
-    `SELECT id, email, password_hash
+    `SELECT id, email, role, password_hash
      FROM users
      WHERE email = $1`,
     [normalizedEmail]
@@ -71,7 +68,7 @@ export async function authenticateUser(email: string, password: string) {
     return null;
   }
 
-  return { id: user.id, email: user.email };
+  return { id: user.id, email: user.email, role: user.role };
 }
 
 export async function createSession(userId: number) {
@@ -126,7 +123,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   if (!token) return null;
 
   const result = await db.query<AuthUser>(
-    `SELECT users.id, users.email
+    `SELECT users.id, users.email, users.role
      FROM sessions
      INNER JOIN users ON users.id = sessions.user_id
      WHERE sessions.token_hash = $1

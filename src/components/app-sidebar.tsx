@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp, Send } from "lucide-react";
+import { Briefcase, Heart, Settings, Moon, Sun, CircleHelp, Send, Users } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 import { AuthSidebarPanel } from "@/components/auth/AuthSidebarPanel";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { FOOTER_QUOTES } from "@/data/footerQuotes";
 import { pickRandomItem } from "@/lib/random";
 
@@ -26,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-const navItems = [
+const baseNavItems = [
     { title: "Recherche", url: "/", icon: Briefcase },
     { title: "Favoris", url: "/favorites", icon: Heart },
     { title: "Candidatures", url: "/applications", icon: Send },
@@ -36,7 +37,12 @@ const navItems = [
 export function AppSidebar() {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
+    const { user } = useAuth();
     const [currentQuote, setCurrentQuote] = useState(() => FOOTER_QUOTES[0]);
+    const navItems =
+        user?.role === "coach" || user?.role === "admin"
+            ? [...baseNavItems.slice(0, 3), { title: "Suivi coach", url: "/coach", icon: Users }, baseNavItems[3]]
+            : baseNavItems;
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => {

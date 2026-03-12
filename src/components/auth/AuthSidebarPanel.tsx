@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LogIn, LogOut, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +44,7 @@ export function AuthSidebarPanel() {
       });
       const data = (await response.json()) as {
         error?: string;
-        user?: { id: number; email: string };
+        user?: { id: number; email: string; role: "user" | "coach" | "admin" };
       };
 
       if (!response.ok || !data.user) {
@@ -88,7 +89,12 @@ export function AuthSidebarPanel() {
             Compte
           </p>
           {user ? (
-            <p className="text-sm text-foreground font-medium break-all">{user.email}</p>
+            <div className="space-y-2">
+              <p className="text-sm text-foreground font-medium break-all">{user.email}</p>
+              <Badge variant="secondary" className="w-fit capitalize">
+                {user.role}
+              </Badge>
+            </div>
           ) : (
             <p className="text-xs text-muted-foreground">
               Connectez-vous pour synchroniser vos données sur plusieurs appareils.

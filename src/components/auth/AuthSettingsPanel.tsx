@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Badge } from "@/components/ui/badge";
 
 export function AuthSettingsPanel() {
   const { user, isLoading, refresh, setUser } = useAuth();
@@ -24,7 +25,10 @@ export function AuthSettingsPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = (await response.json()) as { error?: string; user?: { id: number; email: string } };
+      const data = (await response.json()) as {
+        error?: string;
+        user?: { id: number; email: string; role: "user" | "coach" | "admin" };
+      };
 
       if (!response.ok || !data.user) {
         setFeedback(data.error || "Action impossible.");
@@ -71,6 +75,9 @@ export function AuthSettingsPanel() {
             Connecté en tant que <span className="font-semibold text-foreground">{user.email}</span>.
             Vos favoris, candidatures, paramètres et recherches sont synchronisés via Postgres.
           </p>
+          <Badge variant="secondary" className="w-fit capitalize">
+            {user.role}
+          </Badge>
           <Button type="button" variant="outline" onClick={handleLogout} disabled={isSubmitting || isLoading}>
             Se déconnecter
           </Button>

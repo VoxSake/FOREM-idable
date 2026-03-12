@@ -29,8 +29,12 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
 
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
@@ -92,6 +96,29 @@ CREATE TABLE IF NOT EXISTS user_settings (
   locations_cache JSONB,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS coach_groups (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS coach_groups_created_by_idx ON coach_groups(created_by);
+
+CREATE TABLE IF NOT EXISTS coach_group_members (
+  group_id BIGINT NOT NULL REFERENCES coach_groups(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (group_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS coach_group_members_user_id_idx
+  ON coach_group_members(user_id);
+
+UPDATE users
+SET role = 'admin'
+WHERE lower(email) = lower('jordi@brisbois.dev');
 `;
 
 export async function ensureDatabase() {
