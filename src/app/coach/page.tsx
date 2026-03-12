@@ -34,7 +34,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
-import { exportCoachApplicationsToCSV } from "@/lib/exportCoachApplicationsCsv";
+import {
+  CoachApplicationExportRow,
+  exportCoachApplicationsToCSV,
+} from "@/lib/exportCoachApplicationsCsv";
 import { JobApplication } from "@/types/application";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 
@@ -306,22 +309,24 @@ export default function CoachPage() {
   const exportUserApplications = () => {
     if (!selectedUser) return;
 
-    exportCoachApplicationsToCSV({
-      filenamePrefix: `candidatures-${selectedUser.email.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
-      rows:
-        selectedUser.applications.length > 0
-          ? selectedUser.applications.map((application) => ({
+    const rows: CoachApplicationExportRow[] =
+      selectedUser.applications.length > 0
+        ? selectedUser.applications.map((application) => ({
+            userEmail: selectedUser.email,
+            groupName: selectedUser.groupNames[0] ?? "",
+            application,
+          }))
+        : [
+            {
               userEmail: selectedUser.email,
               groupName: selectedUser.groupNames[0] ?? "",
-              application,
-            }))
-          : [
-              {
-                userEmail: selectedUser.email,
-                groupName: selectedUser.groupNames[0] ?? "",
-                message: "Utilisateur sans candidature au moment de l'export.",
-              },
-            ],
+              message: "Utilisateur sans candidature au moment de l'export.",
+            },
+          ];
+
+    exportCoachApplicationsToCSV({
+      filenamePrefix: `candidatures-${selectedUser.email.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
+      rows,
     });
 
     if (selectedUser.applications.length === 0) {
@@ -330,7 +335,7 @@ export default function CoachPage() {
   };
 
   const exportGroupApplications = (groupName: string, members: CoachUserSummary[]) => {
-    const rows = members.flatMap((entry) =>
+    const rows: CoachApplicationExportRow[] = members.flatMap((entry) =>
       entry.applications.length > 0
         ? entry.applications.map((application) => ({
             userEmail: entry.email,

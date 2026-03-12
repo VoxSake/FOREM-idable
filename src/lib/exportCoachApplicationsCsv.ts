@@ -2,6 +2,13 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
+export interface CoachApplicationExportRow {
+  userEmail: string;
+  groupName?: string;
+  application?: JobApplication;
+  message?: string;
+}
+
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   in_progress: "En cours",
   follow_up: "Relance à faire",
@@ -24,12 +31,7 @@ function escapeCSVCell(cell: string) {
 
 export function exportCoachApplicationsToCSV(input: {
   filenamePrefix: string;
-  rows: Array<{
-    userEmail: string;
-    groupName?: string;
-    application?: JobApplication;
-    message?: string;
-  }>;
+  rows: CoachApplicationExportRow[];
 }) {
   if (!input.rows.length) return;
 
