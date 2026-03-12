@@ -30,6 +30,7 @@ export function AuthSidebarPanel() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,11 +40,17 @@ export function AuthSidebarPanel() {
     if (nextMode === "login") {
       setFirstName("");
       setLastName("");
+      setConfirmPassword("");
     }
     setIsOpen(true);
   };
 
   const handleAuth = async () => {
+    if (mode === "register" && password !== confirmPassword) {
+      setFeedback("Les mots de passe ne correspondent pas.");
+      return;
+    }
+
     setIsSubmitting(true);
     setFeedback(null);
 
@@ -76,6 +83,7 @@ export function AuthSidebarPanel() {
       setFirstName("");
       setLastName("");
       setPassword("");
+      setConfirmPassword("");
       window.location.reload();
     } catch {
       setFeedback("Action impossible.");
@@ -205,6 +213,14 @@ export function AuthSidebarPanel() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Mot de passe (8 caractères minimum)"
             />
+            {mode === "register" ? (
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="Confirmer le mot de passe"
+              />
+            ) : null}
             {feedback && <p className="text-sm text-muted-foreground">{feedback}</p>}
           </div>
 
@@ -219,7 +235,11 @@ export function AuthSidebarPanel() {
                 isSubmitting ||
                 !email.trim() ||
                 password.length < 8 ||
-                (mode === "register" && (!firstName.trim() || !lastName.trim()))
+                (mode === "register" &&
+                  (!firstName.trim() ||
+                    !lastName.trim() ||
+                    confirmPassword.length < 8 ||
+                    password !== confirmPassword))
               }
             >
               {mode === "login" ? "Se connecter" : "Créer le compte"}

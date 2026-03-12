@@ -14,10 +14,16 @@ export function AuthSettingsPanel() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAuth = async (mode: "login" | "register") => {
+    if (mode === "register" && password !== confirmPassword) {
+      setFeedback("Les mots de passe ne correspondent pas.");
+      return;
+    }
+
     setIsSubmitting(true);
     setFeedback(null);
 
@@ -137,6 +143,16 @@ export function AuthSettingsPanel() {
               placeholder="8 caractères minimum"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="auth-password-confirm">Confirmer le mot de passe</Label>
+            <Input
+              id="auth-password-confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Ressaisir le mot de passe"
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -154,7 +170,9 @@ export function AuthSettingsPanel() {
                 !email.trim() ||
                 !firstName.trim() ||
                 !lastName.trim() ||
-                password.length < 8
+                password.length < 8 ||
+                confirmPassword.length < 8 ||
+                password !== confirmPassword
               }
             >
               Créer un compte
