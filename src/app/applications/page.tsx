@@ -226,19 +226,22 @@ export default function ApplicationsPage() {
     });
   };
 
-  const renderOfferButtons = (entry: JobApplication) => {
+  const renderOfferButtons = (entry: JobApplication, layout: "card" | "sheet" = "card") => {
     const pdfUrl = getJobPdfUrl(entry.job);
+    const isSheet = layout === "sheet";
 
     return (
       <div
-        className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+        className={
+          isSheet ? "flex flex-wrap gap-2" : "grid grid-cols-2 gap-2 sm:grid-cols-3"
+        }
         onClick={(event) => event.stopPropagation()}
       >
         {entry.job.url !== "#" ? (
           <Button
             size="sm"
             asChild
-            className="h-8 w-full gap-1 whitespace-nowrap"
+            className={`h-8 gap-1 whitespace-nowrap ${isSheet ? "px-3" : "w-full"}`}
           >
             <a href={entry.job.url} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-3 w-3" />
@@ -253,7 +256,7 @@ export default function ApplicationsPage() {
             variant="outline"
             size="sm"
             asChild
-            className="h-8 w-full whitespace-nowrap"
+            className={`h-8 whitespace-nowrap ${isSheet ? "px-3" : "w-full"}`}
           >
             <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
               <FileText className="mr-1 h-3 w-3" />
@@ -560,27 +563,35 @@ export default function ApplicationsPage() {
               </div>
 
               <SheetFooter className="border-t bg-background/95 p-4">
-                <div className="grid w-full gap-2 sm:grid-cols-2">
-                  {renderOfferButtons(selectedApplication)}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => markFollowUpDone(selectedApplication.job.id)}
-                    disabled={selectedApplication.status === "accepted" || selectedApplication.status === "rejected"}
-                  >
-                    Relancer
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => openInterviewModal(selectedApplication)}
-                    disabled={selectedApplication.status === "accepted" || selectedApplication.status === "rejected"}
-                  >
-                    <CalendarDays className="mr-2 h-4 w-4" />
-                    Entretien
-                  </Button>
+                <div className="flex w-full flex-col gap-2">
+                  {renderOfferButtons(selectedApplication, "sheet")}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => markFollowUpDone(selectedApplication.job.id)}
+                      disabled={
+                        selectedApplication.status === "accepted" ||
+                        selectedApplication.status === "rejected"
+                      }
+                    >
+                      Relancer
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => openInterviewModal(selectedApplication)}
+                      disabled={
+                        selectedApplication.status === "accepted" ||
+                        selectedApplication.status === "rejected"
+                      }
+                    >
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      Entretien
+                    </Button>
+                  </div>
                 </div>
               </SheetFooter>
             </>
