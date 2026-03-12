@@ -57,6 +57,13 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <SidebarGroup>
+                    <SidebarGroupLabel>Compte</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <AuthSidebarPanel />
+                    </SidebarGroupContent>
+                </SidebarGroup>
+
+                <SidebarGroup>
                     <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
@@ -76,8 +83,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="border-t p-4 flex flex-col gap-4">
-                <AuthSidebarPanel />
-
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild isActive={pathname === "/settings"}>

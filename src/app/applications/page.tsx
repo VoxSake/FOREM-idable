@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -9,7 +9,6 @@ import {
   Download,
   ExternalLink,
   FileText,
-  NotebookPen,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -27,8 +26,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { exportApplicationsToCSV } from "@/lib/exportApplicationsCsv";
-import { ApplicationStatus } from "@/types/application";
+import { ApplicationStatus, JobApplication } from "@/types/application";
 import {
   Table,
   TableBody,
@@ -42,6 +49,24 @@ function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "N/A";
   return format(date, "dd MMM yyyy", { locale: fr });
+}
+
+function isFollowUpPending(status: ApplicationStatus) {
+  return status === "in_progress" || status === "follow_up";
+}
+
+function statusLabel(status: ApplicationStatus) {
+  switch (status) {
+    case "accepted":
+      return "Acceptée";
+    case "rejected":
+      return "Refusée";
+    case "follow_up":
+      return "Relance à faire";
+    case "in_progress":
+    default:
+      return "En cours";
+  }
 }
 
 export default function ApplicationsPage() {
@@ -59,11 +84,7 @@ export default function ApplicationsPage() {
   } = useApplications();
   const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editorState, setEditorState] = useState<{
-    jobId: string;
-    field: "notes";
-    value: string;
-  } | null>(null);
+  const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
   const [manualForm, setManualForm] = useState({
     company: "",
     title: "",
@@ -78,21 +99,21 @@ export default function ApplicationsPage() {
 
   const now = new Date();
   const dueCount = applications.filter(
-    (entry) =>
-      (entry.status === "in_progress" || entry.status === "follow_up") &&
-      !isAfter(new Date(entry.followUpDueAt), now)
+    (entry) => isFollowUpPending(entry.status) && !isAfter(new Date(entry.followUpDueAt), now)
   ).length;
+
+  const selectedApplication = useMemo(
+    () => applications.find((entry) => entry.job.id === detailsJobId) ?? null,
+    [applications, detailsJobId]
+  );
 
   if (!isLoaded) return null;
 
   const toggleSelection = (jobId: string) => {
     setSelectedJobIds((prev) => {
       const next = new Set(prev);
-      if (next.has(jobId)) {
-        next.delete(jobId);
-      } else {
-        next.add(jobId);
-      }
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
       return next;
     });
   };
@@ -137,16 +158,40 @@ export default function ApplicationsPage() {
     setIsCreateOpen(false);
   };
 
-  const openEditor = (jobId: string, field: "notes", value: string) => {
-    setEditorState({ jobId, field, value });
-  };
+  const renderOfferButtons = (entry: JobApplication) => {
+    const pdfUrl = getJobPdfUrl(entry.job);
 
-  const saveEditor = () => {
-    if (!editorState) return;
-
-    saveNotes(editorState.jobId, editorState.value);
-
-    setEditorState(null);
+    return (
+      <div className="flex items-center gap-2">
+        {pdfUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="rounded-full h-8 px-3 whitespace-nowrap"
+          >
+            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+              <FileText className="mr-1 h-3 w-3" />
+              PDF
+            </a>
+          </Button>
+        )}
+        {entry.job.url !== "#" ? (
+          <Button
+            size="sm"
+            asChild
+            className="rounded-full h-8 px-3 gap-1 whitespace-nowrap"
+          >
+            <a href={entry.job.url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3 w-3" />
+              WEB
+            </a>
+          </Button>
+        ) : (
+          <span className="text-xs text-muted-foreground">Ajout manuel</span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -156,7 +201,7 @@ export default function ApplicationsPage() {
           Candidatures envoyées
         </h1>
         <p className="text-muted-foreground text-lg">
-          Suivez vos candidatures, réponses, relances et preuves dans un seul tableau.
+          Suivez vos candidatures avec une vue simple sur desktop et mobile.
         </p>
       </div>
 
@@ -195,182 +240,187 @@ export default function ApplicationsPage() {
       </div>
 
       {applications.length > 0 ? (
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-          <Table className="table-fixed min-w-[1100px] xl:min-w-[1180px]">
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="w-12">Sel.</TableHead>
-                <TableHead className="w-[240px]">Entreprise</TableHead>
-                <TableHead className="w-[140px]">Type</TableHead>
-                <TableHead className="hidden md:table-cell">Date envoyée</TableHead>
-                <TableHead className="w-[170px]">Statut</TableHead>
-                <TableHead className="hidden lg:table-cell">Relance</TableHead>
-                <TableHead className="hidden xl:table-cell">Notes</TableHead>
-                <TableHead className="w-[170px]">Offre</TableHead>
-                <TableHead className="text-right w-[96px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {applications.map((entry) => {
-                const isSelected = selectedJobIds.has(entry.job.id);
-                const followUpDue = new Date(entry.followUpDueAt);
-                const isDue =
-                  (entry.status === "in_progress" || entry.status === "follow_up") &&
-                  !isAfter(followUpDue, now);
-                const isSoon =
-                  (entry.status === "in_progress" || entry.status === "follow_up") &&
-                  isAfter(followUpDue, now) &&
-                  isBefore(followUpDue, addDays(now, 2));
-                const pdfUrl = getJobPdfUrl(entry.job);
+        <>
+          <div className="md:hidden space-y-3">
+            {applications.map((entry) => {
+              const isSelected = selectedJobIds.has(entry.job.id);
+              const isDue =
+                isFollowUpPending(entry.status) &&
+                !isAfter(new Date(entry.followUpDueAt), now);
 
-                return (
-                  <TableRow
-                    key={entry.job.id}
-                    className={isDue ? "bg-amber-50/80 dark:bg-amber-950/20" : ""}
-                  >
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-primary cursor-pointer"
-                        checked={isSelected}
-                        onChange={() => toggleSelection(entry.job.id)}
-                        aria-label="Sélectionner la candidature"
-                      />
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <div className="space-y-1">
-                        <p className="font-semibold leading-snug">
-                          {entry.job.company || "Entreprise non précisée"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{entry.job.title}</p>
-                        <p className="text-xs text-muted-foreground">{entry.job.location}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <span
-                        className={`inline-flex max-w-[180px] items-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-medium whitespace-nowrap overflow-hidden text-ellipsis ${getContractBadgeClass(entry.job.contractType || "")}`}
-                      >
-                        {entry.job.contractType || "N/A"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{formatDate(entry.appliedAt)}</TableCell>
-                    <TableCell className="align-top">
-                      <select
-                        className="h-9 min-w-[150px] rounded-md border bg-background px-3 text-sm"
-                        value={entry.status}
-                        onChange={(event) => {
-                          const nextStatus = event.target.value as ApplicationStatus;
-                          if (nextStatus === "accepted") markAsAccepted(entry.job.id);
-                          else if (nextStatus === "rejected") markAsRejected(entry.job.id);
-                          else if (nextStatus === "follow_up") markAsFollowUp(entry.job.id);
-                          else markAsInProgress(entry.job.id);
-                        }}
-                      >
-                        <option value="in_progress">En cours</option>
-                        <option value="follow_up">Relance à faire</option>
-                        <option value="accepted">Acceptée</option>
-                        <option value="rejected">Refusée</option>
-                      </select>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <div className="space-y-1">
-                        <p>{formatDate(entry.followUpDueAt)}</p>
-                        {isDue && (
-                          <Badge className="bg-amber-500 text-white hover:bg-amber-500">
-                            Relance à faire
-                          </Badge>
-                        )}
-                        {isSoon && <Badge variant="secondary">Bientôt</Badge>}
-                        {entry.lastFollowUpAt && (
-                          <p className="text-xs text-muted-foreground">
-                            Dernière relance: {formatDate(entry.lastFollowUpAt)}
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden xl:table-cell align-top">
-                      <button
-                        type="button"
-                        onClick={() => openEditor(entry.job.id, "notes", entry.notes ?? "")}
-                        className="w-full text-left"
-                      >
-                        <p className="line-clamp-3 text-sm text-foreground/90">
-                          {entry.notes?.trim() || "Ajouter des notes"}
-                        </p>
-                      </button>
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <div className="flex flex-col items-start gap-2 xl:flex-row xl:items-center">
-                        {pdfUrl && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
-                            className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 whitespace-nowrap"
-                          >
-                            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                              <span className="hidden sm:inline">PDF</span>
-                              <FileText className="w-3 h-3 flex-shrink-0" />
-                            </a>
-                          </Button>
-                        )}
-                        {entry.job.url !== "#" ? (
-                          <Button
-                            size="sm"
-                            asChild
-                            className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 gap-1 whitespace-nowrap"
-                          >
-                            <a href={entry.job.url} target="_blank" rel="noopener noreferrer">
-                              <span className="hidden sm:inline">Voir l&apos;offre</span>
-                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                            </a>
-                          </Button>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Ajout manuel</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right align-top">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          title="Éditer les notes"
-                          onClick={() => openEditor(entry.job.id, "notes", entry.notes ?? "")}
-                        >
-                          <NotebookPen className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          title="Relance faite"
-                          onClick={() => markFollowUpDone(entry.job.id)}
-                          disabled={entry.status === "accepted" || entry.status === "rejected"}
-                        >
-                          <Clock3 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          title="Supprimer"
-                          onClick={() => removeApplication(entry.job.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+              return (
+                <div key={entry.job.id} className={`rounded-xl border bg-card p-4 shadow-sm space-y-3 ${isDue ? "border-amber-400/70" : ""}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      className="text-left min-w-0 flex-1"
+                      onClick={() => setDetailsJobId(entry.job.id)}
+                    >
+                      <p className="font-semibold leading-snug">{entry.job.company || "Entreprise non précisée"}</p>
+                      <p className="text-sm text-muted-foreground">{entry.job.title}</p>
+                      <p className="text-xs text-muted-foreground">{entry.job.location}</p>
+                    </button>
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 accent-primary cursor-pointer"
+                      checked={isSelected}
+                      onChange={() => toggleSelection(entry.job.id)}
+                      aria-label="Sélectionner la candidature"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium ${getContractBadgeClass(entry.job.contractType || "")}`}
+                    >
+                      {entry.job.contractType || "N/A"}
+                    </span>
+                    <Badge variant={isDue ? "destructive" : "secondary"}>{statusLabel(entry.status)}</Badge>
+                    <Badge variant="outline">Envoyée le {formatDate(entry.appliedAt)}</Badge>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {renderOfferButtons(entry)}
+                    <Button type="button" variant="outline" size="sm" onClick={() => setDetailsJobId(entry.job.id)}>
+                      Notes
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => markFollowUpDone(entry.job.id)}
+                      disabled={entry.status === "accepted" || entry.status === "rejected"}
+                    >
+                      <Clock3 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => removeApplication(entry.job.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+
+          <div className="hidden md:block rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="table-fixed min-w-[980px]">
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="w-12">Sel.</TableHead>
+                    <TableHead className="w-[280px]">Entreprise</TableHead>
+                    <TableHead className="w-[140px]">Type</TableHead>
+                    <TableHead className="w-[140px]">Date envoyée</TableHead>
+                    <TableHead className="w-[170px]">Statut</TableHead>
+                    <TableHead className="hidden lg:table-cell w-[160px]">Relance</TableHead>
+                    <TableHead className="w-[170px]">Offre</TableHead>
+                    <TableHead className="text-right w-[90px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {applications.map((entry) => {
+                    const isSelected = selectedJobIds.has(entry.job.id);
+                    const followUpDue = new Date(entry.followUpDueAt);
+                    const isDue = isFollowUpPending(entry.status) && !isAfter(followUpDue, now);
+                    const isSoon =
+                      isFollowUpPending(entry.status) &&
+                      isAfter(followUpDue, now) &&
+                      isBefore(followUpDue, addDays(now, 2));
+
+                    return (
+                      <TableRow key={entry.job.id} className={isDue ? "bg-amber-50/80 dark:bg-amber-950/20" : ""}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-primary cursor-pointer"
+                            checked={isSelected}
+                            onChange={() => toggleSelection(entry.job.id)}
+                            aria-label="Sélectionner la candidature"
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <button
+                            type="button"
+                            className="w-full text-left"
+                            onClick={() => setDetailsJobId(entry.job.id)}
+                          >
+                            <p className="font-semibold leading-snug hover:text-primary">{entry.job.company || "Entreprise non précisée"}</p>
+                            <p className="text-xs text-muted-foreground">{entry.job.title}</p>
+                            <p className="text-xs text-muted-foreground">{entry.job.location}</p>
+                          </button>
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <span
+                            className={`inline-flex max-w-[180px] items-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-medium whitespace-nowrap overflow-hidden text-ellipsis ${getContractBadgeClass(entry.job.contractType || "")}`}
+                          >
+                            {entry.job.contractType || "N/A"}
+                          </span>
+                        </TableCell>
+                        <TableCell>{formatDate(entry.appliedAt)}</TableCell>
+                        <TableCell className="align-top">
+                          <select
+                            className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                            value={entry.status}
+                            onChange={(event) => {
+                              const nextStatus = event.target.value as ApplicationStatus;
+                              if (nextStatus === "accepted") markAsAccepted(entry.job.id);
+                              else if (nextStatus === "rejected") markAsRejected(entry.job.id);
+                              else if (nextStatus === "follow_up") markAsFollowUp(entry.job.id);
+                              else markAsInProgress(entry.job.id);
+                            }}
+                          >
+                            <option value="in_progress">En cours</option>
+                            <option value="follow_up">Relance à faire</option>
+                            <option value="accepted">Acceptée</option>
+                            <option value="rejected">Refusée</option>
+                          </select>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="space-y-1">
+                            <p>{formatDate(entry.followUpDueAt)}</p>
+                            {isDue && <Badge className="bg-amber-500 text-white hover:bg-amber-500">Relance à faire</Badge>}
+                            {isSoon && <Badge variant="secondary">Bientôt</Badge>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="align-top">{renderOfferButtons(entry)}</TableCell>
+                        <TableCell className="text-right align-top">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              title="Relance faite"
+                              onClick={() => markFollowUpDone(entry.job.id)}
+                              disabled={entry.status === "accepted" || entry.status === "rejected"}
+                            >
+                              <Clock3 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              title="Supprimer"
+                              onClick={() => removeApplication(entry.job.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
       ) : (
         <div className="h-96 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-dashed border-border mt-8">
           <BriefcaseBusiness className="w-12 h-12 text-muted-foreground/30" />
@@ -390,6 +440,93 @@ export default function ApplicationsPage() {
           </div>
         </div>
       )}
+
+      <Sheet open={Boolean(selectedApplication)} onOpenChange={(open) => !open && setDetailsJobId(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-xl p-0">
+          {selectedApplication && (
+            <>
+              <SheetHeader className="border-b bg-muted/30 p-5 pr-12">
+                <SheetTitle>{selectedApplication.job.title}</SheetTitle>
+                <SheetDescription>
+                  {selectedApplication.job.company || "Entreprise non précisée"} • {selectedApplication.job.location}
+                </SheetDescription>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium ${getContractBadgeClass(selectedApplication.job.contractType || "")}`}
+                  >
+                    {selectedApplication.job.contractType || "N/A"}
+                  </span>
+                  <Badge variant="outline">Envoyée le {formatDate(selectedApplication.appliedAt)}</Badge>
+                  <Badge variant="secondary">{statusLabel(selectedApplication.status)}</Badge>
+                </div>
+              </SheetHeader>
+
+              <div className="flex-1 overflow-y-auto p-5 space-y-5 text-sm">
+                <div className="space-y-2">
+                  <p className="font-medium">Statut</p>
+                  <select
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    value={selectedApplication.status}
+                    onChange={(event) => {
+                      const nextStatus = event.target.value as ApplicationStatus;
+                      if (nextStatus === "accepted") markAsAccepted(selectedApplication.job.id);
+                      else if (nextStatus === "rejected") markAsRejected(selectedApplication.job.id);
+                      else if (nextStatus === "follow_up") markAsFollowUp(selectedApplication.job.id);
+                      else markAsInProgress(selectedApplication.job.id);
+                    }}
+                  >
+                    <option value="in_progress">En cours</option>
+                    <option value="follow_up">Relance à faire</option>
+                    <option value="accepted">Acceptée</option>
+                    <option value="rejected">Refusée</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-medium">Relance</p>
+                  <p className="text-muted-foreground">Prochaine relance: {formatDate(selectedApplication.followUpDueAt)}</p>
+                  {selectedApplication.lastFollowUpAt && (
+                    <p className="text-muted-foreground">Dernière relance: {formatDate(selectedApplication.lastFollowUpAt)}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-medium">Notes</p>
+                  <textarea
+                    className="min-h-40 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    value={selectedApplication.notes ?? ""}
+                    onChange={(event) => saveNotes(selectedApplication.job.id, event.target.value)}
+                    placeholder="Contexte, contact RH, retour, salaire..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-medium">Preuves / références</p>
+                  <textarea
+                    className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    value={selectedApplication.proofs ?? ""}
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              <SheetFooter className="border-t bg-background/95 p-4">
+                <div className="flex flex-wrap gap-2">
+                  {renderOfferButtons(selectedApplication)}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => markFollowUpDone(selectedApplication.job.id)}
+                    disabled={selectedApplication.status === "accepted" || selectedApplication.status === "rejected"}
+                  >
+                    Relance faite
+                  </Button>
+                </div>
+              </SheetFooter>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-2xl">
@@ -501,37 +638,6 @@ export default function ApplicationsPage() {
               disabled={!manualForm.company.trim() || !manualForm.title.trim()}
             >
               Ajouter la candidature
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editorState !== null} onOpenChange={(open) => !open && setEditorState(null)}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>
-              Notes de candidature
-            </DialogTitle>
-            <DialogDescription>
-              Ajoutez ici les informations utiles de suivi.
-            </DialogDescription>
-          </DialogHeader>
-
-          <textarea
-            className="min-h-56 w-full rounded-md border bg-background px-3 py-2 text-sm"
-            value={editorState?.value ?? ""}
-            onChange={(event) =>
-              setEditorState((prev) => (prev ? { ...prev, value: event.target.value } : prev))
-            }
-            placeholder="Contexte, contact RH, retour, salaire..."
-          />
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setEditorState(null)}>
-              Annuler
-            </Button>
-            <Button type="button" onClick={saveEditor}>
-              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
