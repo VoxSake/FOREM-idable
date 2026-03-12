@@ -35,15 +35,28 @@ export async function createUser(email: string, password: string) {
 
   const normalizedEmail = normalizeEmail(email);
   const passwordHash = hashPassword(password);
+  await db.query("BEGIN");
 
-  const result = await db.query<AuthUser>(
-    `INSERT INTO users (email, password_hash)
-     VALUES ($1, $2)
-     RETURNING id, email, role`,
-    [normalizedEmail, passwordHash]
-  );
+  try {
+    // Serialize first-user bootstrap so only one account can become admin.
+    await db.query("SELECT pg_advisory_xact_lock($1)", [4_016_001]);
 
-  return result.rows[0];
+    const existingUsers = await db.query<{ count: string }>("SELECT COUNT(*)::text AS count FROM users");
+    const nextRole: AuthUser["role"] = existingUsers.rows[0]?.count === "0" ? "admin" : "user";
+
+    const result = await db.query<AuthUser>(
+      `INSERT INTO users (email, password_hash, role)
+       VALUES ($1, $2, $3)
+       RETURNING id, email, role`,
+      [normalizedEmail, passwordHash, nextRole]
+    );
+
+    await db.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await db.query("ROLLBACK");
+    throw error;
+  }
 }
 
 export async function authenticateUser(email: string, password: string) {

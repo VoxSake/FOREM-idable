@@ -115,10 +115,6 @@ CREATE TABLE IF NOT EXISTS coach_group_members (
 
 CREATE INDEX IF NOT EXISTS coach_group_members_user_id_idx
   ON coach_group_members(user_id);
-
-UPDATE users
-SET role = 'admin'
-WHERE lower(email) = lower('jordi@brisbois.dev');
 `;
 
 export async function ensureDatabase() {

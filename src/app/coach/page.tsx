@@ -184,6 +184,19 @@ export default function CoachPage() {
     await loadDashboard();
   };
 
+  const demoteCoach = async (userId: number) => {
+    const response = await fetch(`/api/admin/coaches?userId=${userId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      setFeedback("Retrait du rôle coach impossible.");
+      return;
+    }
+
+    await loadDashboard();
+  };
+
   if (isAuthLoading || isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -377,6 +390,19 @@ export default function CoachPage() {
                       }}
                     >
                       Coach
+                    </Button>
+                  )}
+                  {user.role === "admin" && entry.role === "coach" && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void demoteCoach(entry.id);
+                      }}
+                    >
+                      Retirer coach
                     </Button>
                   )}
                 </div>
