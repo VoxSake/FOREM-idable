@@ -11,11 +11,12 @@ function hasValues(values: Partial<Record<string, string>> | undefined) {
 export function AuthSync() {
   const { user, isLoading } = useAuth();
   const syncTimeout = useRef<number | null>(null);
+  const isApplyingRemote = useRef(false);
 
   useEffect(() => {
     if (isLoading || !user) return;
 
-    const bootstrap = async () => {
+    const pullState = async () => {
       try {
         const response = await fetch("/api/state", { cache: "no-store" });
         if (!response.ok) return;
@@ -26,19 +27,18 @@ export function AuthSync() {
         const localSnapshot = createSyncSnapshot(window.localStorage);
         const remoteValues = data.state?.values ?? {};
         const localValues = localSnapshot.values;
-        const bootstrapKey = `forem-idable-sync-bootstrapped-${user.id}`;
 
         if (hasValues(remoteValues)) {
           const localSerialized = JSON.stringify(localValues);
           const remoteSerialized = JSON.stringify(remoteValues);
 
-          if (localSerialized !== remoteSerialized && !sessionStorage.getItem(bootstrapKey)) {
+          if (localSerialized !== remoteSerialized) {
+            isApplyingRemote.current = true;
             applySyncSnapshot(window.localStorage, {
               version: 1,
               createdAt: data.state?.updatedAt || new Date().toISOString(),
               values: remoteValues,
             });
-            sessionStorage.setItem(bootstrapKey, "1");
             window.location.reload();
             return;
           }
@@ -54,13 +54,30 @@ export function AuthSync() {
       }
     };
 
-    void bootstrap();
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "hidden") return;
+      void pullState();
+    };
+
+    void pullState();
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+    };
   }, [isLoading, user]);
 
   useEffect(() => {
     if (!user) return;
 
     const pushState = () => {
+      if (isApplyingRemote.current) {
+        isApplyingRemote.current = false;
+        return;
+      }
+
       if (syncTimeout.current) {
         window.clearTimeout(syncTimeout.current);
       }
