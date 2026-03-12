@@ -177,15 +177,19 @@ export function CoachUserSheet({
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
                             <p className="mb-1 font-medium text-foreground">Notes</p>
-                            <p className="whitespace-pre-wrap line-clamp-5">
-                              {application.notes || "Aucune note"}
-                            </p>
+                            <div className="max-h-48 overflow-y-auto pr-1">
+                              <p className="whitespace-pre-wrap">
+                                {application.notes || "Aucune note"}
+                              </p>
+                            </div>
                           </div>
                           <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
                             <p className="mb-1 font-medium text-foreground">Preuves</p>
-                            <p className="whitespace-pre-wrap line-clamp-5">
-                              {application.proofs || "Aucune preuve"}
-                            </p>
+                            <div className="max-h-48 overflow-y-auto pr-1">
+                              <p className="whitespace-pre-wrap">
+                                {application.proofs || "Aucune preuve"}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       )}
