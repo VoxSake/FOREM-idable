@@ -16,6 +16,10 @@ Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, favoris, 
 - Tableau d'offres compact (pagination 15)
 - Bouton PDF direct par offre quand disponible (proxy serveur)
 - Favoris en local
+- Suivi des candidatures, relances et entretiens
+- Comptes `user` / `coach` / `admin`
+- Synchronisation multi-device via compte Postgres
+- API externe sécurisée pour export `JSON` / `CSV`
 - Export CSV (colonnes sélectionnables, métadonnées)
 - Comparateur d'offres
 - Provider principal: Forem
@@ -74,6 +78,28 @@ npm run lint       # lint
 npm test           # tests unitaires/intégration (vitest run)
 npm run test:watch # tests en watch
 ```
+
+## API externe
+
+FOREM-idable expose une API externe en lecture seule pour les comptes `coach` et `admin`.
+
+Cas d'usage principaux:
+
+- export Excel / Power Query
+- intégration no-code
+- reporting JSON / CSV
+- extraction par utilisateur, groupe ou candidatures filtrées
+
+Authentification:
+
+- génération d'une clé API depuis `Mon compte`
+- utilisation via header `Authorization: Bearer ...`
+
+Documentation complète:
+
+- [DOCAPI.md](./DOCAPI.md)
+
+Le projet étant open source sous licence MIT, il peut aussi être self-hosted si un hébergement interne est requis pour des raisons de sécurité ou de conformité.
 
 ## Sources API
 
