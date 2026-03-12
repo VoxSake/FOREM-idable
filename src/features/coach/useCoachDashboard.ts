@@ -116,24 +116,6 @@ export function useCoachDashboard() {
     if (user.role === "admin") return true;
     return selectedUser.role === "user";
   }, [selectedUser, user]);
-  const noApplicationsUsers = useMemo(
-    () => dashboard?.users.filter((entry) => entry.applicationCount === 0) ?? [],
-    [dashboard?.users]
-  );
-  const dueUsers = useMemo(
-    () => dashboard?.users.filter((entry) => entry.dueCount > 0).sort((a, b) => b.dueCount - a.dueCount) ?? [],
-    [dashboard?.users]
-  );
-  const noInterviewUsers = useMemo(
-    () =>
-      dashboard?.users.filter((entry) => entry.applicationCount > 0 && entry.interviewCount === 0) ?? [],
-    [dashboard?.users]
-  );
-  const inactiveUsers = useMemo(
-    () =>
-      dashboard?.users.filter((entry) => entry.applicationCount > 0 && !entry.latestActivityAt) ?? [],
-    [dashboard?.users]
-  );
 
   const createGroup = async () => {
     if (!groupName.trim()) return;
@@ -359,10 +341,6 @@ export function useCoachDashboard() {
     totalDue,
     totalAccepted,
     totalRejected,
-    noApplicationsUsers,
-    dueUsers,
-    noInterviewUsers,
-    inactiveUsers,
     loadDashboard,
     createGroup,
     addMember,
