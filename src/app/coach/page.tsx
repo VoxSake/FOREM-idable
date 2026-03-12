@@ -485,8 +485,8 @@ export default function CoachPage() {
               Recherche, suivi et gestion des users directement par groupe.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={() => setIsCreateGroupOpen(true)}>
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Button type="button" className="w-full sm:w-auto" onClick={() => setIsCreateGroupOpen(true)}>
               <FolderPlus className="mr-2 h-4 w-4" />
               Créer un groupe
             </Button>
@@ -503,7 +503,7 @@ export default function CoachPage() {
           {groupedUsers.map((group) => (
             <div key={`${group.kind}-${group.id}`} className="rounded-xl border bg-muted/20 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold">{group.name}</p>
                     <Badge variant="outline">{group.totalApplications} candidatures</Badge>
@@ -514,11 +514,11 @@ export default function CoachPage() {
                     {group.createdByEmail ? ` • créé par ${group.createdByEmail}` : ""}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
                   <Button
                     type="button"
                     size="sm"
-                    className="bg-emerald-600 text-white hover:bg-emerald-700"
+                    className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
                     onClick={() => exportGroupApplications(group.name, group.members)}
                   >
                     <Download className="mr-2 h-4 w-4" />
@@ -529,6 +529,7 @@ export default function CoachPage() {
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="w-full sm:w-auto"
                       onClick={() => setMemberPickerGroupId(group.id)}
                     >
                       <UserRoundPlus className="mr-2 h-4 w-4" />
@@ -540,7 +541,7 @@ export default function CoachPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="text-destructive hover:text-destructive"
+                      className="w-full text-destructive hover:text-destructive sm:w-auto"
                       onClick={() => setRemoveGroup({ groupId: group.id, groupName: group.name })}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -557,7 +558,7 @@ export default function CoachPage() {
                       key={`${group.id}-${entry.id}`}
                       role="button"
                       tabIndex={0}
-                      className="rounded-xl border bg-background px-4 py-3 text-left transition-colors hover:bg-muted/30"
+                      className="min-w-0 rounded-xl border bg-background px-4 py-3 text-left transition-colors hover:bg-muted/30"
                       onClick={() => setSelectedUserId(entry.id)}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
@@ -566,10 +567,10 @@ export default function CoachPage() {
                         }
                       }}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate font-medium">{entry.email}</p>
+                            <p className="min-w-0 break-all font-medium">{entry.email}</p>
                             <Badge variant="secondary" className="capitalize">
                               {entry.role}
                             </Badge>
@@ -578,7 +579,7 @@ export default function CoachPage() {
                             {entry.groupNames.length > 0 ? entry.groupNames.join(" • ") : "Sans groupe"}
                           </p>
                         </div>
-                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
                           <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
                           {entry.interviewCount > 0 && (
                             <Badge className="bg-sky-600 text-white hover:bg-sky-600">
@@ -593,6 +594,7 @@ export default function CoachPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setRemoveMembership({
@@ -611,6 +613,7 @@ export default function CoachPage() {
                               type="button"
                               size="sm"
                               variant="outline"
+                              className="w-full sm:w-auto"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 void demoteCoach(entry.id);
