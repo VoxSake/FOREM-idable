@@ -77,6 +77,7 @@ export default function ApplicationsPage() {
   const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
+  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [manualForm, setManualForm] = useState({
     company: "",
     title: "",
@@ -97,6 +98,10 @@ export default function ApplicationsPage() {
   const selectedApplication = useMemo(
     () => applications.find((entry) => entry.job.id === detailsJobId) ?? null,
     [applications, detailsJobId]
+  );
+  const deleteApplication = useMemo(
+    () => applications.find((entry) => entry.job.id === deleteJobId) ?? null,
+    [applications, deleteJobId]
   );
 
   if (!isLoaded) return null;
@@ -155,19 +160,6 @@ export default function ApplicationsPage() {
 
     return (
       <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
-        {pdfUrl && (
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="rounded-full h-8 px-3 whitespace-nowrap"
-          >
-            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-              <FileText className="mr-1 h-3 w-3" />
-              PDF
-            </a>
-          </Button>
-        )}
         {entry.job.url !== "#" ? (
           <Button
             size="sm"
@@ -181,6 +173,19 @@ export default function ApplicationsPage() {
           </Button>
         ) : (
           <span className="text-xs text-muted-foreground">Ajout manuel</span>
+        )}
+        {pdfUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="rounded-full h-8 px-3 whitespace-nowrap"
+          >
+            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+              <FileText className="mr-1 h-3 w-3" />
+              PDF
+            </a>
+          </Button>
         )}
       </div>
     );
@@ -213,7 +218,7 @@ export default function ApplicationsPage() {
           </Button>
           <Button
             type="button"
-            variant="outline"
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
             onClick={() => exportApplicationsToCSV(applications)}
             disabled={applications.length === 0}
           >
@@ -323,16 +328,16 @@ export default function ApplicationsPage() {
                         <div className="flex items-center gap-1 lg:justify-end">
                           <Button
                             type="button"
-                            size="icon"
-                            variant="ghost"
-                            title="Relance faite"
+                            size="sm"
+                            variant="outline"
                             onClick={(event) => {
                               event.stopPropagation();
                               markFollowUpDone(entry.job.id);
                             }}
                             disabled={entry.status === "accepted" || entry.status === "rejected"}
                           >
-                            <Clock3 className="h-4 w-4" />
+                            <Clock3 className="mr-2 h-4 w-4" />
+                            Relancer
                           </Button>
                           <Button
                             type="button"
@@ -342,7 +347,7 @@ export default function ApplicationsPage() {
                             title="Supprimer"
                             onClick={(event) => {
                               event.stopPropagation();
-                              removeApplication(entry.job.id);
+                              setDeleteJobId(entry.job.id);
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -569,6 +574,38 @@ export default function ApplicationsPage() {
               disabled={!manualForm.company.trim() || !manualForm.title.trim()}
             >
               Ajouter la candidature
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(deleteApplication)} onOpenChange={(open) => !open && setDeleteJobId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer cette candidature ?</DialogTitle>
+            <DialogDescription>
+              {deleteApplication
+                ? `Cette action retirera ${deleteApplication.job.title} de votre suivi.`
+                : "Cette action retirera la candidature de votre suivi."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteJobId(null)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (!deleteApplication) return;
+                removeApplication(deleteApplication.job.id);
+                setDeleteJobId(null);
+                if (detailsJobId === deleteApplication.job.id) {
+                  setDetailsJobId(null);
+                }
+              }}
+            >
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
