@@ -123,6 +123,21 @@ CREATE TABLE IF NOT EXISTS coach_group_members (
 
 CREATE INDEX IF NOT EXISTS coach_group_members_user_id_idx
   ON coach_group_members(user_id);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  key_prefix TEXT NOT NULL,
+  last_four TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_used_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS api_keys_user_id_idx ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS api_keys_active_idx ON api_keys(user_id, revoked_at);
 `;
 
 export async function ensureDatabase() {
