@@ -11,7 +11,6 @@ import {
   FileText,
   NotebookPen,
   Plus,
-  ShieldAlert,
   Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +53,6 @@ export default function ApplicationsPage() {
     markAsRejected,
     markAsFollowUp,
     saveNotes,
-    saveProofs,
     markFollowUpDone,
     removeApplication,
     isLoaded,
@@ -63,7 +61,7 @@ export default function ApplicationsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editorState, setEditorState] = useState<{
     jobId: string;
-    field: "notes" | "proofs";
+    field: "notes";
     value: string;
   } | null>(null);
   const [manualForm, setManualForm] = useState({
@@ -139,18 +137,14 @@ export default function ApplicationsPage() {
     setIsCreateOpen(false);
   };
 
-  const openEditor = (jobId: string, field: "notes" | "proofs", value: string) => {
+  const openEditor = (jobId: string, field: "notes", value: string) => {
     setEditorState({ jobId, field, value });
   };
 
   const saveEditor = () => {
     if (!editorState) return;
 
-    if (editorState.field === "notes") {
-      saveNotes(editorState.jobId, editorState.value);
-    } else {
-      saveProofs(editorState.jobId, editorState.value);
-    }
+    saveNotes(editorState.jobId, editorState.value);
 
     setEditorState(null);
   };
@@ -203,19 +197,18 @@ export default function ApplicationsPage() {
       {applications.length > 0 ? (
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-          <Table className="table-fixed min-w-[1180px]">
+          <Table className="table-fixed min-w-[1100px] xl:min-w-[1180px]">
             <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="w-12">Sel.</TableHead>
-                <TableHead>Entreprise</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead className="w-[240px]">Entreprise</TableHead>
+                <TableHead className="w-[140px]">Type</TableHead>
                 <TableHead className="hidden md:table-cell">Date envoyée</TableHead>
-                <TableHead>Statut</TableHead>
+                <TableHead className="w-[170px]">Statut</TableHead>
                 <TableHead className="hidden lg:table-cell">Relance</TableHead>
                 <TableHead className="hidden xl:table-cell">Notes</TableHead>
-                <TableHead className="hidden xl:table-cell">Preuves</TableHead>
-                <TableHead>Offre</TableHead>
-                <TableHead className="text-right w-[110px]">Actions</TableHead>
+                <TableHead className="w-[170px]">Offre</TableHead>
+                <TableHead className="text-right w-[96px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -307,19 +300,8 @@ export default function ApplicationsPage() {
                         </p>
                       </button>
                     </TableCell>
-                    <TableCell className="hidden xl:table-cell align-top">
-                      <button
-                        type="button"
-                        onClick={() => openEditor(entry.job.id, "proofs", entry.proofs ?? "")}
-                        className="w-full text-left"
-                      >
-                        <p className="line-clamp-3 text-sm text-foreground/90">
-                          {entry.proofs?.trim() || "Ajouter des preuves"}
-                        </p>
-                      </button>
-                    </TableCell>
                     <TableCell className="align-top">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-start gap-2 xl:flex-row xl:items-center">
                         {pdfUrl && (
                           <Button
                             variant="outline"
@@ -350,7 +332,7 @@ export default function ApplicationsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right align-top">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-0.5">
                         <Button
                           type="button"
                           size="icon"
@@ -359,15 +341,6 @@ export default function ApplicationsPage() {
                           onClick={() => openEditor(entry.job.id, "notes", entry.notes ?? "")}
                         >
                           <NotebookPen className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          title="Éditer les preuves"
-                          onClick={() => openEditor(entry.job.id, "proofs", entry.proofs ?? "")}
-                        >
-                          <ShieldAlert className="h-4 w-4" />
                         </Button>
                         <Button
                           type="button"
@@ -537,12 +510,10 @@ export default function ApplicationsPage() {
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
-              {editorState?.field === "notes" ? "Notes de candidature" : "Preuves et références"}
+              Notes de candidature
             </DialogTitle>
             <DialogDescription>
-              {editorState?.field === "notes"
-                ? "Ajoutez ici les informations utiles de suivi."
-                : "Conservez ici les preuves d'envoi, réponses ou refus."}
+              Ajoutez ici les informations utiles de suivi.
             </DialogDescription>
           </DialogHeader>
 
@@ -552,11 +523,7 @@ export default function ApplicationsPage() {
             onChange={(event) =>
               setEditorState((prev) => (prev ? { ...prev, value: event.target.value } : prev))
             }
-            placeholder={
-              editorState?.field === "notes"
-                ? "Contexte, contact RH, retour, salaire..."
-                : "Lien mail, capture, référence de refus..."
-            }
+            placeholder="Contexte, contact RH, retour, salaire..."
           />
 
           <DialogFooter>
