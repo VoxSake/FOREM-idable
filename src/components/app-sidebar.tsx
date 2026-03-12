@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
+import { AuthSidebarPanel } from "@/components/auth/AuthSidebarPanel";
 import { FOOTER_QUOTES } from "@/data/footerQuotes";
 import { pickRandomItem } from "@/lib/random";
 
@@ -75,6 +76,8 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="border-t p-4 flex flex-col gap-4">
+                <AuthSidebarPanel />
+
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild isActive={pathname === "/settings"}>
