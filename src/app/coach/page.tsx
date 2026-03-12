@@ -3,7 +3,15 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { format, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
-import { FolderPlus, LoaderCircle, ShieldPlus, UserRoundPlus, X } from "lucide-react";
+import {
+  ExternalLink,
+  FileText,
+  FolderPlus,
+  LoaderCircle,
+  ShieldPlus,
+  UserRoundPlus,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +32,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { JobApplication } from "@/types/application";
 import { CoachDashboardData } from "@/types/coach";
 
@@ -60,6 +69,12 @@ export default function CoachPage() {
   const [memberPickerGroupId, setMemberPickerGroupId] = useState<number | null>(null);
   const [coachPickerOpen, setCoachPickerOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [removeMembership, setRemoveMembership] = useState<{
+    groupId: number;
+    userId: number;
+    userEmail: string;
+    groupName: string;
+  } | null>(null);
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
 
@@ -101,13 +116,6 @@ export default function CoachPage() {
     [dashboard, selectedUserId]
   );
 
-  const filteredUsers = useMemo(() => {
-    const list = dashboard?.users ?? [];
-    const normalized = deferredSearch.trim().toLowerCase();
-    if (!normalized) return list;
-    return list.filter((entry) => entry.email.toLowerCase().includes(normalized));
-  }, [dashboard, deferredSearch]);
-
   const memberPickerGroup =
     dashboard?.groups.find((group) => group.id === memberPickerGroupId) ?? null;
 
@@ -121,6 +129,70 @@ export default function CoachPage() {
     () => (dashboard?.users ?? []).filter((entry) => entry.role === "user"),
     [dashboard]
   );
+
+  const groupedUsers = useMemo(() => {
+    if (!dashboard) return [];
+
+    const normalized = deferredSearch.trim().toLowerCase();
+    const matchesSearch = (email: string) =>
+      !normalized || email.toLowerCase().includes(normalized);
+
+    const standardGroups = dashboard.groups.map((group) => {
+      const members = dashboard.users.filter((entry) => group.members.some((member) => member.id === entry.id));
+      const visibleMembers = members.filter((entry) => matchesSearch(entry.email));
+
+      return {
+        id: group.id,
+        name: group.name,
+        createdByEmail: group.createdBy.email,
+        canAddMembers: true,
+        kind: "standard" as const,
+        totalApplications: members.reduce((sum, entry) => sum + entry.applicationCount, 0),
+        totalInterviews: members.reduce((sum, entry) => sum + entry.interviewCount, 0),
+        members: visibleMembers,
+      };
+    });
+
+    const ungroupedMembers = dashboard.users.filter(
+      (entry) => entry.role === "user" && entry.groupIds.length === 0 && matchesSearch(entry.email)
+    );
+    const coachMembers = dashboard.users.filter(
+      (entry) => (entry.role === "coach" || entry.role === "admin") && matchesSearch(entry.email)
+    );
+    const allUngroupedMembers = dashboard.users.filter(
+      (entry) => entry.role === "user" && entry.groupIds.length === 0
+    );
+    const allCoachMembers = dashboard.users.filter(
+      (entry) => entry.role === "coach" || entry.role === "admin"
+    );
+
+    const syntheticGroups = [
+      {
+        id: -1,
+        name: "Aucun groupe attribué",
+        createdByEmail: null,
+        canAddMembers: false,
+        kind: "ungrouped" as const,
+        totalApplications: allUngroupedMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
+        totalInterviews: allUngroupedMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
+        members: ungroupedMembers,
+      },
+      {
+        id: -2,
+        name: "Coaches",
+        createdByEmail: null,
+        canAddMembers: false,
+        kind: "coaches" as const,
+        totalApplications: allCoachMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
+        totalInterviews: allCoachMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
+        members: coachMembers,
+      },
+    ];
+
+    return [...standardGroups, ...syntheticGroups].filter(
+      (group) => group.members.length > 0 || !normalized
+    );
+  }, [dashboard, deferredSearch]);
 
   const createGroup = async () => {
     if (!groupName.trim()) return;
@@ -255,32 +327,50 @@ export default function CoachPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold">Groupes</h2>
-              <p className="text-sm text-muted-foreground">
-                Tous les coaches voient tous les groupes et peuvent gérer les affectations.
-              </p>
-            </div>
+      <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold">Groupes</h2>
+            <p className="text-sm text-muted-foreground">
+              Recherche, suivi et gestion des users directement par groupe.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {user.role === "admin" && (
+              <Button type="button" variant="outline" onClick={() => setCoachPickerOpen(true)}>
+                <ShieldPlus className="mr-2 h-4 w-4" />
+                Ajouter un coach
+              </Button>
+            )}
             <Button type="button" onClick={() => setIsCreateGroupOpen(true)}>
               <FolderPlus className="mr-2 h-4 w-4" />
               Créer un groupe
             </Button>
           </div>
+        </div>
 
-          <div className="grid gap-3 lg:grid-cols-2">
-            {dashboard?.groups.map((group) => (
-              <div key={group.id} className="rounded-xl border bg-muted/20 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Rechercher un user dans les groupes..."
+        />
+
+        <div className="space-y-4">
+          {groupedUsers.map((group) => (
+            <div key={`${group.kind}-${group.id}`} className="rounded-xl border bg-muted/20 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold">{group.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {group.members.length} membre{group.members.length > 1 ? "s" : ""} • créé par{" "}
-                      {group.createdBy.email}
-                    </p>
+                    <Badge variant="outline">{group.totalApplications} candidatures</Badge>
+                    <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {group.members.length} membre{group.members.length > 1 ? "s" : ""}
+                    {group.createdByEmail ? ` • créé par ${group.createdByEmail}` : ""}
+                  </p>
+                </div>
+                {group.canAddMembers && (
                   <Button
                     type="button"
                     variant="outline"
@@ -290,130 +380,108 @@ export default function CoachPage() {
                     <UserRoundPlus className="mr-2 h-4 w-4" />
                     Ajouter
                   </Button>
-                </div>
+                )}
+              </div>
 
-                <div className="mt-4 space-y-2">
-                  {group.members.length > 0 ? (
-                    group.members.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
-                      >
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                {group.members.length > 0 ? (
+                  group.members.map((entry) => (
+                    <div
+                      key={`${group.id}-${entry.id}`}
+                      role="button"
+                      tabIndex={0}
+                      className="rounded-xl border bg-background px-4 py-3 text-left transition-colors hover:bg-muted/30"
+                      onClick={() => setSelectedUserId(entry.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setSelectedUserId(entry.id);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{member.email}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate font-medium">{entry.email}</p>
+                            <Badge variant="secondary" className="capitalize">
+                              {entry.role}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {entry.groupNames.length > 0 ? entry.groupNames.join(" • ") : "Sans groupe"}
+                          </p>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => void removeMember(group.id, member.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                          <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
+                          {entry.interviewCount > 0 && (
+                            <Badge className="bg-sky-600 text-white hover:bg-sky-600">
+                              {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
+                            </Badge>
+                          )}
+                          {entry.dueCount > 0 && (
+                            <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>
+                          )}
+                          {group.kind === "standard" && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setRemoveMembership({
+                                  groupId: group.id,
+                                  userId: entry.id,
+                                  userEmail: entry.email,
+                                  groupName: group.name,
+                                });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {user.role === "admin" && group.kind === "coaches" && entry.role === "coach" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void demoteCoach(entry.id);
+                              }}
+                            >
+                              Retirer coach
+                            </Button>
+                          )}
+                          {user.role === "admin" && entry.role === "user" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void promoteCoach(entry.id);
+                              }}
+                            >
+                              Coach
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Aucun membre pour le moment.</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold">Utilisateurs</h2>
-              <p className="text-sm text-muted-foreground">
-                Recherche rapide, promotion coach et accès au suivi individuel.
-              </p>
-            </div>
-            {user.role === "admin" && (
-              <Button type="button" variant="outline" onClick={() => setCoachPickerOpen(true)}>
-                <ShieldPlus className="mr-2 h-4 w-4" />
-                Ajouter un coach
-              </Button>
-            )}
-          </div>
-
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Rechercher un email..."
-          />
-
-          <div className="space-y-2">
-            {filteredUsers.map((entry) => (
-              <div
-                key={entry.id}
-                role="button"
-                tabIndex={0}
-                className="flex w-full items-center justify-between gap-4 rounded-xl border px-3 py-3 text-left transition-colors hover:bg-muted/30"
-                onClick={() => setSelectedUserId(entry.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setSelectedUserId(entry.id);
-                  }
-                }}
-              >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-medium">{entry.email}</p>
-                    <Badge variant="secondary" className="capitalize">
-                      {entry.role}
-                    </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+                    Aucun utilisateur correspondant.
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {entry.groupNames.length > 0 ? entry.groupNames.join(" • ") : "Sans groupe"}
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
-                  {entry.interviewCount > 0 && (
-                    <Badge className="bg-sky-600 text-white hover:bg-sky-600">
-                      {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
-                    </Badge>
-                  )}
-                  {entry.dueCount > 0 && <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>}
-                  {user.role === "admin" && entry.role === "user" && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void promoteCoach(entry.id);
-                      }}
-                    >
-                      Coach
-                    </Button>
-                  )}
-                  {user.role === "admin" && entry.role === "coach" && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void demoteCoach(entry.id);
-                      }}
-                    >
-                      Retirer coach
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
-            ))}
-          </div>
-        </section>
-      </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <Sheet open={Boolean(selectedUser)} onOpenChange={(open) => !open && setSelectedUserId(null)}>
-        <SheetContent side="right" className="w-full p-0 sm:max-w-2xl">
+        <SheetContent side="right" className="w-full p-0 sm:max-w-[50vw]">
           {selectedUser && (
             <>
               <SheetHeader className="border-b bg-muted/30 p-5 pr-12">
@@ -485,6 +553,29 @@ export default function CoachPage() {
                               <p className="mt-1 line-clamp-3">{application.interviewDetails}</p>
                             )}
                           </div>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {application.job.url && application.job.url !== "#" ? (
+                            <Button type="button" size="sm" asChild>
+                              <a href={application.job.url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                WEB
+                              </a>
+                            </Button>
+                          ) : null}
+                          {getJobPdfUrl(application.job) && (
+                            <Button type="button" size="sm" variant="outline" asChild>
+                              <a
+                                href={getJobPdfUrl(application.job) ?? undefined}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                PDF
+                              </a>
+                            </Button>
+                          )}
                         </div>
 
                         {(application.notes || application.proofs) && (
@@ -563,6 +654,35 @@ export default function CoachPage() {
           void promoteCoach(entry.id);
         }}
       />
+
+      <Dialog open={Boolean(removeMembership)} onOpenChange={(open) => !open && setRemoveMembership(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Retirer du groupe ?</DialogTitle>
+            <DialogDescription>
+              {removeMembership
+                ? `${removeMembership.userEmail} sera retiré de ${removeMembership.groupName}.`
+                : "Cet utilisateur sera retiré du groupe."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRemoveMembership(null)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (!removeMembership) return;
+                void removeMember(removeMembership.groupId, removeMembership.userId);
+                setRemoveMembership(null);
+              }}
+            >
+              Retirer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
