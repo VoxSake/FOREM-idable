@@ -2,12 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
-import { fr } from "date-fns/locale";
 import {
   BriefcaseBusiness,
   CalendarDays,
   Clock3,
-  Download,
   ExternalLink,
   FileText,
   Plus,
@@ -35,49 +33,20 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { ApplicationsHeaderControls } from "@/features/applications/components/ApplicationsHeaderControls";
+import { ApplicationsInsights } from "@/features/applications/components/ApplicationsInsights";
+import {
+  applicationStatusLabel,
+  ApplicationModeFilter,
+  formatApplicationDate,
+  formatApplicationDateTime,
+  isFollowUpPending,
+  isManualApplication,
+  shouldShowFollowUpDetails,
+} from "@/features/applications/utils";
 import { exportApplicationsToCSV } from "@/lib/exportApplicationsCsv";
+import { exportInterviewsToICS } from "@/lib/exportApplicationsIcs";
 import { ApplicationStatus, JobApplication } from "@/types/application";
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
-  return format(date, "dd MMM yyyy", { locale: fr });
-}
-
-function formatDateTime(value?: string) {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
-  return format(date, "dd MMM yyyy 'a' HH:mm", { locale: fr });
-}
-
-function isFollowUpPending(status: ApplicationStatus) {
-  return status === "in_progress" || status === "follow_up";
-}
-
-function shouldShowFollowUpDetails(status: ApplicationStatus) {
-  return status !== "rejected" && status !== "accepted" && status !== "interview";
-}
-
-function isManualApplication(entry: JobApplication) {
-  return entry.job.url === "#" || entry.job.id.startsWith("manual-");
-}
-
-function statusLabel(status: ApplicationStatus) {
-  switch (status) {
-    case "accepted":
-      return "Acceptée";
-    case "rejected":
-      return "Refusée";
-    case "interview":
-      return "Entretien";
-    case "follow_up":
-      return "Relance à faire";
-    case "in_progress":
-    default:
-      return "En cours";
-  }
-}
 
 export default function ApplicationsPage() {
   const {
@@ -100,13 +69,16 @@ export default function ApplicationsPage() {
   const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [interviewJobId, setInterviewJobId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ApplicationStatus>("all");
+  const [modeFilter, setModeFilter] = useState<ApplicationModeFilter>("all");
   const [manualForm, setManualForm] = useState({
-    company: "",
-    title: "",
-    contractType: "",
-    location: "",
-    appliedAt: format(new Date(), "yyyy-MM-dd"),
-    status: "in_progress" as ApplicationStatus,
+      company: "",
+      title: "",
+      contractType: "",
+      location: "",
+      appliedAt: format(new Date(), "yyyy-MM-dd"),
+      status: "in_progress" as ApplicationStatus,
     notes: "",
     proofs: "",
     url: "",
@@ -116,10 +88,60 @@ export default function ApplicationsPage() {
     interviewDetails: "",
   });
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const dueCount = applications.filter(
     (entry) => isFollowUpPending(entry.status) && !isAfter(new Date(entry.followUpDueAt), now)
   ).length;
+  const upcomingInterviewCount = applications.filter((entry) => {
+    if (!entry.interviewAt) return false;
+    const interviewDate = new Date(entry.interviewAt);
+    return !Number.isNaN(interviewDate.getTime()) && !isBefore(interviewDate, now);
+  }).length;
+  const closedCount = applications.filter(
+    (entry) => entry.status === "accepted" || entry.status === "rejected"
+  ).length;
+
+  const filteredApplications = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return applications.filter((entry) => {
+      if (statusFilter !== "all" && entry.status !== statusFilter) {
+        return false;
+      }
+
+      if (modeFilter === "due") {
+        const dueDate = new Date(entry.followUpDueAt);
+        if (
+          !isFollowUpPending(entry.status) ||
+          Number.isNaN(dueDate.getTime()) ||
+          isAfter(dueDate, now)
+        ) {
+          return false;
+        }
+      }
+
+      if (modeFilter === "interviews" && !entry.interviewAt) {
+        return false;
+      }
+
+      if (modeFilter === "manual" && !isManualApplication(entry)) {
+        return false;
+      }
+
+      if (!normalizedSearch) return true;
+
+      return [
+        entry.job.company || "",
+        entry.job.title,
+        entry.job.location,
+        entry.job.contractType,
+        entry.notes || "",
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+    });
+  }, [applications, modeFilter, now, search, statusFilter]);
 
   const selectedApplication = useMemo(
     () => applications.find((entry) => entry.job.id === detailsJobId) ?? null,
@@ -297,43 +319,34 @@ export default function ApplicationsPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">
-            {applications.length} candidature{applications.length > 1 ? "s" : ""} suivie{applications.length > 1 ? "s" : ""}
-          </p>
-          <p className="text-sm font-medium text-foreground">
-            {dueCount > 0 ? `${dueCount} relance${dueCount > 1 ? "s" : ""} à faire` : "Aucune relance urgente"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => setIsCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Ajouter manuellement
-          </Button>
-          <Button
-            type="button"
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
-            onClick={() => exportApplicationsToCSV(applications)}
-            disabled={applications.length === 0}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export Excel
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={removeSelected}
-            disabled={selectedJobIds.size === 0}
-          >
-            Supprimer la sélection
-          </Button>
-        </div>
-      </div>
+      <ApplicationsHeaderControls
+        displayedCount={filteredApplications.length}
+        totalCount={applications.length}
+        dueCount={dueCount}
+        selectedCount={selectedJobIds.size}
+        canExportCalendar={filteredApplications.some((entry) => entry.interviewAt)}
+        onCreateManual={() => setIsCreateOpen(true)}
+        onExportCsv={() => exportApplicationsToCSV(filteredApplications)}
+        onExportCalendar={() => exportInterviewsToICS(filteredApplications)}
+        onRemoveSelected={removeSelected}
+      />
 
-      {applications.length > 0 ? (
+      <ApplicationsInsights
+        totalCount={applications.length}
+        dueCount={dueCount}
+        upcomingInterviewCount={upcomingInterviewCount}
+        closedCount={closedCount}
+        search={search}
+        statusFilter={statusFilter}
+        modeFilter={modeFilter}
+        onSearchChange={setSearch}
+        onStatusFilterChange={setStatusFilter}
+        onModeFilterChange={setModeFilter}
+      />
+
+      {filteredApplications.length > 0 ? (
         <div className="grid gap-3 xl:grid-cols-2">
-          {applications.map((entry) => {
+          {filteredApplications.map((entry) => {
             const isSelected = selectedJobIds.has(entry.job.id);
             const followUpDue = new Date(entry.followUpDueAt);
             const interviewDate = entry.interviewAt ? new Date(entry.interviewAt) : null;
@@ -389,12 +402,12 @@ export default function ApplicationsPage() {
                           </Badge>
                         )}
                         <Badge variant={isDue ? "destructive" : "secondary"}>
-                          {statusLabel(entry.status)}
+                          {applicationStatusLabel(entry.status)}
                         </Badge>
-                        <Badge variant="outline">Envoyée le {formatDate(entry.appliedAt)}</Badge>
+                        <Badge variant="outline">Envoyée le {formatApplicationDate(entry.appliedAt)}</Badge>
                         {hasInterview && (
                           <Badge className="bg-sky-600 text-white hover:bg-sky-600">
-                            Entretien {formatDateTime(entry.interviewAt)}
+                            Entretien {formatApplicationDateTime(entry.interviewAt)}
                           </Badge>
                         )}
                       </div>
@@ -431,16 +444,16 @@ export default function ApplicationsPage() {
                           Détails
                         </Button>
                         <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                          {shouldShowFollowUpDetails(entry.status) ? (
+                              {shouldShowFollowUpDetails(entry.status) ? (
                             <>
-                              <p>Relance: {formatDate(entry.followUpDueAt)}</p>
+                              <p>Relance: {formatApplicationDate(entry.followUpDueAt)}</p>
                               {isSoon && <p>Bientôt</p>}
-                              {entry.lastFollowUpAt && <p>Dernière: {formatDate(entry.lastFollowUpAt)}</p>}
+                              {entry.lastFollowUpAt && <p>Dernière: {formatApplicationDate(entry.lastFollowUpAt)}</p>}
                             </>
                           ) : (
                             <p>Aucune relance automatique sur une candidature clôturée.</p>
                           )}
-                          {hasInterview && <p>Entretien: {formatDateTime(entry.interviewAt)}</p>}
+                          {hasInterview && <p>Entretien: {formatApplicationDateTime(entry.interviewAt)}</p>}
                         </div>
                         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
                           <Button
@@ -497,15 +510,33 @@ export default function ApplicationsPage() {
         <div className="h-96 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-dashed border-border mt-8">
           <BriefcaseBusiness className="w-12 h-12 text-muted-foreground/30" />
           <p className="text-muted-foreground font-medium text-lg">
-            Aucune candidature suivie pour le moment.
+            {applications.length === 0
+              ? "Aucune candidature suivie pour le moment."
+              : "Aucune candidature ne correspond aux filtres actuels."}
           </p>
           <p className="text-sm text-muted-foreground/70 text-center max-w-md">
-            Utilisez le bouton de candidature depuis les résultats ou encodez une candidature faite ailleurs.
+            {applications.length === 0
+              ? "Utilisez le bouton de candidature depuis les résultats ou encodez une candidature faite ailleurs."
+              : "Ajustez la recherche ou les filtres pour retrouver vos candidatures."}
           </p>
-          <Button type="button" onClick={() => setIsCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Encoder une candidature externe
-          </Button>
+          {applications.length === 0 ? (
+            <Button type="button" onClick={() => setIsCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Encoder une candidature externe
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setModeFilter("all");
+              }}
+            >
+              Réinitialiser les filtres
+            </Button>
+          )}
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
             <Clock3 className="h-3.5 w-3.5" />
             Les relances sont mises en avant 7 jours après l&apos;envoi.
@@ -524,8 +555,8 @@ export default function ApplicationsPage() {
                 </SheetDescription>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <ContractTypeBadge contractType={selectedApplication.job.contractType || "N/A"} />
-                  <Badge variant="outline">Envoyée le {formatDate(selectedApplication.appliedAt)}</Badge>
-                  <Badge variant="secondary">{statusLabel(selectedApplication.status)}</Badge>
+                  <Badge variant="outline">Envoyée le {formatApplicationDate(selectedApplication.appliedAt)}</Badge>
+                  <Badge variant="secondary">{applicationStatusLabel(selectedApplication.status)}</Badge>
                 </div>
               </SheetHeader>
 
@@ -551,9 +582,9 @@ export default function ApplicationsPage() {
                   <p className="font-medium">Relance</p>
                   {shouldShowFollowUpDetails(selectedApplication.status) ? (
                     <>
-                      <p className="text-muted-foreground">Prochaine relance: {formatDate(selectedApplication.followUpDueAt)}</p>
+                      <p className="text-muted-foreground">Prochaine relance: {formatApplicationDate(selectedApplication.followUpDueAt)}</p>
                       {selectedApplication.lastFollowUpAt && (
-                        <p className="text-muted-foreground">Dernière relance: {formatDate(selectedApplication.lastFollowUpAt)}</p>
+                        <p className="text-muted-foreground">Dernière relance: {formatApplicationDate(selectedApplication.lastFollowUpAt)}</p>
                       )}
                     </>
                   ) : (
@@ -567,7 +598,7 @@ export default function ApplicationsPage() {
                   <p className="font-medium">Entretien</p>
                   <p className="text-muted-foreground">
                     {selectedApplication.interviewAt
-                      ? formatDateTime(selectedApplication.interviewAt)
+                      ? formatApplicationDateTime(selectedApplication.interviewAt)
                       : "Aucun entretien planifié"}
                   </p>
                   {selectedApplication.interviewDetails && (
