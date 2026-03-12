@@ -113,8 +113,13 @@ export function AuthSidebarPanel() {
         </div>
 
         {!user ? (
-          <div className="grid grid-cols-2 gap-2">
-            <Button type="button" size="sm" className="w-full" onClick={() => openDialog("login")}>
+          <div className="grid gap-2">
+            <Button
+              type="button"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => openDialog("login")}
+            >
               <LogIn className="mr-2 h-4 w-4" />
               Connexion
             </Button>
@@ -122,7 +127,7 @@ export function AuthSidebarPanel() {
               type="button"
               variant="outline"
               size="sm"
-              className="w-full"
+              className="w-full justify-start"
               onClick={() => openDialog("register")}
             >
               <UserPlus className="mr-2 h-4 w-4" />

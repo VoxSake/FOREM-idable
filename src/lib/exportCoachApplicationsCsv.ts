@@ -27,7 +27,8 @@ export function exportCoachApplicationsToCSV(input: {
   rows: Array<{
     userEmail: string;
     groupName?: string;
-    application: JobApplication;
+    application?: JobApplication;
+    message?: string;
   }>;
 }) {
   if (!input.rows.length) return;
@@ -50,26 +51,50 @@ export function exportCoachApplicationsToCSV(input: {
     "Lien",
   ];
 
-  const rows = input.rows.map(({ userEmail, groupName, application }) =>
-    [
-      userEmail,
-      groupName || "",
-      application.job.company || "",
-      application.job.title,
-      application.job.contractType,
-      application.job.location,
-      formatDate(application.appliedAt),
-      formatDate(application.followUpDueAt),
-      formatDate(application.lastFollowUpAt),
-      formatDate(application.interviewAt),
-      application.interviewDetails || "",
-      STATUS_LABELS[application.status],
-      application.notes || "",
-      application.proofs || "",
-      application.job.url || "",
-    ]
-      .map(escapeCSVCell)
-      .join(",")
+  const rows = input.rows.map(({ userEmail, groupName, application, message }) =>
+    {
+      if (!application) {
+        return [
+          userEmail,
+          groupName || "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Aucune candidature",
+          message || "",
+          "",
+          "",
+        ]
+          .map(escapeCSVCell)
+          .join(",");
+      }
+
+      return [
+        userEmail,
+        groupName || "",
+        application.job.company || "",
+        application.job.title,
+        application.job.contractType,
+        application.job.location,
+        formatDate(application.appliedAt),
+        formatDate(application.followUpDueAt),
+        formatDate(application.lastFollowUpAt),
+        formatDate(application.interviewAt),
+        application.interviewDetails || "",
+        STATUS_LABELS[application.status],
+        application.notes || "",
+        application.proofs || "",
+        application.job.url || "",
+      ]
+        .map(escapeCSVCell)
+        .join(",");
+    }
   );
 
   const csvContent = [headers.join(","), ...rows].join("\n");

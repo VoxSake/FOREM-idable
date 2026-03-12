@@ -304,36 +304,56 @@ export default function CoachPage() {
   };
 
   const exportUserApplications = () => {
-    if (!selectedUser || selectedUser.applications.length === 0) return;
+    if (!selectedUser) return;
 
     exportCoachApplicationsToCSV({
       filenamePrefix: `candidatures-${selectedUser.email.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
-      rows: selectedUser.applications.map((application) => ({
-        userEmail: selectedUser.email,
-        groupName: selectedUser.groupNames[0] ?? "",
-        application,
-      })),
+      rows:
+        selectedUser.applications.length > 0
+          ? selectedUser.applications.map((application) => ({
+              userEmail: selectedUser.email,
+              groupName: selectedUser.groupNames[0] ?? "",
+              application,
+            }))
+          : [
+              {
+                userEmail: selectedUser.email,
+                groupName: selectedUser.groupNames[0] ?? "",
+                message: "Utilisateur sans candidature au moment de l'export.",
+              },
+            ],
     });
+
+    if (selectedUser.applications.length === 0) {
+      setFeedback("Export généré avec une ligne vide: aucune candidature pour cet utilisateur.");
+    }
   };
 
   const exportGroupApplications = (groupName: string, members: CoachUserSummary[]) => {
     const rows = members.flatMap((entry) =>
-      entry.applications.map((application) => ({
-        userEmail: entry.email,
-        groupName,
-        application,
-      }))
+      entry.applications.length > 0
+        ? entry.applications.map((application) => ({
+            userEmail: entry.email,
+            groupName,
+            application,
+          }))
+        : [
+            {
+              userEmail: entry.email,
+              groupName,
+              message: "Aucune candidature pour cet utilisateur dans ce groupe.",
+            },
+          ]
     );
-
-    if (!rows.length) {
-      setFeedback("Aucune candidature à exporter pour ce groupe.");
-      return;
-    }
 
     exportCoachApplicationsToCSV({
       filenamePrefix: `groupe-${groupName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
       rows,
     });
+
+    if (members.every((entry) => entry.applications.length === 0)) {
+      setFeedback("Export généré avec des lignes vides: aucune candidature dans ce groupe.");
+    }
   };
 
   if (isAuthLoading || isLoading) {
