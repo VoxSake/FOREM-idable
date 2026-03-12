@@ -41,7 +41,7 @@ export function AppSidebar() {
     const [currentQuote, setCurrentQuote] = useState(() => FOOTER_QUOTES[0]);
     const navItems =
         user?.role === "coach" || user?.role === "admin"
-            ? [...baseNavItems.slice(0, 3), { title: "Suivi coach", url: "/coach", icon: Users }, baseNavItems[3]]
+            ? [{ title: "Suivi coach", url: "/coach", icon: Users }, ...baseNavItems]
             : baseNavItems;
 
     useEffect(() => {
@@ -75,7 +75,15 @@ export function AppSidebar() {
                         <SidebarMenu>
                             {navItems.map((item) => (
                                 <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild isActive={pathname === item.url}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname === item.url}
+                                        className={
+                                            item.url === "/coach"
+                                                ? "border border-emerald-200 bg-emerald-50/80 font-medium text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100 dark:hover:bg-emerald-950/50"
+                                                : undefined
+                                        }
+                                    >
                                         <Link href={item.url}>
                                             <item.icon className="w-4 h-4" />
                                             <span>{item.title}</span>
