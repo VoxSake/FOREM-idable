@@ -147,3 +147,27 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   return result.rows[0] ?? null;
 }
+
+export async function setUserPassword(userId: number, password: string) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const passwordHash = hashPassword(password);
+  await db.query(
+    `UPDATE users
+     SET password_hash = $2
+     WHERE id = $1`,
+    [userId, passwordHash]
+  );
+}
+
+export async function deleteUserAccount(userId: number) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  await db.query(
+    `DELETE FROM users
+     WHERE id = $1`,
+    [userId]
+  );
+}

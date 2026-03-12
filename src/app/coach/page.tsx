@@ -9,6 +9,7 @@ import {
   FileText,
   FolderPlus,
   LoaderCircle,
+  LockKeyhole,
   Trash2,
   UserRoundPlus,
   X,
@@ -83,6 +84,15 @@ export default function CoachPage() {
     groupId: number;
     groupName: string;
   } | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<{
+    userId: number;
+    email: string;
+  } | null>(null);
+  const [deleteUserTarget, setDeleteUserTarget] = useState<{
+    userId: number;
+    email: string;
+  } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
 
@@ -303,6 +313,50 @@ export default function CoachPage() {
       return;
     }
 
+    await loadDashboard();
+  };
+
+  const changeUserPassword = async () => {
+    if (!passwordTarget || newPassword.length < 8) {
+      setFeedback("Mot de passe invalide.");
+      return;
+    }
+
+    const response = await fetch(`/api/admin/users/${passwordTarget.userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: newPassword }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setFeedback(data.error || "Changement de mot de passe impossible.");
+      return;
+    }
+
+    setFeedback(`Mot de passe mis à jour pour ${passwordTarget.email}.`);
+    setPasswordTarget(null);
+    setNewPassword("");
+  };
+
+  const deleteUser = async () => {
+    if (!deleteUserTarget) return;
+
+    const response = await fetch(`/api/admin/users/${deleteUserTarget.userId}`, {
+      method: "DELETE",
+    });
+
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setFeedback(data.error || "Suppression utilisateur impossible.");
+      return;
+    }
+
+    if (selectedUserId === deleteUserTarget.userId) {
+      setSelectedUserId(null);
+    }
+    setFeedback(`Compte supprimé: ${deleteUserTarget.email}.`);
+    setDeleteUserTarget(null);
     await loadDashboard();
   };
 
@@ -607,6 +661,39 @@ export default function CoachPage() {
                     <Download className="mr-2 h-4 w-4" />
                     Export CSV
                   </Button>
+                  {user.role === "admin" && (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setPasswordTarget({
+                            userId: selectedUser.id,
+                            email: selectedUser.email,
+                          })
+                        }
+                      >
+                        <LockKeyhole className="mr-2 h-4 w-4" />
+                        Mot de passe
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() =>
+                          setDeleteUserTarget({
+                            userId: selectedUser.id,
+                            email: selectedUser.email,
+                          })
+                        }
+                        disabled={selectedUser.id === user.id}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Supprimer
+                      </Button>
+                    </>
+                  )}
                 </div>
               </SheetHeader>
 
@@ -805,6 +892,72 @@ export default function CoachPage() {
                 setRemoveGroup(null);
               }}
             >
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(passwordTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPasswordTarget(null);
+            setNewPassword("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Changer le mot de passe</DialogTitle>
+            <DialogDescription>
+              {passwordTarget
+                ? `Définir un nouveau mot de passe pour ${passwordTarget.email}.`
+                : "Définir un nouveau mot de passe."}
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            type="password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            placeholder="8 caractères minimum"
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPasswordTarget(null);
+                setNewPassword("");
+              }}
+            >
+              Annuler
+            </Button>
+            <Button type="button" onClick={changeUserPassword} disabled={newPassword.length < 8}>
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deleteUserTarget)}
+        onOpenChange={(open) => !open && setDeleteUserTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer ce compte ?</DialogTitle>
+            <DialogDescription>
+              {deleteUserTarget
+                ? `Le compte ${deleteUserTarget.email} et ses données seront supprimés.`
+                : "Le compte et ses données seront supprimés."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteUserTarget(null)}>
+              Annuler
+            </Button>
+            <Button type="button" variant="destructive" onClick={deleteUser}>
               Supprimer
             </Button>
           </DialogFooter>
