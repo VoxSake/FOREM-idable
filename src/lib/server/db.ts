@@ -47,6 +47,51 @@ CREATE TABLE IF NOT EXISTS user_state (
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS user_favorites (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  job_id TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  job JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, job_id)
+);
+
+CREATE INDEX IF NOT EXISTS user_favorites_user_position_idx
+  ON user_favorites(user_id, position);
+
+CREATE TABLE IF NOT EXISTS user_applications (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  job_id TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  application JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, job_id)
+);
+
+CREATE INDEX IF NOT EXISTS user_applications_user_position_idx
+  ON user_applications(user_id, position);
+
+CREATE TABLE IF NOT EXISTS user_search_history (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  entry_id TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  entry JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, entry_id)
+);
+
+CREATE INDEX IF NOT EXISTS user_search_history_user_position_idx
+  ON user_search_history(user_id, position);
+
+CREATE TABLE IF NOT EXISTS user_settings (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  theme TEXT,
+  analytics_consent TEXT,
+  locations_cache JSONB,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 export async function ensureDatabase() {
