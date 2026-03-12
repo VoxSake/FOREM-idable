@@ -32,6 +32,7 @@ export function useSettings() {
     useEffect(() => {
         if (isLoaded) {
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            window.dispatchEvent(new Event("forem-idable:local-state-changed"));
         }
     }, [settings, isLoaded]);
 

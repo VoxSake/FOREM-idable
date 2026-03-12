@@ -12,6 +12,7 @@ import {
     setAnalyticsConsentChoice,
     useAnalyticsConsentChoice,
 } from "@/features/consent/analyticsConsent";
+import { AuthSettingsPanel } from "@/components/auth/AuthSettingsPanel";
 import { ALL_STORAGE_KEYS } from "@/lib/storageKeys";
 import { applySyncSnapshot, createSyncSnapshot, decodeSyncToken, encodeSyncToken } from "@/lib/syncToken";
 
@@ -39,6 +40,8 @@ export default function SettingsPage() {
             </div>
 
             <div className="bg-card rounded-xl border shadow-sm p-6 space-y-8">
+                <AuthSettingsPanel />
+
                 {/* Apparence */}
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold">Apparence</h2>
@@ -48,7 +51,10 @@ export default function SettingsPage() {
                         <Label className="text-base">Thème de l&apos;application</Label>
                         <RadioGroup
                             defaultValue={theme}
-                            onValueChange={(val) => setTheme(val)}
+                            onValueChange={(val) => {
+                                setTheme(val);
+                                window.dispatchEvent(new Event("forem-idable:local-state-changed"));
+                            }}
                             className="flex flex-col space-y-2 mt-2"
                         >
                             <div className="flex items-center space-x-2">

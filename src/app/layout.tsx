@@ -6,6 +6,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 import { runtimeConfig } from "@/config/runtime";
 import { AnalyticsConsent } from "@/components/consent/AnalyticsConsent";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { AuthSync } from "@/components/auth/AuthSync";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,18 +52,21 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SidebarProvider>
-            <AppSidebar />
-            <main className="flex-1 overflow-x-hidden flex flex-col w-full min-h-screen">
-              <header className="h-14 flex items-center border-b px-4 lg:hidden">
-                <SidebarTrigger />
-                <ForemIdableLogo className="ml-4 h-7" />
-              </header>
-              <div className="flex-1 p-4 lg:p-8 bg-muted/10">
-                {children}
-              </div>
-            </main>
-          </SidebarProvider>
+          <AuthProvider>
+            <AuthSync />
+            <SidebarProvider>
+              <AppSidebar />
+              <main className="flex-1 overflow-x-hidden flex flex-col w-full min-h-screen">
+                <header className="h-14 flex items-center border-b px-4 lg:hidden">
+                  <SidebarTrigger />
+                  <ForemIdableLogo className="ml-4 h-7" />
+                </header>
+                <div className="flex-1 p-4 lg:p-8 bg-muted/10">
+                  {children}
+                </div>
+              </main>
+            </SidebarProvider>
+          </AuthProvider>
         </ThemeProvider>
         <AnalyticsConsent
           umamiEnabled={umamiEnabled}

@@ -91,7 +91,10 @@ export function AppSidebar() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                        onClick={() => {
+                            setTheme(theme === "dark" ? "light" : "dark");
+                            window.dispatchEvent(new Event("forem-idable:local-state-changed"));
+                        }}
                         className="rounded-full"
                     >
                         <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

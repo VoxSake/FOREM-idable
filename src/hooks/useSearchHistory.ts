@@ -31,6 +31,7 @@ export function useSearchHistory() {
   useEffect(() => {
     if (!isLoaded) return;
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+    window.dispatchEvent(new Event("forem-idable:local-state-changed"));
   }, [history, isLoaded]);
 
   const addEntry = (state: SearchQuery) => {

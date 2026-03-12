@@ -23,6 +23,7 @@ export function useFavorites() {
     useEffect(() => {
         if (isLoaded) {
             localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+            window.dispatchEvent(new Event("forem-idable:local-state-changed"));
         }
     }, [favorites, isLoaded]);
 

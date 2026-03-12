@@ -202,7 +202,8 @@ export default function ApplicationsPage() {
 
       {applications.length > 0 ? (
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
-          <Table className="table-fixed">
+          <div className="overflow-x-auto">
+          <Table className="table-fixed min-w-[1180px]">
             <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="w-12">Sel.</TableHead>
@@ -395,6 +396,7 @@ export default function ApplicationsPage() {
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
       ) : (
         <div className="h-96 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-dashed border-border mt-8">
