@@ -396,7 +396,7 @@ export default function ApplicationsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_120px] lg:items-start">
+                      <div className="space-y-2">
                         <select
                           className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                           value={entry.status}
@@ -412,23 +412,19 @@ export default function ApplicationsPage() {
                           <option value="rejected">Refusée</option>
                         </select>
 
-                        <div className="grid gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-full"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setDetailsJobId(entry.job.id);
-                            }}
-                          >
-                            Détails
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
+                        {renderOfferButtons(entry)}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-full"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setDetailsJobId(entry.job.id);
+                          }}
+                        >
+                          Détails
+                        </Button>
                         <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                           {shouldShowFollowUpDetails(entry.status) ? (
                             <>
@@ -441,52 +437,48 @@ export default function ApplicationsPage() {
                           )}
                           {hasInterview && <p>Entretien: {formatDateTime(entry.interviewAt)}</p>}
                         </div>
-
-                        <div className="space-y-2">
-                          {renderOfferButtons(entry)}
-                          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-8 w-full"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                markFollowUpDone(entry.job.id);
-                              }}
-                              disabled={entry.status === "accepted"}
-                            >
-                              <Clock3 className="mr-2 h-4 w-4" />
-                              Relancer
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-8 w-full"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openInterviewModal(entry);
-                              }}
-                              disabled={entry.status === "accepted" || entry.status === "rejected"}
-                            >
-                              <CalendarDays className="mr-2 h-4 w-4" />
-                              Entretien
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 self-center text-destructive hover:text-destructive"
-                              title="Supprimer"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setDeleteJobId(entry.job.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-full"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              markFollowUpDone(entry.job.id);
+                            }}
+                            disabled={entry.status === "accepted"}
+                          >
+                            <Clock3 className="mr-2 h-4 w-4" />
+                            Relancer
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-full"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openInterviewModal(entry);
+                            }}
+                            disabled={entry.status === "accepted" || entry.status === "rejected"}
+                          >
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            Entretien
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 self-center text-destructive hover:text-destructive"
+                            title="Supprimer"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setDeleteJobId(entry.job.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
