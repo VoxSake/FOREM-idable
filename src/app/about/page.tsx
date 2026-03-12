@@ -3,6 +3,22 @@ import Link from "next/link";
 const RECENT_UPDATES = [
   {
     month: "Mars 2026",
+    text: "Ajout d'une page Confidentialité, d'un consentement statistiques clarifié et de variables d'environnement dédiées pour personnaliser les informations RGPD.",
+  },
+  {
+    month: "Mars 2026",
+    text: "Mise en place d'une API externe sécurisée pour les comptes coach et admin, avec clés API Bearer et exports JSON / CSV compatibles Excel et Power Query.",
+  },
+  {
+    month: "Mars 2026",
+    text: "Arrivée des rôles user, coach et admin, avec gestion de groupes, suivi des candidatures et exports coach par utilisateur ou par groupe.",
+  },
+  {
+    month: "Mars 2026",
+    text: "Ajout du suivi complet des candidatures: relances, entretiens, export CSV, synchronisation multi-appareils et interface dédiée.",
+  },
+  {
+    month: "Mars 2026",
     text: "Tracking optionnel via Umami, activable par variables d'environnement.",
   },
   {
