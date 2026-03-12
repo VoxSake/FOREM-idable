@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, X } from "lucide-react";
+import { CheckSquare, Send, X } from "lucide-react";
 import { Job } from "@/types/job";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +10,15 @@ interface SelectionPanelProps {
   selectedJobs: Job[];
   onReset: () => void;
   onRemove: (job: Job) => void;
+  onSendToApplications: () => void;
 }
 
-export function SelectionPanel({ selectedJobs, onReset, onRemove }: SelectionPanelProps) {
+export function SelectionPanel({
+  selectedJobs,
+  onReset,
+  onRemove,
+  onSendToApplications,
+}: SelectionPanelProps) {
   if (selectedJobs.length === 0) return null;
 
   return (
@@ -22,9 +28,15 @@ export function SelectionPanel({ selectedJobs, onReset, onRemove }: SelectionPan
           <CheckSquare className="w-4 h-4" />
           Sélection ({selectedJobs.length})
         </h2>
-        <Button variant="ghost" size="sm" onClick={onReset}>
-          Réinitialiser
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={onSendToApplications}>
+            <Send className="mr-2 h-4 w-4" />
+            Envoyer vers Candidatures
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onReset}>
+            Réinitialiser
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {selectedJobs.map((job) => (

@@ -15,6 +15,7 @@ import { ExportDialog } from "@/features/jobs/components/ExportDialog";
 import { fromSearchParams, toSearchPath } from "@/features/jobs/utils/searchUrl";
 import { Job } from "@/types/job";
 import { JobDetailsSheet } from "@/features/jobs/components/JobDetailsSheet";
+import { useApplications } from "@/hooks/useApplications";
 
 function DashboardPageContent() {
   const router = useRouter();
@@ -42,6 +43,7 @@ function DashboardPageContent() {
     toggleSelection,
     resetSelection,
   } = useSelectionJobs();
+  const { addApplication } = useApplications();
   const {
     isExportDialogOpen,
     setIsExportDialogOpen,
@@ -123,7 +125,15 @@ function DashboardPageContent() {
 
       {hasSearched && (
         <div className="space-y-4">
-          <SelectionPanel selectedJobs={selectedJobs} onReset={resetSelection} onRemove={toggleSelection} />
+          <SelectionPanel
+            selectedJobs={selectedJobs}
+            onReset={resetSelection}
+            onRemove={toggleSelection}
+            onSendToApplications={() => {
+              selectedJobs.forEach((job) => addApplication(job));
+              resetSelection();
+            }}
+          />
 
           <ResultsToolbar
             jobsCount={jobs.length}
