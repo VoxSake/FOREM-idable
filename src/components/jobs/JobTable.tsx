@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Job } from "@/types/job";
-import { Heart, ExternalLink, FileText, Send } from "lucide-react";
-import { useFavorites } from "@/hooks/useFavorites";
+import { ExternalLink, FileText, Send } from "lucide-react";
 import { useApplications } from "@/hooks/useApplications";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
@@ -55,8 +54,8 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
         cell: "hidden lg:table-cell",
     },
     actions: {
-        head: "text-right w-[124px] sm:w-[220px]",
-        cell: "whitespace-nowrap w-[124px] sm:w-[220px]",
+        head: "text-right w-[96px] sm:w-[172px]",
+        cell: "whitespace-nowrap w-[96px] sm:w-[172px]",
     },
 };
 export function JobTable({
@@ -69,7 +68,6 @@ export function JobTable({
     onToggleSelection,
     onOpenDetails,
 }: JobTableProps) {
-    const { isFavorite, addFavorite, removeFavorite, isLoaded } = useFavorites();
     const {
         isApplied,
         addApplication,
@@ -133,7 +131,6 @@ export function JobTable({
             header: "Actions",
             cell: ({ row }) => {
                 const job = row.original;
-                const fav = isFavorite(job.id);
                 const applied = isApplied(job.id);
                 const pdfUrl = getJobPdfUrl(job);
                 const isSelected = selectedJobIds?.has(job.id) ?? false;
@@ -150,17 +147,6 @@ export function JobTable({
                                 aria-label="Sélectionner l'offre"
                             />
                         )}
-
-                        <Button
-                            variant={fav ? "secondary" : "ghost"}
-                            size="icon"
-                            className={fav ? "text-rose-500 hover:text-rose-600 bg-rose-100/50 hover:bg-rose-100 dark:bg-rose-950/50" : "text-muted-foreground transition-colors hover:text-rose-500"}
-                            onClick={() => fav ? removeFavorite(job.id) : addFavorite(job)}
-                            title={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
-                            disabled={!isLoaded}
-                        >
-                            <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
-                        </Button>
 
                         <Button
                             variant={applied ? "secondary" : "ghost"}

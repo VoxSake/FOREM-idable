@@ -1,6 +1,6 @@
 # FOREM-idable
 
-Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, favoris, export CSV, comparaison d'offres et filtres localités multi-sélection.
+Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, suivi de candidatures, export CSV, comparaison d'offres et filtres localités multi-sélection.
 
 ## Stack
 
@@ -15,7 +15,6 @@ Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, favoris, 
 - Filtres localités multi-sélection (régions, provinces, arrondissements, communes, localités)
 - Tableau d'offres compact (pagination 15)
 - Bouton PDF direct par offre quand disponible (proxy serveur)
-- Favoris en local
 - Suivi des candidatures, relances et entretiens
 - Comptes `user` / `coach` / `admin`
 - Synchronisation multi-device via compte Postgres
