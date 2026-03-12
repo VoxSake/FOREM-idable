@@ -71,27 +71,24 @@ export default function CoachPage() {
       <CoachUserSheet
         currentUserId={coach.user.id}
         isAdmin={coach.user.role === "admin"}
+        canEditUser={coach.canEditSelectedUser}
         open={Boolean(coach.selectedUser)}
         user={coach.selectedUser}
         onOpenChange={(open) => !open && coach.setSelectedUserId(null)}
         onExport={coach.exportUserApplications}
-        onEditProfile={() => {
+        onEdit={() => {
           if (!coach.selectedUser) return;
-          coach.setProfileTarget({
+          coach.setEditTarget({
             userId: coach.selectedUser.id,
             email: coach.selectedUser.email,
             firstName: coach.selectedUser.firstName,
             lastName: coach.selectedUser.lastName,
+            role: coach.selectedUser.role,
           });
           coach.setEditedFirstName(coach.selectedUser.firstName);
           coach.setEditedLastName(coach.selectedUser.lastName);
-        }}
-        onChangePassword={() => {
-          if (!coach.selectedUser) return;
-          coach.setPasswordTarget({
-            userId: coach.selectedUser.id,
-            email: coach.selectedUser.email,
-          });
+          coach.setNewPassword("");
+          coach.setConfirmNewPassword("");
         }}
         onDeleteUser={() => {
           if (!coach.selectedUser) return;
@@ -126,32 +123,25 @@ export default function CoachPage() {
           void coach.deleteGroup(coach.removeGroup.groupId);
           coach.setRemoveGroup(null);
         }}
-        passwordTarget={coach.passwordTarget}
+        editTarget={coach.editTarget}
+        editedFirstName={coach.editedFirstName}
+        editedLastName={coach.editedLastName}
         newPassword={coach.newPassword}
         confirmNewPassword={coach.confirmNewPassword}
+        onEditedFirstNameChange={coach.setEditedFirstName}
+        onEditedLastNameChange={coach.setEditedLastName}
         onNewPasswordChange={coach.setNewPassword}
         onConfirmNewPasswordChange={coach.setConfirmNewPassword}
-        onPasswordOpenChange={(open) => {
+        onEditOpenChange={(open) => {
           if (!open) {
-            coach.setPasswordTarget(null);
+            coach.setEditTarget(null);
+            coach.setEditedFirstName("");
+            coach.setEditedLastName("");
             coach.setNewPassword("");
             coach.setConfirmNewPassword("");
           }
         }}
-        onConfirmPasswordChange={() => void coach.changeUserPassword()}
-        profileTarget={coach.profileTarget}
-        editedFirstName={coach.editedFirstName}
-        editedLastName={coach.editedLastName}
-        onEditedFirstNameChange={coach.setEditedFirstName}
-        onEditedLastNameChange={coach.setEditedLastName}
-        onProfileOpenChange={(open) => {
-          if (!open) {
-            coach.setProfileTarget(null);
-            coach.setEditedFirstName("");
-            coach.setEditedLastName("");
-          }
-        }}
-        onConfirmProfileChange={() => void coach.updateUserProfile()}
+        onConfirmEdit={() => void coach.updateManagedUser()}
         deleteUserTarget={coach.deleteUserTarget}
         onDeleteUserOpenChange={(open) => !open && coach.setDeleteUserTarget(null)}
         onConfirmDeleteUser={() => void coach.deleteUser()}

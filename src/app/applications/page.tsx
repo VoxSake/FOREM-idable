@@ -55,6 +55,10 @@ function isFollowUpPending(status: ApplicationStatus) {
   return status === "in_progress" || status === "follow_up";
 }
 
+function shouldShowFollowUpDetails(status: ApplicationStatus) {
+  return status !== "rejected" && status !== "accepted" && status !== "interview";
+}
+
 function statusLabel(status: ApplicationStatus) {
   switch (status) {
     case "accepted":
@@ -389,10 +393,10 @@ export default function ApplicationsPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-                      <div className="space-y-3">
+                    <div className="space-y-3">
+                      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
                         <select
-                          className="h-9 w-full rounded-md border bg-background px-3 text-sm sm:w-[180px]"
+                          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                           value={entry.status}
                           onClick={(event) => event.stopPropagation()}
                           onChange={(event) =>
@@ -406,16 +410,7 @@ export default function ApplicationsPage() {
                           <option value="rejected">Refusée</option>
                         </select>
 
-                        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                          <p>Relance: {formatDate(entry.followUpDueAt)}</p>
-                          {isSoon && <p>Bientôt</p>}
-                          {entry.lastFollowUpAt && <p>Dernière: {formatDate(entry.lastFollowUpAt)}</p>}
-                          {hasInterview && <p>Entretien: {formatDateTime(entry.interviewAt)}</p>}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2 lg:w-[260px]">
-                        <div className="space-y-2">
+                        <div className="grid gap-2">
                           {renderOfferButtons(entry)}
                           <Button
                             type="button"
@@ -430,6 +425,21 @@ export default function ApplicationsPage() {
                             Détails
                           </Button>
                         </div>
+                      </div>
+
+                      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
+                        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                          {shouldShowFollowUpDetails(entry.status) ? (
+                            <>
+                              <p>Relance: {formatDate(entry.followUpDueAt)}</p>
+                              {isSoon && <p>Bientôt</p>}
+                              {entry.lastFollowUpAt && <p>Dernière: {formatDate(entry.lastFollowUpAt)}</p>}
+                            </>
+                          ) : (
+                            <p>Aucune relance automatique sur une candidature clôturée.</p>
+                          )}
+                          {hasInterview && <p>Entretien: {formatDateTime(entry.interviewAt)}</p>}
+                        </div>
 
                         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
                           <Button
@@ -441,7 +451,7 @@ export default function ApplicationsPage() {
                               event.stopPropagation();
                               markFollowUpDone(entry.job.id);
                             }}
-                            disabled={entry.status === "accepted" || entry.status === "rejected"}
+                            disabled={entry.status === "accepted"}
                           >
                             <Clock3 className="mr-2 h-4 w-4" />
                             Relancer
@@ -538,9 +548,17 @@ export default function ApplicationsPage() {
 
                 <div className="space-y-2">
                   <p className="font-medium">Relance</p>
-                  <p className="text-muted-foreground">Prochaine relance: {formatDate(selectedApplication.followUpDueAt)}</p>
-                  {selectedApplication.lastFollowUpAt && (
-                    <p className="text-muted-foreground">Dernière relance: {formatDate(selectedApplication.lastFollowUpAt)}</p>
+                  {shouldShowFollowUpDetails(selectedApplication.status) ? (
+                    <>
+                      <p className="text-muted-foreground">Prochaine relance: {formatDate(selectedApplication.followUpDueAt)}</p>
+                      {selectedApplication.lastFollowUpAt && (
+                        <p className="text-muted-foreground">Dernière relance: {formatDate(selectedApplication.lastFollowUpAt)}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      Aucune relance automatique sur une candidature clôturée.
+                    </p>
                   )}
                 </div>
 
@@ -588,8 +606,7 @@ export default function ApplicationsPage() {
                       className="w-full"
                       onClick={() => markFollowUpDone(selectedApplication.job.id)}
                       disabled={
-                        selectedApplication.status === "accepted" ||
-                        selectedApplication.status === "rejected"
+                        selectedApplication.status === "accepted"
                       }
                     >
                       Relancer

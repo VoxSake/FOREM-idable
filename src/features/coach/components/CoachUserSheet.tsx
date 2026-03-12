@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ExternalLink, FilePenLine, FileText, LockKeyhole, Trash2 } from "lucide-react";
+import { Download, ExternalLink, FilePenLine, FileText, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,24 +22,24 @@ import { CoachUserSummary } from "@/types/coach";
 interface CoachUserSheetProps {
   currentUserId: number | undefined;
   isAdmin: boolean;
+  canEditUser: boolean;
   open: boolean;
   user: CoachUserSummary | null;
   onOpenChange: (open: boolean) => void;
   onExport: () => void;
-  onEditProfile: () => void;
-  onChangePassword: () => void;
+  onEdit: () => void;
   onDeleteUser: () => void;
 }
 
 export function CoachUserSheet({
   currentUserId,
   isAdmin,
+  canEditUser,
   open,
   user,
   onOpenChange,
   onExport,
-  onEditProfile,
-  onChangePassword,
+  onEdit,
   onDeleteUser,
 }: CoachUserSheetProps) {
   return (
@@ -71,16 +71,16 @@ export function CoachUserSheet({
                   <Download className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
+                {canEditUser && (
+                  <>
+                    <Button type="button" size="sm" variant="outline" onClick={onEdit}>
+                      <FilePenLine className="mr-2 h-4 w-4" />
+                      Editer
+                    </Button>
+                  </>
+                )}
                 {isAdmin && (
                   <>
-                    <Button type="button" size="sm" variant="outline" onClick={onEditProfile}>
-                      <FilePenLine className="mr-2 h-4 w-4" />
-                      Nom / prénom
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={onChangePassword}>
-                      <LockKeyhole className="mr-2 h-4 w-4" />
-                      Mot de passe
-                    </Button>
                     <Button
                       type="button"
                       size="sm"
@@ -132,9 +132,17 @@ export function CoachUserSheet({
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
                           <p>Envoyée: {formatCoachDate(application.appliedAt)}</p>
-                          <p>Relance: {formatCoachDate(application.followUpDueAt)}</p>
-                          {application.lastFollowUpAt && (
-                            <p>Dernière relance: {formatCoachDate(application.lastFollowUpAt)}</p>
+                          {application.status === "rejected" ||
+                          application.status === "accepted" ||
+                          application.status === "interview" ? (
+                            <p>Aucune relance automatique</p>
+                          ) : (
+                            <>
+                              <p>Relance: {formatCoachDate(application.followUpDueAt)}</p>
+                              {application.lastFollowUpAt && (
+                                <p>Dernière relance: {formatCoachDate(application.lastFollowUpAt)}</p>
+                              )}
+                            </>
                           )}
                         </div>
                         <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">

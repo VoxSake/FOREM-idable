@@ -13,9 +13,8 @@ import { Input } from "@/components/ui/input";
 import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import {
   CoachDeleteUserTarget,
+  CoachEditTarget,
   CoachMemberPickerGroup,
-  CoachPasswordTarget,
-  CoachProfileTarget,
   CoachRemoveGroupTarget,
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
@@ -37,20 +36,17 @@ interface CoachDialogsProps {
   removeGroup: CoachRemoveGroupTarget | null;
   onRemoveGroupOpenChange: (open: boolean) => void;
   onConfirmRemoveGroup: () => void;
-  passwordTarget: CoachPasswordTarget | null;
-  newPassword: string;
-  confirmNewPassword: string;
-  onNewPasswordChange: (value: string) => void;
-  onConfirmNewPasswordChange: (value: string) => void;
-  onPasswordOpenChange: (open: boolean) => void;
-  onConfirmPasswordChange: () => void;
-  profileTarget: CoachProfileTarget | null;
+  editTarget: CoachEditTarget | null;
   editedFirstName: string;
   editedLastName: string;
+  newPassword: string;
+  confirmNewPassword: string;
   onEditedFirstNameChange: (value: string) => void;
   onEditedLastNameChange: (value: string) => void;
-  onProfileOpenChange: (open: boolean) => void;
-  onConfirmProfileChange: () => void;
+  onNewPasswordChange: (value: string) => void;
+  onConfirmNewPasswordChange: (value: string) => void;
+  onEditOpenChange: (open: boolean) => void;
+  onConfirmEdit: () => void;
   deleteUserTarget: CoachDeleteUserTarget | null;
   onDeleteUserOpenChange: (open: boolean) => void;
   onConfirmDeleteUser: () => void;
@@ -72,20 +68,17 @@ export function CoachDialogs({
   removeGroup,
   onRemoveGroupOpenChange,
   onConfirmRemoveGroup,
-  passwordTarget,
-  newPassword,
-  confirmNewPassword,
-  onNewPasswordChange,
-  onConfirmNewPasswordChange,
-  onPasswordOpenChange,
-  onConfirmPasswordChange,
-  profileTarget,
+  editTarget,
   editedFirstName,
   editedLastName,
+  newPassword,
+  confirmNewPassword,
   onEditedFirstNameChange,
   onEditedLastNameChange,
-  onProfileOpenChange,
-  onConfirmProfileChange,
+  onNewPasswordChange,
+  onConfirmNewPasswordChange,
+  onEditOpenChange,
+  onConfirmEdit,
   deleteUserTarget,
   onDeleteUserOpenChange,
   onConfirmDeleteUser,
@@ -167,54 +160,13 @@ export function CoachDialogs({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(passwordTarget)} onOpenChange={onPasswordOpenChange}>
+      <Dialog open={Boolean(editTarget)} onOpenChange={onEditOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Changer le mot de passe</DialogTitle>
+            <DialogTitle>Editer l&apos;utilisateur</DialogTitle>
             <DialogDescription>
-              {passwordTarget
-                ? `Définir un nouveau mot de passe pour ${passwordTarget.email}.`
-                : "Définir un nouveau mot de passe."}
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            type="password"
-            value={newPassword}
-            onChange={(event) => onNewPasswordChange(event.target.value)}
-            placeholder="8 caractères minimum"
-          />
-          <Input
-            type="password"
-            value={confirmNewPassword}
-            onChange={(event) => onConfirmNewPasswordChange(event.target.value)}
-            placeholder="Confirmer le mot de passe"
-          />
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onPasswordOpenChange(false)}>
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              onClick={onConfirmPasswordChange}
-              disabled={
-                newPassword.length < 8 ||
-                confirmNewPassword.length < 8 ||
-                newPassword !== confirmNewPassword
-              }
-            >
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={Boolean(profileTarget)} onOpenChange={onProfileOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Modifier le profil</DialogTitle>
-            <DialogDescription>
-              {profileTarget
-                ? `Mettre à jour le nom et le prénom de ${profileTarget.email}.`
+              {editTarget
+                ? `Mettre à jour le profil de ${editTarget.email}. Le mot de passe est optionnel.`
                 : "Mettre à jour le profil utilisateur."}
             </DialogDescription>
           </DialogHeader>
@@ -230,14 +182,38 @@ export function CoachDialogs({
               placeholder="Nom"
             />
           </div>
+          <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+            <p className="mb-3 text-sm font-medium text-foreground">Mot de passe</p>
+            <div className="space-y-3">
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(event) => onNewPasswordChange(event.target.value)}
+                placeholder="Laisser vide pour ne pas changer"
+              />
+              <Input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(event) => onConfirmNewPasswordChange(event.target.value)}
+                placeholder="Confirmer le mot de passe"
+              />
+            </div>
+          </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onProfileOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onEditOpenChange(false)}>
               Annuler
             </Button>
             <Button
               type="button"
-              onClick={onConfirmProfileChange}
-              disabled={!editedFirstName.trim() || !editedLastName.trim()}
+              onClick={onConfirmEdit}
+              disabled={
+                !editedFirstName.trim() ||
+                !editedLastName.trim() ||
+                ((newPassword.length > 0 || confirmNewPassword.length > 0) &&
+                  (newPassword.length < 8 ||
+                    confirmNewPassword.length < 8 ||
+                    newPassword !== confirmNewPassword))
+              }
             >
               Enregistrer
             </Button>

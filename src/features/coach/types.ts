@@ -14,21 +14,17 @@ export interface CoachRemoveGroupTarget {
   groupName: string;
 }
 
-export interface CoachPasswordTarget {
+export interface CoachEditTarget {
   userId: number;
   email: string;
+  firstName: string;
+  lastName: string;
+  role: CoachUserSummary["role"];
 }
 
 export interface CoachDeleteUserTarget {
   userId: number;
   email: string;
-}
-
-export interface CoachProfileTarget {
-  userId: number;
-  email: string;
-  firstName: string;
-  lastName: string;
 }
 
 export type CoachMemberPickerGroup = CoachGroupSummary;

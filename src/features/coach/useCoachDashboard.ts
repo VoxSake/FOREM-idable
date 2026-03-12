@@ -9,10 +9,9 @@ import {
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import {
   CoachDeleteUserTarget,
+  CoachEditTarget,
   CoachGroupedUserGroup,
   CoachMemberPickerGroup,
-  CoachPasswordTarget,
-  CoachProfileTarget,
   CoachRemoveGroupTarget,
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
@@ -34,9 +33,8 @@ export function useCoachDashboard() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [removeMembership, setRemoveMembership] = useState<CoachRemoveMembershipTarget | null>(null);
   const [removeGroup, setRemoveGroup] = useState<CoachRemoveGroupTarget | null>(null);
-  const [passwordTarget, setPasswordTarget] = useState<CoachPasswordTarget | null>(null);
+  const [editTarget, setEditTarget] = useState<CoachEditTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
-  const [profileTarget, setProfileTarget] = useState<CoachProfileTarget | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [editedFirstName, setEditedFirstName] = useState("");
@@ -111,6 +109,11 @@ export function useCoachDashboard() {
   const totalApplications = dashboard?.users.reduce((sum, entry) => sum + entry.applicationCount, 0) ?? 0;
   const totalInterviews = dashboard?.users.reduce((sum, entry) => sum + entry.interviewCount, 0) ?? 0;
   const totalDue = dashboard?.users.reduce((sum, entry) => sum + entry.dueCount, 0) ?? 0;
+  const canEditSelectedUser = useMemo(() => {
+    if (!selectedUser || !user) return false;
+    if (user.role === "admin") return true;
+    return selectedUser.role === "user";
+  }, [selectedUser, user]);
 
   const createGroup = async () => {
     if (!groupName.trim()) return;
@@ -206,55 +209,39 @@ export function useCoachDashboard() {
     await loadDashboard();
   };
 
-  const changeUserPassword = async () => {
-    if (!passwordTarget || newPassword.length < 8 || newPassword !== confirmNewPassword) {
-      setFeedback("Mot de passe invalide.");
-      return;
-    }
-
-    const response = await fetch(`/api/admin/users/${passwordTarget.userId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: newPassword }),
-    });
-
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
-    if (!response.ok) {
-      setFeedback(data.error || "Changement de mot de passe impossible.");
-      return;
-    }
-
-    setFeedback(`Mot de passe mis à jour pour ${passwordTarget.email}.`);
-    setPasswordTarget(null);
-    setNewPassword("");
-    setConfirmNewPassword("");
-  };
-
-  const updateUserProfile = async () => {
-    if (!profileTarget || !editedFirstName.trim() || !editedLastName.trim()) {
+  const updateManagedUser = async () => {
+    if (!editTarget || !editedFirstName.trim() || !editedLastName.trim()) {
       setFeedback("Nom et prénom invalides.");
       return;
     }
 
-    const response = await fetch(`/api/admin/users/${profileTarget.userId}`, {
+    if ((newPassword.length > 0 || confirmNewPassword.length > 0) && (newPassword.length < 8 || newPassword !== confirmNewPassword)) {
+      setFeedback("Mot de passe invalide.");
+      return;
+    }
+
+    const response = await fetch(`/api/admin/users/${editTarget.userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         firstName: editedFirstName,
         lastName: editedLastName,
+        password: newPassword || undefined,
       }),
     });
 
     const data = (await response.json().catch(() => ({}))) as { error?: string };
     if (!response.ok) {
-      setFeedback(data.error || "Mise à jour du profil impossible.");
+      setFeedback(data.error || "Mise à jour utilisateur impossible.");
       return;
     }
 
-    setFeedback(`Profil mis à jour pour ${profileTarget.email}.`);
-    setProfileTarget(null);
+    setFeedback(`Utilisateur mis à jour: ${editTarget.email}.`);
+    setEditTarget(null);
     setEditedFirstName("");
     setEditedLastName("");
+    setNewPassword("");
+    setConfirmNewPassword("");
     await loadDashboard();
   };
 
@@ -328,12 +315,10 @@ export function useCoachDashboard() {
     setRemoveMembership,
     removeGroup,
     setRemoveGroup,
-    passwordTarget,
-    setPasswordTarget,
+    editTarget,
+    setEditTarget,
     deleteUserTarget,
     setDeleteUserTarget,
-    profileTarget,
-    setProfileTarget,
     newPassword,
     setNewPassword,
     confirmNewPassword,
@@ -345,6 +330,7 @@ export function useCoachDashboard() {
     search,
     setSearch,
     selectedUser,
+    canEditSelectedUser,
     memberPickerGroup,
     assignableUsers,
     groupedUsers,
@@ -357,8 +343,7 @@ export function useCoachDashboard() {
     removeMember,
     demoteCoach,
     deleteGroup,
-    changeUserPassword,
-    updateUserProfile,
+    updateManagedUser,
     deleteUser,
     exportUserApplications,
     exportGroupApplications,
