@@ -107,6 +107,10 @@ export function CoachUserSheet({
                       className={`rounded-xl border p-4 ${
                         application.status === "interview"
                           ? "border-sky-300 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20"
+                          : application.status === "accepted"
+                            ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20"
+                            : application.status === "rejected"
+                              ? "border-rose-300 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/20"
                           : isDue
                             ? "border-amber-400/70 bg-amber-50/50 dark:bg-amber-950/20"
                             : "bg-card"
