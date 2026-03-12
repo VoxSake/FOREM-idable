@@ -80,7 +80,7 @@ export function AppSidebar() {
                                         isActive={pathname === item.url}
                                         className={
                                             item.url === "/coach"
-                                                ? "border border-emerald-200 bg-emerald-50/80 font-medium text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100 dark:hover:bg-emerald-950/50"
+                                                ? "border border-sky-200 bg-sky-50/80 font-medium text-sky-900 hover:bg-sky-100 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100 dark:hover:bg-sky-950/50"
                                                 : undefined
                                         }
                                     >
