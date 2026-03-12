@@ -15,8 +15,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { useApplications } from "@/hooks/useApplications";
-import { getContractBadgeClass } from "@/features/jobs/utils/contractBadge";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import {
   Dialog,
@@ -270,11 +270,7 @@ export default function ApplicationsPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium ${getContractBadgeClass(entry.job.contractType || "")}`}
-                    >
-                      {entry.job.contractType || "N/A"}
-                    </span>
+                    <ContractTypeBadge contractType={entry.job.contractType || "N/A"} />
                     <Badge variant={isDue ? "destructive" : "secondary"}>{statusLabel(entry.status)}</Badge>
                     <Badge variant="outline">Envoyée le {formatDate(entry.appliedAt)}</Badge>
                   </div>
@@ -356,11 +352,7 @@ export default function ApplicationsPage() {
                           </button>
                         </TableCell>
                         <TableCell className="align-top">
-                          <span
-                            className={`inline-flex max-w-[180px] items-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-medium whitespace-nowrap overflow-hidden text-ellipsis ${getContractBadgeClass(entry.job.contractType || "")}`}
-                          >
-                            {entry.job.contractType || "N/A"}
-                          </span>
+                          <ContractTypeBadge contractType={entry.job.contractType || "N/A"} />
                         </TableCell>
                         <TableCell>{formatDate(entry.appliedAt)}</TableCell>
                         <TableCell className="align-top">
@@ -451,11 +443,7 @@ export default function ApplicationsPage() {
                   {selectedApplication.job.company || "Entreprise non précisée"} • {selectedApplication.job.location}
                 </SheetDescription>
                 <div className="flex flex-wrap gap-2 pt-2">
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium ${getContractBadgeClass(selectedApplication.job.contractType || "")}`}
-                  >
-                    {selectedApplication.job.contractType || "N/A"}
-                  </span>
+                  <ContractTypeBadge contractType={selectedApplication.job.contractType || "N/A"} />
                   <Badge variant="outline">Envoyée le {formatDate(selectedApplication.appliedAt)}</Badge>
                   <Badge variant="secondary">{statusLabel(selectedApplication.status)}</Badge>
                 </div>

@@ -4,7 +4,7 @@ import { CheckSquare, Send, X } from "lucide-react";
 import { Job } from "@/types/job";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getContractBadgeClass } from "@/features/jobs/utils/contractBadge";
+import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 
 interface SelectionPanelProps {
   selectedJobs: Job[];
@@ -54,7 +54,7 @@ export function SelectionPanel({
             </div>
             <div className="flex flex-wrap gap-1">
               <Badge variant="outline">{job.source}</Badge>
-              <Badge className={getContractBadgeClass(job.contractType)}>{job.contractType}</Badge>
+              <ContractTypeBadge contractType={job.contractType} />
             </div>
             <p className="text-xs text-muted-foreground">{job.location}</p>
             <p className="text-xs text-muted-foreground">

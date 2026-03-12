@@ -25,7 +25,7 @@ import { Heart, ExternalLink, FileText, Send } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useApplications } from "@/hooks/useApplications";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
-import { getContractBadgeClass } from "@/features/jobs/utils/contractBadge";
+import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 
 interface JobTableProps {
     data: Job[];
@@ -114,14 +114,7 @@ export function JobTable({
             header: "Contrat",
             cell: ({ row }) => {
                 const type = row.getValue("contractType") as string;
-                return (
-                    <span
-                        title={type}
-                        className={`inline-flex max-w-[180px] items-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-medium whitespace-nowrap overflow-hidden text-ellipsis ${getContractBadgeClass(type)}`}
-                    >
-                        {type}
-                    </span>
-                );
+                return <ContractTypeBadge contractType={type} />;
             }
         },
         {

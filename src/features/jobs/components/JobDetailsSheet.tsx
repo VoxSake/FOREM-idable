@@ -16,7 +16,7 @@ import { getForemOfferId, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { useOfferDetails } from "@/features/jobs/hooks/useOfferDetails";
 import { buildOfferMailtoLink } from "@/features/jobs/utils/shareOfferMail";
 import { JobDetailsActions } from "@/features/jobs/components/JobDetailsActions";
-import { getContractBadgeClass } from "@/features/jobs/utils/contractBadge";
+import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 
 
 interface JobDetailsSheetProps {
@@ -51,7 +51,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
             {job.company || "Entreprise non précisée"} • {job.location}
           </SheetDescription>
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            <Badge className={getContractBadgeClass(job.contractType)}>{job.contractType}</Badge>
+            <ContractTypeBadge contractType={job.contractType} />
             <Badge variant="secondary">{job.source.toUpperCase()}</Badge>
             <Badge variant="outline">
               Publiée le {job.publicationDate ? format(new Date(job.publicationDate), "dd MMM yyyy", { locale: fr }) : "N/A"}

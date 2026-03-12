@@ -20,3 +20,33 @@ export function getContractBadgeClass(contractType: string) {
 
   return "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300";
 }
+
+export function getContractBadgeLabel(contractType: string) {
+  const normalizedType = contractType.toLowerCase();
+
+  if (normalizedType.includes("cdi") || normalizedType.includes("indétermin")) {
+    return "CDI";
+  }
+
+  if (normalizedType.includes("cdd")) {
+    return "CDD";
+  }
+
+  if (normalizedType.includes("intérim") || normalizedType.includes("interim")) {
+    return normalizedType.includes("indétermin") ? "Intérim CDI" : "Intérim";
+  }
+
+  if (normalizedType.includes("temporaire")) {
+    return "Temp.";
+  }
+
+  if (normalizedType.includes("stage")) {
+    return "Stage";
+  }
+
+  if (normalizedType.includes("alternance")) {
+    return "Alternance";
+  }
+
+  return contractType.length > 18 ? `${contractType.slice(0, 15)}...` : contractType;
+}
