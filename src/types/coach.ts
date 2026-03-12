@@ -4,6 +4,8 @@ import { AuthUser, UserRole } from "@/types/auth";
 export interface CoachGroupMember {
   id: number;
   email: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
 }
 
@@ -21,6 +23,8 @@ export interface CoachGroupSummary {
 export interface CoachUserSummary {
   id: number;
   email: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
   groupIds: number[];
   groupNames: string[];

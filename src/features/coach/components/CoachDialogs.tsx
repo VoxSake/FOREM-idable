@@ -15,6 +15,7 @@ import {
   CoachDeleteUserTarget,
   CoachMemberPickerGroup,
   CoachPasswordTarget,
+  CoachProfileTarget,
   CoachRemoveGroupTarget,
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
@@ -41,6 +42,13 @@ interface CoachDialogsProps {
   onNewPasswordChange: (value: string) => void;
   onPasswordOpenChange: (open: boolean) => void;
   onConfirmPasswordChange: () => void;
+  profileTarget: CoachProfileTarget | null;
+  editedFirstName: string;
+  editedLastName: string;
+  onEditedFirstNameChange: (value: string) => void;
+  onEditedLastNameChange: (value: string) => void;
+  onProfileOpenChange: (open: boolean) => void;
+  onConfirmProfileChange: () => void;
   deleteUserTarget: CoachDeleteUserTarget | null;
   onDeleteUserOpenChange: (open: boolean) => void;
   onConfirmDeleteUser: () => void;
@@ -67,6 +75,13 @@ export function CoachDialogs({
   onNewPasswordChange,
   onPasswordOpenChange,
   onConfirmPasswordChange,
+  profileTarget,
+  editedFirstName,
+  editedLastName,
+  onEditedFirstNameChange,
+  onEditedLastNameChange,
+  onProfileOpenChange,
+  onConfirmProfileChange,
   deleteUserTarget,
   onDeleteUserOpenChange,
   onConfirmDeleteUser,
@@ -169,6 +184,43 @@ export function CoachDialogs({
               Annuler
             </Button>
             <Button type="button" onClick={onConfirmPasswordChange} disabled={newPassword.length < 8}>
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(profileTarget)} onOpenChange={onProfileOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier le profil</DialogTitle>
+            <DialogDescription>
+              {profileTarget
+                ? `Mettre à jour le nom et le prénom de ${profileTarget.email}.`
+                : "Mettre à jour le profil utilisateur."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              value={editedFirstName}
+              onChange={(event) => onEditedFirstNameChange(event.target.value)}
+              placeholder="Prénom"
+            />
+            <Input
+              value={editedLastName}
+              onChange={(event) => onEditedLastNameChange(event.target.value)}
+              placeholder="Nom"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onProfileOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={onConfirmProfileChange}
+              disabled={!editedFirstName.trim() || !editedLastName.trim()}
+            >
               Enregistrer
             </Button>
           </DialogFooter>

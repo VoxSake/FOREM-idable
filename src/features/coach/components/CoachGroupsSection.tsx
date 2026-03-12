@@ -4,6 +4,7 @@ import { Download, FolderPlus, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getCoachUserDisplayName } from "@/features/coach/utils";
 import { CoachGroupedUserGroup, CoachRemoveMembershipTarget } from "@/features/coach/types";
 import { CoachUserSummary } from "@/types/coach";
 
@@ -52,7 +53,7 @@ export function CoachGroupsSection({
       <Input
         value={search}
         onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="Rechercher un user dans les groupes..."
+        placeholder="Rechercher par nom, prénom ou email..."
       />
 
       <div className="space-y-4">
@@ -126,11 +127,14 @@ export function CoachGroupsSection({
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 break-all font-medium">{entry.email}</p>
+                          <p className="min-w-0 break-words font-medium">
+                            {getCoachUserDisplayName(entry)}
+                          </p>
                           <Badge variant="secondary" className="capitalize">
                             {entry.role}
                           </Badge>
                         </div>
+                        <p className="break-all text-xs text-muted-foreground">{entry.email}</p>
                         <p className="text-xs text-muted-foreground">
                           {entry.groupNames.length > 0 ? entry.groupNames.join(" • ") : "Sans groupe"}
                         </p>

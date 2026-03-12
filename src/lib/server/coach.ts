@@ -37,11 +37,13 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
     db.query<{
       id: number;
       email: string;
+      first_name: string;
+      last_name: string;
       role: UserRole;
     }>(
-      `SELECT id, email, role
+      `SELECT id, email, first_name, last_name, role
        FROM users
-       ORDER BY email ASC`
+       ORDER BY last_name ASC, first_name ASC, email ASC`
     ),
     db.query<{
       id: number;
@@ -63,15 +65,19 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
       group_id: number;
       user_id: number;
       email: string;
+      first_name: string;
+      last_name: string;
       role: UserRole;
     }>(
       `SELECT coach_group_members.group_id,
               users.id AS user_id,
               users.email,
+              users.first_name,
+              users.last_name,
               users.role
        FROM coach_group_members
        INNER JOIN users ON users.id = coach_group_members.user_id
-       ORDER BY users.email ASC`
+       ORDER BY users.last_name ASC, users.first_name ASC, users.email ASC`
     ),
     db.query<{
       user_id: number;
@@ -106,6 +112,8 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
     group.members.push({
       id: row.user_id,
       email: row.email,
+      firstName: row.first_name,
+      lastName: row.last_name,
       role: row.role,
     });
 
@@ -125,6 +133,8 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
     return {
       id: row.id,
       email: row.email,
+      firstName: row.first_name,
+      lastName: row.last_name,
       role: row.role,
       groupIds: groupIdsByUser.get(row.id) ?? [],
       groupNames: groupNamesByUser.get(row.id) ?? [],

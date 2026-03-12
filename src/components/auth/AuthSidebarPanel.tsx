@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LogIn, LogOut, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +18,17 @@ import { useAuth } from "@/components/auth/AuthProvider";
 
 type AuthMode = "login" | "register";
 
+function getDisplayName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName}`.trim();
+}
+
 export function AuthSidebarPanel() {
   const { user, isLoading, refresh, setUser } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +36,10 @@ export function AuthSidebarPanel() {
   const openDialog = (nextMode: AuthMode) => {
     setMode(nextMode);
     setFeedback(null);
+    if (nextMode === "login") {
+      setFirstName("");
+      setLastName("");
+    }
     setIsOpen(true);
   };
 
@@ -40,11 +51,17 @@ export function AuthSidebarPanel() {
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, firstName, lastName }),
       });
       const data = (await response.json()) as {
         error?: string;
-        user?: { id: number; email: string; role: "user" | "coach" | "admin" };
+        user?: {
+          id: number;
+          email: string;
+          firstName: string;
+          lastName: string;
+          role: "user" | "coach" | "admin";
+        };
       };
 
       if (!response.ok || !data.user) {
@@ -56,6 +73,8 @@ export function AuthSidebarPanel() {
       await refresh();
       setIsOpen(false);
       setEmail("");
+      setFirstName("");
+      setLastName("");
       setPassword("");
       window.location.reload();
     } catch {
@@ -88,10 +107,19 @@ export function AuthSidebarPanel() {
           {user ? (
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 space-y-1">
-                <p className="break-all text-sm font-medium text-foreground">{user.email}</p>
+                <p className="truncate text-sm font-medium text-foreground">
+                  {getDisplayName(user.firstName, user.lastName) || user.email}
+                </p>
+                <p className="break-all text-xs text-muted-foreground">{user.email}</p>
                 <Badge variant="secondary" className="w-fit capitalize">
                   {user.role}
                 </Badge>
+                <Link
+                  href="/account"
+                  className="inline-flex text-xs font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300"
+                >
+                  Mon compte
+                </Link>
               </div>
               <Button
                 type="button"
@@ -151,6 +179,20 @@ export function AuthSidebarPanel() {
           </DialogHeader>
 
           <div className="space-y-3">
+            {mode === "register" ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  placeholder="Prénom"
+                />
+                <Input
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                  placeholder="Nom"
+                />
+              </div>
+            ) : null}
             <Input
               type="email"
               value={email}
@@ -173,7 +215,12 @@ export function AuthSidebarPanel() {
             <Button
               type="button"
               onClick={() => void handleAuth()}
-              disabled={isSubmitting || !email.trim() || password.length < 8}
+              disabled={
+                isSubmitting ||
+                !email.trim() ||
+                password.length < 8 ||
+                (mode === "register" && (!firstName.trim() || !lastName.trim()))
+              }
             >
               {mode === "login" ? "Se connecter" : "Créer le compte"}
             </Button>

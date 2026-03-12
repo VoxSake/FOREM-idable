@@ -24,6 +24,13 @@ export interface CoachDeleteUserTarget {
   email: string;
 }
 
+export interface CoachProfileTarget {
+  userId: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 export type CoachMemberPickerGroup = CoachGroupSummary;
 
 export interface CoachGroupedUserGroup {

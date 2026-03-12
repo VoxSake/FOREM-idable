@@ -29,12 +29,23 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-export async function createUser(email: string, password: string) {
+function normalizeProfileValue(value: string) {
+  return value.trim();
+}
+
+export async function createUser(
+  email: string,
+  password: string,
+  firstName: string,
+  lastName: string
+) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
   const normalizedEmail = normalizeEmail(email);
   const passwordHash = hashPassword(password);
+  const normalizedFirstName = normalizeProfileValue(firstName);
+  const normalizedLastName = normalizeProfileValue(lastName);
   await db.query("BEGIN");
 
   try {
@@ -45,10 +56,10 @@ export async function createUser(email: string, password: string) {
     const nextRole: AuthUser["role"] = existingUsers.rows[0]?.count === "0" ? "admin" : "user";
 
     const result = await db.query<AuthUser>(
-      `INSERT INTO users (email, password_hash, role)
-       VALUES ($1, $2, $3)
-       RETURNING id, email, role`,
-      [normalizedEmail, passwordHash, nextRole]
+      `INSERT INTO users (email, password_hash, first_name, last_name, role)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, email, first_name AS "firstName", last_name AS "lastName", role`,
+      [normalizedEmail, passwordHash, normalizedFirstName, normalizedLastName, nextRole]
     );
 
     await db.query("COMMIT");
@@ -67,10 +78,12 @@ export async function authenticateUser(email: string, password: string) {
   const result = await db.query<{
     id: number;
     email: string;
+    first_name: string;
+    last_name: string;
     role: AuthUser["role"];
     password_hash: string;
   }>(
-    `SELECT id, email, role, password_hash
+    `SELECT id, email, first_name, last_name, role, password_hash
      FROM users
      WHERE email = $1`,
     [normalizedEmail]
@@ -81,7 +94,13 @@ export async function authenticateUser(email: string, password: string) {
     return null;
   }
 
-  return { id: user.id, email: user.email, role: user.role };
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    role: user.role,
+  };
 }
 
 export async function createSession(userId: number) {
@@ -136,7 +155,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   if (!token) return null;
 
   const result = await db.query<AuthUser>(
-    `SELECT users.id, users.email, users.role
+    `SELECT users.id,
+            users.email,
+            users.first_name AS "firstName",
+            users.last_name AS "lastName",
+            users.role
      FROM sessions
      INNER JOIN users ON users.id = sessions.user_id
      WHERE sessions.token_hash = $1
@@ -158,6 +181,19 @@ export async function setUserPassword(userId: number, password: string) {
      SET password_hash = $2
      WHERE id = $1`,
     [userId, passwordHash]
+  );
+}
+
+export async function updateUserProfile(userId: number, firstName: string, lastName: string) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  await db.query(
+    `UPDATE users
+     SET first_name = $2,
+         last_name = $3
+     WHERE id = $1`,
+    [userId, normalizeProfileValue(firstName), normalizeProfileValue(lastName)]
   );
 }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteUserAccount, setUserPassword } from "@/lib/server/auth";
+import { deleteUserAccount, setUserPassword, updateUserProfile } from "@/lib/server/auth";
 import { requireAdminAccess } from "@/lib/server/coach";
 
 function parseUserId(value: string) {
@@ -21,15 +21,30 @@ export async function PATCH(
     const userId = parseUserId(rawUserId);
     const body = await request.json();
     const password = typeof body.password === "string" ? body.password : "";
+    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
+    const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
 
-    if (!userId || password.length < 8) {
-      return NextResponse.json({ error: "Mot de passe invalide." }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: "Utilisateur invalide." }, { status: 400 });
     }
 
-    await setUserPassword(userId, password);
+    if (password) {
+      if (password.length < 8) {
+        return NextResponse.json({ error: "Mot de passe invalide." }, { status: 400 });
+      }
+
+      await setUserPassword(userId, password);
+      return NextResponse.json({ ok: true });
+    }
+
+    if (!firstName || !lastName) {
+      return NextResponse.json({ error: "Nom et prénom invalides." }, { status: 400 });
+    }
+
+    await updateUserProfile(userId, firstName, lastName);
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Changement de mot de passe impossible." }, { status: 500 });
+    return NextResponse.json({ error: "Mise à jour utilisateur impossible." }, { status: 500 });
   }
 }
 

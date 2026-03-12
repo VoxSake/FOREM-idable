@@ -12,6 +12,7 @@ import {
   CoachGroupedUserGroup,
   CoachMemberPickerGroup,
   CoachPasswordTarget,
+  CoachProfileTarget,
   CoachRemoveGroupTarget,
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
@@ -35,7 +36,10 @@ export function useCoachDashboard() {
   const [removeGroup, setRemoveGroup] = useState<CoachRemoveGroupTarget | null>(null);
   const [passwordTarget, setPasswordTarget] = useState<CoachPasswordTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
+  const [profileTarget, setProfileTarget] = useState<CoachProfileTarget | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [editedFirstName, setEditedFirstName] = useState("");
+  const [editedLastName, setEditedLastName] = useState("");
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
 
@@ -224,6 +228,34 @@ export function useCoachDashboard() {
     setNewPassword("");
   };
 
+  const updateUserProfile = async () => {
+    if (!profileTarget || !editedFirstName.trim() || !editedLastName.trim()) {
+      setFeedback("Nom et prénom invalides.");
+      return;
+    }
+
+    const response = await fetch(`/api/admin/users/${profileTarget.userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstName: editedFirstName,
+        lastName: editedLastName,
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setFeedback(data.error || "Mise à jour du profil impossible.");
+      return;
+    }
+
+    setFeedback(`Profil mis à jour pour ${profileTarget.email}.`);
+    setProfileTarget(null);
+    setEditedFirstName("");
+    setEditedLastName("");
+    await loadDashboard();
+  };
+
   const deleteUser = async () => {
     if (!deleteUserTarget) return;
 
@@ -298,8 +330,14 @@ export function useCoachDashboard() {
     setPasswordTarget,
     deleteUserTarget,
     setDeleteUserTarget,
+    profileTarget,
+    setProfileTarget,
     newPassword,
     setNewPassword,
+    editedFirstName,
+    setEditedFirstName,
+    editedLastName,
+    setEditedLastName,
     search,
     setSearch,
     selectedUser,
@@ -316,6 +354,7 @@ export function useCoachDashboard() {
     demoteCoach,
     deleteGroup,
     changeUserPassword,
+    updateUserProfile,
     deleteUser,
     exportUserApplications,
     exportGroupApplications,

@@ -3,6 +3,8 @@ import { fr } from "date-fns/locale";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
 export interface CoachApplicationExportRow {
+  userFirstName: string;
+  userLastName: string;
   userEmail: string;
   groupName?: string;
   application?: JobApplication;
@@ -36,6 +38,8 @@ export function exportCoachApplicationsToCSV(input: {
   if (!input.rows.length) return;
 
   const headers = [
+    "Prénom",
+    "Nom",
     "Utilisateur",
     "Groupe",
     "Entreprise",
@@ -53,10 +57,12 @@ export function exportCoachApplicationsToCSV(input: {
     "Lien",
   ];
 
-  const rows = input.rows.map(({ userEmail, groupName, application, message }) =>
-    {
+  const rows = input.rows.map(
+    ({ userFirstName, userLastName, userEmail, groupName, application, message }) => {
       if (!application) {
         return [
+          userFirstName,
+          userLastName,
           userEmail,
           groupName || "",
           "",
@@ -78,6 +84,8 @@ export function exportCoachApplicationsToCSV(input: {
       }
 
       return [
+        userFirstName,
+        userLastName,
         userEmail,
         groupName || "",
         application.job.company || "",

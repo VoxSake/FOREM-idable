@@ -16,6 +16,8 @@ import { UserRole } from "@/types/auth";
 interface PickerUser {
   id: number;
   email: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
 }
 
@@ -41,7 +43,12 @@ export function UserPickerDialog({
   const filteredUsers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return users;
-    return users.filter((user) => user.email.toLowerCase().includes(normalized));
+    return users.filter((user) =>
+      [user.firstName, user.lastName, `${user.firstName} ${user.lastName}`.trim(), user.email]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalized)
+    );
   }, [query, users]);
 
   return (
@@ -73,7 +80,7 @@ export function UserPickerDialog({
           {filteredUsers.map((user) => (
             <CommandItem
               key={user.id}
-              value={`${user.email}-${user.role}`}
+              value={`${user.firstName}-${user.lastName}-${user.email}-${user.role}`}
               onSelect={() => {
                 onSelect(user);
                 onOpenChange(false);
@@ -82,8 +89,10 @@ export function UserPickerDialog({
               className="flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <p className="truncate font-medium">{user.email}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                <p className="truncate font-medium">
+                  {[user.firstName, user.lastName].filter(Boolean).join(" ") || user.email}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
               </div>
               <Badge variant="secondary" className="capitalize">
                 {user.role}

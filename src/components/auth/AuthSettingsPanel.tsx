@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 export function AuthSettingsPanel() {
   const { user, isLoading, refresh, setUser } = useAuth();
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,11 +25,17 @@ export function AuthSettingsPanel() {
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, firstName, lastName }),
       });
       const data = (await response.json()) as {
         error?: string;
-        user?: { id: number; email: string; role: "user" | "coach" | "admin" };
+        user?: {
+          id: number;
+          email: string;
+          firstName: string;
+          lastName: string;
+          role: "user" | "coach" | "admin";
+        };
       };
 
       if (!response.ok || !data.user) {
@@ -72,7 +80,11 @@ export function AuthSettingsPanel() {
       {user ? (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Connecté en tant que <span className="font-semibold text-foreground">{user.email}</span>.
+            Connecté en tant que{" "}
+            <span className="font-semibold text-foreground">
+              {`${user.firstName} ${user.lastName}`.trim()}
+            </span>{" "}
+            <span className="text-xs">({user.email})</span>.
             Vos favoris, candidatures, paramètres et recherches sont synchronisés via Postgres.
           </p>
           <Badge variant="secondary" className="w-fit capitalize">
@@ -87,6 +99,24 @@ export function AuthSettingsPanel() {
           <p className="text-sm text-muted-foreground">
             Créez un compte ou connectez-vous pour retrouver vos données sur plusieurs appareils.
           </p>
+          <div className="space-y-2">
+            <Label htmlFor="auth-first-name">Prénom</Label>
+            <Input
+              id="auth-first-name"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              placeholder="Prénom"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="auth-last-name">Nom</Label>
+            <Input
+              id="auth-last-name"
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+              placeholder="Nom"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="auth-email">Adresse email</Label>
             <Input
@@ -119,7 +149,13 @@ export function AuthSettingsPanel() {
               type="button"
               variant="outline"
               onClick={() => void handleAuth("register")}
-              disabled={isSubmitting || !email.trim() || password.length < 8}
+              disabled={
+                isSubmitting ||
+                !email.trim() ||
+                !firstName.trim() ||
+                !lastName.trim() ||
+                password.length < 8
+              }
             >
               Créer un compte
             </Button>

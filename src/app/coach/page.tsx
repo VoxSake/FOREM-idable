@@ -75,6 +75,17 @@ export default function CoachPage() {
         user={coach.selectedUser}
         onOpenChange={(open) => !open && coach.setSelectedUserId(null)}
         onExport={coach.exportUserApplications}
+        onEditProfile={() => {
+          if (!coach.selectedUser) return;
+          coach.setProfileTarget({
+            userId: coach.selectedUser.id,
+            email: coach.selectedUser.email,
+            firstName: coach.selectedUser.firstName,
+            lastName: coach.selectedUser.lastName,
+          });
+          coach.setEditedFirstName(coach.selectedUser.firstName);
+          coach.setEditedLastName(coach.selectedUser.lastName);
+        }}
         onChangePassword={() => {
           if (!coach.selectedUser) return;
           coach.setPasswordTarget({
@@ -125,6 +136,19 @@ export default function CoachPage() {
           }
         }}
         onConfirmPasswordChange={() => void coach.changeUserPassword()}
+        profileTarget={coach.profileTarget}
+        editedFirstName={coach.editedFirstName}
+        editedLastName={coach.editedLastName}
+        onEditedFirstNameChange={coach.setEditedFirstName}
+        onEditedLastNameChange={coach.setEditedLastName}
+        onProfileOpenChange={(open) => {
+          if (!open) {
+            coach.setProfileTarget(null);
+            coach.setEditedFirstName("");
+            coach.setEditedLastName("");
+          }
+        }}
+        onConfirmProfileChange={() => void coach.updateUserProfile()}
         deleteUserTarget={coach.deleteUserTarget}
         onDeleteUserOpenChange={(open) => !open && coach.setDeleteUserTarget(null)}
         onConfirmDeleteUser={() => void coach.deleteUser()}

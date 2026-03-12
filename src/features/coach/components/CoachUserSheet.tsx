@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ExternalLink, FileText, LockKeyhole, Trash2 } from "lucide-react";
+import { Download, ExternalLink, FilePenLine, FileText, LockKeyhole, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
-import { coachStatusLabel, formatCoachDate, isApplicationDue } from "@/features/coach/utils";
+import {
+  coachStatusLabel,
+  formatCoachDate,
+  getCoachUserDisplayName,
+  isApplicationDue,
+} from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
 
 interface CoachUserSheetProps {
@@ -21,6 +26,7 @@ interface CoachUserSheetProps {
   user: CoachUserSummary | null;
   onOpenChange: (open: boolean) => void;
   onExport: () => void;
+  onEditProfile: () => void;
   onChangePassword: () => void;
   onDeleteUser: () => void;
 }
@@ -32,6 +38,7 @@ export function CoachUserSheet({
   user,
   onOpenChange,
   onExport,
+  onEditProfile,
   onChangePassword,
   onDeleteUser,
 }: CoachUserSheetProps) {
@@ -41,9 +48,12 @@ export function CoachUserSheet({
         {user && (
           <>
             <SheetHeader className="border-b bg-muted/30 p-5 pr-12">
-              <SheetTitle>{user.email}</SheetTitle>
+              <SheetTitle>{getCoachUserDisplayName(user)}</SheetTitle>
               <SheetDescription>
-                {user.groupNames.length > 0 ? user.groupNames.join(" • ") : "Aucun groupe assigné"}
+                <span className="block text-sm">{user.email}</span>
+                <span className="block">
+                  {user.groupNames.length > 0 ? user.groupNames.join(" • ") : "Aucun groupe assigné"}
+                </span>
               </SheetDescription>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Badge variant="secondary" className="capitalize">
@@ -63,6 +73,10 @@ export function CoachUserSheet({
                 </Button>
                 {isAdmin && (
                   <>
+                    <Button type="button" size="sm" variant="outline" onClick={onEditProfile}>
+                      <FilePenLine className="mr-2 h-4 w-4" />
+                      Nom / prénom
+                    </Button>
                     <Button type="button" size="sm" variant="outline" onClick={onChangePassword}>
                       <LockKeyhole className="mr-2 h-4 w-4" />
                       Mot de passe

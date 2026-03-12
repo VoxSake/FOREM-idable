@@ -5,6 +5,10 @@ import { JobApplication } from "@/types/application";
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 import { CoachGroupedUserGroup, CoachMemberPickerGroup } from "@/features/coach/types";
 
+export function getCoachUserDisplayName(user: Pick<CoachUserSummary, "firstName" | "lastName" | "email">) {
+  return `${user.firstName} ${user.lastName}`.trim() || user.email;
+}
+
 export function formatCoachDate(value?: string | null, withTime = false) {
   if (!value) return "N/A";
   const date = new Date(value);
@@ -62,12 +66,21 @@ export function buildGroupedUsers(input: {
   canManageCoachGroup: boolean;
 }): CoachGroupedUserGroup[] {
   const { groups, users, normalizedSearch, canManageCoachGroup } = input;
-  const matchesSearch = (email: string) =>
-    !normalizedSearch || email.toLowerCase().includes(normalizedSearch);
+  const matchesSearch = (user: CoachUserSummary) =>
+    !normalizedSearch ||
+    [
+      user.firstName,
+      user.lastName,
+      `${user.firstName} ${user.lastName}`.trim(),
+      user.email,
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearch);
 
   const standardGroups = groups.map((group) => {
     const members = users.filter((entry) => group.members.some((member) => member.id === entry.id));
-    const visibleMembers = members.filter((entry) => matchesSearch(entry.email));
+    const visibleMembers = members.filter((entry) => matchesSearch(entry));
 
     return {
       id: group.id,
@@ -82,10 +95,10 @@ export function buildGroupedUsers(input: {
   });
 
   const ungroupedMembers = users.filter(
-    (entry) => entry.role === "user" && entry.groupIds.length === 0 && matchesSearch(entry.email)
+    (entry) => entry.role === "user" && entry.groupIds.length === 0 && matchesSearch(entry)
   );
   const coachMembers = users.filter(
-    (entry) => (entry.role === "coach" || entry.role === "admin") && matchesSearch(entry.email)
+    (entry) => (entry.role === "coach" || entry.role === "admin") && matchesSearch(entry)
   );
   const allUngroupedMembers = users.filter(
     (entry) => entry.role === "user" && entry.groupIds.length === 0
@@ -125,12 +138,16 @@ export function buildGroupedUsers(input: {
 export function buildUserExportRows(user: CoachUserSummary): CoachApplicationExportRow[] {
   return user.applications.length > 0
     ? user.applications.map((application) => ({
+        userFirstName: user.firstName,
+        userLastName: user.lastName,
         userEmail: user.email,
         groupName: user.groupNames[0] ?? "",
         application,
       }))
     : [
         {
+          userFirstName: user.firstName,
+          userLastName: user.lastName,
           userEmail: user.email,
           groupName: user.groupNames[0] ?? "",
           message: "Utilisateur sans candidature au moment de l'export.",
@@ -148,6 +165,8 @@ export function buildGroupExportRows(
     if (entry.applications.length > 0) {
       for (const application of entry.applications) {
         rows.push({
+          userFirstName: entry.firstName,
+          userLastName: entry.lastName,
           userEmail: entry.email,
           groupName,
           application,
@@ -155,6 +174,8 @@ export function buildGroupExportRows(
       }
     } else {
       rows.push({
+        userFirstName: entry.firstName,
+        userLastName: entry.lastName,
         userEmail: entry.email,
         groupName,
         message: "Aucune candidature pour cet utilisateur dans ce groupe.",
