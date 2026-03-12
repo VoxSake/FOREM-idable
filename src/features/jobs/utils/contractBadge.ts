@@ -22,31 +22,17 @@ export function getContractBadgeClass(contractType: string) {
 }
 
 export function getContractBadgeLabel(contractType: string) {
-  const normalizedType = contractType.toLowerCase();
+  const compact = contractType
+    .replace(/\bavec\b/gi, "av.")
+    .replace(/\boption\b/gi, "opt.")
+    .replace(/\bdurée\b/gi, "dur.")
+    .replace(/\bindéterminée?\b/gi, "indét.")
+    .replace(/\bdéterminée?\b/gi, "dét.")
+    .replace(/\bintérimaire\b/gi, "Intérim")
+    .replace(/\binterimaire\b/gi, "Intérim")
+    .replace(/\btemporaire\b/gi, "Temp.")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  if (normalizedType.includes("cdi") || normalizedType.includes("indétermin")) {
-    return "CDI";
-  }
-
-  if (normalizedType.includes("cdd")) {
-    return "CDD";
-  }
-
-  if (normalizedType.includes("intérim") || normalizedType.includes("interim")) {
-    return normalizedType.includes("indétermin") ? "Intérim CDI" : "Intérim";
-  }
-
-  if (normalizedType.includes("temporaire")) {
-    return "Temp.";
-  }
-
-  if (normalizedType.includes("stage")) {
-    return "Stage";
-  }
-
-  if (normalizedType.includes("alternance")) {
-    return "Alternance";
-  }
-
-  return contractType.length > 18 ? `${contractType.slice(0, 15)}...` : contractType;
+  return compact.length > 18 ? `${compact.slice(0, 15)}...` : compact;
 }
