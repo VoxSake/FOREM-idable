@@ -19,6 +19,7 @@ export default function AccountPage() {
   const [passwordFeedback, setPasswordFeedback] = useState<string | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKeySummary[]>([]);
   const [apiKeyName, setApiKeyName] = useState("");
+  const [apiKeyExpiry, setApiKeyExpiry] = useState("none");
   const [apiKeyFeedback, setApiKeyFeedback] = useState<string | null>(null);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -132,11 +133,16 @@ export default function AccountPage() {
     setApiKeyFeedback(null);
     setNewApiKey(null);
 
+    const expiresAt =
+      apiKeyExpiry === "none"
+        ? null
+        : new Date(Date.now() + Number(apiKeyExpiry) * 24 * 60 * 60 * 1000).toISOString();
+
     try {
       const response = await fetch("/api/account/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: apiKeyName }),
+        body: JSON.stringify({ name: apiKeyName, expiresAt }),
       });
       const data = (await response.json()) as { error?: string } & Partial<ApiKeyCreateResult>;
 
@@ -146,6 +152,7 @@ export default function AccountPage() {
       }
 
       setApiKeyName("");
+      setApiKeyExpiry("none");
       setNewApiKey(data.plainTextKey);
       setApiKeyFeedback("Clé API créée. Copie-la maintenant: elle ne sera plus réaffichée.");
       setApiKeys((current) => [data.apiKey as ApiKeySummary, ...current]);
@@ -304,11 +311,23 @@ export default function AccountPage() {
           <Separator className="my-4" />
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <Input
-              value={apiKeyName}
-              onChange={(event) => setApiKeyName(event.target.value)}
-              placeholder="Ex: Excel Jordi, Power Query coach, Zapier..."
-            />
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+              <Input
+                value={apiKeyName}
+                onChange={(event) => setApiKeyName(event.target.value)}
+                placeholder="Ex: Excel Jordi, Power Query coach, Zapier..."
+              />
+              <select
+                value={apiKeyExpiry}
+                onChange={(event) => setApiKeyExpiry(event.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="none">Sans expiration</option>
+                <option value="30">Expire dans 30 jours</option>
+                <option value="90">Expire dans 90 jours</option>
+                <option value="365">Expire dans 365 jours</option>
+              </select>
+            </div>
             <Button
               type="button"
               onClick={() => void createApiKey()}
@@ -365,9 +384,14 @@ export default function AccountPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Créée: {new Date(entry.createdAt).toLocaleString("fr-FR")}
+                      {entry.expiresAt
+                        ? ` • Expire: ${new Date(entry.expiresAt).toLocaleString("fr-FR")}`
+                        : " • Sans expiration"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
                       {entry.lastUsedAt
                         ? ` • Dernier usage: ${new Date(entry.lastUsedAt).toLocaleString("fr-FR")}`
-                        : " • Jamais utilisée"}
+                        : "Jamais utilisée"}
                     </p>
                     {entry.revokedAt ? (
                       <p className="text-xs font-medium text-destructive">

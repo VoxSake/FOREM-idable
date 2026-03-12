@@ -29,6 +29,7 @@ export async function listApiKeysForUser(userId: number): Promise<ApiKeySummary[
             key_prefix AS "keyPrefix",
             last_four AS "lastFour",
             created_at AS "createdAt",
+            expires_at AS "expiresAt",
             last_used_at AS "lastUsedAt",
             revoked_at AS "revokedAt"
      FROM api_keys
@@ -40,7 +41,11 @@ export async function listApiKeysForUser(userId: number): Promise<ApiKeySummary[
   return result.rows;
 }
 
-export async function createApiKey(userId: number, name: string): Promise<ApiKeyCreateResult> {
+export async function createApiKey(
+  userId: number,
+  name: string,
+  expiresAt?: string | null
+): Promise<ApiKeyCreateResult> {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
@@ -49,18 +54,24 @@ export async function createApiKey(userId: number, name: string): Promise<ApiKey
     throw new Error("API key name required");
   }
 
+  const normalizedExpiresAt = expiresAt ? new Date(expiresAt) : null;
+  if (normalizedExpiresAt && Number.isNaN(normalizedExpiresAt.getTime())) {
+    throw new Error("Invalid API key expiration");
+  }
+
   const { plainTextKey, keyPrefix, lastFour, tokenHash } = buildKeyMaterial();
   const result = await db.query<ApiKeySummary>(
-    `INSERT INTO api_keys (user_id, name, token_hash, key_prefix, last_four)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO api_keys (user_id, name, token_hash, key_prefix, last_four, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id,
                name,
                key_prefix AS "keyPrefix",
                last_four AS "lastFour",
                created_at AS "createdAt",
+               expires_at AS "expiresAt",
                last_used_at AS "lastUsedAt",
                revoked_at AS "revokedAt"`,
-    [userId, trimmedName, tokenHash, keyPrefix, lastFour]
+    [userId, trimmedName, tokenHash, keyPrefix, lastFour, normalizedExpiresAt?.toISOString() ?? null]
   );
 
   return {
@@ -119,6 +130,7 @@ export async function requireExternalApiActor(): Promise<ExternalApiActor | null
      FROM api_keys
      INNER JOIN users ON users.id = api_keys.user_id
      WHERE api_keys.revoked_at IS NULL
+       AND (api_keys.expires_at IS NULL OR api_keys.expires_at > NOW())
        AND api_keys.token_hash = $1
        AND users.role IN ('coach', 'admin')`
     ,

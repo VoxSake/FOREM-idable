@@ -1,7 +1,6 @@
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { UserRole } from "@/types/auth";
 import { Job } from "@/types/job";
-import { SearchHistoryEntry } from "@/features/jobs/types/searchHistory";
 
 export interface ApiKeySummary {
   id: number;
@@ -9,6 +8,7 @@ export interface ApiKeySummary {
   keyPrefix: string;
   lastFour: string;
   createdAt: string;
+  expiresAt: string | null;
   lastUsedAt: string | null;
   revokedAt: string | null;
 }
@@ -58,11 +58,6 @@ export interface ExternalApiUserSummary {
 
 export interface ExternalApiUserDetail extends ExternalApiUserSummary {
   favorites: Job[];
-  searchHistory: SearchHistoryEntry[];
-  settings: Record<string, unknown>;
-  theme: string | null;
-  analyticsConsent: string | null;
-  locationsCache: unknown;
 }
 
 export interface ExternalApiGroupSummary {

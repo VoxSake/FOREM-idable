@@ -132,9 +132,13 @@ CREATE TABLE IF NOT EXISTS api_keys (
   key_prefix TEXT NOT NULL,
   last_four TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ,
   last_used_at TIMESTAMPTZ,
   revoked_at TIMESTAMPTZ
 );
+
+ALTER TABLE api_keys
+  ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS api_keys_user_id_idx ON api_keys(user_id);
 CREATE INDEX IF NOT EXISTS api_keys_active_idx ON api_keys(user_id, revoked_at);

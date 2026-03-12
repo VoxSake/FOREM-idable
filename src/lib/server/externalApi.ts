@@ -16,7 +16,6 @@ import {
 import { ApplicationStatus } from "@/types/application";
 import { STORAGE_KEYS } from "@/lib/storageKeys";
 import { Job } from "@/types/job";
-import { SearchHistoryEntry } from "@/features/jobs/types/searchHistory";
 import { CoachUserSummary } from "@/types/coach";
 
 function safeJsonParse<T>(value: string | undefined, fallback: T): T {
@@ -140,11 +139,6 @@ export async function getExternalUserDetail(actor: ExternalApiActor, userId: num
   return {
     ...toExternalUserSummary(user, true),
     favorites: safeJsonParse<Job[]>(values[STORAGE_KEYS.favorites], []),
-    searchHistory: safeJsonParse<SearchHistoryEntry[]>(values[STORAGE_KEYS.searchHistory], []),
-    settings: safeJsonParse<Record<string, unknown>>(values[STORAGE_KEYS.settings], {}),
-    theme: values[STORAGE_KEYS.theme] ?? null,
-    analyticsConsent: values[STORAGE_KEYS.analyticsConsent] ?? null,
-    locationsCache: safeJsonParse<unknown>(values[STORAGE_KEYS.locationsCache], null),
   };
 }
 
@@ -360,8 +354,13 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
   return toCsv(headers, rows);
 }
 
+function neutralizeSpreadsheetFormula(value: string) {
+  if (!value) return value;
+  return /^[=+\-@]/.test(value) ? `'${value}` : value;
+}
+
 function escapeCell(value: string) {
-  return `"${value.replace(/"/g, '""').replace(/\n/g, " ")}"`;
+  return `"${neutralizeSpreadsheetFormula(value).replace(/"/g, '""').replace(/\n/g, " ")}"`;
 }
 
 function toCsv(headers: string[], rows: string[][]) {

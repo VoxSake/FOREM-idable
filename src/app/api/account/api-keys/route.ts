@@ -29,11 +29,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
+    const expiresAt =
+      typeof body.expiresAt === "string" && body.expiresAt.trim() ? body.expiresAt.trim() : null;
     if (!name) {
       return NextResponse.json({ error: "Nom de clé requis." }, { status: 400 });
     }
 
-    const result = await createApiKey(user.id, name);
+    const result = await createApiKey(user.id, name, expiresAt);
     return NextResponse.json(result);
   } catch {
     return NextResponse.json({ error: "Création de la clé API impossible." }, { status: 500 });
