@@ -3,6 +3,7 @@ import { Job } from "@/types/job";
 export type ApplicationStatus =
   | "in_progress"
   | "follow_up"
+  | "interview"
   | "accepted"
   | "rejected";
 
@@ -14,5 +15,7 @@ export interface JobApplication {
   status: ApplicationStatus;
   notes?: string;
   proofs?: string;
+  interviewAt?: string;
+  interviewDetails?: string;
   updatedAt: string;
 }

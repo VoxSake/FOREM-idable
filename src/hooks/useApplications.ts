@@ -172,6 +172,15 @@ export function useApplications() {
     }));
   };
 
+  const scheduleInterview = (jobId: string, interviewAt: string, interviewDetails?: string) => {
+    updateApplication(jobId, (entry) => ({
+      ...entry,
+      status: "interview",
+      interviewAt,
+      interviewDetails,
+    }));
+  };
+
   const saveNotes = (jobId: string, notes: string) => {
     updateApplication(jobId, (entry) => ({
       ...entry,
@@ -211,6 +220,7 @@ export function useApplications() {
     markAsInProgress,
     markAsAccepted,
     markAsFollowUp,
+    scheduleInterview,
     saveNotes,
     saveProofs,
     markFollowUpDone,

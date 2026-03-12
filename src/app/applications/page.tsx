@@ -5,6 +5,7 @@ import { format, isAfter, isBefore, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   BriefcaseBusiness,
+  CalendarDays,
   Clock3,
   Download,
   ExternalLink,
@@ -43,6 +44,13 @@ function formatDate(value: string) {
   return format(date, "dd MMM yyyy", { locale: fr });
 }
 
+function formatDateTime(value?: string) {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return format(date, "dd MMM yyyy 'a' HH:mm", { locale: fr });
+}
+
 function isFollowUpPending(status: ApplicationStatus) {
   return status === "in_progress" || status === "follow_up";
 }
@@ -53,6 +61,8 @@ function statusLabel(status: ApplicationStatus) {
       return "Acceptée";
     case "rejected":
       return "Refusée";
+    case "interview":
+      return "Entretien";
     case "follow_up":
       return "Relance à faire";
     case "in_progress":
@@ -69,7 +79,9 @@ export default function ApplicationsPage() {
     markAsAccepted,
     markAsRejected,
     markAsFollowUp,
+    scheduleInterview,
     saveNotes,
+    saveProofs,
     markFollowUpDone,
     removeApplication,
     isLoaded,
@@ -78,6 +90,7 @@ export default function ApplicationsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
+  const [interviewJobId, setInterviewJobId] = useState<string | null>(null);
   const [manualForm, setManualForm] = useState({
     company: "",
     title: "",
@@ -88,6 +101,10 @@ export default function ApplicationsPage() {
     notes: "",
     proofs: "",
     url: "",
+  });
+  const [interviewForm, setInterviewForm] = useState({
+    interviewAt: "",
+    interviewDetails: "",
   });
 
   const now = new Date();
@@ -103,8 +120,32 @@ export default function ApplicationsPage() {
     () => applications.find((entry) => entry.job.id === deleteJobId) ?? null,
     [applications, deleteJobId]
   );
+  const interviewApplication = useMemo(
+    () => applications.find((entry) => entry.job.id === interviewJobId) ?? null,
+    [applications, interviewJobId]
+  );
 
   if (!isLoaded) return null;
+
+  const applyStatus = (jobId: string, status: ApplicationStatus) => {
+    if (status === "accepted") markAsAccepted(jobId);
+    else if (status === "rejected") markAsRejected(jobId);
+    else if (status === "follow_up") markAsFollowUp(jobId);
+    else if (status === "interview") {
+      const existing = applications.find((entry) => entry.job.id === jobId);
+      if (existing?.interviewAt) {
+        scheduleInterview(jobId, existing.interviewAt, existing.interviewDetails);
+      } else {
+        setInterviewJobId(jobId);
+        setInterviewForm({
+          interviewAt: "",
+          interviewDetails: existing?.interviewDetails ?? "",
+        });
+      }
+    } else {
+      markAsInProgress(jobId);
+    }
+  };
 
   const toggleSelection = (jobId: string) => {
     setSelectedJobIds((prev) => {
@@ -153,6 +194,36 @@ export default function ApplicationsPage() {
 
     resetManualForm();
     setIsCreateOpen(false);
+  };
+
+  const openInterviewModal = (entry: JobApplication) => {
+    const date = entry.interviewAt ? new Date(entry.interviewAt) : null;
+    const interviewAt =
+      date && !Number.isNaN(date.getTime()) ? format(date, "yyyy-MM-dd'T'HH:mm") : "";
+
+    setInterviewJobId(entry.job.id);
+    setInterviewForm({
+      interviewAt,
+      interviewDetails: entry.interviewDetails ?? "",
+    });
+  };
+
+  const submitInterview = () => {
+    if (!interviewApplication || !interviewForm.interviewAt) return;
+
+    const interviewAt = new Date(interviewForm.interviewAt);
+    if (Number.isNaN(interviewAt.getTime())) return;
+
+    scheduleInterview(
+      interviewApplication.job.id,
+      interviewAt.toISOString(),
+      interviewForm.interviewDetails.trim()
+    );
+    setInterviewJobId(null);
+    setInterviewForm({
+      interviewAt: "",
+      interviewDetails: "",
+    });
   };
 
   const renderOfferButtons = (entry: JobApplication) => {
@@ -241,6 +312,9 @@ export default function ApplicationsPage() {
           {applications.map((entry) => {
             const isSelected = selectedJobIds.has(entry.job.id);
             const followUpDue = new Date(entry.followUpDueAt);
+            const interviewDate = entry.interviewAt ? new Date(entry.interviewAt) : null;
+            const hasInterview =
+              Boolean(interviewDate) && interviewDate !== null && !Number.isNaN(interviewDate.getTime());
             const isDue = isFollowUpPending(entry.status) && !isAfter(followUpDue, now);
             const isSoon =
               isFollowUpPending(entry.status) &&
@@ -250,7 +324,13 @@ export default function ApplicationsPage() {
             return (
               <div
                 key={entry.job.id}
-                className={`rounded-xl border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/20 ${isDue ? "border-amber-400/70" : ""}`}
+                className={`rounded-xl border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/20 ${
+                  hasInterview
+                    ? "border-sky-300 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20"
+                    : isDue
+                      ? "border-amber-400/70"
+                      : ""
+                }`}
                 onClick={() => setDetailsJobId(entry.job.id)}
               >
                 <div className="flex items-start gap-3">
@@ -279,6 +359,11 @@ export default function ApplicationsPage() {
                           {statusLabel(entry.status)}
                         </Badge>
                         <Badge variant="outline">Envoyée le {formatDate(entry.appliedAt)}</Badge>
+                        {hasInterview && (
+                          <Badge className="bg-sky-600 text-white hover:bg-sky-600">
+                            Entretien {formatDateTime(entry.interviewAt)}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -288,16 +373,13 @@ export default function ApplicationsPage() {
                           className="h-9 w-full rounded-md border bg-background px-3 text-sm sm:w-[180px]"
                           value={entry.status}
                           onClick={(event) => event.stopPropagation()}
-                          onChange={(event) => {
-                            const nextStatus = event.target.value as ApplicationStatus;
-                            if (nextStatus === "accepted") markAsAccepted(entry.job.id);
-                            else if (nextStatus === "rejected") markAsRejected(entry.job.id);
-                            else if (nextStatus === "follow_up") markAsFollowUp(entry.job.id);
-                            else markAsInProgress(entry.job.id);
-                          }}
+                          onChange={(event) =>
+                            applyStatus(entry.job.id, event.target.value as ApplicationStatus)
+                          }
                         >
                           <option value="in_progress">En cours</option>
                           <option value="follow_up">Relance à faire</option>
+                          <option value="interview">Entretien</option>
                           <option value="accepted">Acceptée</option>
                           <option value="rejected">Refusée</option>
                         </select>
@@ -306,6 +388,7 @@ export default function ApplicationsPage() {
                           <p>Relance: {formatDate(entry.followUpDueAt)}</p>
                           {isSoon && <p>Bientôt</p>}
                           {entry.lastFollowUpAt && <p>Dernière: {formatDate(entry.lastFollowUpAt)}</p>}
+                          {hasInterview && <p>Entretien: {formatDateTime(entry.interviewAt)}</p>}
                         </div>
                       </div>
 
@@ -337,7 +420,20 @@ export default function ApplicationsPage() {
                             disabled={entry.status === "accepted" || entry.status === "rejected"}
                           >
                             <Clock3 className="mr-2 h-4 w-4" />
-                            Relancer
+                            Relance faite
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openInterviewModal(entry);
+                            }}
+                            disabled={entry.status === "accepted" || entry.status === "rejected"}
+                          >
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            Entretien
                           </Button>
                           <Button
                             type="button"
@@ -403,16 +499,13 @@ export default function ApplicationsPage() {
                   <select
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                     value={selectedApplication.status}
-                    onChange={(event) => {
-                      const nextStatus = event.target.value as ApplicationStatus;
-                      if (nextStatus === "accepted") markAsAccepted(selectedApplication.job.id);
-                      else if (nextStatus === "rejected") markAsRejected(selectedApplication.job.id);
-                      else if (nextStatus === "follow_up") markAsFollowUp(selectedApplication.job.id);
-                      else markAsInProgress(selectedApplication.job.id);
-                    }}
+                    onChange={(event) =>
+                      applyStatus(selectedApplication.job.id, event.target.value as ApplicationStatus)
+                    }
                   >
                     <option value="in_progress">En cours</option>
                     <option value="follow_up">Relance à faire</option>
+                    <option value="interview">Entretien</option>
                     <option value="accepted">Acceptée</option>
                     <option value="rejected">Refusée</option>
                   </select>
@@ -423,6 +516,20 @@ export default function ApplicationsPage() {
                   <p className="text-muted-foreground">Prochaine relance: {formatDate(selectedApplication.followUpDueAt)}</p>
                   {selectedApplication.lastFollowUpAt && (
                     <p className="text-muted-foreground">Dernière relance: {formatDate(selectedApplication.lastFollowUpAt)}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-medium">Entretien</p>
+                  <p className="text-muted-foreground">
+                    {selectedApplication.interviewAt
+                      ? formatDateTime(selectedApplication.interviewAt)
+                      : "Aucun entretien planifié"}
+                  </p>
+                  {selectedApplication.interviewDetails && (
+                    <p className="whitespace-pre-wrap rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-muted-foreground">
+                      {selectedApplication.interviewDetails}
+                    </p>
                   )}
                 </div>
 
@@ -441,7 +548,7 @@ export default function ApplicationsPage() {
                   <textarea
                     className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm"
                     value={selectedApplication.proofs ?? ""}
-                    readOnly
+                    onChange={(event) => saveProofs(selectedApplication.job.id, event.target.value)}
                   />
                 </div>
               </div>
@@ -456,6 +563,15 @@ export default function ApplicationsPage() {
                     disabled={selectedApplication.status === "accepted" || selectedApplication.status === "rejected"}
                   >
                     Relance faite
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => openInterviewModal(selectedApplication)}
+                    disabled={selectedApplication.status === "accepted" || selectedApplication.status === "rejected"}
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    Entretien
                   </Button>
                 </div>
               </SheetFooter>
@@ -525,6 +641,7 @@ export default function ApplicationsPage() {
               >
                 <option value="in_progress">En cours</option>
                 <option value="follow_up">Relance à faire</option>
+                <option value="interview">Entretien</option>
                 <option value="accepted">Acceptée</option>
                 <option value="rejected">Refusée</option>
               </select>
@@ -574,6 +691,77 @@ export default function ApplicationsPage() {
               disabled={!manualForm.company.trim() || !manualForm.title.trim()}
             >
               Ajouter la candidature
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(interviewApplication)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInterviewJobId(null);
+            setInterviewForm({
+              interviewAt: "",
+              interviewDetails: "",
+            });
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Planifier un entretien</DialogTitle>
+            <DialogDescription>
+              {interviewApplication
+                ? `Planifiez la date d'entretien pour ${interviewApplication.job.company || interviewApplication.job.title}.`
+                : "Planifiez une date d'entretien."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date et heure</label>
+              <Input
+                type="datetime-local"
+                value={interviewForm.interviewAt}
+                onChange={(event) =>
+                  setInterviewForm((prev) => ({ ...prev, interviewAt: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Détails</label>
+              <textarea
+                className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={interviewForm.interviewDetails}
+                onChange={(event) =>
+                  setInterviewForm((prev) => ({ ...prev, interviewDetails: event.target.value }))
+                }
+                placeholder="Adresse, Teams, contact, documents à prévoir..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setInterviewJobId(null);
+                setInterviewForm({
+                  interviewAt: "",
+                  interviewDetails: "",
+                });
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={submitInterview}
+              disabled={!interviewForm.interviewAt}
+            >
+              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>

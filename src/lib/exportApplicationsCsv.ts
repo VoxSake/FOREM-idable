@@ -5,6 +5,7 @@ import { JobApplication, ApplicationStatus } from "@/types/application";
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   in_progress: "En cours",
   follow_up: "Relance à faire",
+  interview: "Entretien",
   accepted: "Acceptée",
   rejected: "Refusée",
 };
@@ -31,6 +32,7 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
     "Lieu",
     "Date envoyée",
     "Date relance",
+    "Date entretien",
     "Statut",
     "Notes",
     "Preuves",
@@ -45,6 +47,7 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
       entry.job.location,
       formatDate(entry.appliedAt),
       formatDate(entry.followUpDueAt),
+      formatDate(entry.interviewAt),
       STATUS_LABELS[entry.status],
       entry.notes || "",
       entry.proofs || "",
