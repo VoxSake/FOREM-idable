@@ -83,17 +83,27 @@ export function AuthSidebarPanel() {
 
   return (
     <>
-      <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-3 space-y-3">
+      <div className="space-y-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Compte
-          </p>
           {user ? (
-            <div className="space-y-2">
-              <p className="text-sm text-foreground font-medium break-all">{user.email}</p>
-              <Badge variant="secondary" className="w-fit capitalize">
-                {user.role}
-              </Badge>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 space-y-1">
+                <p className="break-all text-sm font-medium text-foreground">{user.email}</p>
+                <Badge variant="secondary" className="w-fit capitalize">
+                  {user.role}
+                </Badge>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={handleLogout}
+                disabled={isSubmitting || isLoading}
+                title="Déconnexion"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
@@ -102,34 +112,24 @@ export function AuthSidebarPanel() {
           )}
         </div>
 
-        {user ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-start"
-            onClick={handleLogout}
-            disabled={isSubmitting || isLoading}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Déconnexion
-          </Button>
-        ) : (
-          <div className="grid gap-2">
-            <Button type="button" className="w-full justify-start" onClick={() => openDialog("login")}>
+        {!user ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" size="sm" className="w-full" onClick={() => openDialog("login")}>
               <LogIn className="mr-2 h-4 w-4" />
               Connexion
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="w-full justify-start"
+              size="sm"
+              className="w-full"
               onClick={() => openDialog("register")}
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Créer un compte
             </Button>
           </div>
-        )}
+        ) : null}
 
         {feedback && <p className="text-xs text-muted-foreground">{feedback}</p>}
       </div>
