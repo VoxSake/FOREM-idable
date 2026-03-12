@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSession, createUser } from "@/lib/server/auth";
+import { checkRateLimit } from "@/lib/server/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimit = await checkRateLimit({
+      scope: "auth-register",
+      limit: 6,
+      windowMs: 10 * 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Trop de tentatives. Réessayez dans quelques minutes." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
@@ -28,7 +41,7 @@ export async function POST(request: NextRequest) {
     const isDuplicate = message.includes("duplicate") || message.includes("unique");
 
     return NextResponse.json(
-      { error: isDuplicate ? "Un compte existe déjà avec cet email." : "Inscription impossible." },
+      { error: isDuplicate ? "Inscription impossible." : "Inscription impossible." },
       { status: isDuplicate ? 409 : 500 }
     );
   }

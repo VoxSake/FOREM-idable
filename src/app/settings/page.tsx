@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSettings } from "@/hooks/useSettings";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -13,11 +14,13 @@ import {
     useAnalyticsConsentChoice,
 } from "@/features/consent/analyticsConsent";
 import { AuthSettingsPanel } from "@/components/auth/AuthSettingsPanel";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { ALL_STORAGE_KEYS } from "@/lib/storageKeys";
 import { applySyncSnapshot, createSyncSnapshot, decodeSyncToken, encodeSyncToken } from "@/lib/syncToken";
 
 export default function SettingsPage() {
     const { settings, updateSettings, isLoaded } = useSettings();
+    const { user } = useAuth();
     const { theme, setTheme } = useTheme();
     const analyticsConsent = useAnalyticsConsentChoice();
     const [syncToken, setSyncToken] = useState("");
@@ -40,7 +43,23 @@ export default function SettingsPage() {
             </div>
 
             <div className="bg-card rounded-xl border shadow-sm p-6 space-y-8">
-                <AuthSettingsPanel />
+                {user ? (
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-bold">Compte</h2>
+                        <Separator />
+                        <p className="text-sm text-muted-foreground">
+                            Vous êtes connecté en tant que <span className="font-semibold text-foreground">{`${user.firstName} ${user.lastName}`.trim()}</span>{" "}
+                            <span className="text-xs">({user.email})</span>. Les réglages de profil, mot de passe et clés API sont disponibles dans `Mon compte`.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild type="button">
+                                <Link href="/account">Ouvrir Mon compte</Link>
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <AuthSettingsPanel />
+                )}
 
                 {/* Apparence */}
                 <div className="space-y-4">

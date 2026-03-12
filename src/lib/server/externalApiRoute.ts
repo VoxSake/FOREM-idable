@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ApplicationStatus } from "@/types/application";
 import { UserRole } from "@/types/auth";
 import { requireExternalApiActor } from "@/lib/server/apiKeys";
+import { checkRateLimit } from "@/lib/server/rateLimit";
 import { ExternalApiActor, ExternalApiFilters } from "@/types/externalApi";
 
 const APPLICATION_STATUSES: ApplicationStatus[] = [
@@ -15,6 +16,15 @@ const APPLICATION_STATUSES: ApplicationStatus[] = [
 const USER_ROLES: UserRole[] = ["user", "coach", "admin"];
 
 export async function requireExternalApiAccess() {
+  const rateLimit = await checkRateLimit({
+    scope: "external-api",
+    limit: 2000,
+    windowMs: 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const actor = await requireExternalApiActor();
   if (!actor) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
