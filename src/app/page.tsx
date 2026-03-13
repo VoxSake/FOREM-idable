@@ -214,7 +214,9 @@ function DashboardPageContent() {
               isAuthenticated={isApplicationAuth}
               isApplicationsLoaded={areApplicationsLoaded}
               isApplied={isApplied}
-              onTrackApplication={(job) => addApplication(job)}
+              onTrackApplication={async (job) => {
+                await addApplication(job);
+              }}
               onRequireAuth={(job) => requestAuthForApplications([job])}
             />
           )}
@@ -246,7 +248,9 @@ function DashboardPageContent() {
         applied={selectedJob ? isApplied(selectedJob.id) : false}
         isAuthenticated={isApplicationAuth}
         isApplicationsLoaded={areApplicationsLoaded}
-        onTrackApplication={(job) => addApplication(job)}
+        onTrackApplication={async (job) => {
+          await addApplication(job);
+        }}
         onRequireAuth={() => {
           if (selectedJob) {
             requestAuthForApplications([selectedJob]);
