@@ -35,6 +35,42 @@ function safeJsonParse<T>(value: string | undefined | null, fallback: T): T {
   }
 }
 
+export function sanitizeApplicationsForBeneficiary(applications: JobApplication[]) {
+  return applications.map((application) => {
+    if (application.shareCoachNoteWithBeneficiary) {
+      return application;
+    }
+
+    return {
+      ...application,
+      coachNote: undefined,
+    };
+  });
+}
+
+export function mergeApplicationsWithServerFields(input: {
+  incoming: JobApplication[];
+  existing: JobApplication[];
+}) {
+  const existingByJobId = new Map(
+    input.existing.map((application) => [application.job.id, application] as const)
+  );
+
+  return input.incoming.map((application) => {
+    const existing = existingByJobId.get(application.job.id);
+    if (!existing) {
+      return application;
+    }
+
+    return {
+      ...application,
+      coachNote: application.coachNote ?? existing.coachNote,
+      shareCoachNoteWithBeneficiary:
+        application.shareCoachNoteWithBeneficiary ?? existing.shareCoachNoteWithBeneficiary,
+    };
+  });
+}
+
 function buildValues(input: {
   favorites?: Job[];
   applications?: JobApplication[];
@@ -94,12 +130,22 @@ async function persistNormalizedState(userId: number, values: Record<string, str
   if (!db) throw new Error("Database unavailable");
 
   const favorites = safeJsonParse<Job[]>(values[STORAGE_KEYS.favorites], []);
-  const applications = safeJsonParse<JobApplication[]>(values[STORAGE_KEYS.applications], []);
+  const incomingApplications = safeJsonParse<JobApplication[]>(values[STORAGE_KEYS.applications], []);
   const searchHistory = safeJsonParse<SearchHistoryEntry[]>(values[STORAGE_KEYS.searchHistory], []);
   const settings = safeJsonParse<Record<string, unknown>>(values[STORAGE_KEYS.settings], {});
   const theme = values[STORAGE_KEYS.theme] ?? null;
   const analyticsConsent = values[STORAGE_KEYS.analyticsConsent] ?? null;
   const locationsCache = safeJsonParse<unknown>(values[STORAGE_KEYS.locationsCache], null);
+  const existingApplicationsResult = await db.query<{ application: JobApplication }>(
+    `SELECT application
+     FROM user_applications
+     WHERE user_id = $1`,
+    [userId]
+  );
+  const applications = mergeApplicationsWithServerFields({
+    incoming: incomingApplications,
+    existing: existingApplicationsResult.rows.map((row) => row.application),
+  });
 
   await db.query("BEGIN");
 
@@ -222,7 +268,9 @@ export async function getUserState(userId: number): Promise<PersistedUserState |
   const settingsRow = settingsResult.rows[0];
   const values = buildValues({
     favorites: favoritesResult.rows.map((row) => row.job),
-    applications: applicationsResult.rows.map((row) => row.application),
+    applications: sanitizeApplicationsForBeneficiary(
+      applicationsResult.rows.map((row) => row.application)
+    ),
     searchHistory: searchHistoryResult.rows.map((row) => row.entry),
     settings: settingsRow?.settings ?? {},
     theme: settingsRow?.theme ?? null,
