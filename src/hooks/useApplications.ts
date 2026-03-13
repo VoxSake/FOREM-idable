@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { addDays } from "date-fns";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { sortApplicationsByMostRecent } from "@/features/applications/utils";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
 
@@ -54,68 +55,91 @@ export function useApplications() {
     }
   }, [user]);
 
+  const upsertApplication = useCallback((application: JobApplication) => {
+    setApplications((current) => {
+      const exists = current.some((entry) => entry.job.id === application.job.id);
+      const next = exists
+        ? current.map((entry) => (entry.job.id === application.job.id ? application : entry))
+        : [...current, application];
+
+      return sortApplicationsByMostRecent(next);
+    });
+  }, []);
+
   useEffect(() => {
     if (isAuthLoading) return;
     void refresh();
   }, [isAuthLoading, refresh]);
 
-  const createApplication = async (payload: {
-    job: Job;
-    appliedAt?: string;
-    status?: ApplicationStatus;
-    notes?: string;
-    proofs?: string;
-    interviewAt?: string;
-    interviewDetails?: string;
-  }) => {
-    if (!user) return false;
+  const createApplication = useCallback(
+    async (payload: {
+      job: Job;
+      appliedAt?: string;
+      status?: ApplicationStatus;
+      notes?: string;
+      proofs?: string;
+      interviewAt?: string;
+      interviewDetails?: string;
+    }) => {
+      if (!user) return false;
 
-    const response = await fetch("/api/applications", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!response.ok) {
-      return false;
-    }
+      if (!response.ok) {
+        return false;
+      }
 
-    await refresh();
-    return true;
-  };
+      const data = (await response.json().catch(() => ({}))) as { application?: JobApplication };
+      if (data.application) {
+        upsertApplication(data.application);
+      }
+      return true;
+    },
+    [upsertApplication, user]
+  );
 
-  const patchApplication = async (
-    jobId: string,
-    patch: Partial<
-      Pick<
-        JobApplication,
-        | "status"
-        | "notes"
-        | "proofs"
-        | "interviewAt"
-        | "interviewDetails"
-        | "lastFollowUpAt"
-        | "followUpDueAt"
-        | "appliedAt"
-        | "job"
+  const patchApplication = useCallback(
+    async (
+      jobId: string,
+      patch: Partial<
+        Pick<
+          JobApplication,
+          | "status"
+          | "notes"
+          | "proofs"
+          | "interviewAt"
+          | "interviewDetails"
+          | "lastFollowUpAt"
+          | "followUpDueAt"
+          | "appliedAt"
+          | "job"
+        >
       >
-    >
-  ) => {
-    if (!user) return false;
+    ) => {
+      if (!user) return false;
 
-    const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patch }),
-    });
+      const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patch }),
+      });
 
-    if (!response.ok) {
-      return false;
-    }
+      if (!response.ok) {
+        return false;
+      }
 
-    await refresh();
-    return true;
-  };
+      const data = (await response.json().catch(() => ({}))) as { application?: JobApplication };
+      if (data.application) {
+        upsertApplication(data.application);
+      }
+      return true;
+    },
+    [upsertApplication, user]
+  );
 
   const addApplication = async (job: Job) => createApplication({ job });
 
@@ -138,20 +162,23 @@ export function useApplications() {
       proofs: input.proofs,
     });
 
-  const removeApplication = async (jobId: string) => {
-    if (!user) return false;
+  const removeApplication = useCallback(
+    async (jobId: string) => {
+      if (!user) return false;
 
-    const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
-      method: "DELETE",
-    });
+      const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      return false;
-    }
+      if (!response.ok) {
+        return false;
+      }
 
-    await refresh();
-    return true;
-  };
+      setApplications((current) => current.filter((entry) => entry.job.id !== jobId));
+      return true;
+    },
+    [user]
+  );
 
   const markAsRejected = (jobId: string) =>
     patchApplication(jobId, {

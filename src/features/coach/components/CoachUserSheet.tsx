@@ -23,6 +23,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { isManualApplication, sortApplicationsByMostRecent } from "@/features/applications/utils";
 import {
@@ -130,6 +138,10 @@ function CoachUserSheetBody({
   const [privateNoteDrafts, setPrivateNoteDrafts] = useState<Record<string, string>>({});
   const [sharedNoteDrafts, setSharedNoteDrafts] = useState<Record<string, string>>({});
   const [newSharedNoteDrafts, setNewSharedNoteDrafts] = useState<Record<string, string>>({});
+  const [deleteSharedTarget, setDeleteSharedTarget] = useState<{
+    jobId: string;
+    noteId: string;
+  } | null>(null);
 
   const toggleExpanded = (jobId: string, nextOpen: boolean) => {
     setExpandedJobIds((current) =>
@@ -396,7 +408,7 @@ function CoachUserSheetBody({
                           placeholder="Note privée commune pour l'équipe coach..."
                         />
                         <div className="flex justify-end">
-                          <Button
+                         <Button
                             type="button"
                             size="sm"
                             onClick={() =>
@@ -406,7 +418,10 @@ function CoachUserSheetBody({
                                 privateCoachNoteDraft
                               )
                             }
-                            disabled={savingCoachNoteKey === `private:${application.job.id}`}
+                            disabled={
+                              savingCoachNoteKey === `private:${application.job.id}` ||
+                              privateCoachNoteDraft === (privateCoachNote?.content ?? "")
+                            }
                           >
                             {savingCoachNoteKey === `private:${application.job.id}` ? (
                               <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -428,7 +443,7 @@ function CoachUserSheetBody({
                             <Button
                               type="button"
                               size="sm"
-                              variant="outline"
+                              className="bg-sky-600 text-white hover:bg-sky-700"
                               onClick={() =>
                                 setNewSharedNoteDrafts((current) => ({
                                   ...current,
@@ -473,7 +488,10 @@ function CoachUserSheetBody({
                                       variant="outline"
                                       className="text-destructive hover:text-destructive"
                                       onClick={() =>
-                                        void onDeleteSharedCoachNote(user.id, application.job.id, note.id)
+                                        setDeleteSharedTarget({
+                                          jobId: application.job.id,
+                                          noteId: note.id,
+                                        })
                                       }
                                       disabled={savingCoachNoteKey === `delete:${note.id}`}
                                     >
@@ -495,7 +513,10 @@ function CoachUserSheetBody({
                                           getSharedDraft(note.id, note.content)
                                         )
                                       }
-                                      disabled={savingCoachNoteKey === `shared:${note.id}`}
+                                      disabled={
+                                        savingCoachNoteKey === `shared:${note.id}` ||
+                                        getSharedDraft(note.id, note.content) === note.content
+                                      }
                                     >
                                       {savingCoachNoteKey === `shared:${note.id}` ? (
                                         <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -560,7 +581,10 @@ function CoachUserSheetBody({
                                       return next;
                                     });
                                   }}
-                                  disabled={savingCoachNoteKey === `create:${application.job.id}`}
+                                  disabled={
+                                    savingCoachNoteKey === `create:${application.job.id}` ||
+                                    !newSharedNoteDraft.trim()
+                                  }
                                 >
                                   {savingCoachNoteKey === `create:${application.job.id}` ? (
                                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -586,6 +610,51 @@ function CoachUserSheetBody({
           </div>
         )}
       </div>
+
+      <Dialog
+        open={Boolean(deleteSharedTarget)}
+        onOpenChange={(open) => !open && setDeleteSharedTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer la note partagée</DialogTitle>
+            <DialogDescription>
+              Cette note ne sera plus visible par le bénéficiaire. Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteSharedTarget(null)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={async () => {
+                if (!deleteSharedTarget) return;
+                const deleted = await onDeleteSharedCoachNote(
+                  user.id,
+                  deleteSharedTarget.jobId,
+                  deleteSharedTarget.noteId
+                );
+                if (deleted) {
+                  setDeleteSharedTarget(null);
+                }
+              }}
+              disabled={
+                !deleteSharedTarget ||
+                savingCoachNoteKey === `delete:${deleteSharedTarget.noteId}`
+              }
+            >
+              {deleteSharedTarget && savingCoachNoteKey === `delete:${deleteSharedTarget.noteId}` ? (
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

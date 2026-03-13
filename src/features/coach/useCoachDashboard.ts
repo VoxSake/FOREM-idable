@@ -7,6 +7,7 @@ import {
   exportCoachApplicationsToCSV,
 } from "@/lib/exportCoachApplicationsCsv";
 import { ApiKeySummary } from "@/types/externalApi";
+import { JobApplication } from "@/types/application";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import {
   CoachApiKeysTarget,
@@ -52,6 +53,56 @@ export function useCoachDashboard() {
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
   const deferredSearch = useDeferredValue(search);
+
+  const applyApplicationUpdate = (userId: number, application: JobApplication) => {
+    setDashboard((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        users: current.users.map((entry) => {
+          if (entry.id !== userId) {
+            return entry;
+          }
+
+          const nextApplications = entry.applications
+            .map((existing) =>
+              existing.job.id === application.job.id ? application : existing
+            )
+            .sort((left, right) => {
+              const leftTime = new Date(left.appliedAt).getTime();
+              const rightTime = new Date(right.appliedAt).getTime();
+              return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
+            });
+
+          const now = new Date();
+
+          return {
+            ...entry,
+            applications: nextApplications,
+            applicationCount: nextApplications.length,
+            interviewCount: nextApplications.filter((item) => item.status === "interview").length,
+            dueCount: nextApplications.filter((item) => {
+              const due = new Date(item.followUpDueAt);
+              return (
+                (item.status === "in_progress" || item.status === "follow_up") &&
+                !Number.isNaN(due.getTime()) &&
+                due <= now
+              );
+            }).length,
+            acceptedCount: nextApplications.filter((item) => item.status === "accepted").length,
+            rejectedCount: nextApplications.filter((item) => item.status === "rejected").length,
+            inProgressCount: nextApplications.filter((item) => item.status === "in_progress").length,
+            latestActivityAt:
+              nextApplications
+                .map((item) => item.updatedAt)
+                .filter(Boolean)
+                .sort((a, b) => (a > b ? -1 : 1))[0] ?? null,
+          };
+        }),
+      };
+    });
+  };
 
   const loadDashboard = async () => {
     setIsLoading(true);
@@ -304,7 +355,10 @@ export function useCoachDashboard() {
       }),
     });
 
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      application?: JobApplication;
+    };
     if (!response.ok) {
       setFeedback(data.error || "Note coach impossible à enregistrer.");
       setSavingCoachNoteKey(null);
@@ -312,7 +366,9 @@ export function useCoachDashboard() {
     }
 
     setFeedback("Note privée enregistrée.");
-    await loadDashboard();
+    if (data.application) {
+      applyApplicationUpdate(userId, data.application);
+    }
     setSavingCoachNoteKey(null);
     return true;
   };
@@ -330,7 +386,10 @@ export function useCoachDashboard() {
       }),
     });
 
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      application?: JobApplication;
+    };
     if (!response.ok) {
       setFeedback(data.error || "Note partagée impossible à créer.");
       setSavingCoachNoteKey(null);
@@ -338,7 +397,9 @@ export function useCoachDashboard() {
     }
 
     setFeedback("Note partagée enregistrée.");
-    await loadDashboard();
+    if (data.application) {
+      applyApplicationUpdate(userId, data.application);
+    }
     setSavingCoachNoteKey(null);
     return true;
   };
@@ -362,7 +423,10 @@ export function useCoachDashboard() {
       }),
     });
 
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      application?: JobApplication;
+    };
     if (!response.ok) {
       setFeedback(data.error || "Note partagée impossible à mettre à jour.");
       setSavingCoachNoteKey(null);
@@ -370,7 +434,9 @@ export function useCoachDashboard() {
     }
 
     setFeedback("Note partagée mise à jour.");
-    await loadDashboard();
+    if (data.application) {
+      applyApplicationUpdate(userId, data.application);
+    }
     setSavingCoachNoteKey(null);
     return true;
   };
@@ -388,7 +454,10 @@ export function useCoachDashboard() {
       }),
     });
 
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      application?: JobApplication;
+    };
     if (!response.ok) {
       setFeedback(data.error || "Suppression de la note partagée impossible.");
       setSavingCoachNoteKey(null);
@@ -396,7 +465,9 @@ export function useCoachDashboard() {
     }
 
     setFeedback("Note partagée supprimée.");
-    await loadDashboard();
+    if (data.application) {
+      applyApplicationUpdate(userId, data.application);
+    }
     setSavingCoachNoteKey(null);
     return true;
   };

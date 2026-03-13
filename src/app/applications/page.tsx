@@ -9,6 +9,7 @@ import {
   ExternalLink,
   FileText,
   Plus,
+  Save,
   Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +93,8 @@ export default function ApplicationsPage() {
     interviewAt: "",
     interviewDetails: "",
   });
+  const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
+  const [proofsDrafts, setProofsDrafts] = useState<Record<string, string>>({});
   const now = useMemo(() => new Date(), []);
   const dueCount = applications.filter(
     (entry) => isFollowUpPending(entry.status) && !isAfter(new Date(entry.followUpDueAt), now)
@@ -576,6 +579,12 @@ export default function ApplicationsPage() {
         <SheetContent side="right" className="w-full sm:max-w-xl p-0">
           {selectedApplication && (
             <>
+              {(() => {
+                const notesDraft = notesDrafts[selectedApplication.job.id] ?? (selectedApplication.notes ?? "");
+                const proofsDraft = proofsDrafts[selectedApplication.job.id] ?? (selectedApplication.proofs ?? "");
+
+                return (
+                  <>
               <SheetHeader className="border-b bg-muted/30 p-5 pr-12">
                 <SheetTitle>{selectedApplication.job.title}</SheetTitle>
                 <SheetDescription>
@@ -657,19 +666,69 @@ export default function ApplicationsPage() {
                   <p className="font-medium">Notes</p>
                   <textarea
                     className="min-h-40 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    value={selectedApplication.notes ?? ""}
-                    onChange={(event) => saveNotes(selectedApplication.job.id, event.target.value)}
+                    value={notesDraft}
+                    onChange={(event) =>
+                      setNotesDrafts((current) => ({
+                        ...current,
+                        [selectedApplication.job.id]: event.target.value,
+                      }))
+                    }
                     placeholder="Contexte, contact RH, retour, salaire..."
                   />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={async () => {
+                        const saved = await saveNotes(selectedApplication.job.id, notesDraft);
+                        if (saved) {
+                          setNotesDrafts((current) => {
+                            const next = { ...current };
+                            delete next[selectedApplication.job.id];
+                            return next;
+                          });
+                        }
+                      }}
+                      disabled={notesDraft === (selectedApplication.notes ?? "")}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <p className="font-medium">Preuves / références</p>
                   <textarea
                     className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    value={selectedApplication.proofs ?? ""}
-                    onChange={(event) => saveProofs(selectedApplication.job.id, event.target.value)}
+                    value={proofsDraft}
+                    onChange={(event) =>
+                      setProofsDrafts((current) => ({
+                        ...current,
+                        [selectedApplication.job.id]: event.target.value,
+                      }))
+                    }
                   />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={async () => {
+                        const saved = await saveProofs(selectedApplication.job.id, proofsDraft);
+                        if (saved) {
+                          setProofsDrafts((current) => {
+                            const next = { ...current };
+                            delete next[selectedApplication.job.id];
+                            return next;
+                          });
+                        }
+                      }}
+                      disabled={proofsDraft === (selectedApplication.proofs ?? "")}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer
+                    </Button>
+                  </div>
                 </div>
 
                 {selectedApplication.sharedCoachNotes &&
@@ -730,6 +789,9 @@ export default function ApplicationsPage() {
                   </div>
                 </div>
               </SheetFooter>
+                  </>
+                );
+              })()}
             </>
           )}
         </SheetContent>
