@@ -44,3 +44,23 @@ export function applicationStatusLabel(status: ApplicationStatus) {
       return "En cours";
   }
 }
+
+function getApplicationSortTime(entry: JobApplication) {
+  const candidates = [entry.appliedAt, entry.updatedAt, entry.job.publicationDate];
+
+  for (const value of candidates) {
+    if (!value) continue;
+    const time = new Date(value).getTime();
+    if (!Number.isNaN(time)) {
+      return time;
+    }
+  }
+
+  return 0;
+}
+
+export function sortApplicationsByMostRecent(applications: JobApplication[]) {
+  return [...applications].sort(
+    (left, right) => getApplicationSortTime(right) - getApplicationSortTime(left)
+  );
+}

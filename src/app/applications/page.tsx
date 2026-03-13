@@ -43,6 +43,7 @@ import {
   isFollowUpPending,
   isManualApplication,
   shouldShowFollowUpDetails,
+  sortApplicationsByMostRecent,
 } from "@/features/applications/utils";
 import { exportApplicationsToCSV } from "@/lib/exportApplicationsCsv";
 import { exportInterviewsToICS } from "@/lib/exportApplicationsIcs";
@@ -104,43 +105,45 @@ export default function ApplicationsPage() {
   const filteredApplications = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return applications.filter((entry) => {
-      if (statusFilter !== "all" && entry.status !== statusFilter) {
-        return false;
-      }
-
-      if (modeFilter === "due") {
-        const dueDate = new Date(entry.followUpDueAt);
-        if (
-          !isFollowUpPending(entry.status) ||
-          Number.isNaN(dueDate.getTime()) ||
-          isAfter(dueDate, now)
-        ) {
+    return sortApplicationsByMostRecent(
+      applications.filter((entry) => {
+        if (statusFilter !== "all" && entry.status !== statusFilter) {
           return false;
         }
-      }
 
-      if (modeFilter === "interviews" && !entry.interviewAt) {
-        return false;
-      }
+        if (modeFilter === "due") {
+          const dueDate = new Date(entry.followUpDueAt);
+          if (
+            !isFollowUpPending(entry.status) ||
+            Number.isNaN(dueDate.getTime()) ||
+            isAfter(dueDate, now)
+          ) {
+            return false;
+          }
+        }
 
-      if (modeFilter === "manual" && !isManualApplication(entry)) {
-        return false;
-      }
+        if (modeFilter === "interviews" && !entry.interviewAt) {
+          return false;
+        }
 
-      if (!normalizedSearch) return true;
+        if (modeFilter === "manual" && !isManualApplication(entry)) {
+          return false;
+        }
 
-      return [
-        entry.job.company || "",
-        entry.job.title,
-        entry.job.location,
-        entry.job.contractType,
-        entry.notes || "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedSearch);
-    });
+        if (!normalizedSearch) return true;
+
+        return [
+          entry.job.company || "",
+          entry.job.title,
+          entry.job.location,
+          entry.job.contractType,
+          entry.notes || "",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      })
+    );
   }, [applications, modeFilter, now, search, statusFilter]);
 
   const selectedApplication = useMemo(

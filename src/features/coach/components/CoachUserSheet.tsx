@@ -17,6 +17,7 @@ import {
   getCoachUserDisplayName,
   isApplicationDue,
 } from "@/features/coach/utils";
+import { sortApplicationsByMostRecent } from "@/features/applications/utils";
 import { CoachUserSummary } from "@/types/coach";
 
 interface CoachUserSheetProps {
@@ -46,6 +47,8 @@ export function CoachUserSheet({
   onEdit,
   onDeleteUser,
 }: CoachUserSheetProps) {
+  const sortedApplications = user ? sortApplicationsByMostRecent(user.applications) : [];
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full p-0 sm:max-w-[50vw]">
@@ -107,8 +110,8 @@ export function CoachUserSheet({
             </SheetHeader>
 
             <div className="space-y-4 overflow-y-auto p-5">
-              {user.applications.length > 0 ? (
-                user.applications.map((application) => {
+              {sortedApplications.length > 0 ? (
+                sortedApplications.map((application) => {
                   const isDue = isApplicationDue(application);
 
                   return (
