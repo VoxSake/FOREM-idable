@@ -42,7 +42,7 @@ export function AuthSync() {
 
           if (localSerialized !== remoteSerialized) {
             const localIsNewer =
-              Boolean(localUpdatedAt) &&
+              typeof localUpdatedAt === "string" &&
               (!remoteUpdatedAt ||
                 new Date(localUpdatedAt).getTime() > new Date(remoteUpdatedAt).getTime());
 
