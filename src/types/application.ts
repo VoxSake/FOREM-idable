@@ -39,13 +39,13 @@ export interface JobApplication {
   job: Job;
   appliedAt: string;
   followUpDueAt: string;
-  lastFollowUpAt?: string;
+  lastFollowUpAt?: string | null;
   status: ApplicationStatus;
-  notes?: string;
-  proofs?: string;
+  notes?: string | null;
+  proofs?: string | null;
   privateCoachNote?: CoachPrivateNote;
   sharedCoachNotes?: CoachSharedNote[];
-  interviewAt?: string;
-  interviewDetails?: string;
+  interviewAt?: string | null;
+  interviewDetails?: string | null;
   updatedAt: string;
 }

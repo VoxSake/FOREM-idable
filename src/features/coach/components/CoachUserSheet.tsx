@@ -528,6 +528,22 @@ function CoachUserSheetBody({
                                   </div>
                                 </div>
                               ))}
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    setNewSharedNoteDrafts((current) => ({
+                                      ...current,
+                                      [application.job.id]: current[application.job.id] ?? "",
+                                    }))
+                                  }
+                                >
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  Ajouter une note partagée
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <p className="text-sm text-muted-foreground">

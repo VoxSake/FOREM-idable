@@ -183,29 +183,29 @@ export function useApplications() {
   const markAsRejected = (jobId: string) =>
     patchApplication(jobId, {
       status: "rejected",
-      interviewAt: undefined,
-      interviewDetails: undefined,
+      interviewAt: null,
+      interviewDetails: null,
     });
 
   const markAsInProgress = (jobId: string) =>
     patchApplication(jobId, {
       status: "in_progress",
-      interviewAt: undefined,
-      interviewDetails: undefined,
+      interviewAt: null,
+      interviewDetails: null,
     });
 
   const markAsAccepted = (jobId: string) =>
     patchApplication(jobId, {
       status: "accepted",
-      interviewAt: undefined,
-      interviewDetails: undefined,
+      interviewAt: null,
+      interviewDetails: null,
     });
 
   const markAsFollowUp = (jobId: string) =>
     patchApplication(jobId, {
       status: "follow_up",
-      interviewAt: undefined,
-      interviewDetails: undefined,
+      interviewAt: null,
+      interviewDetails: null,
     });
 
   const scheduleInterview = (jobId: string, interviewAt: string, interviewDetails?: string) =>
@@ -220,8 +220,8 @@ export function useApplications() {
 
     return patchApplication(jobId, {
       status: current?.status === "interview" ? "in_progress" : current?.status,
-      interviewAt: undefined,
-      interviewDetails: undefined,
+      interviewAt: null,
+      interviewDetails: null,
     });
   };
 
