@@ -91,7 +91,7 @@ export function AuthSettingsPanel() {
               {`${user.firstName} ${user.lastName}`.trim()}
             </span>{" "}
             <span className="text-xs">({user.email})</span>.
-            Vos favoris, candidatures, paramètres et recherches sont synchronisés via Postgres.
+            Vos candidatures et votre historique de recherche sont liés à votre compte.
           </p>
           <Badge variant="secondary" className="w-fit capitalize">
             {user.role}
@@ -103,7 +103,7 @@ export function AuthSettingsPanel() {
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Créez un compte ou connectez-vous pour retrouver vos données sur plusieurs appareils.
+            Créez un compte ou connectez-vous pour suivre vos candidatures et conserver votre historique de recherche.
           </p>
           <div className="space-y-2">
             <Label htmlFor="auth-first-name">Prénom</Label>

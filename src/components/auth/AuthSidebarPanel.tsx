@@ -143,7 +143,7 @@ export function AuthSidebarPanel() {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Connectez-vous pour synchroniser vos données sur plusieurs appareils.
+              Connectez-vous pour suivre vos candidatures et retrouver votre historique.
             </p>
           )}
         </div>
@@ -188,8 +188,8 @@ export function AuthSidebarPanel() {
             <DialogTitle>{mode === "login" ? "Connexion" : "Créer un compte"}</DialogTitle>
             <DialogDescription>
               {mode === "login"
-                ? "Retrouvez vos favoris, candidatures et paramètres synchronisés."
-                : "Créez un compte pour synchroniser vos données entre appareils."}
+                ? "Retrouvez vos candidatures, votre historique et votre espace personnel."
+                : "Créez un compte pour suivre vos candidatures et conserver votre historique."}
             </DialogDescription>
           </DialogHeader>
 

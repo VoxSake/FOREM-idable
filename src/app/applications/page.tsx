@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { AuthRequiredDialog } from "@/components/auth/AuthRequiredDialog";
 import { useApplications } from "@/hooks/useApplications";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import {
@@ -50,6 +52,7 @@ import { exportInterviewsToICS } from "@/lib/exportApplicationsIcs";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
 export default function ApplicationsPage() {
+  const { user, isLoading: isAuthLoading } = useAuth();
   const {
     applications,
     addManualApplication,
@@ -88,6 +91,7 @@ export default function ApplicationsPage() {
     interviewAt: "",
     interviewDetails: "",
   });
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
 
   const now = useMemo(() => new Date(), []);
   const dueCount = applications.filter(
@@ -159,7 +163,34 @@ export default function ApplicationsPage() {
     [applications, interviewJobId]
   );
 
-  if (!isLoaded) return null;
+  if (isAuthLoading || !isLoaded) return null;
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Candidatures</h1>
+          <p className="text-lg text-muted-foreground">
+            Connectez-vous pour suivre vos candidatures, relances, entretiens et notes dans un espace dédié.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Avec un compte, vous retrouvez automatiquement vos candidatures et votre historique de recherche,
+              et vous pouvez partager votre suivi avec un coach si besoin.
+            </p>
+            <Button type="button" onClick={() => setIsAuthDialogOpen(true)}>
+              Connexion / création de compte
+            </Button>
+          </div>
+        </div>
+
+        <AuthRequiredDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} />
+      </div>
+    );
+  }
 
   const applyStatus = (jobId: string, status: ApplicationStatus) => {
     if (status === "accepted") markAsAccepted(jobId);

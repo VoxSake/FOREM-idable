@@ -22,7 +22,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Job } from "@/types/job";
 import { ExternalLink, FileText, Send } from "lucide-react";
-import { useApplications } from "@/hooks/useApplications";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 
@@ -35,6 +34,11 @@ interface JobTableProps {
     selectedJobIds?: Set<string>;
     onToggleSelection?: (job: Job) => void;
     onOpenDetails?: (job: Job) => void;
+    isAuthenticated?: boolean;
+    isApplicationsLoaded?: boolean;
+    isApplied?: (jobId: string) => boolean;
+    onTrackApplication?: (job: Job) => Promise<void> | void;
+    onRequireAuth?: (job: Job) => void;
 }
 
 const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
@@ -67,13 +71,12 @@ export function JobTable({
     selectedJobIds,
     onToggleSelection,
     onOpenDetails,
+    isAuthenticated = false,
+    isApplicationsLoaded = true,
+    isApplied = () => false,
+    onTrackApplication,
+    onRequireAuth,
 }: JobTableProps) {
-    const {
-        isApplied,
-        addApplication,
-        isLoaded: isApplicationsLoaded,
-    } = useApplications();
-
     const columns: ColumnDef<Job>[] = [
         {
             accessorKey: "title",
@@ -152,7 +155,13 @@ export function JobTable({
                             variant={applied ? "secondary" : "ghost"}
                             size="icon"
                             className={applied ? "text-emerald-600 hover:text-emerald-700 bg-emerald-100/60 hover:bg-emerald-100 dark:bg-emerald-950/40" : "text-muted-foreground transition-colors hover:text-emerald-600"}
-                            onClick={() => addApplication(job)}
+                            onClick={async () => {
+                                if (!isAuthenticated) {
+                                    onRequireAuth?.(job);
+                                    return;
+                                }
+                                await onTrackApplication?.(job);
+                            }}
                             title={applied ? "Candidature déjà suivie" : "Marquer comme candidature envoyée"}
                             disabled={!isApplicationsLoaded}
                         >

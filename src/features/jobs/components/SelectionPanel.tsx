@@ -11,6 +11,7 @@ interface SelectionPanelProps {
   onReset: () => void;
   onRemove: (job: Job) => void;
   onSendToApplications: () => void;
+  sendDisabled?: boolean;
 }
 
 export function SelectionPanel({
@@ -18,6 +19,7 @@ export function SelectionPanel({
   onReset,
   onRemove,
   onSendToApplications,
+  sendDisabled = false,
 }: SelectionPanelProps) {
   if (selectedJobs.length === 0) return null;
 
@@ -29,7 +31,7 @@ export function SelectionPanel({
           Sélection ({selectedJobs.length})
         </h2>
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={onSendToApplications}>
+          <Button size="sm" onClick={onSendToApplications} disabled={sendDisabled}>
             <Send className="mr-2 h-4 w-4" />
             Envoyer vers Candidatures
           </Button>

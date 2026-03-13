@@ -17,7 +17,7 @@ Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, suivi de 
 - Bouton PDF direct par offre quand disponible (proxy serveur)
 - Suivi des candidatures, relances et entretiens
 - Comptes `user` / `coach` / `admin`
-- Synchronisation multi-device via compte Postgres
+- Candidatures et historique liés au compte utilisateur
 - API externe sécurisée pour export `JSON` / `CSV`
 - Export CSV (colonnes sélectionnables, métadonnées)
 - Comparateur d'offres

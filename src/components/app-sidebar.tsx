@@ -123,7 +123,6 @@ export function AppSidebar() {
                         size="icon"
                         onClick={() => {
                             setTheme(theme === "dark" ? "light" : "dark");
-                            window.dispatchEvent(new Event("forem-idable:local-state-changed"));
                         }}
                         className="rounded-full"
                     >

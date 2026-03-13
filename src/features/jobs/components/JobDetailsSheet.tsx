@@ -23,9 +23,23 @@ interface JobDetailsSheetProps {
   job: Job | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  applied: boolean;
+  isAuthenticated: boolean;
+  isApplicationsLoaded: boolean;
+  onTrackApplication: (job: Job) => Promise<void> | void;
+  onRequireAuth?: () => void;
 }
 
-export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProps) {
+export function JobDetailsSheet({
+  job,
+  open,
+  onOpenChange,
+  applied,
+  isAuthenticated,
+  isApplicationsLoaded,
+  onTrackApplication,
+  onRequireAuth,
+}: JobDetailsSheetProps) {
   const offerId = job ? getForemOfferId(job) : null;
   const { details } = useOfferDetails({
     offerId,
@@ -97,6 +111,11 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
             mailtoHref={mailtoHref}
             pdfUrl={pdfUrl}
             jobUrl={job.url}
+            applied={applied}
+            isAuthenticated={isAuthenticated}
+            isApplicationsLoaded={isApplicationsLoaded}
+            onTrackApplication={onTrackApplication}
+            onRequireAuth={onRequireAuth}
           />
         </SheetFooter>
       </SheetContent>

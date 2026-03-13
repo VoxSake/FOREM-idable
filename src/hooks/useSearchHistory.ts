@@ -1,52 +1,75 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { SearchQuery } from "@/types/search";
-import { dedupeAndPrependHistory } from "@/features/jobs/utils/searchHistory";
 import { SearchHistoryEntry } from "@/features/jobs/types/searchHistory";
 
-const SEARCH_HISTORY_KEY = "forem_idable_search_history_v1";
-const MAX_HISTORY_ITEMS = 8;
-
 export function useSearchHistory() {
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [history, setHistory] = useState<SearchHistoryEntry[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setHistory([]);
+      setIsLoaded(true);
+      return;
+    }
+
+    setIsLoaded(false);
+
     try {
-      const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as SearchHistoryEntry[];
-        if (Array.isArray(parsed)) {
-          setHistory(parsed);
-        }
-      }
-    } catch (error) {
-      console.error("Unable to load search history", error);
+      const response = await fetch("/api/search-history", { cache: "no-store" });
+      const data = (await response.json()) as { history?: SearchHistoryEntry[] };
+      setHistory(Array.isArray(data.history) ? data.history : []);
+    } catch {
+      setHistory([]);
     } finally {
       setIsLoaded(true);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
-    window.dispatchEvent(new Event("forem-idable:local-state-changed"));
-  }, [history, isLoaded]);
+    if (isAuthLoading) return;
+    void refresh();
+  }, [isAuthLoading, refresh]);
 
-  const addEntry = (state: SearchQuery) => {
-    const normalized: SearchHistoryEntry = {
+  const addEntry = async (state: SearchQuery) => {
+    if (!user) return false;
+
+    const entry: SearchHistoryEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       state,
       createdAt: new Date().toISOString(),
     };
 
-    setHistory((prev) => {
-      return dedupeAndPrependHistory(prev, normalized, MAX_HISTORY_ITEMS);
+    const response = await fetch("/api/search-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entry }),
     });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = (await response.json()) as { history?: SearchHistoryEntry[] };
+    setHistory(Array.isArray(data.history) ? data.history : []);
+    return true;
   };
 
-  const clearHistory = () => setHistory([]);
+  const clearHistory = async () => {
+    if (!user) return false;
 
-  return { history, addEntry, clearHistory, isLoaded };
+    const response = await fetch("/api/search-history", { method: "DELETE" });
+    if (!response.ok) {
+      return false;
+    }
+
+    setHistory([]);
+    return true;
+  };
+
+  return { history, addEntry, clearHistory, isLoaded, isAuthenticated: Boolean(user) };
 }

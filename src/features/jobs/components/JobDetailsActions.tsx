@@ -2,7 +2,6 @@
 
 import { ExternalLink, FileText, Mail, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useApplications } from "@/hooks/useApplications";
 import { Job } from "@/types/job";
 
 interface JobDetailsActionsProps {
@@ -10,19 +9,37 @@ interface JobDetailsActionsProps {
   pdfUrl: string | null;
   jobUrl: string;
   job: Job;
+  applied: boolean;
+  isAuthenticated: boolean;
+  isApplicationsLoaded: boolean;
+  onTrackApplication: (job: Job) => Promise<void> | void;
+  onRequireAuth?: () => void;
 }
 
-export function JobDetailsActions({ mailtoHref, pdfUrl, jobUrl, job }: JobDetailsActionsProps) {
-  const { addApplication, isApplied, isLoaded } = useApplications();
-  const applied = isApplied(job.id);
-
+export function JobDetailsActions({
+  mailtoHref,
+  pdfUrl,
+  jobUrl,
+  job,
+  applied,
+  isAuthenticated,
+  isApplicationsLoaded,
+  onTrackApplication,
+  onRequireAuth,
+}: JobDetailsActionsProps) {
   return (
     <>
       <Button
         variant={applied ? "secondary" : "outline"}
         type="button"
-        onClick={() => addApplication(job)}
-        disabled={!isLoaded}
+        onClick={async () => {
+          if (!isAuthenticated) {
+            onRequireAuth?.();
+            return;
+          }
+          await onTrackApplication(job);
+        }}
+        disabled={!isApplicationsLoaded}
         className="w-full sm:w-auto whitespace-normal h-auto py-2.5 px-3 text-center"
       >
         <Send className="w-4 h-4 mr-2" />

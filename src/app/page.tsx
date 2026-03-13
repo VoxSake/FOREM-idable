@@ -16,12 +16,16 @@ import { fromSearchParams, toSearchPath } from "@/features/jobs/utils/searchUrl"
 import { Job } from "@/types/job";
 import { JobDetailsSheet } from "@/features/jobs/components/JobDetailsSheet";
 import { useApplications } from "@/hooks/useApplications";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { AuthRequiredDialog } from "@/components/auth/AuthRequiredDialog";
+import { Button } from "@/components/ui/button";
 
 function DashboardPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const hasAppliedInitialUrlQuery = useRef(false);
+  const { user } = useAuth();
   const { settings, isLoaded } = useSettings();
   const {
     jobs,
@@ -43,7 +47,12 @@ function DashboardPageContent() {
     toggleSelection,
     resetSelection,
   } = useSelectionJobs();
-  const { addApplication } = useApplications();
+  const {
+    addApplication,
+    isApplied,
+    isLoaded: areApplicationsLoaded,
+    isAuthenticated: isApplicationAuth,
+  } = useApplications();
   const {
     isExportDialogOpen,
     setIsExportDialogOpen,
@@ -56,6 +65,8 @@ function DashboardPageContent() {
   } = useExportJobs();
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isAuthRequiredOpen, setIsAuthRequiredOpen] = useState(false);
+  const [pendingApplicationJobs, setPendingApplicationJobs] = useState<Job[]>([]);
   const urlQuery = fromSearchParams(searchParams);
 
   const updateUrlFromQuery = (query: SearchState) => {
@@ -93,6 +104,25 @@ function DashboardPageContent() {
     await executeSearch(state);
   };
 
+  const requestAuthForApplications = (jobsToTrack: Job[]) => {
+    setPendingApplicationJobs(jobsToTrack);
+    setIsAuthRequiredOpen(true);
+  };
+
+  const trackJobs = async (jobsToTrack: Job[]) => {
+    for (const job of jobsToTrack) {
+      await addApplication(job);
+    }
+  };
+
+  const replayPendingApplications = async () => {
+    if (pendingApplicationJobs.length === 0) return;
+
+    await trackJobs(pendingApplicationJobs);
+    resetSelection();
+    setPendingApplicationJobs([]);
+  };
+
   if (!isLoaded) return null;
 
   return (
@@ -111,7 +141,22 @@ function DashboardPageContent() {
         initialState={urlQuery ?? { booleanMode: settings.defaultSearchMode }}
       />
 
-      {isHistoryLoaded && (
+      {!user ? (
+        <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/20 dark:text-sky-100">
+          <p className="font-medium">Connectez-vous pour aller plus loin.</p>
+          <p className="mt-1 text-sky-800/90 dark:text-sky-100/80">
+            Le compte permet de suivre les candidatures, conserver l&apos;historique de recherche,
+            retrouver vos données sur tous vos appareils et partager l&apos;avancement avec un coach.
+          </p>
+          <div className="mt-3">
+            <Button type="button" size="sm" onClick={() => setIsAuthRequiredOpen(true)}>
+              Connexion / création de compte
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {user && isHistoryLoaded && (
         <SearchHistoryPanel
           history={history}
           onReplay={async (query) => {
@@ -130,8 +175,11 @@ function DashboardPageContent() {
             onReset={resetSelection}
             onRemove={toggleSelection}
             onSendToApplications={() => {
-              selectedJobs.forEach((job) => addApplication(job));
-              resetSelection();
+              if (!user) {
+                requestAuthForApplications(selectedJobs);
+                return;
+              }
+              void trackJobs(selectedJobs).then(() => resetSelection());
             }}
           />
 
@@ -163,6 +211,11 @@ function DashboardPageContent() {
                 setSelectedJob(job);
                 setIsDetailsOpen(true);
               }}
+              isAuthenticated={isApplicationAuth}
+              isApplicationsLoaded={areApplicationsLoaded}
+              isApplied={isApplied}
+              onTrackApplication={(job) => addApplication(job)}
+              onRequireAuth={(job) => requestAuthForApplications([job])}
             />
           )}
         </div>
@@ -190,6 +243,23 @@ function DashboardPageContent() {
         job={selectedJob}
         open={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
+        applied={selectedJob ? isApplied(selectedJob.id) : false}
+        isAuthenticated={isApplicationAuth}
+        isApplicationsLoaded={areApplicationsLoaded}
+        onTrackApplication={(job) => addApplication(job)}
+        onRequireAuth={() => {
+          if (selectedJob) {
+            requestAuthForApplications([selectedJob]);
+          } else {
+            setIsAuthRequiredOpen(true);
+          }
+        }}
+      />
+
+      <AuthRequiredDialog
+        open={isAuthRequiredOpen}
+        onOpenChange={setIsAuthRequiredOpen}
+        onSuccess={replayPendingApplications}
       />
     </div>
   );

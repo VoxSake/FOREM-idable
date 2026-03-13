@@ -7,7 +7,6 @@ import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 import { runtimeConfig } from "@/config/runtime";
 import { AnalyticsConsent } from "@/components/consent/AnalyticsConsent";
 import { AuthProvider } from "@/components/auth/AuthProvider";
-import { AuthSync } from "@/components/auth/AuthSync";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -53,7 +52,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <AuthSync />
             <SidebarProvider>
               <AppSidebar />
               <main className="flex-1 overflow-x-hidden flex flex-col w-full min-h-screen">

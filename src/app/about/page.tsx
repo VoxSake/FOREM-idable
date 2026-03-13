@@ -19,7 +19,7 @@ const RECENT_UPDATES = [
   },
   {
     month: "Mars 2026",
-    text: "Ajout du suivi complet des candidatures: relances, entretiens, export CSV, synchronisation multi-appareils et interface dédiée.",
+    text: "Ajout du suivi complet des candidatures: relances, entretiens, export CSV, compte obligatoire pour le suivi et interface dédiée.",
   },
   {
     month: "Mars 2026",
@@ -62,7 +62,7 @@ export default function AboutPage() {
         <p className="text-sm text-muted-foreground leading-6">
           Le site simplifie la recherche d&apos;offres en regroupant les résultats, en améliorant le filtrage par
           localités (provinces, arrondissements, communes, localités) et en proposant des actions pratiques
-          comme les favoris et l&apos;ouverture du PDF quand il est disponible.
+          comme le suivi des candidatures et l&apos;ouverture du PDF quand il est disponible.
         </p>
       </section>
 

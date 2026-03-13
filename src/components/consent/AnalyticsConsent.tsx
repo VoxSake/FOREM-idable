@@ -63,9 +63,9 @@ export function AnalyticsConsent({
           <div className="space-y-2">
             <p className="text-sm leading-relaxed text-card-foreground">
               FOREM-idable stocke localement les donn&eacute;es n&eacute;cessaires &agrave; son
-              fonctionnement, comme vos favoris, candidatures, recherches, pr&eacute;f&eacute;rences
-              et choix de consentement. Si vous vous connectez, ces donn&eacute;es peuvent aussi
-              &ecirc;tre synchronis&eacute;es avec votre compte.
+              fonctionnement, comme vos pr&eacute;f&eacute;rences d&apos;interface et votre choix de consentement.
+              Si vous vous connectez, vos candidatures et votre historique de recherche sont alors
+              enregistr&eacute;s dans votre compte.
             </p>
             <p className="text-sm leading-relaxed text-card-foreground">
               Les statistiques anonymes de navigation via Umami sont facultatives. Voulez-vous les

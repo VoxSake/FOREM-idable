@@ -7,6 +7,8 @@ const mockUseSettings = vi.fn();
 const mockUseJobSearch = vi.fn();
 const mockUseSelectionJobs = vi.fn();
 const mockUseExportJobs = vi.fn();
+const mockUseApplications = vi.fn();
+const mockUseAuth = vi.fn();
 const mockReplace = vi.fn();
 
 vi.mock("@/hooks/useSettings", () => ({
@@ -23,6 +25,14 @@ vi.mock("@/features/jobs/hooks/useSelectionJobs", () => ({
 
 vi.mock("@/features/jobs/hooks/useExportJobs", () => ({
   useExportJobs: () => mockUseExportJobs(),
+}));
+
+vi.mock("@/hooks/useApplications", () => ({
+  useApplications: () => mockUseApplications(),
+}));
+
+vi.mock("@/components/auth/AuthProvider", () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -68,6 +78,10 @@ vi.mock("@/features/jobs/components/SearchHistoryPanel", () => ({
 
 vi.mock("@/features/jobs/components/SelectionPanel", () => ({
   SelectionPanel: () => <div>selection-panel</div>,
+}));
+
+vi.mock("@/components/auth/AuthRequiredDialog", () => ({
+  AuthRequiredDialog: () => <div>auth-required-dialog</div>,
 }));
 
 vi.mock("@/features/jobs/components/ResultsToolbar", () => ({
@@ -154,6 +168,20 @@ describe("DashboardPage integration", () => {
       selectAllColumns: vi.fn(),
       toggleColumn: vi.fn(),
       applyExport: vi.fn(),
+    });
+
+    mockUseApplications.mockReturnValue({
+      addApplication: vi.fn(),
+    });
+
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: 1,
+        email: "user@example.com",
+        firstName: "Test",
+        lastName: "User",
+        role: "user",
+      },
     });
   });
 

@@ -488,7 +488,6 @@ Inclut:
 - groupes
 - stats
 - candidatures
-- favoris
 
 Les candidatures détaillées peuvent inclure aussi:
 

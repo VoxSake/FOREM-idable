@@ -1,6 +1,5 @@
 import { isAfter } from "date-fns";
 import { getCoachDashboard } from "@/lib/server/coach";
-import { getUserState } from "@/lib/server/userState";
 import {
   ExternalApiActor,
   ExternalApiApplicationRow,
@@ -14,19 +13,7 @@ import {
   ExternalApiUsersResponse,
 } from "@/types/externalApi";
 import { ApplicationStatus } from "@/types/application";
-import { STORAGE_KEYS } from "@/lib/storageKeys";
-import { Job } from "@/types/job";
 import { CoachUserSummary } from "@/types/coach";
-
-function safeJsonParse<T>(value: string | undefined, fallback: T): T {
-  if (!value) return fallback;
-
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
-}
 
 function matchesSearch(haystack: string[], search?: string) {
   const normalized = search?.trim().toLowerCase();
@@ -133,13 +120,7 @@ export async function getExternalUserDetail(actor: ExternalApiActor, userId: num
   const user = dashboard.users.find((entry) => entry.id === userId);
   if (!user) return null;
 
-  const persisted = await getUserState(userId);
-  const values = persisted?.values ?? {};
-
-  return {
-    ...toExternalUserSummary(user, true),
-    favorites: safeJsonParse<Job[]>(values[STORAGE_KEYS.favorites], []),
-  };
+  return toExternalUserSummary(user, true);
 }
 
 export async function getExternalGroups(

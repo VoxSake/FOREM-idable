@@ -1,6 +1,5 @@
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { UserRole } from "@/types/auth";
-import { Job } from "@/types/job";
 
 export interface ApiKeySummary {
   id: number;
@@ -56,9 +55,7 @@ export interface ExternalApiUserSummary {
   applications?: JobApplication[];
 }
 
-export interface ExternalApiUserDetail extends ExternalApiUserSummary {
-  favorites: Job[];
-}
+export type ExternalApiUserDetail = ExternalApiUserSummary;
 
 export interface ExternalApiGroupSummary {
   id: number;

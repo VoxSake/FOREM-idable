@@ -21,7 +21,7 @@ export default function PrivacyPage() {
           <p>
             FOREM-idable est un projet gratuit et open source, mis à disposition sous licence MIT.
             L&apos;application permet de rechercher des offres d&apos;emploi, de suivre des
-            candidatures, et, si vous créez un compte, de synchroniser ces données entre appareils.
+            candidatures, et, si vous créez un compte, d&apos;enregistrer ces données dans votre espace personnel.
           </p>
           <p>
             La présente politique de confidentialité est rédigée en tenant compte du Règlement
@@ -74,25 +74,24 @@ export default function PrivacyPage() {
           <div>
             <p className="font-semibold text-foreground">2. Données d&apos;usage métier</p>
             <p>
-              L&apos;application peut stocker vos favoris, candidatures, notes, preuves, dates
-              d&apos;entretien, relances, historique de recherche, préférences d&apos;interface,
-              thème et choix de consentement analytics.
+              L&apos;application peut stocker vos candidatures, notes, preuves, dates d&apos;entretien,
+              relances, historique de recherche et, selon votre rôle, des annotations de suivi liées
+              à l&apos;accompagnement coach.
             </p>
           </div>
           <div>
             <p className="font-semibold text-foreground">3. Données locales</p>
             <p>
-              Une partie importante de ces données peut être conservée localement dans votre
-              navigateur pour faire fonctionner l&apos;application, même sans compte.
+              Certaines préférences techniques restent conservées localement dans votre navigateur,
+              comme le thème, l&apos;opérateur booléen par défaut et votre choix de consentement analytics.
             </p>
           </div>
           <div>
             <p className="font-semibold text-foreground">4. Synchronisation</p>
             <p>
-              Si vous vous connectez, les données utiles au fonctionnement de l&apos;application
-              peuvent être synchronisées avec la base de données associée à votre compte. Si vous
-              utilisez le jeton d&apos;export/import manuel, le contenu du jeton reste sous votre
-              contrôle et dépend de l&apos;usage que vous en faites.
+              Si vous vous connectez, vos candidatures et votre historique de recherche sont
+              enregistrés dans la base de données associée à votre compte afin d&apos;être retrouvés
+              sur vos appareils et, le cas échéant, visibles dans le suivi coach selon vos droits.
             </p>
           </div>
           <div>
@@ -119,7 +118,7 @@ export default function PrivacyPage() {
         <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
           <p>
             <span className="font-semibold text-foreground">Fournir le service</span>: recherche
-            d&apos;offres, gestion des favoris, suivi des candidatures, synchronisation et accès aux
+            d&apos;offres, suivi des candidatures, historique de recherche, accès au compte et accès aux
             fonctions du compte. Base juridique principale: exécution du service demandé et, selon
             les cas, mesures précontractuelles.
           </p>

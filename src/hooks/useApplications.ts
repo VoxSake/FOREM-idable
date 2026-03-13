@@ -1,122 +1,125 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { addDays } from "date-fns";
-import { STORAGE_KEYS } from "@/lib/storageKeys";
-import { Job } from "@/types/job";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { ApplicationStatus, JobApplication } from "@/types/application";
+import { Job } from "@/types/job";
 
-const APPLICATIONS_CHANGE_EVENT = "forem-idable:applications-change";
-
-function buildApplication(job: Job): JobApplication {
-  const now = new Date();
+function buildManualJob(input: {
+  company: string;
+  title: string;
+  contractType: string;
+  location: string;
+  appliedAt?: string;
+  url?: string;
+}): Job {
+  const baseDate = input.appliedAt ? new Date(input.appliedAt) : new Date();
+  const appliedAt = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate;
 
   return {
-    job,
-    appliedAt: now.toISOString(),
-    followUpDueAt: addDays(now, 7).toISOString(),
-    status: "in_progress",
-    updatedAt: now.toISOString(),
+    id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: input.title,
+    company: input.company,
+    location: input.location || "Non précisé",
+    contractType: input.contractType || "Non précisé",
+    publicationDate: appliedAt.toISOString(),
+    url: input.url || "#",
+    source: "forem",
   };
 }
 
 export function useApplications() {
-  const [state, setState] = useState<{
-    applications: JobApplication[];
-    isLoaded: boolean;
-  }>({
-    applications: [],
-    isLoaded: false,
-  });
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const applications = state.applications;
-  const isLoaded = state.isLoaded;
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setApplications([]);
+      setIsLoaded(true);
+      return;
+    }
 
-  useEffect(() => {
-    const load = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEYS.applications);
-        if (stored) {
-          const parsed = JSON.parse(stored) as JobApplication[];
-          if (Array.isArray(parsed)) {
-            setState({
-              applications: parsed,
-              isLoaded: true,
-            });
-            return;
-          }
-        }
-        setState({
-          applications: [],
-          isLoaded: true,
-        });
-      } catch (error) {
-        console.error("Failed to load applications", error);
-        setState({
-          applications: [],
-          isLoaded: true,
-        });
-      }
-    };
+    setIsLoaded(false);
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEYS.applications) {
-        load();
-      }
-    };
-    const handleChange = (event: Event) => {
-      const nextApplications = (event as CustomEvent<JobApplication[]>).detail;
-      if (Array.isArray(nextApplications)) {
-        setState((current) => ({
-          ...current,
-          applications: nextApplications,
-        }));
-      }
-    };
-
-    load();
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener(APPLICATIONS_CHANGE_EVENT, handleChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener(APPLICATIONS_CHANGE_EVENT, handleChange);
-    };
-  }, []);
+    try {
+      const response = await fetch("/api/applications", { cache: "no-store" });
+      const data = (await response.json()) as { applications?: JobApplication[] };
+      setApplications(Array.isArray(data.applications) ? data.applications : []);
+    } catch {
+      setApplications([]);
+    } finally {
+      setIsLoaded(true);
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (isAuthLoading) return;
+    void refresh();
+  }, [isAuthLoading, refresh]);
 
-    localStorage.setItem(STORAGE_KEYS.applications, JSON.stringify(applications));
-    window.dispatchEvent(new CustomEvent(APPLICATIONS_CHANGE_EVENT, { detail: applications }));
-  }, [applications, isLoaded]);
+  const createApplication = async (payload: {
+    job: Job;
+    appliedAt?: string;
+    status?: ApplicationStatus;
+    notes?: string;
+    proofs?: string;
+    interviewAt?: string;
+    interviewDetails?: string;
+  }) => {
+    if (!user) return false;
 
-  const addApplication = (job: Job) => {
-    setState((current) => {
-      const existing = current.applications.find((entry) => entry.job.id === job.id);
-      if (existing) {
-        return {
-          ...current,
-          applications: current.applications.map((entry) =>
-            entry.job.id === job.id
-              ? {
-                  ...entry,
-                  job,
-                  updatedAt: new Date().toISOString(),
-                }
-              : entry
-          ),
-        };
-      }
-
-      return {
-        ...current,
-        applications: [buildApplication(job), ...current.applications],
-      };
+    const response = await fetch("/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    await refresh();
+    return true;
   };
 
-  const addManualApplication = (input: {
+  const patchApplication = async (
+    jobId: string,
+    patch: Partial<
+      Pick<
+        JobApplication,
+        | "status"
+        | "notes"
+        | "proofs"
+        | "interviewAt"
+        | "interviewDetails"
+        | "lastFollowUpAt"
+        | "followUpDueAt"
+        | "appliedAt"
+        | "job"
+      >
+    >
+  ) => {
+    if (!user) return false;
+
+    const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patch }),
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    await refresh();
+    return true;
+  };
+
+  const addApplication = async (job: Job) => createApplication({ job });
+
+  const addManualApplication = async (input: {
     company: string;
     title: string;
     contractType: string;
@@ -126,145 +129,98 @@ export function useApplications() {
     notes?: string;
     proofs?: string;
     url?: string;
-  }) => {
-    const baseDate = input.appliedAt ? new Date(input.appliedAt) : new Date();
-    const appliedAt = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate;
-    const job: Job = {
-      id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      title: input.title,
-      company: input.company,
-      location: input.location || "Non précisé",
-      contractType: input.contractType || "Non précisé",
-      publicationDate: appliedAt.toISOString(),
-      url: input.url || "#",
-      source: "forem",
-    };
+  }) =>
+    createApplication({
+      job: buildManualJob(input),
+      appliedAt: input.appliedAt,
+      status: input.status,
+      notes: input.notes,
+      proofs: input.proofs,
+    });
 
-    setState((current) => ({
-      ...current,
-      applications: [
-        {
-          ...buildApplication(job),
-          appliedAt: appliedAt.toISOString(),
-          followUpDueAt: addDays(appliedAt, 7).toISOString(),
-          status: input.status || "in_progress",
-          notes: input.notes,
-          proofs: input.proofs,
-        },
-        ...current.applications,
-      ],
-    }));
+  const removeApplication = async (jobId: string) => {
+    if (!user) return false;
+
+    const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    await refresh();
+    return true;
   };
 
-  const removeApplication = (jobId: string) => {
-    setState((current) => ({
-      ...current,
-      applications: current.applications.filter((entry) => entry.job.id !== jobId),
-    }));
-  };
-
-  const updateApplication = (jobId: string, updater: (entry: JobApplication) => JobApplication) => {
-    setState((current) => ({
-      ...current,
-      applications: current.applications.map((entry) => {
-        if (entry.job.id !== jobId) return entry;
-        return {
-          ...updater(entry),
-          updatedAt: new Date().toISOString(),
-        };
-      }),
-    }));
-  };
-
-  const markAsRejected = (jobId: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
+  const markAsRejected = (jobId: string) =>
+    patchApplication(jobId, {
       status: "rejected",
       interviewAt: undefined,
       interviewDetails: undefined,
-    }));
-  };
+    });
 
-  const markAsInProgress = (jobId: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
+  const markAsInProgress = (jobId: string) =>
+    patchApplication(jobId, {
       status: "in_progress",
       interviewAt: undefined,
       interviewDetails: undefined,
-    }));
-  };
+    });
 
-  const markAsAccepted = (jobId: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
+  const markAsAccepted = (jobId: string) =>
+    patchApplication(jobId, {
       status: "accepted",
       interviewAt: undefined,
       interviewDetails: undefined,
-    }));
-  };
+    });
 
-  const markAsFollowUp = (jobId: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
+  const markAsFollowUp = (jobId: string) =>
+    patchApplication(jobId, {
       status: "follow_up",
       interviewAt: undefined,
       interviewDetails: undefined,
-    }));
-  };
+    });
 
-  const scheduleInterview = (jobId: string, interviewAt: string, interviewDetails?: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
+  const scheduleInterview = (jobId: string, interviewAt: string, interviewDetails?: string) =>
+    patchApplication(jobId, {
       status: "interview",
       interviewAt,
       interviewDetails,
-    }));
-  };
+    });
 
-  const clearInterview = (jobId: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
-      status: entry.status === "interview" ? "in_progress" : entry.status,
+  const clearInterview = async (jobId: string) => {
+    const current = applications.find((entry) => entry.job.id === jobId);
+
+    return patchApplication(jobId, {
+      status: current?.status === "interview" ? "in_progress" : current?.status,
       interviewAt: undefined,
       interviewDetails: undefined,
-    }));
-  };
-
-  const saveNotes = (jobId: string, notes: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
-      notes,
-    }));
-  };
-
-  const saveProofs = (jobId: string, proofs: string) => {
-    updateApplication(jobId, (entry) => ({
-      ...entry,
-      proofs,
-    }));
-  };
-
-  const markFollowUpDone = (jobId: string) => {
-    updateApplication(jobId, (entry) => {
-      const now = new Date();
-
-      return {
-        ...entry,
-        lastFollowUpAt: now.toISOString(),
-        followUpDueAt: addDays(now, 7).toISOString(),
-        status: "in_progress",
-      };
     });
   };
 
-  const isApplied = (jobId: string) => applications.some((entry) => entry.job.id === jobId);
+  const saveNotes = (jobId: string, notes: string) => patchApplication(jobId, { notes });
+  const saveProofs = (jobId: string, proofs: string) => patchApplication(jobId, { proofs });
+
+  const markFollowUpDone = (jobId: string) => {
+    const now = new Date();
+
+    return patchApplication(jobId, {
+      lastFollowUpAt: now.toISOString(),
+      followUpDueAt: addDays(now, 7).toISOString(),
+      status: "in_progress",
+    });
+  };
+
+  const isApplied = useCallback(
+    (jobId: string) => applications.some((entry) => entry.job.id === jobId),
+    [applications]
+  );
 
   return {
     applications,
     addApplication,
     addManualApplication,
     removeApplication,
-    updateApplication,
     markAsRejected,
     markAsInProgress,
     markAsAccepted,
@@ -276,5 +232,8 @@ export function useApplications() {
     markFollowUpDone,
     isApplied,
     isLoaded,
+    isAuthenticated: Boolean(user),
+    isAuthLoading,
+    refresh,
   };
 }
