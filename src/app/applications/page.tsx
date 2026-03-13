@@ -184,7 +184,7 @@ export default function ApplicationsPage() {
     else if (status === "interview") {
       const existing = applications.find((entry) => entry.job.id === jobId);
       if (existing?.interviewAt) {
-        scheduleInterview(jobId, existing.interviewAt, existing.interviewDetails);
+        scheduleInterview(jobId, existing.interviewAt, existing.interviewDetails ?? undefined);
       } else {
         setInterviewJobId(jobId);
         setInterviewForm({
