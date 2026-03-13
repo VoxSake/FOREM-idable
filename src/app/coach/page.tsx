@@ -79,7 +79,7 @@ export default function CoachPage() {
         canManageApiKeys={Boolean(coach.canManageSelectedUserApiKeys)}
         open={Boolean(coach.selectedUser)}
         user={coach.selectedUser}
-        savingCoachNoteJobId={coach.savingCoachNoteJobId}
+        savingCoachNoteKey={coach.savingCoachNoteKey}
         onOpenChange={(open) => !open && coach.setSelectedUserId(null)}
         onExport={coach.exportUserApplications}
         onOpenApiKeys={() => void coach.openManagedUserApiKeys()}
@@ -104,8 +104,17 @@ export default function CoachPage() {
             email: coach.selectedUser.email,
           });
         }}
-        onSaveCoachNote={(userId, jobId, coachNote, shareCoachNoteWithBeneficiary) =>
-          coach.updateApplicationCoachNote(userId, jobId, coachNote, shareCoachNoteWithBeneficiary)
+        onSavePrivateCoachNote={(userId, jobId, content) =>
+          coach.savePrivateCoachNote(userId, jobId, content)
+        }
+        onCreateSharedCoachNote={(userId, jobId, content) =>
+          coach.createSharedCoachNote(userId, jobId, content)
+        }
+        onUpdateSharedCoachNote={(userId, jobId, noteId, content) =>
+          coach.updateSharedCoachNote(userId, jobId, noteId, content)
+        }
+        onDeleteSharedCoachNote={(userId, jobId, noteId) =>
+          coach.deleteSharedCoachNote(userId, jobId, noteId)
         }
       />
 

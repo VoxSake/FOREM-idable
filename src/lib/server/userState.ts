@@ -1,5 +1,10 @@
 import { STORAGE_KEYS } from "@/lib/storageKeys";
 import { db, ensureDatabase } from "@/lib/server/db";
+import {
+  normalizeApplicationCoachNotes,
+  preserveApplicationCoachFields,
+  sanitizeApplicationForBeneficiary,
+} from "@/lib/coachNotes";
 import { JobApplication } from "@/types/application";
 import { SearchHistoryEntry } from "@/features/jobs/types/searchHistory";
 import { Job } from "@/types/job";
@@ -36,16 +41,7 @@ function safeJsonParse<T>(value: string | undefined | null, fallback: T): T {
 }
 
 export function sanitizeApplicationsForBeneficiary(applications: JobApplication[]) {
-  return applications.map((application) => {
-    if (application.shareCoachNoteWithBeneficiary) {
-      return application;
-    }
-
-    return {
-      ...application,
-      coachNote: undefined,
-    };
-  });
+  return applications.map((application) => sanitizeApplicationForBeneficiary(application));
 }
 
 export function mergeApplicationsWithServerFields(input: {
@@ -59,15 +55,10 @@ export function mergeApplicationsWithServerFields(input: {
   return input.incoming.map((application) => {
     const existing = existingByJobId.get(application.job.id);
     if (!existing) {
-      return application;
+      return normalizeApplicationCoachNotes(application);
     }
 
-    return {
-      ...application,
-      coachNote: application.coachNote ?? existing.coachNote,
-      shareCoachNoteWithBeneficiary:
-        application.shareCoachNoteWithBeneficiary ?? existing.shareCoachNoteWithBeneficiary,
-    };
+    return preserveApplicationCoachFields(existing, application);
   });
 }
 

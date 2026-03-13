@@ -44,7 +44,7 @@ export function useCoachDashboard() {
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
   const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<CoachRevokeApiKeyTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
-  const [savingCoachNoteJobId, setSavingCoachNoteJobId] = useState<string | null>(null);
+  const [savingCoachNoteKey, setSavingCoachNoteKey] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [editedFirstName, setEditedFirstName] = useState("");
@@ -287,34 +287,117 @@ export function useCoachDashboard() {
     await loadDashboard();
   };
 
-  const updateApplicationCoachNote = async (
+  const savePrivateCoachNote = async (
     userId: number,
     jobId: string,
-    coachNote: string,
-    shareCoachNoteWithBeneficiary: boolean
+    content: string
   ) => {
-    setSavingCoachNoteJobId(jobId);
+    setSavingCoachNoteKey(`private:${jobId}`);
 
     const response = await fetch(`/api/coach/users/${userId}/applications`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         jobId,
-        coachNote,
-        shareCoachNoteWithBeneficiary,
+        action: "save-private",
+        content,
       }),
     });
 
     const data = (await response.json().catch(() => ({}))) as { error?: string };
     if (!response.ok) {
       setFeedback(data.error || "Note coach impossible à enregistrer.");
-      setSavingCoachNoteJobId(null);
+      setSavingCoachNoteKey(null);
       return false;
     }
 
-    setFeedback("Note coach enregistrée.");
+    setFeedback("Note privée enregistrée.");
     await loadDashboard();
-    setSavingCoachNoteJobId(null);
+    setSavingCoachNoteKey(null);
+    return true;
+  };
+
+  const createSharedCoachNote = async (userId: number, jobId: string, content: string) => {
+    setSavingCoachNoteKey(`create:${jobId}`);
+
+    const response = await fetch(`/api/coach/users/${userId}/applications`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        action: "create-shared",
+        content,
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setFeedback(data.error || "Note partagée impossible à créer.");
+      setSavingCoachNoteKey(null);
+      return false;
+    }
+
+    setFeedback("Note partagée enregistrée.");
+    await loadDashboard();
+    setSavingCoachNoteKey(null);
+    return true;
+  };
+
+  const updateSharedCoachNote = async (
+    userId: number,
+    jobId: string,
+    noteId: string,
+    content: string
+  ) => {
+    setSavingCoachNoteKey(`shared:${noteId}`);
+
+    const response = await fetch(`/api/coach/users/${userId}/applications`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        noteId,
+        action: "update-shared",
+        content,
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setFeedback(data.error || "Note partagée impossible à mettre à jour.");
+      setSavingCoachNoteKey(null);
+      return false;
+    }
+
+    setFeedback("Note partagée mise à jour.");
+    await loadDashboard();
+    setSavingCoachNoteKey(null);
+    return true;
+  };
+
+  const deleteSharedCoachNote = async (userId: number, jobId: string, noteId: string) => {
+    setSavingCoachNoteKey(`delete:${noteId}`);
+
+    const response = await fetch(`/api/coach/users/${userId}/applications`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        noteId,
+        action: "delete-shared",
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setFeedback(data.error || "Suppression de la note partagée impossible.");
+      setSavingCoachNoteKey(null);
+      return false;
+    }
+
+    setFeedback("Note partagée supprimée.");
+    await loadDashboard();
+    setSavingCoachNoteKey(null);
     return true;
   };
 
@@ -434,7 +517,7 @@ export function useCoachDashboard() {
     setRevokeApiKeyTarget,
     deleteUserTarget,
     setDeleteUserTarget,
-    savingCoachNoteJobId,
+    savingCoachNoteKey,
     newPassword,
     setNewPassword,
     confirmNewPassword,
@@ -468,7 +551,10 @@ export function useCoachDashboard() {
     openManagedUserApiKeys,
     revokeManagedApiKey,
     deleteUser,
-    updateApplicationCoachNote,
+    savePrivateCoachNote,
+    createSharedCoachNote,
+    updateSharedCoachNote,
+    deleteSharedCoachNote,
     exportUserApplications,
     exportGroupApplications,
   };

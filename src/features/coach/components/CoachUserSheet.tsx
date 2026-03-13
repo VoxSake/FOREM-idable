@@ -9,6 +9,7 @@ import {
   FilePenLine,
   FileText,
   LoaderCircle,
+  Plus,
   Save,
   Trash2,
 } from "lucide-react";
@@ -26,9 +27,11 @@ import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { isManualApplication, sortApplicationsByMostRecent } from "@/features/applications/utils";
 import {
   coachStatusLabel,
+  formatCoachAuthorName,
   formatCoachDate,
   getCoachUserDisplayName,
   isApplicationDue,
+  summarizeCoachContributors,
 } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
 
@@ -39,18 +42,21 @@ interface CoachUserSheetProps {
   canManageApiKeys: boolean;
   open: boolean;
   user: CoachUserSummary | null;
-  savingCoachNoteJobId: string | null;
+  savingCoachNoteKey: string | null;
   onOpenChange: (open: boolean) => void;
   onExport: () => void;
   onOpenApiKeys: () => void;
   onEdit: () => void;
   onDeleteUser: () => void;
-  onSaveCoachNote: (
+  onSavePrivateCoachNote: (userId: number, jobId: string, content: string) => Promise<boolean>;
+  onCreateSharedCoachNote: (userId: number, jobId: string, content: string) => Promise<boolean>;
+  onUpdateSharedCoachNote: (
     userId: number,
     jobId: string,
-    coachNote: string,
-    shareCoachNoteWithBeneficiary: boolean
+    noteId: string,
+    content: string
   ) => Promise<boolean>;
+  onDeleteSharedCoachNote: (userId: number, jobId: string, noteId: string) => Promise<boolean>;
 }
 
 export function CoachUserSheet({
@@ -60,13 +66,16 @@ export function CoachUserSheet({
   canManageApiKeys,
   open,
   user,
-  savingCoachNoteJobId,
+  savingCoachNoteKey,
   onOpenChange,
   onExport,
   onOpenApiKeys,
   onEdit,
   onDeleteUser,
-  onSaveCoachNote,
+  onSavePrivateCoachNote,
+  onCreateSharedCoachNote,
+  onUpdateSharedCoachNote,
+  onDeleteSharedCoachNote,
 }: CoachUserSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -79,12 +88,15 @@ export function CoachUserSheet({
             canEditUser={canEditUser}
             canManageApiKeys={canManageApiKeys}
             user={user}
-            savingCoachNoteJobId={savingCoachNoteJobId}
+            savingCoachNoteKey={savingCoachNoteKey}
             onExport={onExport}
             onOpenApiKeys={onOpenApiKeys}
             onEdit={onEdit}
             onDeleteUser={onDeleteUser}
-            onSaveCoachNote={onSaveCoachNote}
+            onSavePrivateCoachNote={onSavePrivateCoachNote}
+            onCreateSharedCoachNote={onCreateSharedCoachNote}
+            onUpdateSharedCoachNote={onUpdateSharedCoachNote}
+            onDeleteSharedCoachNote={onDeleteSharedCoachNote}
           />
         )}
       </SheetContent>
@@ -103,17 +115,21 @@ function CoachUserSheetBody({
   canEditUser,
   canManageApiKeys,
   user,
-  savingCoachNoteJobId,
+  savingCoachNoteKey,
   onExport,
   onOpenApiKeys,
   onEdit,
   onDeleteUser,
-  onSaveCoachNote,
+  onSavePrivateCoachNote,
+  onCreateSharedCoachNote,
+  onUpdateSharedCoachNote,
+  onDeleteSharedCoachNote,
 }: CoachUserSheetBodyProps) {
   const sortedApplications = useMemo(() => sortApplicationsByMostRecent(user.applications), [user.applications]);
   const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
-  const [coachNoteDrafts, setCoachNoteDrafts] = useState<Record<string, string>>({});
-  const [shareDrafts, setShareDrafts] = useState<Record<string, boolean>>({});
+  const [privateNoteDrafts, setPrivateNoteDrafts] = useState<Record<string, string>>({});
+  const [sharedNoteDrafts, setSharedNoteDrafts] = useState<Record<string, string>>({});
+  const [newSharedNoteDrafts, setNewSharedNoteDrafts] = useState<Record<string, string>>({});
 
   const toggleExpanded = (jobId: string, nextOpen: boolean) => {
     setExpandedJobIds((current) =>
@@ -123,8 +139,10 @@ function CoachUserSheetBody({
     );
   };
 
-  const getDraftNote = (jobId: string, fallback?: string) => coachNoteDrafts[jobId] ?? fallback ?? "";
-  const getDraftShare = (jobId: string, fallback?: boolean) => shareDrafts[jobId] ?? fallback ?? false;
+  const getPrivateDraft = (jobId: string, fallback?: string) =>
+    privateNoteDrafts[jobId] ?? fallback ?? "";
+  const getSharedDraft = (noteId: string, fallback: string) =>
+    sharedNoteDrafts[noteId] ?? fallback;
 
   return (
     <>
@@ -185,11 +203,12 @@ function CoachUserSheetBody({
             const isDue = isApplicationDue(application);
             const isOpen = expandedJobIds.includes(application.job.id);
             const isManual = isManualApplication(application);
-            const coachNote = getDraftNote(application.job.id, application.coachNote);
-            const shareCoachNote = getDraftShare(
+            const privateCoachNote = application.privateCoachNote;
+            const privateCoachNoteDraft = getPrivateDraft(
               application.job.id,
-              application.shareCoachNoteWithBeneficiary
+              privateCoachNote?.content
             );
+            const newSharedNoteDraft = newSharedNoteDrafts[application.job.id] ?? "";
 
             return (
               <Collapsible
@@ -198,17 +217,17 @@ function CoachUserSheetBody({
                 onOpenChange={(nextOpen) => toggleExpanded(application.job.id, nextOpen)}
               >
                 <div
-                  className={`rounded-xl border ${
+                  className={`rounded-xl border transition-colors ${
                     application.status === "interview"
-                      ? "border-sky-300 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20"
+                      ? "border-sky-300 bg-sky-50/60 hover:border-sky-400 hover:bg-sky-100/70 dark:border-sky-900 dark:bg-sky-950/20 dark:hover:border-sky-800 dark:hover:bg-sky-950/30"
                       : application.status === "accepted"
-                        ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20"
+                        ? "border-emerald-300 bg-emerald-50/60 hover:border-emerald-400 hover:bg-emerald-100/70 dark:border-emerald-900 dark:bg-emerald-950/20 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
                         : application.status === "rejected"
-                          ? "border-rose-300 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/20"
+                          ? "border-rose-300 bg-rose-50/60 hover:border-rose-400 hover:bg-rose-100/70 dark:border-rose-900 dark:bg-rose-950/20 dark:hover:border-rose-800 dark:hover:bg-rose-950/30"
                           : isDue
-                            ? "border-amber-400/70 bg-amber-50/50 dark:bg-amber-950/20"
-                            : "bg-card"
-                  } transition-colors hover:border-primary/50 hover:bg-primary/5`}
+                            ? "border-amber-400/70 bg-amber-50/50 hover:border-amber-500 hover:bg-amber-100/60 dark:bg-amber-950/20 dark:hover:border-amber-700 dark:hover:bg-amber-950/30"
+                            : "bg-card hover:border-primary/50 hover:bg-primary/5"
+                  }`}
                 >
                   <CollapsibleTrigger asChild>
                     <button
@@ -340,54 +359,219 @@ function CoachUserSheetBody({
                         </div>
                       )}
 
-                      <div className="rounded-lg border bg-background/80 p-3">
-                        <p className="mb-2 font-medium text-foreground">Notes coach</p>
+                      <div className="space-y-4 rounded-lg border bg-background/80 p-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-medium text-foreground">Note privée coach</p>
+                            {privateCoachNote ? (
+                              <span className="text-xs text-muted-foreground">
+                                {formatCoachDate(privateCoachNote.updatedAt, true)}
+                              </span>
+                            ) : null}
+                          </div>
+                          {privateCoachNote ? (
+                            <p className="text-xs text-muted-foreground">
+                              Rédigée par {formatCoachAuthorName(privateCoachNote.createdBy)}
+                              {privateCoachNote.contributors.length > 1
+                                ? ` • Contributions: ${summarizeCoachContributors(
+                                    privateCoachNote.contributors
+                                  )}`
+                                : ""}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Visible uniquement par les coachs et admins.
+                            </p>
+                          )}
+                        </div>
                         <textarea
                           className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                          value={coachNote}
+                          value={privateCoachNoteDraft}
                           onChange={(event) =>
-                            setCoachNoteDrafts((current) => ({
+                            setPrivateNoteDrafts((current) => ({
                               ...current,
                               [application.job.id]: event.target.value,
                             }))
                           }
-                          placeholder="Observation coach, piste de relance, préparation entretien..."
+                          placeholder="Note privée commune pour l'équipe coach..."
                         />
-                        <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 accent-primary"
-                            checked={shareCoachNote}
-                            onChange={(event) =>
-                              setShareDrafts((current) => ({
-                                ...current,
-                                [application.job.id]: event.target.checked,
-                              }))
-                            }
-                          />
-                          Partager avec le bénéficiaire
-                        </label>
-                        <div className="mt-3 flex justify-end">
+                        <div className="flex justify-end">
                           <Button
                             type="button"
                             size="sm"
                             onClick={() =>
-                              void onSaveCoachNote(
+                              void onSavePrivateCoachNote(
                                 user.id,
                                 application.job.id,
-                                coachNote,
-                                shareCoachNote
+                                privateCoachNoteDraft
                               )
                             }
-                            disabled={savingCoachNoteJobId === application.job.id}
+                            disabled={savingCoachNoteKey === `private:${application.job.id}`}
                           >
-                            {savingCoachNoteJobId === application.job.id ? (
+                            {savingCoachNoteKey === `private:${application.job.id}` ? (
                               <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
                               <Save className="mr-2 h-4 w-4" />
                             )}
                             Enregistrer
                           </Button>
+                        </div>
+
+                        <div className="space-y-3 border-t pt-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="font-medium text-foreground">Notes partagées</p>
+                              <p className="text-xs text-muted-foreground">
+                                Ces notes sont visibles par le bénéficiaire.
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setNewSharedNoteDrafts((current) => ({
+                                  ...current,
+                                  [application.job.id]: current[application.job.id] ?? "",
+                                }))
+                              }
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Ajouter une note partagée
+                            </Button>
+                          </div>
+
+                          {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
+                            <div className="space-y-3">
+                              {application.sharedCoachNotes.map((note) => (
+                                <div key={note.id} className="space-y-2 rounded-lg border bg-card p-3">
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">
+                                      Rédigée par {formatCoachAuthorName(note.createdBy)} •{" "}
+                                      {formatCoachDate(note.updatedAt, true)}
+                                    </p>
+                                    {note.contributors.length > 1 ? (
+                                      <p className="text-xs text-muted-foreground">
+                                        Contributions: {summarizeCoachContributors(note.contributors)}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <textarea
+                                    className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                    value={getSharedDraft(note.id, note.content)}
+                                    onChange={(event) =>
+                                      setSharedNoteDrafts((current) => ({
+                                        ...current,
+                                        [note.id]: event.target.value,
+                                      }))
+                                    }
+                                  />
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-destructive hover:text-destructive"
+                                      onClick={() =>
+                                        void onDeleteSharedCoachNote(user.id, application.job.id, note.id)
+                                      }
+                                      disabled={savingCoachNoteKey === `delete:${note.id}`}
+                                    >
+                                      {savingCoachNoteKey === `delete:${note.id}` ? (
+                                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                      )}
+                                      Supprimer
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() =>
+                                        void onUpdateSharedCoachNote(
+                                          user.id,
+                                          application.job.id,
+                                          note.id,
+                                          getSharedDraft(note.id, note.content)
+                                        )
+                                      }
+                                      disabled={savingCoachNoteKey === `shared:${note.id}`}
+                                    >
+                                      {savingCoachNoteKey === `shared:${note.id}` ? (
+                                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Save className="mr-2 h-4 w-4" />
+                                      )}
+                                      Enregistrer
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              Aucune note partagée pour l’instant.
+                            </p>
+                          )}
+
+                          {Object.prototype.hasOwnProperty.call(newSharedNoteDrafts, application.job.id) && (
+                            <div className="space-y-2 rounded-lg border border-dashed bg-card p-3">
+                              <p className="text-sm font-medium text-foreground">Nouvelle note partagée</p>
+                              <textarea
+                                className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                value={newSharedNoteDraft}
+                                onChange={(event) =>
+                                  setNewSharedNoteDrafts((current) => ({
+                                    ...current,
+                                    [application.job.id]: event.target.value,
+                                  }))
+                                }
+                                placeholder="Message ou consigne visible par le bénéficiaire..."
+                              />
+                              <div className="flex flex-wrap justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    setNewSharedNoteDrafts((current) => {
+                                      const next = { ...current };
+                                      delete next[application.job.id];
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  Annuler
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={async () => {
+                                    const created = await onCreateSharedCoachNote(
+                                      user.id,
+                                      application.job.id,
+                                      newSharedNoteDraft
+                                    );
+                                    if (!created) return;
+
+                                    setNewSharedNoteDrafts((current) => {
+                                      const next = { ...current };
+                                      delete next[application.job.id];
+                                      return next;
+                                    });
+                                  }}
+                                  disabled={savingCoachNoteKey === `create:${application.job.id}`}
+                                >
+                                  {savingCoachNoteKey === `create:${application.job.id}` ? (
+                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Save className="mr-2 h-4 w-4" />
+                                  )}
+                                  Ajouter
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { JobApplication, ApplicationStatus } from "@/types/application";
+import { formatCoachAuthorName } from "@/lib/coachNotes";
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   in_progress: "En cours",
@@ -36,6 +37,7 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
     "Statut",
     "Notes",
     "Preuves",
+    "Notes coach partagées",
     "Lien",
   ];
 
@@ -51,6 +53,9 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
       STATUS_LABELS[entry.status],
       entry.notes || "",
       entry.proofs || "",
+      (entry.sharedCoachNotes ?? [])
+        .map((note) => `${formatCoachAuthorName(note.createdBy)}: ${note.content}`)
+        .join(" | "),
       entry.job.url,
     ]
       .map(escapeCSVCell)

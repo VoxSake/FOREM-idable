@@ -29,17 +29,40 @@ describe("userState helpers", () => {
       existing: [
         {
           ...baseApplication,
-          coachNote: "Relancer le bénéficiaire sur la suite",
-          shareCoachNoteWithBeneficiary: true,
+          sharedCoachNotes: [
+            {
+              id: "shared-1",
+              content: "Relancer le bénéficiaire sur la suite",
+              createdAt: "2026-03-13T11:00:00.000Z",
+              updatedAt: "2026-03-13T11:00:00.000Z",
+              createdBy: {
+                id: 10,
+                firstName: "Coach",
+                lastName: "One",
+                email: "coach@example.com",
+                role: "coach",
+              },
+              contributors: [
+                {
+                  id: 10,
+                  firstName: "Coach",
+                  lastName: "One",
+                  email: "coach@example.com",
+                  role: "coach",
+                },
+              ],
+            },
+          ],
         },
       ],
     });
 
-    expect(merged[0]?.coachNote).toBe("Relancer le bénéficiaire sur la suite");
-    expect(merged[0]?.shareCoachNoteWithBeneficiary).toBe(true);
+    expect(merged[0]?.sharedCoachNotes?.[0]?.content).toBe(
+      "Relancer le bénéficiaire sur la suite"
+    );
   });
 
-  it("hides non-shared coach notes from the beneficiary payload", () => {
+  it("migrates legacy coach notes and hides private notes from the beneficiary payload", () => {
     const sanitized = sanitizeApplicationsForBeneficiary([
       {
         ...baseApplication,
@@ -52,9 +75,10 @@ describe("userState helpers", () => {
         coachNote: "Visible",
         shareCoachNoteWithBeneficiary: true,
       },
-    ]);
+    ] as unknown as JobApplication[]);
 
-    expect(sanitized[0]?.coachNote).toBeUndefined();
-    expect(sanitized[1]?.coachNote).toBe("Visible");
+    expect(sanitized[0]?.privateCoachNote).toBeUndefined();
+    expect(sanitized[0]?.sharedCoachNotes).toEqual([]);
+    expect(sanitized[1]?.sharedCoachNotes?.[0]?.content).toBe("Visible");
   });
 });

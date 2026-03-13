@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sheet";
 import { ApplicationsHeaderControls } from "@/features/applications/components/ApplicationsHeaderControls";
 import { ApplicationsInsights } from "@/features/applications/components/ApplicationsInsights";
+import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
 import {
   applicationStatusLabel,
   ApplicationModeFilter,
@@ -421,9 +422,11 @@ export default function ApplicationsPage() {
                             SITE
                           </Badge>
                         )}
-                        {entry.shareCoachNoteWithBeneficiary && entry.coachNote && (
+                        {entry.sharedCoachNotes && entry.sharedCoachNotes.length > 0 && (
                           <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
-                            NOTE COACH
+                            {entry.sharedCoachNotes.length > 1
+                              ? `${entry.sharedCoachNotes.length} NOTES COACH`
+                              : "NOTE COACH"}
                           </Badge>
                         )}
                         <Badge variant={isDue ? "destructive" : "secondary"}>
@@ -589,10 +592,12 @@ export default function ApplicationsPage() {
                       SITE
                     </Badge>
                   )}
-                  {selectedApplication.shareCoachNoteWithBeneficiary &&
-                  selectedApplication.coachNote ? (
+                  {selectedApplication.sharedCoachNotes &&
+                  selectedApplication.sharedCoachNotes.length > 0 ? (
                     <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
-                      NOTE COACH
+                      {selectedApplication.sharedCoachNotes.length > 1
+                        ? `${selectedApplication.sharedCoachNotes.length} NOTES COACH`
+                        : "NOTE COACH"}
                     </Badge>
                   ) : null}
                   <Badge variant="outline">Envoyée le {formatApplicationDate(selectedApplication.appliedAt)}</Badge>
@@ -667,12 +672,28 @@ export default function ApplicationsPage() {
                   />
                 </div>
 
-                {selectedApplication.shareCoachNoteWithBeneficiary &&
-                  selectedApplication.coachNote && (
+                {selectedApplication.sharedCoachNotes &&
+                  selectedApplication.sharedCoachNotes.length > 0 && (
                     <div className="space-y-2">
                       <p className="font-medium">Notes du coach</p>
-                      <div className="min-h-24 whitespace-pre-wrap rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-                        {selectedApplication.coachNote}
+                      <div className="space-y-3">
+                        {selectedApplication.sharedCoachNotes.map((note) => (
+                          <div
+                            key={note.id}
+                            className="rounded-md border border-border/60 bg-muted/20 px-3 py-3 text-sm text-muted-foreground"
+                          >
+                            <div className="space-y-1 text-xs">
+                              <p>
+                                Rédigée par {formatCoachAuthorName(note.createdBy)} •{" "}
+                                {formatApplicationDateTime(note.updatedAt)}
+                              </p>
+                              {note.contributors.length > 1 ? (
+                                <p>Contributions: {summarizeCoachContributors(note.contributors)}</p>
+                              ) : null}
+                            </div>
+                            <p className="mt-3 whitespace-pre-wrap text-sm">{note.content}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

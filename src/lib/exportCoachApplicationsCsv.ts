@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ApplicationStatus, JobApplication } from "@/types/application";
+import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
 
 export interface CoachApplicationExportRow {
   userFirstName: string;
@@ -54,8 +55,10 @@ export function exportCoachApplicationsToCSV(input: {
     "Statut",
     "Notes",
     "Preuves",
-    "Note coach",
-    "Partagée bénéficiaire",
+    "Note privée coach",
+    "Contributeurs note privée",
+    "Notes coach partagées",
+    "Contributeurs notes partagées",
     "Lien",
   ];
 
@@ -104,8 +107,16 @@ export function exportCoachApplicationsToCSV(input: {
         STATUS_LABELS[application.status],
         application.notes || "",
         application.proofs || "",
-        application.coachNote || "",
-        application.shareCoachNoteWithBeneficiary ? "Oui" : "Non",
+        application.privateCoachNote?.content || "",
+        application.privateCoachNote
+          ? summarizeCoachContributors(application.privateCoachNote.contributors)
+          : "",
+        (application.sharedCoachNotes ?? [])
+          .map((note) => `${formatCoachAuthorName(note.createdBy)}: ${note.content}`)
+          .join(" | "),
+        (application.sharedCoachNotes ?? [])
+          .map((note) => summarizeCoachContributors(note.contributors))
+          .join(" | "),
         application.job.url || "",
       ]
         .map(escapeCSVCell)

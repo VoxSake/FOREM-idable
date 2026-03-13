@@ -1,4 +1,5 @@
 import { Job } from "@/types/job";
+import { UserRole } from "@/types/auth";
 
 export type ApplicationStatus =
   | "in_progress"
@@ -6,6 +7,33 @@ export type ApplicationStatus =
   | "interview"
   | "accepted"
   | "rejected";
+
+export type CoachNoteAuthorRole = Extract<UserRole, "coach" | "admin"> | "system";
+
+export interface CoachNoteAuthor {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: CoachNoteAuthorRole;
+}
+
+export interface CoachSharedNote {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: CoachNoteAuthor;
+  contributors: CoachNoteAuthor[];
+}
+
+export interface CoachPrivateNote {
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: CoachNoteAuthor;
+  contributors: CoachNoteAuthor[];
+}
 
 export interface JobApplication {
   job: Job;
@@ -15,8 +43,8 @@ export interface JobApplication {
   status: ApplicationStatus;
   notes?: string;
   proofs?: string;
-  coachNote?: string;
-  shareCoachNoteWithBeneficiary?: boolean;
+  privateCoachNote?: CoachPrivateNote;
+  sharedCoachNotes?: CoachSharedNote[];
   interviewAt?: string;
   interviewDetails?: string;
   updatedAt: string;

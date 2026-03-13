@@ -21,7 +21,7 @@ L'API est:
 - sécurisée par clé API Bearer
 - disponible en `JSON` ou `CSV`
 - pensée pour l'export global, par groupe, par utilisateur, ou filtré
-- capable d'inclure les notes coach et leur statut de partage sur les candidatures
+- capable d'inclure la note privée coach commune et les notes coach partagées sur les candidatures
 
 ## Base URL
 
@@ -54,7 +54,9 @@ Les clés API donnent accès à l'ensemble des données visibles dans le suivi c
 - entretiens
 - relances
 - détails utilisateur
-- notes coach et statut de partage
+- note privée coach commune
+- notes coach partagées
+- auteurs / contributeurs des notes partagées
 
 ## Modèle de sécurité
 

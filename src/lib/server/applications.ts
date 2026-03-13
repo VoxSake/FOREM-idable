@@ -1,18 +1,11 @@
 import { addDays } from "date-fns";
 import { db, ensureDatabase } from "@/lib/server/db";
+import {
+  preserveApplicationCoachFields,
+  sanitizeApplicationForBeneficiary,
+} from "@/lib/coachNotes";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
-
-function sanitizeForBeneficiary(application: JobApplication): JobApplication {
-  if (application.shareCoachNoteWithBeneficiary) {
-    return application;
-  }
-
-  return {
-    ...application,
-    coachNote: undefined,
-  };
-}
 
 function sortApplicationsByAppliedAt(applications: JobApplication[]) {
   return [...applications].sort((left, right) => {
@@ -61,16 +54,6 @@ async function getNextPosition(userId: number) {
   return result.rows[0]?.next_position ?? 0;
 }
 
-function preserveCoachFields(existing: JobApplication | null, next: JobApplication): JobApplication {
-  if (!existing) return next;
-
-  return {
-    ...next,
-    coachNote: existing.coachNote,
-    shareCoachNoteWithBeneficiary: existing.shareCoachNoteWithBeneficiary,
-  };
-}
-
 export async function listApplicationsForUser(userId: number) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
@@ -84,7 +67,7 @@ export async function listApplicationsForUser(userId: number) {
   );
 
   return sortApplicationsByAppliedAt(
-    result.rows.map((row) => sanitizeForBeneficiary(row.application))
+    result.rows.map((row) => sanitizeApplicationForBeneficiary(row.application))
   );
 }
 
@@ -129,7 +112,7 @@ export async function createTrackedApplicationForUser(input: {
         updatedAt: new Date().toISOString(),
       };
 
-  const next = preserveCoachFields(existing, nextBase);
+  const next = preserveApplicationCoachFields(existing, nextBase);
 
   if (existing) {
     await db.query(
@@ -147,7 +130,7 @@ export async function createTrackedApplicationForUser(input: {
     );
   }
 
-  return sanitizeForBeneficiary(next);
+  return sanitizeApplicationForBeneficiary(next);
 }
 
 export async function updateApplicationForUser(input: {
@@ -176,7 +159,7 @@ export async function updateApplicationForUser(input: {
     throw new Error("Application not found");
   }
 
-  const next = preserveCoachFields(existing, {
+  const next = preserveApplicationCoachFields(existing, {
     ...existing,
     ...input.patch,
     updatedAt: new Date().toISOString(),
@@ -189,7 +172,7 @@ export async function updateApplicationForUser(input: {
     [input.userId, input.jobId, JSON.stringify(next)]
   );
 
-  return sanitizeForBeneficiary(next);
+  return sanitizeApplicationForBeneficiary(next);
 }
 
 export async function deleteApplicationForUser(userId: number, jobId: string) {

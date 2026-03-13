@@ -3,7 +3,7 @@ import Link from "next/link";
 const RECENT_UPDATES = [
   {
     month: "Mars 2026",
-    text: "Vue coach affinée: side panel plus large, candidatures repliables, notes coach partageables avec le bénéficiaire, badge SITE/MANUEL et exports enrichis.",
+    text: "Vue coach affinée: side panel plus large, candidatures repliables, note privée coach commune, notes partagées multiples avec auteurs/contributeurs, badge SITE/MANUEL et exports enrichis.",
   },
   {
     month: "Mars 2026",

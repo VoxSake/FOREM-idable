@@ -1,4 +1,5 @@
 import { isAfter } from "date-fns";
+import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
 import { getCoachDashboard } from "@/lib/server/coach";
 import {
   ExternalApiActor,
@@ -303,8 +304,10 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
     "Statut",
     "Notes",
     "Preuves",
-    "Note coach",
-    "Partagée bénéficiaire",
+    "Note privée coach",
+    "Contributeurs note privée",
+    "Notes coach partagées",
+    "Contributeurs notes partagées",
     "Lien",
     "PDF",
     "Mis à jour le",
@@ -329,8 +332,16 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
     row.application.status,
     row.application.notes || "",
     row.application.proofs || "",
-    row.application.coachNote || "",
-    row.application.shareCoachNoteWithBeneficiary ? "Oui" : "Non",
+    row.application.privateCoachNote?.content || "",
+    row.application.privateCoachNote
+      ? summarizeCoachContributors(row.application.privateCoachNote.contributors)
+      : "",
+    (row.application.sharedCoachNotes ?? [])
+      .map((note) => `${formatCoachAuthorName(note.createdBy)}: ${note.content}`)
+      .join(" | "),
+    (row.application.sharedCoachNotes ?? [])
+      .map((note) => summarizeCoachContributors(note.contributors))
+      .join(" | "),
     row.application.job.url || "",
     row.application.job.pdfUrl || "",
     row.application.updatedAt,

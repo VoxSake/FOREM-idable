@@ -1,7 +1,12 @@
+import { randomUUID } from "crypto";
 import { isAfter } from "date-fns";
+import {
+  normalizeApplicationCoachNotes,
+  toCoachNoteAuthor,
+} from "@/lib/coachNotes";
 import { getCurrentUser } from "@/lib/server/auth";
 import { db, ensureDatabase } from "@/lib/server/db";
-import { JobApplication } from "@/types/application";
+import { CoachNoteAuthor, CoachSharedNote, JobApplication } from "@/types/application";
 import { AuthUser, UserRole } from "@/types/auth";
 import { CoachDashboardData, CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 
@@ -123,7 +128,10 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
 
   const applicationsByUser = new Map<number, JobApplication[]>();
   for (const row of applicationsResult.rows) {
-    applicationsByUser.set(row.user_id, [...(applicationsByUser.get(row.user_id) ?? []), row.application]);
+    applicationsByUser.set(row.user_id, [
+      ...(applicationsByUser.get(row.user_id) ?? []),
+      normalizeApplicationCoachNotes(row.application),
+    ]);
   }
 
   const now = new Date();
@@ -232,16 +240,30 @@ export async function setUserRole(userId: number, role: UserRole) {
   );
 }
 
-export async function updateCoachApplicationNote(input: {
+function withContributor<T extends { contributors: CoachNoteAuthor[] }>(
+  note: T,
+  actor: CoachNoteAuthor
+) {
+  const alreadyContributor = note.contributors.some((entry) => entry.id === actor.id);
+  return {
+    ...note,
+    contributors: alreadyContributor ? note.contributors : [...note.contributors, actor],
+  };
+}
+
+export async function updateCoachApplicationNotes(input: {
+  actor: CoachCapableUser;
   userId: number;
   jobId: string;
-  coachNote: string;
-  shareCoachNoteWithBeneficiary: boolean;
+  privateNoteContent?: string;
+  sharedNoteId?: string;
+  sharedNoteContent?: string;
+  createSharedNote?: boolean;
+  deleteSharedNote?: boolean;
 }) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
-
-  const trimmedNote = input.coachNote.trim();
+  const actor = toCoachNoteAuthor(input.actor);
 
   const existingResult = await db.query<{ application: JobApplication }>(
     `SELECT application
@@ -256,14 +278,72 @@ export async function updateCoachApplicationNote(input: {
     throw new Error("Application not found");
   }
 
+  const normalizedExisting = normalizeApplicationCoachNotes(existing);
+  const now = new Date().toISOString();
   const nextApplication: JobApplication = {
-    ...existing,
-    coachNote: trimmedNote || undefined,
-    shareCoachNoteWithBeneficiary: trimmedNote
-      ? input.shareCoachNoteWithBeneficiary
-      : false,
-    updatedAt: new Date().toISOString(),
+    ...normalizedExisting,
+    updatedAt: now,
   };
+
+  if (typeof input.privateNoteContent === "string") {
+    const trimmedPrivate = input.privateNoteContent.trim();
+
+    nextApplication.privateCoachNote = trimmedPrivate
+      ? withContributor(
+          {
+            content: trimmedPrivate,
+            createdAt: normalizedExisting.privateCoachNote?.createdAt ?? now,
+            updatedAt: now,
+            createdBy: normalizedExisting.privateCoachNote?.createdBy ?? actor,
+            contributors: normalizedExisting.privateCoachNote?.contributors ?? [actor],
+          },
+          actor
+        )
+      : undefined;
+  }
+
+  if (input.createSharedNote) {
+    const trimmedShared = input.sharedNoteContent?.trim() ?? "";
+    if (!trimmedShared) {
+      throw new Error("Shared note content required");
+    }
+
+    const sharedNote: CoachSharedNote = {
+      id: randomUUID(),
+      content: trimmedShared,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: actor,
+      contributors: [actor],
+    };
+
+    nextApplication.sharedCoachNotes = [
+      ...(normalizedExisting.sharedCoachNotes ?? []),
+      sharedNote,
+    ];
+  }
+
+  if (input.sharedNoteId && typeof input.sharedNoteContent === "string" && !input.createSharedNote) {
+    const trimmedShared = input.sharedNoteContent.trim();
+    nextApplication.sharedCoachNotes = (normalizedExisting.sharedCoachNotes ?? []).map((note) =>
+      note.id === input.sharedNoteId
+        ? withContributor(
+            {
+              ...note,
+              content: trimmedShared,
+              updatedAt: now,
+            },
+            actor
+          )
+        : note
+    ).filter((note) => note.content.trim());
+  }
+
+  if (input.sharedNoteId && input.deleteSharedNote) {
+    nextApplication.sharedCoachNotes = (normalizedExisting.sharedCoachNotes ?? []).filter(
+      (note) => note.id !== input.sharedNoteId
+    );
+  }
 
   await db.query(
     `UPDATE user_applications
@@ -272,5 +352,5 @@ export async function updateCoachApplicationNote(input: {
     [input.userId, input.jobId, JSON.stringify(nextApplication)]
   );
 
-  return nextApplication;
+  return normalizeApplicationCoachNotes(nextApplication);
 }

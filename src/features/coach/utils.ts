@@ -1,7 +1,7 @@
 import { format, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 import { CoachApplicationExportRow } from "@/lib/exportCoachApplicationsCsv";
-import { JobApplication } from "@/types/application";
+import { CoachNoteAuthor, JobApplication } from "@/types/application";
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 import {
   CoachGroupedUserGroup,
@@ -11,6 +11,22 @@ import {
 
 export function getCoachUserDisplayName(user: Pick<CoachUserSummary, "firstName" | "lastName" | "email">) {
   return `${user.firstName} ${user.lastName}`.trim() || user.email;
+}
+
+export function formatCoachAuthorName(author: Pick<CoachNoteAuthor, "firstName" | "lastName" | "email">) {
+  return `${author.firstName} ${author.lastName}`.trim() || author.email || "Historique";
+}
+
+export function summarizeCoachContributors(contributors: CoachNoteAuthor[]) {
+  const seen = new Set<number>();
+  return contributors
+    .filter((entry) => {
+      if (seen.has(entry.id)) return false;
+      seen.add(entry.id);
+      return true;
+    })
+    .map((entry) => formatCoachAuthorName(entry))
+    .join(", ");
 }
 
 export function formatCoachDate(value?: string | null, withTime = false) {
