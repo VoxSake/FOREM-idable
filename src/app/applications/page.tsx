@@ -91,7 +91,8 @@ export default function ApplicationsPage() {
     interviewAt: "",
     interviewDetails: "",
   });
-  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
 
   const now = useMemo(() => new Date(), []);
   const dueCount = applications.filter(
@@ -181,13 +182,27 @@ export default function ApplicationsPage() {
               Avec un compte, vous retrouvez automatiquement vos candidatures et votre historique de recherche,
               et vous pouvez partager votre suivi avec un coach si besoin.
             </p>
-            <Button type="button" onClick={() => setIsAuthDialogOpen(true)}>
-              Connexion / création de compte
-            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button type="button" onClick={() => setIsLoginDialogOpen(true)}>
+                Connexion
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsRegisterDialogOpen(true)}>
+                Créer un compte
+              </Button>
+            </div>
           </div>
         </div>
 
-        <AuthRequiredDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} />
+        <AuthRequiredDialog
+          open={isLoginDialogOpen}
+          onOpenChange={setIsLoginDialogOpen}
+          mode="login"
+        />
+        <AuthRequiredDialog
+          open={isRegisterDialogOpen}
+          onOpenChange={setIsRegisterDialogOpen}
+          mode="register"
+        />
       </div>
     );
   }

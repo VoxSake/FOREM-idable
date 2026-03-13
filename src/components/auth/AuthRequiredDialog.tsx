@@ -11,6 +11,7 @@ type AuthMode = "login" | "register";
 interface AuthRequiredDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode?: AuthMode;
   title?: string;
   description?: string;
   onSuccess?: () => Promise<void> | void;
@@ -19,12 +20,13 @@ interface AuthRequiredDialogProps {
 export function AuthRequiredDialog({
   open,
   onOpenChange,
-  title = "Compte requis",
-  description = "Connectez-vous ou créez un compte pour suivre vos candidatures et retrouver votre historique.",
+  mode: forcedMode,
+  title,
+  description,
   onSuccess,
 }: AuthRequiredDialogProps) {
   const { refresh, setUser } = useAuth();
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode>(forcedMode ?? "login");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -33,8 +35,18 @@ export function AuthRequiredDialog({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const effectiveMode = forcedMode ?? mode;
+  const effectiveTitle =
+    title ??
+    (effectiveMode === "login" ? "Connexion" : "Créer un compte");
+  const effectiveDescription =
+    description ??
+    (effectiveMode === "login"
+      ? "Connectez-vous pour suivre vos candidatures et retrouver votre historique."
+      : "Créez un compte pour suivre vos candidatures et retrouver votre historique.");
+
   const submit = async () => {
-    if (mode === "register" && password !== confirmPassword) {
+    if (effectiveMode === "register" && password !== confirmPassword) {
       setFeedback("Les mots de passe ne correspondent pas.");
       return;
     }
@@ -43,7 +55,7 @@ export function AuthRequiredDialog({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/auth/${mode}`, {
+      const response = await fetch(`/api/auth/${effectiveMode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, firstName, lastName }),
@@ -84,31 +96,33 @@ export function AuthRequiredDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{effectiveTitle}</DialogTitle>
+          <DialogDescription>{effectiveDescription}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={mode === "login" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setMode("login")}
-          >
-            Connexion
-          </Button>
-          <Button
-            type="button"
-            variant={mode === "register" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setMode("register")}
-          >
-            Créer un compte
-          </Button>
-        </div>
+        {!forcedMode ? (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={mode === "login" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("login")}
+            >
+              Connexion
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "register" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("register")}
+            >
+              Créer un compte
+            </Button>
+          </div>
+        ) : null}
 
         <div className="space-y-3">
-          {mode === "register" ? (
+          {effectiveMode === "register" ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <Input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Prénom" />
               <Input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Nom" />
@@ -126,7 +140,7 @@ export function AuthRequiredDialog({
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Mot de passe (8 caractères minimum)"
           />
-          {mode === "register" ? (
+          {effectiveMode === "register" ? (
             <Input
               type="password"
               value={confirmPassword}
@@ -148,14 +162,14 @@ export function AuthRequiredDialog({
               isSubmitting ||
               !email.trim() ||
               password.length < 8 ||
-              (mode === "register" &&
+              (effectiveMode === "register" &&
                 (!firstName.trim() ||
                   !lastName.trim() ||
                   confirmPassword.length < 8 ||
                   password !== confirmPassword))
             }
           >
-            {mode === "login" ? "Se connecter" : "Créer un compte"}
+            {effectiveMode === "login" ? "Se connecter" : "Créer un compte"}
           </Button>
         </DialogFooter>
       </DialogContent>
