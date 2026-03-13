@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { getLocalSyncUpdatedAt, markLocalSyncUpdatedAt } from "@/lib/localSyncState";
 import { applySyncSnapshot, createSyncSnapshot } from "@/lib/syncToken";
 
 function hasValues(values: Partial<Record<string, string>> | undefined) {
@@ -30,6 +31,7 @@ export function AuthSync() {
         const remoteValues = data.state?.values ?? {};
         const localValues = localSnapshot.values;
         const remoteUpdatedAt = data.state?.updatedAt ?? null;
+        const localUpdatedAt = getLocalSyncUpdatedAt(window.localStorage, localValues);
         const knownRemoteUpdatedAt = remoteUpdatedAt
           ? sessionStorage.getItem(remoteStateKey)
           : null;
@@ -38,18 +40,44 @@ export function AuthSync() {
           const localSerialized = JSON.stringify(localValues);
           const remoteSerialized = JSON.stringify(remoteValues);
 
-          if (localSerialized !== remoteSerialized && remoteUpdatedAt !== knownRemoteUpdatedAt) {
-            isApplyingRemote.current = true;
-            applySyncSnapshot(window.localStorage, {
-              version: 1,
-              createdAt: remoteUpdatedAt || new Date().toISOString(),
-              values: remoteValues,
-            });
-            if (remoteUpdatedAt) {
-              sessionStorage.setItem(remoteStateKey, remoteUpdatedAt);
+          if (localSerialized !== remoteSerialized) {
+            const localIsNewer =
+              Boolean(localUpdatedAt) &&
+              (!remoteUpdatedAt ||
+                new Date(localUpdatedAt).getTime() > new Date(remoteUpdatedAt).getTime());
+
+            if (localIsNewer && hasValues(localValues)) {
+              const pushResponse = await fetch("/api/state", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ values: localValues }),
+              });
+              if (pushResponse.ok) {
+                const pushData = (await pushResponse.json()) as {
+                  state?: { updatedAt?: string };
+                };
+                if (pushData.state?.updatedAt) {
+                  sessionStorage.setItem(remoteStateKey, pushData.state.updatedAt);
+                  markLocalSyncUpdatedAt(window.localStorage, pushData.state.updatedAt);
+                }
+              }
+              return;
             }
-            window.location.reload();
-            return;
+
+            if (remoteUpdatedAt !== knownRemoteUpdatedAt) {
+              isApplyingRemote.current = true;
+              applySyncSnapshot(window.localStorage, {
+                version: 1,
+                createdAt: remoteUpdatedAt || new Date().toISOString(),
+                values: remoteValues,
+              });
+              if (remoteUpdatedAt) {
+                sessionStorage.setItem(remoteStateKey, remoteUpdatedAt);
+                markLocalSyncUpdatedAt(window.localStorage, remoteUpdatedAt);
+              }
+              window.location.reload();
+              return;
+            }
           }
         } else if (hasValues(localValues)) {
           const pushResponse = await fetch("/api/state", {
@@ -63,10 +91,12 @@ export function AuthSync() {
             };
             if (pushData.state?.updatedAt) {
               sessionStorage.setItem(remoteStateKey, pushData.state.updatedAt);
+              markLocalSyncUpdatedAt(window.localStorage, pushData.state.updatedAt);
             }
           }
         } else if (remoteUpdatedAt) {
           sessionStorage.setItem(remoteStateKey, remoteUpdatedAt);
+          markLocalSyncUpdatedAt(window.localStorage, remoteUpdatedAt);
         }
       } catch {
         // Keep local-only behavior on sync failures
@@ -99,6 +129,8 @@ export function AuthSync() {
         return;
       }
 
+      markLocalSyncUpdatedAt(window.localStorage);
+
       if (syncTimeout.current) {
         window.clearTimeout(syncTimeout.current);
       }
@@ -117,6 +149,7 @@ export function AuthSync() {
             };
             if (data.state?.updatedAt) {
               sessionStorage.setItem(remoteStateKey, data.state.updatedAt);
+              markLocalSyncUpdatedAt(window.localStorage, data.state.updatedAt);
             }
           })
           .catch(() => {
