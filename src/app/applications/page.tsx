@@ -438,7 +438,7 @@ export default function ApplicationsPage() {
                         <Badge variant="outline">Envoyée le {formatApplicationDate(entry.appliedAt)}</Badge>
                         {hasInterview && (
                           <Badge className="bg-sky-600 text-white hover:bg-sky-600">
-                            Entretien {formatApplicationDateTime(entry.interviewAt)}
+                            Entretien {formatApplicationDateTime(entry.interviewAt ?? undefined)}
                           </Badge>
                         )}
                       </div>
@@ -484,7 +484,9 @@ export default function ApplicationsPage() {
                           ) : (
                             <p>Aucune relance automatique sur une candidature clôturée.</p>
                           )}
-                          {hasInterview && <p>Entretien: {formatApplicationDateTime(entry.interviewAt)}</p>}
+                          {hasInterview && (
+                            <p>Entretien: {formatApplicationDateTime(entry.interviewAt ?? undefined)}</p>
+                          )}
                         </div>
                         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
                           <Button
@@ -652,7 +654,7 @@ export default function ApplicationsPage() {
                   <p className="font-medium">Entretien</p>
                   <p className="text-muted-foreground">
                     {selectedApplication.interviewAt
-                      ? formatApplicationDateTime(selectedApplication.interviewAt)
+                      ? formatApplicationDateTime(selectedApplication.interviewAt ?? undefined)
                       : "Aucun entretien planifié"}
                   </p>
                   {selectedApplication.interviewDetails && (
