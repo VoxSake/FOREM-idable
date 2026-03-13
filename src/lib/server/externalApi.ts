@@ -15,6 +15,7 @@ import {
 } from "@/types/externalApi";
 import { ApplicationStatus } from "@/types/application";
 import { CoachUserSummary } from "@/types/coach";
+import { escapeCsvCell } from "@/lib/csv";
 
 function matchesSearch(haystack: string[], search?: string) {
   const normalized = search?.trim().toLowerCase();
@@ -350,15 +351,8 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
   return toCsv(headers, rows);
 }
 
-function neutralizeSpreadsheetFormula(value: string) {
-  if (!value) return value;
-  return /^[=+\-@]/.test(value) ? `'${value}` : value;
-}
-
-function escapeCell(value: string) {
-  return `"${neutralizeSpreadsheetFormula(value).replace(/"/g, '""').replace(/\n/g, " ")}"`;
-}
-
 function toCsv(headers: string[], rows: string[][]) {
-  return [headers, ...rows].map((row) => row.map((cell) => escapeCell(cell ?? "")).join(",")).join("\n");
+  return [headers, ...rows]
+    .map((row) => row.map((cell) => escapeCsvCell(cell ?? "")).join(","))
+    .join("\n");
 }

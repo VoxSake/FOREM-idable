@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
+import { escapeCsvCell } from "@/lib/csv";
 
 export interface CoachApplicationExportRow {
   userFirstName: string;
@@ -25,11 +26,6 @@ function formatDate(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return format(date, "dd/MM/yyyy HH:mm", { locale: fr });
-}
-
-function escapeCSVCell(cell: string) {
-  if (!cell) return '""';
-  return `"${cell.replace(/"/g, '""').replace(/\n/g, " ")}"`;
 }
 
 export function exportCoachApplicationsToCSV(input: {
@@ -86,7 +82,7 @@ export function exportCoachApplicationsToCSV(input: {
           "",
           "",
         ]
-          .map(escapeCSVCell)
+          .map(escapeCsvCell)
           .join(",");
       }
 
@@ -119,7 +115,7 @@ export function exportCoachApplicationsToCSV(input: {
           .join(" | "),
         application.job.url || "",
       ]
-        .map(escapeCSVCell)
+        .map(escapeCsvCell)
         .join(",");
     }
   );

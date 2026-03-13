@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { JobApplication, ApplicationStatus } from "@/types/application";
 import { formatCoachAuthorName } from "@/lib/coachNotes";
+import { escapeCsvCell } from "@/lib/csv";
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   in_progress: "En cours",
@@ -16,11 +17,6 @@ function formatDate(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return format(date, "dd/MM/yyyy", { locale: fr });
-}
-
-function escapeCSVCell(cell: string) {
-  if (!cell) return '""';
-  return `"${cell.replace(/"/g, '""').replace(/\n/g, " ")}"`;
 }
 
 export function exportApplicationsToCSV(applications: JobApplication[]) {
@@ -58,7 +54,7 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
         .join(" | "),
       entry.job.url,
     ]
-      .map(escapeCSVCell)
+      .map(escapeCsvCell)
       .join(",")
   );
 

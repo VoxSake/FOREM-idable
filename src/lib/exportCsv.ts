@@ -1,4 +1,5 @@
 import { Job } from "@/types/job";
+import { escapeCsvCell } from "@/lib/csv";
 
 export type ExportColumnKey =
     | "title"
@@ -36,12 +37,6 @@ export function exportJobsToCSV(jobs: Job[], options: ExportCsvOptions = {}) {
 
     const headers = columns.map((column) => EXPORT_COLUMNS[column]);
 
-    const escapeCSVCell = (cell: string) => {
-        if (!cell) return '""';
-        const cellStr = cell.replace(/"/g, '""').replace(/\n/g, " ");
-        return `"${cellStr}"`;
-    };
-
     const valueByColumn = (job: Job, column: ExportColumnKey): string => {
         switch (column) {
             case "title":
@@ -66,11 +61,11 @@ export function exportJobsToCSV(jobs: Job[], options: ExportCsvOptions = {}) {
     };
 
     const rows = jobs.map((job) => {
-        return columns.map((column) => escapeCSVCell(valueByColumn(job, column))).join(",");
+        return columns.map((column) => escapeCsvCell(valueByColumn(job, column))).join(",");
     });
 
     const metadataRows = Object.entries(options.metadata || {}).map(([label, value]) =>
-        `${escapeCSVCell(label)},${escapeCSVCell(value)}`
+        `${escapeCsvCell(label)},${escapeCsvCell(value)}`
     );
     const preamble = metadataRows.length > 0 ? [...metadataRows, ""] : [];
     const csvContent = [...preamble, headers.join(","), ...rows].join("\n");

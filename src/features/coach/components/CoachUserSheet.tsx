@@ -532,7 +532,7 @@ function CoachUserSheetBody({
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant="outline"
+                                  className="bg-sky-600 text-white hover:bg-sky-700"
                                   onClick={() =>
                                     setNewSharedNoteDrafts((current) => ({
                                       ...current,
