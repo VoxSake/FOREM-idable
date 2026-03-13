@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Copy, KeyRound, LoaderCircle, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { AuthRequiredDialog } from "@/components/auth/AuthRequiredDialog";
+import { AccountAccessPrompt } from "@/components/auth/AccountAccessPrompt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,9 +29,6 @@ export default function AccountPage() {
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
   const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
   const [revokingApiKeyId, setRevokingApiKeyId] = useState<number | null>(null);
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
-  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
-
   useEffect(() => {
     if (!user) return;
     setFirstName(user.firstName);
@@ -222,42 +219,11 @@ export default function AccountPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 animate-in fade-in duration-500">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-black tracking-tight">Mon compte</h1>
-          <p className="text-lg text-muted-foreground">
-            Connectez-vous pour gérer votre profil, votre mot de passe et vos clés API.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border bg-card p-6 shadow-sm">
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Avec un compte, vous retrouvez votre suivi, vos paramètres personnels et, pour les coachs,
-              vos accès API.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button type="button" onClick={() => setIsLoginDialogOpen(true)}>
-                Connexion
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setIsRegisterDialogOpen(true)}>
-                Créer un compte
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <AuthRequiredDialog
-          open={isLoginDialogOpen}
-          onOpenChange={setIsLoginDialogOpen}
-          mode="login"
-        />
-        <AuthRequiredDialog
-          open={isRegisterDialogOpen}
-          onOpenChange={setIsRegisterDialogOpen}
-          mode="register"
-        />
-      </div>
+      <AccountAccessPrompt
+        title="Mon compte"
+        description="Connectez-vous pour gérer votre profil, votre mot de passe et vos clés API."
+        summary="Avec un compte, vous retrouvez votre suivi, vos paramètres personnels et, pour les coachs, vos accès API."
+      />
     );
   }
 

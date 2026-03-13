@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { AuthRequiredDialog } from "@/components/auth/AuthRequiredDialog";
+import { AccountAccessPrompt } from "@/components/auth/AccountAccessPrompt";
 import { useApplications } from "@/hooks/useApplications";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import {
@@ -91,9 +91,6 @@ export default function ApplicationsPage() {
     interviewAt: "",
     interviewDetails: "",
   });
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
-  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
-
   const now = useMemo(() => new Date(), []);
   const dueCount = applications.filter(
     (entry) => isFollowUpPending(entry.status) && !isAfter(new Date(entry.followUpDueAt), now)
@@ -168,42 +165,11 @@ export default function ApplicationsPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 animate-in fade-in duration-500">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Candidatures</h1>
-          <p className="text-lg text-muted-foreground">
-            Connectez-vous pour suivre vos candidatures, relances, entretiens et notes dans un espace dédié.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border bg-card p-6 shadow-sm">
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Avec un compte, vous retrouvez automatiquement vos candidatures et votre historique de recherche,
-              et vous pouvez partager votre suivi avec un coach si besoin.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button type="button" onClick={() => setIsLoginDialogOpen(true)}>
-                Connexion
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setIsRegisterDialogOpen(true)}>
-                Créer un compte
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <AuthRequiredDialog
-          open={isLoginDialogOpen}
-          onOpenChange={setIsLoginDialogOpen}
-          mode="login"
-        />
-        <AuthRequiredDialog
-          open={isRegisterDialogOpen}
-          onOpenChange={setIsRegisterDialogOpen}
-          mode="register"
-        />
-      </div>
+      <AccountAccessPrompt
+        title="Candidatures"
+        description="Connectez-vous pour suivre vos candidatures, relances, entretiens et notes dans un espace dédié."
+        summary="Avec un compte, vous retrouvez automatiquement vos candidatures et votre historique de recherche, et vous pouvez partager votre suivi avec un coach si besoin."
+      />
     );
   }
 
