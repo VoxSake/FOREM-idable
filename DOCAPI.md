@@ -21,6 +21,7 @@ L'API est:
 - sécurisée par clé API Bearer
 - disponible en `JSON` ou `CSV`
 - pensée pour l'export global, par groupe, par utilisateur, ou filtré
+- capable d'inclure les notes coach et leur statut de partage sur les candidatures
 
 ## Base URL
 
@@ -53,6 +54,7 @@ Les clés API donnent accès à l'ensemble des données visibles dans le suivi c
 - entretiens
 - relances
 - détails utilisateur
+- notes coach et statut de partage
 
 ## Modèle de sécurité
 
@@ -488,6 +490,11 @@ Inclut:
 - candidatures
 - favoris
 
+Les candidatures détaillées peuvent inclure aussi:
+
+- `coachNote`
+- `shareCoachNoteWithBeneficiary`
+
 #### Exemples
 
 ```txt
@@ -565,6 +572,11 @@ Inclut:
 - membres
 - candidatures des membres
 
+Les candidatures embarquées peuvent inclure aussi:
+
+- `coachNote`
+- `shareCoachNoteWithBeneficiary`
+
 #### CSV
 
 Quand `format=csv`, retourne toutes les candidatures du groupe.
@@ -620,6 +632,11 @@ Chaque ligne contient:
 - groupes
 - candidature complète
 
+La candidature complète peut inclure aussi:
+
+- `coachNote`
+- `shareCoachNoteWithBeneficiary`
+
 #### CSV
 
 Colonnes:
@@ -642,6 +659,8 @@ Colonnes:
 - `Statut`
 - `Notes`
 - `Preuves`
+- `Note coach`
+- `Partagée bénéficiaire`
 - `Lien`
 - `PDF`
 - `Mis à jour le`

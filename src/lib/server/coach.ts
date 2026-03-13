@@ -231,3 +231,46 @@ export async function setUserRole(userId: number, role: UserRole) {
     [userId, role]
   );
 }
+
+export async function updateCoachApplicationNote(input: {
+  userId: number;
+  jobId: string;
+  coachNote: string;
+  shareCoachNoteWithBeneficiary: boolean;
+}) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const trimmedNote = input.coachNote.trim();
+
+  const existingResult = await db.query<{ application: JobApplication }>(
+    `SELECT application
+     FROM user_applications
+     WHERE user_id = $1 AND job_id = $2
+     LIMIT 1`,
+    [input.userId, input.jobId]
+  );
+
+  const existing = existingResult.rows[0]?.application;
+  if (!existing) {
+    throw new Error("Application not found");
+  }
+
+  const nextApplication: JobApplication = {
+    ...existing,
+    coachNote: trimmedNote || undefined,
+    shareCoachNoteWithBeneficiary: trimmedNote
+      ? input.shareCoachNoteWithBeneficiary
+      : false,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await db.query(
+    `UPDATE user_applications
+     SET application = $3::jsonb
+     WHERE user_id = $1 AND job_id = $2`,
+    [input.userId, input.jobId, JSON.stringify(nextApplication)]
+  );
+
+  return nextApplication;
+}

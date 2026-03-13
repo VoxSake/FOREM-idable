@@ -54,6 +54,8 @@ export function exportCoachApplicationsToCSV(input: {
     "Statut",
     "Notes",
     "Preuves",
+    "Note coach",
+    "Partagée bénéficiaire",
     "Lien",
   ];
 
@@ -78,6 +80,8 @@ export function exportCoachApplicationsToCSV(input: {
           message || "",
           "",
           "",
+          "",
+          "",
         ]
           .map(escapeCSVCell)
           .join(",");
@@ -100,6 +104,8 @@ export function exportCoachApplicationsToCSV(input: {
         STATUS_LABELS[application.status],
         application.notes || "",
         application.proofs || "",
+        application.coachNote || "",
+        application.shareCoachNoteWithBeneficiary ? "Oui" : "Non",
         application.job.url || "",
       ]
         .map(escapeCSVCell)

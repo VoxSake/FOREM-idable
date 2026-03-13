@@ -15,6 +15,8 @@ export interface JobApplication {
   status: ApplicationStatus;
   notes?: string;
   proofs?: string;
+  coachNote?: string;
+  shareCoachNoteWithBeneficiary?: boolean;
   interviewAt?: string;
   interviewDetails?: string;
   updatedAt: string;

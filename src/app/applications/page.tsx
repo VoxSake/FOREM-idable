@@ -404,6 +404,11 @@ export default function ApplicationsPage() {
                             MANUEL
                           </Badge>
                         )}
+                        {!isManualApplication(entry) && (
+                          <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                            SITE
+                          </Badge>
+                        )}
                         <Badge variant={isDue ? "destructive" : "secondary"}>
                           {applicationStatusLabel(entry.status)}
                         </Badge>
@@ -558,6 +563,15 @@ export default function ApplicationsPage() {
                 </SheetDescription>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <ContractTypeBadge contractType={selectedApplication.job.contractType || "N/A"} />
+                  {isManualApplication(selectedApplication) ? (
+                    <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+                      MANUEL
+                    </Badge>
+                  ) : (
+                    <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                      SITE
+                    </Badge>
+                  )}
                   <Badge variant="outline">Envoyée le {formatApplicationDate(selectedApplication.appliedAt)}</Badge>
                   <Badge variant="secondary">{applicationStatusLabel(selectedApplication.status)}</Badge>
                 </div>
@@ -629,6 +643,16 @@ export default function ApplicationsPage() {
                     onChange={(event) => saveProofs(selectedApplication.job.id, event.target.value)}
                   />
                 </div>
+
+                {selectedApplication.shareCoachNoteWithBeneficiary &&
+                  selectedApplication.coachNote && (
+                    <div className="space-y-2">
+                      <p className="font-medium">Notes du coach</p>
+                      <div className="min-h-24 whitespace-pre-wrap rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+                        {selectedApplication.coachNote}
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <SheetFooter className="border-t bg-background/95 p-4">

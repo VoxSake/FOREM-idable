@@ -43,6 +43,7 @@ export function useCoachDashboard() {
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
   const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<CoachRevokeApiKeyTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
+  const [savingCoachNoteJobId, setSavingCoachNoteJobId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [editedFirstName, setEditedFirstName] = useState("");
@@ -283,6 +284,37 @@ export function useCoachDashboard() {
     await loadDashboard();
   };
 
+  const updateApplicationCoachNote = async (
+    userId: number,
+    jobId: string,
+    coachNote: string,
+    shareCoachNoteWithBeneficiary: boolean
+  ) => {
+    setSavingCoachNoteJobId(jobId);
+
+    const response = await fetch(`/api/coach/users/${userId}/applications`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        coachNote,
+        shareCoachNoteWithBeneficiary,
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setFeedback(data.error || "Note coach impossible à enregistrer.");
+      setSavingCoachNoteJobId(null);
+      return false;
+    }
+
+    setFeedback("Note coach enregistrée.");
+    await loadDashboard();
+    setSavingCoachNoteJobId(null);
+    return true;
+  };
+
   const openManagedUserApiKeys = async () => {
     if (!selectedUser || user?.role !== "admin") return;
     if (selectedUser.role !== "coach" && selectedUser.role !== "admin") return;
@@ -399,6 +431,7 @@ export function useCoachDashboard() {
     setRevokeApiKeyTarget,
     deleteUserTarget,
     setDeleteUserTarget,
+    savingCoachNoteJobId,
     newPassword,
     setNewPassword,
     confirmNewPassword,
@@ -430,6 +463,7 @@ export function useCoachDashboard() {
     openManagedUserApiKeys,
     revokeManagedApiKey,
     deleteUser,
+    updateApplicationCoachNote,
     exportUserApplications,
     exportGroupApplications,
   };

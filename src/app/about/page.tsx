@@ -3,6 +3,10 @@ import Link from "next/link";
 const RECENT_UPDATES = [
   {
     month: "Mars 2026",
+    text: "Vue coach affinée: side panel plus large, candidatures repliables, notes coach partageables avec le bénéficiaire, badge SITE/MANUEL et exports enrichis.",
+  },
+  {
+    month: "Mars 2026",
     text: "Ajout d'une page Confidentialité, d'un consentement statistiques clarifié et de variables d'environnement dédiées pour personnaliser les informations RGPD.",
   },
   {
