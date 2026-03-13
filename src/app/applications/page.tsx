@@ -421,6 +421,11 @@ export default function ApplicationsPage() {
                             SITE
                           </Badge>
                         )}
+                        {entry.shareCoachNoteWithBeneficiary && entry.coachNote && (
+                          <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+                            NOTE COACH
+                          </Badge>
+                        )}
                         <Badge variant={isDue ? "destructive" : "secondary"}>
                           {applicationStatusLabel(entry.status)}
                         </Badge>
@@ -584,6 +589,12 @@ export default function ApplicationsPage() {
                       SITE
                     </Badge>
                   )}
+                  {selectedApplication.shareCoachNoteWithBeneficiary &&
+                  selectedApplication.coachNote ? (
+                    <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+                      NOTE COACH
+                    </Badge>
+                  ) : null}
                   <Badge variant="outline">Envoyée le {formatApplicationDate(selectedApplication.appliedAt)}</Badge>
                   <Badge variant="secondary">{applicationStatusLabel(selectedApplication.status)}</Badge>
                 </div>
