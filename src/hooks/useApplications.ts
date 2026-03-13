@@ -21,8 +21,16 @@ function buildApplication(job: Job): JobApplication {
 }
 
 export function useApplications() {
-  const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [state, setState] = useState<{
+    applications: JobApplication[];
+    isLoaded: boolean;
+  }>({
+    applications: [],
+    isLoaded: false,
+  });
+
+  const applications = state.applications;
+  const isLoaded = state.isLoaded;
 
   useEffect(() => {
     const load = () => {
@@ -31,15 +39,23 @@ export function useApplications() {
         if (stored) {
           const parsed = JSON.parse(stored) as JobApplication[];
           if (Array.isArray(parsed)) {
-            setApplications(parsed);
+            setState({
+              applications: parsed,
+              isLoaded: true,
+            });
             return;
           }
         }
-        setApplications([]);
+        setState({
+          applications: [],
+          isLoaded: true,
+        });
       } catch (error) {
         console.error("Failed to load applications", error);
-      } finally {
-        setIsLoaded(true);
+        setState({
+          applications: [],
+          isLoaded: true,
+        });
       }
     };
 
@@ -51,7 +67,10 @@ export function useApplications() {
     const handleChange = (event: Event) => {
       const nextApplications = (event as CustomEvent<JobApplication[]>).detail;
       if (Array.isArray(nextApplications)) {
-        setApplications(nextApplications);
+        setState((current) => ({
+          ...current,
+          applications: nextApplications,
+        }));
       }
     };
 
@@ -73,21 +92,27 @@ export function useApplications() {
   }, [applications, isLoaded]);
 
   const addApplication = (job: Job) => {
-    setApplications((prev) => {
-      const existing = prev.find((entry) => entry.job.id === job.id);
+    setState((current) => {
+      const existing = current.applications.find((entry) => entry.job.id === job.id);
       if (existing) {
-        return prev.map((entry) =>
-          entry.job.id === job.id
-            ? {
-                ...entry,
-                job,
-                updatedAt: new Date().toISOString(),
-              }
-            : entry
-        );
+        return {
+          ...current,
+          applications: current.applications.map((entry) =>
+            entry.job.id === job.id
+              ? {
+                  ...entry,
+                  job,
+                  updatedAt: new Date().toISOString(),
+                }
+              : entry
+          ),
+        };
       }
 
-      return [buildApplication(job), ...prev];
+      return {
+        ...current,
+        applications: [buildApplication(job), ...current.applications],
+      };
     });
   };
 
@@ -115,33 +140,40 @@ export function useApplications() {
       source: "forem",
     };
 
-    setApplications((prev) => [
-      {
-        ...buildApplication(job),
-        appliedAt: appliedAt.toISOString(),
-        followUpDueAt: addDays(appliedAt, 7).toISOString(),
-        status: input.status || "in_progress",
-        notes: input.notes,
-        proofs: input.proofs,
-      },
-      ...prev,
-    ]);
+    setState((current) => ({
+      ...current,
+      applications: [
+        {
+          ...buildApplication(job),
+          appliedAt: appliedAt.toISOString(),
+          followUpDueAt: addDays(appliedAt, 7).toISOString(),
+          status: input.status || "in_progress",
+          notes: input.notes,
+          proofs: input.proofs,
+        },
+        ...current.applications,
+      ],
+    }));
   };
 
   const removeApplication = (jobId: string) => {
-    setApplications((prev) => prev.filter((entry) => entry.job.id !== jobId));
+    setState((current) => ({
+      ...current,
+      applications: current.applications.filter((entry) => entry.job.id !== jobId),
+    }));
   };
 
   const updateApplication = (jobId: string, updater: (entry: JobApplication) => JobApplication) => {
-    setApplications((prev) =>
-      prev.map((entry) => {
+    setState((current) => ({
+      ...current,
+      applications: current.applications.map((entry) => {
         if (entry.job.id !== jobId) return entry;
         return {
           ...updater(entry),
           updatedAt: new Date().toISOString(),
         };
-      })
-    );
+      }),
+    }));
   };
 
   const markAsRejected = (jobId: string) => {
