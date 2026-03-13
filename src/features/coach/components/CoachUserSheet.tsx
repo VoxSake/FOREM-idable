@@ -208,12 +208,13 @@ function CoachUserSheetBody({
                           : isDue
                             ? "border-amber-400/70 bg-amber-50/50 dark:bg-amber-950/20"
                             : "bg-card"
-                  }`}
+                  } transition-colors hover:border-primary/50 hover:bg-primary/5`}
                 >
                   <CollapsibleTrigger asChild>
                     <button
                       type="button"
-                      className="flex w-full items-start justify-between gap-4 p-4 text-left"
+                      className="flex w-full items-start justify-between gap-4 p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                      aria-expanded={isOpen}
                     >
                       <div className="min-w-0 space-y-2">
                         <div>
@@ -255,13 +256,29 @@ function CoachUserSheetBody({
                               : "Aucun"}
                           </p>
                         </div>
+
+                        <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1 text-xs font-medium text-foreground/80">
+                          <span>{isOpen ? "Masquer le détail" : "Cliquer pour voir le détail"}</span>
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                              isOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </div>
                       </div>
 
-                      <ChevronDown
-                        className={`mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
-                          isOpen ? "rotate-180" : ""
-                        }`}
-                      />
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          {isOpen ? "Ouvert" : "Détails"}
+                        </span>
+                        <div className="rounded-full border border-border/70 bg-background/90 p-2 text-muted-foreground shadow-sm">
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${
+                              isOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </div>
+                      </div>
                     </button>
                   </CollapsibleTrigger>
 
