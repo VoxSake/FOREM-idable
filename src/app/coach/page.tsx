@@ -60,6 +60,8 @@ export default function CoachPage() {
       <CoachGroupsSection
         search={coach.search}
         onSearchChange={coach.setSearch}
+        userFilter={coach.userFilter}
+        onUserFilterChange={coach.setUserFilter}
         groupedUsers={coach.groupedUsers}
         onCreateGroup={() => coach.setIsCreateGroupOpen(true)}
         onAddMember={coach.setMemberPickerGroupId}

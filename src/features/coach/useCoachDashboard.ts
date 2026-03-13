@@ -14,6 +14,7 @@ import {
   CoachEditTarget,
   CoachGroupedUserGroup,
   CoachMemberPickerGroup,
+  CoachUserFilter,
   CoachRevokeApiKeyTarget,
   CoachRemoveGroupTarget,
   CoachRemoveMembershipTarget,
@@ -49,6 +50,7 @@ export function useCoachDashboard() {
   const [editedFirstName, setEditedFirstName] = useState("");
   const [editedLastName, setEditedLastName] = useState("");
   const [search, setSearch] = useState("");
+  const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
   const deferredSearch = useDeferredValue(search);
 
   const loadDashboard = async () => {
@@ -112,8 +114,9 @@ export function useCoachDashboard() {
       users: dashboard.users,
       normalizedSearch: deferredSearch.trim().toLowerCase(),
       canManageCoachGroup: user?.role === "admin",
+      userFilter,
     });
-  }, [dashboard, deferredSearch, user?.role]);
+  }, [dashboard, deferredSearch, user?.role, userFilter]);
 
   const totalApplications = dashboard?.users.reduce((sum, entry) => sum + entry.applicationCount, 0) ?? 0;
   const totalInterviews = dashboard?.users.reduce((sum, entry) => sum + entry.interviewCount, 0) ?? 0;
@@ -442,6 +445,8 @@ export function useCoachDashboard() {
     setEditedLastName,
     search,
     setSearch,
+    userFilter,
+    setUserFilter,
     selectedUser,
     canEditSelectedUser,
     canManageSelectedUserApiKeys,

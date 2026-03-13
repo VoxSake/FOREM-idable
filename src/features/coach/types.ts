@@ -1,6 +1,7 @@
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 
 export type CoachGroupedGroupKind = "standard" | "ungrouped" | "coaches";
+export type CoachUserFilter = "all" | "due" | "interviews" | "accepted" | "rejected";
 
 export interface CoachRemoveMembershipTarget {
   groupId: number;

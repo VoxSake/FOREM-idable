@@ -4,13 +4,19 @@ import { Download, FolderPlus, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getCoachUserDisplayName } from "@/features/coach/utils";
-import { CoachGroupedUserGroup, CoachRemoveMembershipTarget } from "@/features/coach/types";
+import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
+import {
+  CoachGroupedUserGroup,
+  CoachRemoveMembershipTarget,
+  CoachUserFilter,
+} from "@/features/coach/types";
 import { CoachUserSummary } from "@/types/coach";
 
 interface CoachGroupsSectionProps {
   search: string;
   onSearchChange: (value: string) => void;
+  userFilter: CoachUserFilter;
+  onUserFilterChange: (value: CoachUserFilter) => void;
   groupedUsers: CoachGroupedUserGroup[];
   onCreateGroup: () => void;
   onAddMember: (groupId: number) => void;
@@ -24,6 +30,8 @@ interface CoachGroupsSectionProps {
 export function CoachGroupsSection({
   search,
   onSearchChange,
+  userFilter,
+  onUserFilterChange,
   groupedUsers,
   onCreateGroup,
   onAddMember,
@@ -33,6 +41,14 @@ export function CoachGroupsSection({
   onRemoveMembership,
   onDemoteCoach,
 }: CoachGroupsSectionProps) {
+  const filterOptions: Array<{ value: CoachUserFilter; label: string }> = [
+    { value: "all", label: "Tous" },
+    { value: "due", label: "A relancer" },
+    { value: "interviews", label: "Entretiens" },
+    { value: "accepted", label: "Acceptées" },
+    { value: "rejected", label: "Refusées" },
+  ];
+
   return (
     <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -55,6 +71,20 @@ export function CoachGroupsSection({
         onChange={(event) => onSearchChange(event.target.value)}
         placeholder="Rechercher par nom, prénom ou email..."
       />
+
+      <div className="flex flex-wrap gap-2">
+        {filterOptions.map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            size="sm"
+            variant={userFilter === option.value ? "default" : "outline"}
+            onClick={() => onUserFilterChange(option.value)}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
 
       <div className="space-y-4">
         {groupedUsers.map((group) => (
@@ -141,9 +171,16 @@ export function CoachGroupsSection({
                         <p className="text-xs text-muted-foreground">
                           {entry.groupNames.length > 0 ? entry.groupNames.join(" • ") : "Sans groupe"}
                         </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Dernière activité: {formatCoachDate(entry.latestActivityAt)}
+                        </p>
                       </div>
                       <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-                        <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
+                        {entry.applicationCount > 0 ? (
+                          <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
+                        ) : (
+                          <Badge variant="outline">Aucune candidature</Badge>
+                        )}
                         {entry.interviewCount > 0 && (
                           <Badge className="bg-sky-600 text-white hover:bg-sky-600">
                             {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
@@ -151,6 +188,16 @@ export function CoachGroupsSection({
                         )}
                         {entry.dueCount > 0 && (
                           <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>
+                        )}
+                        {entry.acceptedCount > 0 && (
+                          <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
+                            {entry.acceptedCount} acceptée{entry.acceptedCount > 1 ? "s" : ""}
+                          </Badge>
+                        )}
+                        {entry.rejectedCount > 0 && (
+                          <Badge className="bg-rose-600 text-white hover:bg-rose-600">
+                            {entry.rejectedCount} refusée{entry.rejectedCount > 1 ? "s" : ""}
+                          </Badge>
                         )}
                         {group.kind === "standard" && (
                           <Button

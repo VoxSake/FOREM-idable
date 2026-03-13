@@ -3,7 +3,11 @@ import { fr } from "date-fns/locale";
 import { CoachApplicationExportRow } from "@/lib/exportCoachApplicationsCsv";
 import { JobApplication } from "@/types/application";
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
-import { CoachGroupedUserGroup, CoachMemberPickerGroup } from "@/features/coach/types";
+import {
+  CoachGroupedUserGroup,
+  CoachMemberPickerGroup,
+  CoachUserFilter,
+} from "@/features/coach/types";
 
 export function getCoachUserDisplayName(user: Pick<CoachUserSummary, "firstName" | "lastName" | "email">) {
   return `${user.firstName} ${user.lastName}`.trim() || user.email;
@@ -64,8 +68,9 @@ export function buildGroupedUsers(input: {
   users: CoachUserSummary[];
   normalizedSearch: string;
   canManageCoachGroup: boolean;
+  userFilter: CoachUserFilter;
 }): CoachGroupedUserGroup[] {
-  const { groups, users, normalizedSearch, canManageCoachGroup } = input;
+  const { groups, users, normalizedSearch, canManageCoachGroup, userFilter } = input;
   const matchesSearch = (user: CoachUserSummary) =>
     !normalizedSearch ||
     [
@@ -78,9 +83,42 @@ export function buildGroupedUsers(input: {
       .toLowerCase()
       .includes(normalizedSearch);
 
+  const matchesFilter = (user: CoachUserSummary) => {
+    switch (userFilter) {
+      case "due":
+        return user.dueCount > 0;
+      case "interviews":
+        return user.interviewCount > 0;
+      case "accepted":
+        return user.acceptedCount > 0;
+      case "rejected":
+        return user.rejectedCount > 0;
+      case "all":
+      default:
+        return true;
+    }
+  };
+
+  const sortMembers = (members: CoachUserSummary[]) =>
+    [...members].sort((left, right) => {
+      if (right.dueCount !== left.dueCount) return right.dueCount - left.dueCount;
+
+      const leftLatest = left.latestActivityAt ? new Date(left.latestActivityAt).getTime() : 0;
+      const rightLatest = right.latestActivityAt ? new Date(right.latestActivityAt).getTime() : 0;
+      if (rightLatest !== leftLatest) return rightLatest - leftLatest;
+
+      if (right.applicationCount !== left.applicationCount) {
+        return right.applicationCount - left.applicationCount;
+      }
+
+      return getCoachUserDisplayName(left).localeCompare(getCoachUserDisplayName(right), "fr");
+    });
+
   const standardGroups = groups.map((group) => {
     const members = users.filter((entry) => group.members.some((member) => member.id === entry.id));
-    const visibleMembers = members.filter((entry) => matchesSearch(entry));
+    const visibleMembers = sortMembers(
+      members.filter((entry) => matchesSearch(entry) && matchesFilter(entry))
+    );
 
     return {
       id: group.id,
@@ -98,10 +136,17 @@ export function buildGroupedUsers(input: {
   });
 
   const ungroupedMembers = users.filter(
-    (entry) => entry.role === "user" && entry.groupIds.length === 0 && matchesSearch(entry)
+    (entry) =>
+      entry.role === "user" &&
+      entry.groupIds.length === 0 &&
+      matchesSearch(entry) &&
+      matchesFilter(entry)
   );
   const coachMembers = users.filter(
-    (entry) => (entry.role === "coach" || entry.role === "admin") && matchesSearch(entry)
+    (entry) =>
+      (entry.role === "coach" || entry.role === "admin") &&
+      matchesSearch(entry) &&
+      matchesFilter(entry)
   );
   const allUngroupedMembers = users.filter(
     (entry) => entry.role === "user" && entry.groupIds.length === 0
@@ -122,7 +167,7 @@ export function buildGroupedUsers(input: {
       totalDue: allUngroupedMembers.reduce((sum, entry) => sum + entry.dueCount, 0),
       totalAccepted: allUngroupedMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
       totalRejected: allUngroupedMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
-      members: ungroupedMembers,
+      members: sortMembers(ungroupedMembers),
     },
     {
       id: -2,
@@ -135,7 +180,7 @@ export function buildGroupedUsers(input: {
       totalDue: allCoachMembers.reduce((sum, entry) => sum + entry.dueCount, 0),
       totalAccepted: allCoachMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
       totalRejected: allCoachMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
-      members: coachMembers,
+      members: sortMembers(coachMembers),
     },
   ];
 
