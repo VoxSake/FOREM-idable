@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Briefcase, Settings, Moon, Sun, CircleHelp, Send, Users, UserRound, ShieldCheck } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -8,8 +7,6 @@ import { usePathname } from "next/navigation";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 import { AuthSidebarPanel } from "@/components/auth/AuthSidebarPanel";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { FOOTER_QUOTES } from "@/data/footerQuotes";
-import { pickRandomItem } from "@/lib/random";
 
 import {
     Sidebar,
@@ -25,12 +22,12 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 const baseNavItems = [
     { title: "Recherche", url: "/", icon: Briefcase },
     { title: "Candidatures", url: "/applications", icon: Send },
     { title: "Mon compte", url: "/account", icon: UserRound },
+    { title: "Paramètres", url: "/settings", icon: Settings },
     { title: "À propos", url: "/about", icon: CircleHelp },
 ];
 
@@ -38,19 +35,10 @@ export function AppSidebar() {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const { user } = useAuth();
-    const [currentQuote, setCurrentQuote] = useState(() => FOOTER_QUOTES[0]);
     const navItems =
         user?.role === "coach" || user?.role === "admin"
             ? [{ title: "Suivi coach", url: "/coach", icon: Users }, ...baseNavItems]
             : baseNavItems;
-
-    useEffect(() => {
-        const timeoutId = window.setTimeout(() => {
-            setCurrentQuote(pickRandomItem(FOOTER_QUOTES));
-        }, 0);
-
-        return () => window.clearTimeout(timeoutId);
-    }, []);
 
     return (
         <Sidebar>
@@ -96,28 +84,18 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
 
-            <SidebarFooter className="border-t p-4 flex flex-col gap-4">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild isActive={pathname === "/privacy"}>
-                            <Link href="/privacy">
-                                <ShieldCheck className="w-4 h-4" />
-                                <span>Confidentialité</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild isActive={pathname === "/settings"}>
-                            <Link href="/settings">
-                                <Settings className="w-4 h-4" />
-                                <span>Paramètres</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-
-                <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground ml-2">Thème</span>
+            <SidebarFooter className="border-t p-3">
+                <div className="flex items-center gap-2">
+                    <SidebarMenu className="flex-1">
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={pathname === "/privacy"} tooltip="Confidentialité">
+                                <Link href="/privacy">
+                                    <ShieldCheck className="w-4 h-4" />
+                                    <span>Confidentialité</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
                     <Button
                         variant="ghost"
                         size="icon"
@@ -128,30 +106,12 @@ export function AppSidebar() {
                     >
                         <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                         <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                        <span className="sr-only">Toggle theme</span>
+                        <span className="sr-only">Changer le thème</span>
                     </Button>
                 </div>
-
-                <Separator />
-                <blockquote className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-                    <p className="text-[11px] leading-4 text-foreground/90 italic">
-                        « {currentQuote.text} »
-                    </p>
-                    {currentQuote.author && (
-                        <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
-                            — {currentQuote.author}
-                        </p>
-                    )}
-                </blockquote>
-
-                <div className="rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
-                    <p className="text-[11px] leading-4 text-muted-foreground">
-                        Copyright (c) 2026 Jordi Brisbois
-                    </p>
-                    <p className="text-[11px] leading-4 font-medium text-foreground/80">
-                        Licensed under MIT
-                    </p>
-                </div>
+                <p className="mt-2 px-2 text-[11px] leading-4 text-muted-foreground">
+                    FOREM-idable · MIT
+                </p>
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>
