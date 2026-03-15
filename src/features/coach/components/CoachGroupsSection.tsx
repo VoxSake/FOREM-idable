@@ -180,7 +180,7 @@ export function CoachGroupsSection({
                         </p>
                       </div>
                       <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-                        {entry.role === "user" && (
+                        {group.kind !== "coaches" && (
                           <>
                             {entry.applicationCount > 0 ? (
                               <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
