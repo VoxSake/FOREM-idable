@@ -10,6 +10,9 @@ import { useCoachDashboard } from "@/features/coach/useCoachDashboard";
 
 export default function CoachPage() {
   const coach = useCoachDashboard();
+  const followedUserCount =
+    coach.dashboard?.users.filter((entry) => entry.role === "user" || entry.groupIds.length > 0)
+      .length ?? 0;
 
   if (coach.isAuthLoading || coach.isLoading) {
     return (
@@ -49,7 +52,7 @@ export default function CoachPage() {
       </div>
 
       <CoachSummaryCards
-        userCount={coach.dashboard?.users.length ?? 0}
+        userCount={followedUserCount}
         totalApplications={coach.totalApplications}
         totalInterviews={coach.totalInterviews}
         totalDue={coach.totalDue}
