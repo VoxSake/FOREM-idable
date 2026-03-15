@@ -110,7 +110,7 @@ export function AppSidebar() {
                     </Button>
                 </div>
                 <p className="mt-2 px-2 text-[11px] leading-4 text-muted-foreground">
-                    {runtimeConfig.brand.copyrightName} · MIT
+                    {runtimeConfig.brand.copyrightName} · FOREM-idable · 2026 · Licence MIT
                 </p>
             </SidebarFooter>
             <SidebarRail />
