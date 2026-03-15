@@ -8,11 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useSettings } from "@/hooks/useSettings";
 import { AuthUser } from "@/types/auth";
 import { ApiKeyCreateResult, ApiKeySummary } from "@/types/externalApi";
 
 export default function AccountPage() {
   const { user, isLoading, refresh, setUser } = useAuth();
+  const { settings, updateSettings, isLoaded: isSettingsLoaded } = useSettings();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
@@ -208,7 +211,7 @@ export default function AccountPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !isSettingsLoaded) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
         <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />
@@ -318,6 +321,34 @@ export default function AccountPage() {
           </Button>
           {passwordFeedback && <p className="text-sm text-muted-foreground">{passwordFeedback}</p>}
         </div>
+      </section>
+
+      <section className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold">Recherche</h2>
+          <p className="text-sm text-muted-foreground">
+            Définissez le lien initial entre vos mots-clés lors d&apos;une nouvelle recherche.
+          </p>
+        </div>
+        <Separator className="my-4" />
+        <RadioGroup
+          defaultValue={settings.defaultSearchMode}
+          onValueChange={(value: "AND" | "OR") => updateSettings({ defaultSearchMode: value })}
+          className="flex flex-col space-y-2"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="OR" id="account-mode-or" />
+            <Label htmlFor="account-mode-or" className="font-normal">
+              OU (plus de résultats)
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="AND" id="account-mode-and" />
+            <Label htmlFor="account-mode-and" className="font-normal">
+              ET (plus précis)
+            </Label>
+          </div>
+        </RadioGroup>
       </section>
 
       {canManageApiKeys ? (

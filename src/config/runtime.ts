@@ -1,6 +1,12 @@
 import { sanitizeUmamiScriptUrl } from "@/lib/analytics";
 
 export const runtimeConfig = {
+  brand: {
+    copyrightName:
+      process.env.COPYRIGHT_NAME?.trim() ||
+      process.env.PRIVACY_CONTROLLER_NAME?.trim() ||
+      "Jordi Brisbois",
+  },
   adzuna: {
     enabled: process.env.ADZUNA_ENABLED === "true",
     appId: process.env.ADZUNA_APP_ID?.trim() || "",

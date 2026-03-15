@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { runtimeConfig } from "@/config/runtime";
+import { PrivacyConsentControls } from "@/components/consent/PrivacyConsentControls";
 
 export default function PrivacyPage() {
   const privacyEmail = runtimeConfig.privacy.contactEmail;
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
           <p>
             <span className="font-semibold text-foreground">Statistiques facultatives</span>:
             mesure d&apos;usage via Umami. Base juridique: votre consentement, que vous pouvez
-            retirer à tout moment depuis <Link className="text-primary hover:underline" href="/settings">Paramètres</Link>.
+            retirer ou modifier à tout moment sur cette page.
           </p>
           <p>
             <span className="font-semibold text-foreground">Respect des obligations légales</span>:
@@ -160,6 +160,13 @@ export default function PrivacyPage() {
             prestataire technique, il devrait être encadré par les garanties appropriées prévues par
             le RGPD.
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-card p-6 shadow-sm">
+        <h2 className="text-xl font-bold">Choix des statistiques</h2>
+        <div className="mt-4">
+          <PrivacyConsentControls />
         </div>
       </section>
 

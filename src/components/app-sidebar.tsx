@@ -1,12 +1,13 @@
 "use client";
 
-import { Briefcase, Settings, Moon, Sun, CircleHelp, Send, Users, UserRound, ShieldCheck } from "lucide-react";
+import { Briefcase, Moon, Sun, CircleHelp, Send, Users, UserRound, ShieldCheck } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
 import { AuthSidebarPanel } from "@/components/auth/AuthSidebarPanel";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { runtimeConfig } from "@/config/runtime";
 
 import {
     Sidebar,
@@ -27,7 +28,6 @@ const baseNavItems = [
     { title: "Recherche", url: "/", icon: Briefcase },
     { title: "Candidatures", url: "/applications", icon: Send },
     { title: "Mon compte", url: "/account", icon: UserRound },
-    { title: "Paramètres", url: "/settings", icon: Settings },
     { title: "À propos", url: "/about", icon: CircleHelp },
 ];
 
@@ -110,7 +110,7 @@ export function AppSidebar() {
                     </Button>
                 </div>
                 <p className="mt-2 px-2 text-[11px] leading-4 text-muted-foreground">
-                    FOREM-idable · MIT
+                    {runtimeConfig.brand.copyrightName} · MIT
                 </p>
             </SidebarFooter>
             <SidebarRail />

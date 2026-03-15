@@ -50,6 +50,7 @@ cp env.example .env.local
 - `PRIVACY_CONTACT_EMAIL=...`
 - `PRIVACY_PROJECT_LABEL=...`
 - `PRIVACY_SOURCE_URL=...`
+- `COPYRIGHT_NAME=...`
 
 Pour activer Adzuna:
 
