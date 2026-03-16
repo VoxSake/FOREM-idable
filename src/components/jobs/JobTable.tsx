@@ -114,7 +114,7 @@ export function JobTable({
                         <Button
                             type="button"
                             variant={applied ? "secondary" : "default"}
-                            className="h-10 w-full"
+                            className="col-span-2 h-11 w-full"
                             onClick={async () => {
                                 if (!isAuthenticated) {
                                     onRequireAuth?.(job);
@@ -125,44 +125,51 @@ export function JobTable({
                             disabled={!isApplicationsLoaded}
                         >
                             <Send className={`mr-2 h-4 w-4 ${applied ? "fill-current" : ""}`} />
-                            {applied ? "Ajoutée" : "Ajouter"}
+                            {applied ? "Dans candidatures" : "Ajouter aux candidatures"}
                         </Button>
 
                         <Button
                             type="button"
                             className="h-10 w-full"
-                            onClick={() => onOpenDetails?.(job)}
-                            variant="outline"
-                        >
-                            Détails
-                        </Button>
-                    </div>
-
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="h-9 w-full justify-center"
                             asChild
                         >
                             <a href={job.url} target="_blank" rel="noopener noreferrer">
                                 <ExternalLink className="mr-2 h-4 w-4" />
-                                Voir l&apos;offre
+                                WEB
                             </a>
                         </Button>
 
                         {pdfUrl ? (
                             <Button
                                 variant="outline"
-                                size="icon"
-                                className="h-9 w-9"
+                                type="button"
+                                className="h-10 w-full"
                                 asChild
                             >
-                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le PDF">
-                                    <FileText className="h-4 w-4" />
+                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    PDF
                                 </a>
                             </Button>
-                        ) : null}
+                        ) : (
+                            <Button
+                                type="button"
+                                className="h-10 w-full"
+                                onClick={() => onOpenDetails?.(job)}
+                                variant="outline"
+                            >
+                                Détails
+                            </Button>
+                        )}
+
+                        <Button
+                            type="button"
+                            className={pdfUrl ? "col-span-2 h-10 w-full" : "col-span-2 h-10 w-full"}
+                            onClick={() => onOpenDetails?.(job)}
+                            variant="outline"
+                        >
+                            Détails
+                        </Button>
                     </div>
                 </div>
             );
