@@ -5,6 +5,19 @@ function normalizeOrigin(value: string) {
 }
 
 function getExpectedOrigin(request: NextRequest) {
+  const configuredOrigin =
+    process.env.APP_BASE_URL?.trim() ||
+    process.env.COOLIFY_URL?.trim();
+  if (configuredOrigin) {
+    return normalizeOrigin(configuredOrigin);
+  }
+
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.trim();
+  const forwardedHost = request.headers.get("x-forwarded-host")?.trim();
+  if (forwardedProto && forwardedHost) {
+    return normalizeOrigin(`${forwardedProto}://${forwardedHost}`);
+  }
+
   return normalizeOrigin(request.nextUrl.origin);
 }
 
