@@ -55,17 +55,17 @@ export function ApplicationCard({
   return (
     <div
       className={`rounded-xl border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/20 ${
-        hasInterview
-          ? "border-sky-300 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20"
-          : hasUnreadCoachUpdate
-            ? "border-sky-300 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20"
-          : application.status === "accepted"
-            ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20"
-            : application.status === "rejected"
-              ? "border-rose-300 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/20"
-              : isDue
-                ? "border-amber-400/70"
-                : ""
+        application.status === "accepted"
+          ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20"
+          : application.status === "rejected"
+            ? "border-rose-300 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/20"
+          : hasInterview
+            ? "border-sky-300 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20"
+            : hasUnreadCoachUpdate
+              ? "border-sky-300 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20"
+            : isDue
+              ? "border-amber-400/70"
+              : ""
       }`}
       onClick={() => onOpenDetails(application.job.id)}
     >
