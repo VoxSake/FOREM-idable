@@ -35,7 +35,7 @@ export function rejectCrossOriginRequest(request: NextRequest) {
     return null;
   }
 
-  if (fetchSite && !["same-origin", "same-site", "none"].includes(fetchSite)) {
+  if (fetchSite === "cross-site") {
     return NextResponse.json({ error: "Requête interdite." }, { status: 403 });
   }
 
