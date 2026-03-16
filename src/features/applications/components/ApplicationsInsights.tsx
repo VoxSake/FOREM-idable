@@ -41,34 +41,64 @@ export function ApplicationsInsights({
   onStatusFilterChange,
   onModeFilterChange,
 }: ApplicationsInsightsProps) {
+  const stats = [
+    {
+      label: "En suivi",
+      value: totalCount,
+      valueClassName: "",
+      fullWidth: false,
+    },
+    {
+      label: "Relances dues",
+      value: dueCount,
+      valueClassName: "text-amber-700 dark:text-amber-300",
+      fullWidth: false,
+    },
+    {
+      label: "Entretiens à venir",
+      value: upcomingInterviewCount,
+      valueClassName: "text-sky-700 dark:text-sky-300",
+      fullWidth: false,
+    },
+    {
+      label: "Clôturées",
+      value: closedCount,
+      valueClassName: "text-emerald-700 dark:text-emerald-300",
+      fullWidth: false,
+    },
+    {
+      label: "Retours coach",
+      value: coachUpdateCount,
+      valueClassName: "text-sky-700 dark:text-sky-300",
+      fullWidth: coachUpdateCount > 0,
+      hint:
+        coachUpdateCount > 0
+          ? `${coachUpdateCount} candidature${coachUpdateCount > 1 ? "s" : ""} avec un nouveau retour coach.`
+          : null,
+    },
+  ];
+
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">En suivi</p>
-          <p className="mt-2 text-2xl font-black">{totalCount}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Relances dues</p>
-          <p className="mt-2 text-2xl font-black text-amber-700 dark:text-amber-300">{dueCount}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Entretiens à venir</p>
-          <p className="mt-2 text-2xl font-black text-sky-700 dark:text-sky-300">{upcomingInterviewCount}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Clôturées</p>
-          <p className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">{closedCount}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm sm:col-span-2 xl:col-span-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Retours coach</p>
-          <p className="mt-2 text-2xl font-black text-sky-700 dark:text-sky-300">{coachUpdateCount}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {coachUpdateCount > 0
-              ? `${coachUpdateCount} candidature${coachUpdateCount > 1 ? "s" : ""} avec un nouveau retour coach.`
-              : "Aucun nouveau retour coach pour le moment."}
-          </p>
-        </div>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className={`rounded-xl border bg-card p-3 shadow-sm sm:p-4 ${
+              stat.fullWidth ? "col-span-2 xl:col-span-4" : ""
+            }`}
+          >
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground sm:text-xs">
+              {stat.label}
+            </p>
+            <p className={`mt-1 text-2xl font-black sm:mt-2 ${stat.valueClassName}`}>
+              {stat.value}
+            </p>
+            {stat.hint ? (
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{stat.hint}</p>
+            ) : null}
+          </div>
+        ))}
       </div>
 
       <div className="rounded-xl border bg-card p-4 shadow-sm">
