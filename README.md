@@ -46,6 +46,12 @@ cp env.example .env.local
 - `UMAMI_ENABLED=false` par défaut
 - `NEXT_PUBLIC_UMAMI_WEBSITE_ID=...`
 - `NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js` (optionnel)
+- `PASSWORD_RESET_ENABLED=false` par défaut
+- `NEXT_PUBLIC_PASSWORD_RESET_ENABLED=false` par défaut
+- `APP_BASE_URL=...`
+- `RESEND_API_KEY=...`
+- `RESEND_FROM_EMAIL=...`
+- `RESEND_REPLY_TO=...`
 - `PRIVACY_CONTROLLER_NAME=...`
 - `PRIVACY_CONTACT_EMAIL=...`
 - `PRIVACY_PROJECT_LABEL=...`
@@ -63,6 +69,14 @@ Pour activer Umami:
 2. Renseigner `NEXT_PUBLIC_UMAMI_WEBSITE_ID`
 3. Laisser `NEXT_PUBLIC_UMAMI_SCRIPT_URL` tel quel (cloud) ou pointer vers votre script self-hosted
 4. Le script Umami n'est charg&eacute; qu'apr&egrave;s consentement explicite via la banni&egrave;re RGPD
+
+Pour activer la réinitialisation de mot de passe par email:
+
+1. Mettre `PASSWORD_RESET_ENABLED=true`
+2. Mettre `NEXT_PUBLIC_PASSWORD_RESET_ENABLED=true`
+3. Définir `APP_BASE_URL`
+4. Renseigner `RESEND_API_KEY`
+5. Définir une adresse d’envoi valide dans `RESEND_FROM_EMAIL`
 
 Pour personnaliser la page `Confidentialité`:
 

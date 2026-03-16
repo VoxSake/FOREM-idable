@@ -7,6 +7,9 @@ export const runtimeConfig = {
       process.env.PRIVACY_CONTROLLER_NAME?.trim() ||
       "Jordi Brisbois",
   },
+  auth: {
+    passwordResetEnabled: process.env.NEXT_PUBLIC_PASSWORD_RESET_ENABLED === "true",
+  },
   adzuna: {
     enabled: process.env.ADZUNA_ENABLED === "true",
     appId: process.env.ADZUNA_APP_ID?.trim() || "",

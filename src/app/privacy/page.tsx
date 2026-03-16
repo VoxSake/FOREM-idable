@@ -110,6 +110,14 @@ export default function PrivacyPage() {
               consentez. Elles ne sont pas nécessaires à l&apos;utilisation du service.
             </p>
           </div>
+          <div>
+            <p className="font-semibold text-foreground">7. Emails transactionnels</p>
+            <p>
+              Si la fonction de réinitialisation de mot de passe est activée, votre adresse email
+              peut être utilisée pour vous envoyer un lien de changement de mot de passe via le
+              prestataire technique Resend.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -127,6 +135,12 @@ export default function PrivacyPage() {
             des sessions, prévention des abus, journalisation technique minimale, protection des
             accès et des exportations API. Base juridique principale: intérêt légitime à sécuriser
             le service.
+          </p>
+          <p>
+            <span className="font-semibold text-foreground">Réinitialisation de mot de passe</span>:
+            envoi d&apos;un email contenant un lien temporaire lorsque vous demandez explicitement un
+            changement de mot de passe. Base juridique principale: exécution du service demandé et
+            sécurisation de l&apos;accès à votre compte.
           </p>
           <p>
             <span className="font-semibold text-foreground">Statistiques facultatives</span>:

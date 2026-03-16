@@ -3,6 +3,10 @@ import Link from "next/link";
 const RECENT_UPDATES = [
   {
     month: "Mars 2026",
+    text: "Ajout d'un flux mot de passe oublié via email avec Resend, feature flag dédié et page de réinitialisation.",
+  },
+  {
+    month: "Mars 2026",
     text: "Vue coach affinée: side panel plus large, candidatures repliables, note privée coach commune, notes partagées multiples avec auteurs/contributeurs, badge SITE/MANUEL et exports enrichis.",
   },
   {

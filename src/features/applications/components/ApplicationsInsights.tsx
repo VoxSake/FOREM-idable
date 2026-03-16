@@ -11,6 +11,7 @@ interface ApplicationsInsightsProps {
   dueCount: number;
   upcomingInterviewCount: number;
   closedCount: number;
+  coachUpdateCount: number;
   search: string;
   statusFilter: "all" | ApplicationStatus;
   modeFilter: ApplicationModeFilter;
@@ -23,6 +24,7 @@ const QUICK_FILTERS: Array<{ value: ApplicationModeFilter; label: string }> = [
   { value: "all", label: "Tout" },
   { value: "due", label: "Relances" },
   { value: "interviews", label: "Entretiens" },
+  { value: "coach_updates", label: "Nouveaux retours" },
   { value: "manual", label: "Manuel" },
 ];
 
@@ -31,6 +33,7 @@ export function ApplicationsInsights({
   dueCount,
   upcomingInterviewCount,
   closedCount,
+  coachUpdateCount,
   search,
   statusFilter,
   modeFilter,
@@ -56,6 +59,15 @@ export function ApplicationsInsights({
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Clôturées</p>
           <p className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">{closedCount}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4 shadow-sm sm:col-span-2 xl:col-span-4">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Retours coach</p>
+          <p className="mt-2 text-2xl font-black text-sky-700 dark:text-sky-300">{coachUpdateCount}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {coachUpdateCount > 0
+              ? `${coachUpdateCount} candidature${coachUpdateCount > 1 ? "s" : ""} avec un nouveau retour coach.`
+              : "Aucun nouveau retour coach pour le moment."}
+          </p>
         </div>
       </div>
 

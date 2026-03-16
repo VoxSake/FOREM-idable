@@ -5,6 +5,7 @@ import { AuthUser } from "@/types/auth";
 
 const SESSION_COOKIE = "forem_idable_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
+const PASSWORD_RESET_DURATION_MS = 1000 * 60 * 60;
 
 function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
   const derived = scryptSync(password, salt, 64).toString("hex");
@@ -182,6 +183,104 @@ export async function setUserPassword(userId: number, password: string) {
      WHERE id = $1`,
     [userId, passwordHash]
   );
+}
+
+export async function createPasswordResetToken(email: string) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const normalizedEmail = normalizeEmail(email);
+  const userResult = await db.query<{
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+  }>(
+    `SELECT id, email, first_name, last_name
+     FROM users
+     WHERE email = $1
+     LIMIT 1`,
+    [normalizedEmail]
+  );
+
+  const user = userResult.rows[0];
+  if (!user) return null;
+
+  const token = randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_DURATION_MS).toISOString();
+
+  await db.query(
+    `DELETE FROM password_reset_tokens
+     WHERE user_id = $1 OR expires_at <= NOW() OR used_at IS NOT NULL`,
+    [user.id]
+  );
+
+  await db.query(
+    `INSERT INTO password_reset_tokens (token_hash, user_id, expires_at)
+     VALUES ($1, $2, $3)`,
+    [hashToken(token), user.id, expiresAt]
+  );
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+    },
+    expiresAt,
+  };
+}
+
+export async function resetPasswordWithToken(token: string, password: string) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const tokenHash = hashToken(token);
+  const passwordHash = hashPassword(password);
+
+  await db.query("BEGIN");
+
+  try {
+    const result = await db.query<{ user_id: number }>(
+      `SELECT user_id
+       FROM password_reset_tokens
+       WHERE token_hash = $1
+         AND used_at IS NULL
+         AND expires_at > NOW()
+       LIMIT 1
+       FOR UPDATE`,
+      [tokenHash]
+    );
+
+    const row = result.rows[0];
+    if (!row) {
+      await db.query("ROLLBACK");
+      return false;
+    }
+
+    await db.query(
+      `UPDATE users
+       SET password_hash = $2
+       WHERE id = $1`,
+      [row.user_id, passwordHash]
+    );
+
+    await db.query(
+      `UPDATE password_reset_tokens
+       SET used_at = NOW()
+       WHERE token_hash = $1`,
+      [tokenHash]
+    );
+
+    await db.query(`DELETE FROM sessions WHERE user_id = $1`, [row.user_id]);
+    await db.query("COMMIT");
+    return true;
+  } catch (error) {
+    await db.query("ROLLBACK");
+    throw error;
+  }
 }
 
 export async function updateUserProfile(userId: number, firstName: string, lastName: string) {

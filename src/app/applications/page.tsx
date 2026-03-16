@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { format, isAfter, isBefore } from "date-fns";
 import { BriefcaseBusiness, Clock3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,15 @@ import {
 } from "@/features/applications/components/ManualApplicationDialog";
 import {
   ApplicationModeFilter,
+  getLatestSharedCoachNoteAt,
   isFollowUpPending,
   isManualApplication,
   sortApplicationsByMostRecent,
 } from "@/features/applications/utils";
+import {
+  markCoachNoteView,
+  useCoachNoteViews,
+} from "@/features/applications/coachNoteViews";
 import { exportApplicationsToCSV } from "@/lib/exportApplicationsCsv";
 import { exportInterviewsToICS } from "@/lib/exportApplicationsIcs";
 import { ApplicationStatus, JobApplication } from "@/types/application";
@@ -79,6 +84,15 @@ export default function ApplicationsPage() {
   const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
   const [proofsDrafts, setProofsDrafts] = useState<Record<string, string>>({});
   const now = useMemo(() => new Date(), []);
+  const coachNoteViews = useCoachNoteViews(user?.id);
+
+  const hasUnreadCoachUpdate = useCallback((application: JobApplication) => {
+    const latestSharedNoteAt = getLatestSharedCoachNoteAt(application);
+    if (!latestSharedNoteAt) return false;
+    const seenAt = coachNoteViews[application.job.id];
+    if (!seenAt) return true;
+    return new Date(latestSharedNoteAt).getTime() > new Date(seenAt).getTime();
+  }, [coachNoteViews]);
 
   const dueCount = applications.filter(
     (entry) => isFollowUpPending(entry.status) && !isAfter(new Date(entry.followUpDueAt), now)
@@ -112,6 +126,7 @@ export default function ApplicationsPage() {
 
         if (modeFilter === "interviews" && !entry.interviewAt) return false;
         if (modeFilter === "manual" && !isManualApplication(entry)) return false;
+        if (modeFilter === "coach_updates" && !hasUnreadCoachUpdate(entry)) return false;
         if (!normalizedSearch) return true;
 
         return [
@@ -126,7 +141,7 @@ export default function ApplicationsPage() {
           .includes(normalizedSearch);
       })
     );
-  }, [applications, modeFilter, now, search, statusFilter]);
+  }, [applications, hasUnreadCoachUpdate, modeFilter, now, search, statusFilter]);
 
   const selectedApplication = useMemo(
     () => applications.find((entry) => entry.job.id === detailsJobId) ?? null,
@@ -140,6 +155,13 @@ export default function ApplicationsPage() {
     () => applications.find((entry) => entry.job.id === interviewJobId) ?? null,
     [applications, interviewJobId]
   );
+
+  const markCoachUpdateSeen = (application: JobApplication | null) => {
+    if (!application) return;
+    markCoachNoteView(user?.id, application.job.id, getLatestSharedCoachNoteAt(application));
+  };
+
+  const unreadCoachUpdateCount = applications.filter((entry) => hasUnreadCoachUpdate(entry)).length;
 
   if (isAuthLoading || !isLoaded) return null;
 
@@ -321,6 +343,7 @@ export default function ApplicationsPage() {
         dueCount={dueCount}
         upcomingInterviewCount={upcomingInterviewCount}
         closedCount={closedCount}
+        coachUpdateCount={unreadCoachUpdateCount}
         search={search}
         statusFilter={statusFilter}
         modeFilter={modeFilter}
@@ -337,8 +360,12 @@ export default function ApplicationsPage() {
               application={application}
               now={now}
               isSelected={selectedJobIds.has(application.job.id)}
+              hasUnreadCoachUpdate={hasUnreadCoachUpdate(application)}
               onToggleSelection={toggleSelection}
-              onOpenDetails={setDetailsJobId}
+              onOpenDetails={(jobId) => {
+                setDetailsJobId(jobId);
+                markCoachUpdateSeen(applications.find((entry) => entry.job.id === jobId) ?? null);
+              }}
               onApplyStatus={applyStatus}
               onMarkFollowUpDone={markFollowUpDone}
               onOpenInterview={openInterviewModal}
@@ -387,6 +414,7 @@ export default function ApplicationsPage() {
       <ApplicationDetailsSheet
         application={selectedApplication}
         open={Boolean(selectedApplication)}
+        hasUnreadCoachUpdate={selectedApplication ? hasUnreadCoachUpdate(selectedApplication) : false}
         notesDraft={currentNotesDraft}
         proofsDraft={currentProofsDraft}
         onOpenChange={(open) => {

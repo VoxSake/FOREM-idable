@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { runtimeConfig } from "@/config/runtime";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 type AuthMode = "login" | "register";
 
@@ -34,6 +36,7 @@ export function AuthRequiredDialog({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
 
   const effectiveMode = forcedMode ?? mode;
   const effectiveTitle =
@@ -140,6 +143,16 @@ export function AuthRequiredDialog({
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Mot de passe (8 caractères minimum)"
           />
+          {effectiveMode === "login" && runtimeConfig.auth.passwordResetEnabled ? (
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto justify-start px-0 text-sm"
+              onClick={() => setIsForgotPasswordDialogOpen(true)}
+            >
+              Mot de passe oublié ?
+            </Button>
+          ) : null}
           {effectiveMode === "register" ? (
             <Input
               type="password"
@@ -173,6 +186,10 @@ export function AuthRequiredDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <ForgotPasswordDialog
+        open={isForgotPasswordDialogOpen}
+        onOpenChange={setIsForgotPasswordDialogOpen}
+      />
     </Dialog>
   );
 }

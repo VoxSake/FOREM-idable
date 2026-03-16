@@ -15,6 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { runtimeConfig } from "@/config/runtime";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 type AuthMode = "login" | "register";
 
@@ -33,6 +35,7 @@ export function AuthSidebarPanel() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
 
   const openDialog = (nextMode: AuthMode) => {
     setMode(nextMode);
@@ -220,6 +223,16 @@ export function AuthSidebarPanel() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Mot de passe (8 caractères minimum)"
             />
+            {mode === "login" && runtimeConfig.auth.passwordResetEnabled ? (
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto justify-start px-0 text-sm"
+                onClick={() => setIsForgotPasswordDialogOpen(true)}
+              >
+                Mot de passe oublié ?
+              </Button>
+            ) : null}
             {mode === "register" ? (
               <Input
                 type="password"
@@ -254,6 +267,10 @@ export function AuthSidebarPanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ForgotPasswordDialog
+        open={isForgotPasswordDialogOpen}
+        onOpenChange={setIsForgotPasswordDialogOpen}
+      />
     </>
   );
 }

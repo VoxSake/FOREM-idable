@@ -142,6 +142,20 @@ ALTER TABLE api_keys
 
 CREATE INDEX IF NOT EXISTS api_keys_user_id_idx ON api_keys(user_id);
 CREATE INDEX IF NOT EXISTS api_keys_active_idx ON api_keys(user_id, revoked_at);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  token_hash TEXT PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS password_reset_tokens_user_id_idx
+  ON password_reset_tokens(user_id);
+
+CREATE INDEX IF NOT EXISTS password_reset_tokens_expires_at_idx
+  ON password_reset_tokens(expires_at);
 `;
 
 export async function ensureDatabase() {

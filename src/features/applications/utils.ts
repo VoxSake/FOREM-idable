@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
-export type ApplicationModeFilter = "all" | "due" | "interviews" | "manual";
+export type ApplicationModeFilter = "all" | "due" | "interviews" | "manual" | "coach_updates";
 
 export function formatApplicationDate(value: string) {
   const date = new Date(value);
@@ -63,4 +63,15 @@ export function sortApplicationsByMostRecent(applications: JobApplication[]) {
   return [...applications].sort(
     (left, right) => getApplicationSortTime(right) - getApplicationSortTime(left)
   );
+}
+
+export function getLatestSharedCoachNoteAt(application: JobApplication) {
+  const timestamps = (application.sharedCoachNotes ?? [])
+    .map((note) => note.updatedAt)
+    .filter(Boolean)
+    .map((value) => new Date(value).getTime())
+    .filter((value) => !Number.isNaN(value));
+
+  if (timestamps.length === 0) return null;
+  return new Date(Math.max(...timestamps)).toISOString();
 }

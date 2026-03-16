@@ -20,6 +20,7 @@ interface ApplicationCardProps {
   application: JobApplication;
   now: Date;
   isSelected: boolean;
+  hasUnreadCoachUpdate: boolean;
   onToggleSelection: (jobId: string) => void;
   onOpenDetails: (jobId: string) => void;
   onApplyStatus: (jobId: string, status: ApplicationStatus) => void;
@@ -32,6 +33,7 @@ export function ApplicationCard({
   application,
   now,
   isSelected,
+  hasUnreadCoachUpdate,
   onToggleSelection,
   onOpenDetails,
   onApplyStatus,
@@ -55,6 +57,8 @@ export function ApplicationCard({
       className={`rounded-xl border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/20 ${
         hasInterview
           ? "border-sky-300 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20"
+          : hasUnreadCoachUpdate
+            ? "border-sky-300 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20"
           : application.status === "accepted"
             ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20"
             : application.status === "rejected"
@@ -98,9 +102,7 @@ export function ApplicationCard({
               )}
               {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
                 <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
-                  {application.sharedCoachNotes.length > 1
-                    ? `${application.sharedCoachNotes.length} NOTES COACH`
-                    : "NOTE COACH"}
+                  {hasUnreadCoachUpdate ? "Nouveau" : "Retour coach"}
                 </Badge>
               ) : null}
               <Badge variant={isDue ? "destructive" : "secondary"}>
