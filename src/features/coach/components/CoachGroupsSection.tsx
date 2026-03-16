@@ -259,9 +259,20 @@ export function CoachGroupsSection({
                         <p className="text-xs text-muted-foreground">
                           {entry.groupNames.length > 0 ? entry.groupNames.join(" • ") : "Sans groupe"}
                         </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Dernière activité: {formatCoachDate(entry.latestActivityAt)}
-                        </p>
+                        {entry.role === "coach" || entry.role === "admin" ? (
+                          <>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Dernière connexion: {formatCoachDate(entry.lastSeenAt, true)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Dernière action coach: {formatCoachDate(entry.lastCoachActionAt, true)}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Dernière activité: {formatCoachDate(entry.latestActivityAt)}
+                          </p>
+                        )}
                       </div>
                       <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
                         {group.kind !== "coaches" && (

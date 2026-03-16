@@ -35,6 +35,8 @@ export interface CoachUserSummary {
   rejectedCount: number;
   inProgressCount: number;
   latestActivityAt: string | null;
+  lastSeenAt: string | null;
+  lastCoachActionAt: string | null;
   applications: JobApplication[];
 }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminAccess } from "@/lib/server/coach";
+import { markCoachAction, requireAdminAccess } from "@/lib/server/coach";
 import { revokeApiKey } from "@/lib/server/apiKeys";
 
 function parseInteger(value: string) {
@@ -25,6 +25,7 @@ export async function DELETE(
     }
 
     await revokeApiKey(userId, keyId);
+    await markCoachAction(admin.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Révocation impossible." }, { status: 500 });

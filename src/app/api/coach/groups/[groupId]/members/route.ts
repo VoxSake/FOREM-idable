@@ -25,7 +25,7 @@ export async function POST(
       return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
     }
 
-    await addUserToCoachGroup(groupId, userId);
+    await addUserToCoachGroup(groupId, userId, user.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Ajout au groupe impossible." }, { status: 500 });
@@ -50,7 +50,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
     }
 
-    await removeUserFromCoachGroup(groupId, userId);
+    await removeUserFromCoachGroup(groupId, userId, user.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Suppression du groupe impossible." }, { status: 500 });

@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Groupe invalide." }, { status: 400 });
     }
 
-    await deleteCoachGroup(groupId);
+    await deleteCoachGroup(groupId, user.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Suppression du groupe impossible." }, { status: 500 });

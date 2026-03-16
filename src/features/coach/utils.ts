@@ -87,6 +87,21 @@ export function buildGroupedUsers(input: {
   userFilter: CoachUserFilter;
 }): CoachGroupedUserGroup[] {
   const { groups, users, normalizedSearch, canManageCoachGroup, userFilter } = input;
+  const getMostRelevantActivityTime = (user: CoachUserSummary) => {
+    const timestamps =
+      user.role === "coach" || user.role === "admin"
+        ? [user.lastCoachActionAt, user.lastSeenAt, user.latestActivityAt]
+        : [user.latestActivityAt];
+
+    for (const value of timestamps) {
+      const time = value ? new Date(value).getTime() : 0;
+      if (!Number.isNaN(time) && time > 0) {
+        return time;
+      }
+    }
+
+    return 0;
+  };
   const matchesSearch = (user: CoachUserSummary) =>
     !normalizedSearch ||
     [
@@ -119,8 +134,8 @@ export function buildGroupedUsers(input: {
     [...members].sort((left, right) => {
       if (right.dueCount !== left.dueCount) return right.dueCount - left.dueCount;
 
-      const leftLatest = left.latestActivityAt ? new Date(left.latestActivityAt).getTime() : 0;
-      const rightLatest = right.latestActivityAt ? new Date(right.latestActivityAt).getTime() : 0;
+      const leftLatest = getMostRelevantActivityTime(left);
+      const rightLatest = getMostRelevantActivityTime(right);
       if (rightLatest !== leftLatest) return rightLatest - leftLatest;
 
       if (right.applicationCount !== left.applicationCount) {

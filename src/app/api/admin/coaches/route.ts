@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Utilisateur invalide." }, { status: 400 });
     }
 
-    await setUserRole(userId, "coach");
+    await setUserRole(userId, "coach", user.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Promotion coach impossible." }, { status: 500 });
@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Utilisateur invalide." }, { status: 400 });
     }
 
-    await setUserRole(userId, "user");
+    await setUserRole(userId, "user", user.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Retrait du rôle coach impossible." }, { status: 500 });

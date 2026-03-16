@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { deleteUserAccount, setUserPassword, updateUserProfile } from "@/lib/server/auth";
-import { requireAdminAccess, requireCoachAccess } from "@/lib/server/coach";
+import { markCoachAction, requireAdminAccess, requireCoachAccess } from "@/lib/server/coach";
 import { UserRole } from "@/types/auth";
 
 function parseUserId(value: string) {
@@ -66,6 +66,8 @@ export async function PATCH(
       await setUserPassword(userId, password);
     }
 
+    await markCoachAction(actor.id);
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Mise à jour utilisateur impossible." }, { status: 500 });
@@ -96,6 +98,7 @@ export async function DELETE(
     }
 
     await deleteUserAccount(userId);
+    await markCoachAction(admin.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Suppression utilisateur impossible." }, { status: 500 });

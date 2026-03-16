@@ -118,6 +118,13 @@ export async function createSession(userId: number) {
     [tokenHash, userId, expiresAt.toISOString()]
   );
 
+  await db.query(
+    `UPDATE users
+     SET last_seen_at = NOW()
+     WHERE id = $1`,
+    [userId]
+  );
+
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -169,7 +176,17 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     [hashToken(token)]
   );
 
-  return result.rows[0] ?? null;
+  const user = result.rows[0] ?? null;
+  if (user) {
+    await db.query(
+      `UPDATE users
+       SET last_seen_at = NOW()
+       WHERE id = $1`,
+      [user.id]
+    );
+  }
+
+  return user;
 }
 
 export async function setUserPassword(userId: number, password: string) {

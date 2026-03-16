@@ -5,7 +5,7 @@ import {
   createCalendarSubscription,
   regenerateCalendarSubscription,
 } from "@/lib/server/calendarSubscriptions";
-import { requireCoachAccess } from "@/lib/server/coach";
+import { markCoachAction, requireCoachAccess } from "@/lib/server/coach";
 import { CalendarSubscriptionScope } from "@/types/calendar";
 
 function parseScope(value: unknown): CalendarSubscriptionScope | null {
@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
           groupId: scope === "group" ? groupId : null,
           actorId: actor.id,
         });
+
+    await markCoachAction(actor.id);
 
     return NextResponse.json({ subscription });
   } catch (error) {
