@@ -77,6 +77,155 @@ export function JobTable({
     onTrackApplication,
     onRequireAuth,
 }: JobTableProps) {
+    const renderActions = (job: Job, layout: "table" | "mobile") => {
+        const applied = isApplied(job.id);
+        const pdfUrl = getJobPdfUrl(job);
+        const isSelected = selectedJobIds?.has(job.id) ?? false;
+
+        if (layout === "mobile") {
+            return (
+                <div className="space-y-3" onClick={(event) => event.stopPropagation()}>
+                    <div className="flex items-center justify-between gap-3">
+                        {onToggleSelection ? (
+                            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                <input
+                                    type="checkbox"
+                                    className="h-4 w-4 accent-primary cursor-pointer"
+                                    checked={isSelected}
+                                    onChange={() => onToggleSelection(job)}
+                                    aria-label="Sélectionner l'offre"
+                                />
+                                Comparer
+                            </label>
+                        ) : <span />}
+                        <div className="flex flex-wrap items-center gap-2">
+                            {job.contractType ? (
+                                <ContractTypeBadge contractType={job.contractType} />
+                            ) : null}
+                            {job.location ? (
+                                <span className="rounded-full border border-border/70 px-2.5 py-1 text-xs text-muted-foreground">
+                                    {job.location}
+                                </span>
+                            ) : null}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            type="button"
+                            variant={applied ? "secondary" : "default"}
+                            className="h-10 w-full"
+                            onClick={async () => {
+                                if (!isAuthenticated) {
+                                    onRequireAuth?.(job);
+                                    return;
+                                }
+                                await onTrackApplication?.(job);
+                            }}
+                            disabled={!isApplicationsLoaded}
+                        >
+                            <Send className={`mr-2 h-4 w-4 ${applied ? "fill-current" : ""}`} />
+                            {applied ? "Suivie" : "Suivre"}
+                        </Button>
+
+                        <Button
+                            type="button"
+                            className="h-10 w-full"
+                            onClick={() => onOpenDetails?.(job)}
+                            variant="outline"
+                        >
+                            Détails
+                        </Button>
+                    </div>
+
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="h-9 w-full justify-center"
+                            asChild
+                        >
+                            <a href={job.url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                Voir l&apos;offre
+                            </a>
+                        </Button>
+
+                        {pdfUrl ? (
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-9"
+                                asChild
+                            >
+                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le PDF">
+                                    <FileText className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        ) : null}
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center gap-1 sm:gap-2 justify-end" onClick={(event) => event.stopPropagation()}>
+                {onToggleSelection && (
+                    <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary cursor-pointer"
+                        checked={isSelected}
+                        onChange={() => onToggleSelection(job)}
+                        title={isSelected ? "Retirer de la sélection" : "Ajouter à la sélection"}
+                        aria-label="Sélectionner l'offre"
+                    />
+                )}
+
+                <Button
+                    variant={applied ? "secondary" : "ghost"}
+                    size="icon"
+                    className={applied ? "text-emerald-600 hover:text-emerald-700 bg-emerald-100/60 hover:bg-emerald-100 dark:bg-emerald-950/40" : "text-muted-foreground transition-colors hover:text-emerald-600"}
+                    onClick={async () => {
+                        if (!isAuthenticated) {
+                            onRequireAuth?.(job);
+                            return;
+                        }
+                        await onTrackApplication?.(job);
+                    }}
+                    title={applied ? "Candidature déjà suivie" : "Marquer comme candidature envoyée"}
+                    disabled={!isApplicationsLoaded}
+                >
+                    <Send className={`w-4 h-4 ${applied ? "fill-current" : ""}`} />
+                </Button>
+
+                {pdfUrl && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 whitespace-nowrap"
+                    >
+                        <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                            <span className="hidden sm:inline">PDF</span>
+                            <FileText className="w-3 h-3 flex-shrink-0" />
+                        </a>
+                    </Button>
+                )}
+
+                <Button
+                    size="sm"
+                    asChild
+                    className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 gap-1 whitespace-nowrap"
+                >
+                    <a href={job.url} target="_blank" rel="noopener noreferrer">
+                        <span className="hidden sm:inline">Voir l&apos;offre</span>
+                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                </Button>
+            </div>
+        );
+    };
+
     const columns: ColumnDef<Job>[] = [
         {
             accessorKey: "title",
@@ -134,66 +283,7 @@ export function JobTable({
             header: "Actions",
             cell: ({ row }) => {
                 const job = row.original;
-                const applied = isApplied(job.id);
-                const pdfUrl = getJobPdfUrl(job);
-                const isSelected = selectedJobIds?.has(job.id) ?? false;
-
-                return (
-                    <div className="flex items-center gap-1 sm:gap-2 justify-end" onClick={(event) => event.stopPropagation()}>
-                        {onToggleSelection && (
-                            <input
-                                type="checkbox"
-                                className="h-4 w-4 accent-primary cursor-pointer"
-                                checked={isSelected}
-                                onChange={() => onToggleSelection(job)}
-                                title={isSelected ? "Retirer de la sélection" : "Ajouter à la sélection"}
-                                aria-label="Sélectionner l'offre"
-                            />
-                        )}
-
-                        <Button
-                            variant={applied ? "secondary" : "ghost"}
-                            size="icon"
-                            className={applied ? "text-emerald-600 hover:text-emerald-700 bg-emerald-100/60 hover:bg-emerald-100 dark:bg-emerald-950/40" : "text-muted-foreground transition-colors hover:text-emerald-600"}
-                            onClick={async () => {
-                                if (!isAuthenticated) {
-                                    onRequireAuth?.(job);
-                                    return;
-                                }
-                                await onTrackApplication?.(job);
-                            }}
-                            title={applied ? "Candidature déjà suivie" : "Marquer comme candidature envoyée"}
-                            disabled={!isApplicationsLoaded}
-                        >
-                            <Send className={`w-4 h-4 ${applied ? "fill-current" : ""}`} />
-                        </Button>
-
-                        {pdfUrl && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
-                                className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 whitespace-nowrap"
-                            >
-                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                                    <span className="hidden sm:inline">PDF</span>
-                                    <FileText className="w-3 h-3 flex-shrink-0" />
-                                </a>
-                            </Button>
-                        )}
-
-                        <Button
-                            size="sm"
-                            asChild
-                            className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 gap-1 whitespace-nowrap"
-                        >
-                            <a href={job.url} target="_blank" rel="noopener noreferrer">
-                                <span className="hidden sm:inline">Voir l&apos;offre</span>
-                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                            </a>
-                        </Button>
-                    </div>
-                );
+                return renderActions(job, "table");
             },
         },
     ];
@@ -226,7 +316,38 @@ export function JobTable({
 
     return (
         <div className="space-y-4">
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div className="space-y-3 sm:hidden">
+                {table.getRowModel().rows.length ? (
+                    table.getRowModel().rows.map((row) => {
+                        const job = row.original;
+                        return (
+                        <div
+                            key={job.id}
+                            className={`rounded-xl border bg-card p-4 shadow-sm transition-colors ${onOpenDetails ? "cursor-pointer hover:bg-primary/5" : ""}`}
+                            onClick={onOpenDetails ? () => onOpenDetails(job) : undefined}
+                        >
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <p className="text-base font-bold leading-snug text-foreground">
+                                        {job.title}
+                                    </p>
+                                    {job.company ? (
+                                        <p className="text-sm text-muted-foreground">{job.company}</p>
+                                    ) : null}
+                                </div>
+                                {renderActions(job, "mobile")}
+                            </div>
+                        </div>
+                        );
+                    })
+                ) : (
+                    <div className="rounded-xl border bg-card p-6 text-center text-muted-foreground shadow-sm">
+                        Aucune offre ne correspond à vos critères.
+                    </div>
+                )}
+            </div>
+
+            <div className="hidden overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm sm:block">
                 <Table className="table-fixed">
                     <TableHeader className="bg-muted/50">
                         {table.getHeaderGroups().map((headerGroup) => (
