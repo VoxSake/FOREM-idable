@@ -1,7 +1,14 @@
 "use client";
 
-import { CalendarDays, Download, Plus } from "lucide-react";
+import { CalendarDays, Download, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ApplicationsHeaderControlsProps {
   displayedCount: number;
@@ -38,10 +45,11 @@ export function ApplicationsHeaderControls({
           {dueCount > 0 ? `${dueCount} relance${dueCount > 1 ? "s" : ""} à faire` : "Aucune relance urgente"}
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex items-center gap-2 self-start sm:self-auto">
         <Button type="button" onClick={onCreateManual}>
           <Plus className="mr-2 h-4 w-4" />
-          Ajouter manuellement
+          <span className="sm:hidden">Ajouter</span>
+          <span className="hidden sm:inline">Ajouter manuellement</span>
         </Button>
         <Button
           type="button"
@@ -52,23 +60,29 @@ export function ApplicationsHeaderControls({
           <Download className="mr-2 h-4 w-4" />
           Export Excel
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onExportCalendar}
-          disabled={!canExportCalendar}
-        >
-          <CalendarDays className="mr-2 h-4 w-4" />
-          Export calendrier
-        </Button>
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={onRemoveSelected}
-          disabled={selectedCount === 0}
-        >
-          Supprimer la sélection
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline">
+              <MoreHorizontal className="h-4 w-4" />
+              Actions
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={onExportCalendar} disabled={!canExportCalendar}>
+              <CalendarDays className="h-4 w-4" />
+              Export calendrier
+            </DropdownMenuItem>
+            {selectedCount > 0 ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={onRemoveSelected}>
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer la sélection ({selectedCount})
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
