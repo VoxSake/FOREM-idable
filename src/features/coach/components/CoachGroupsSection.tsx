@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
+import { CalendarDays, CircleHelp, Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,14 +85,14 @@ export function CoachGroupsSection({
             Recherche, suivi et gestion des personnes directement par groupe.
           </p>
         </div>
-        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-          <Button type="button" className="w-full sm:w-auto" onClick={onCreateGroup}>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <Button type="button" className="flex-1 sm:flex-none" onClick={onCreateGroup}>
             <FolderPlus className="mr-2 h-4 w-4" />
             Créer un groupe
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" className="w-full sm:w-auto">
+              <Button type="button" variant="outline" className="flex-1 sm:flex-none">
                 <CalendarDays className="mr-2 h-4 w-4" />
                 Calendriers
               </Button>
@@ -116,10 +116,13 @@ export function CoachGroupsSection({
           <Button
             type="button"
             variant="ghost"
-            className="w-full sm:w-auto"
+            size="icon"
+            className="h-10 w-10 shrink-0 rounded-full"
             onClick={() => setIsCalendarHelpOpen(true)}
+            aria-label="Aide agenda"
+            title="Aide agenda"
           >
-            Aide agenda
+            <CircleHelp className="h-4 w-4" />
           </Button>
         </div>
       </div>
