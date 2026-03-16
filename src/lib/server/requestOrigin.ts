@@ -25,8 +25,17 @@ function getReceivedOrigin(request: NextRequest) {
 export function rejectCrossOriginRequest(request: NextRequest) {
   const expectedOrigin = getExpectedOrigin(request);
   const receivedOrigin = getReceivedOrigin(request);
+  const fetchSite = request.headers.get("sec-fetch-site")?.trim().toLowerCase();
 
-  if (!receivedOrigin || receivedOrigin !== expectedOrigin) {
+  if (receivedOrigin) {
+    if (receivedOrigin !== expectedOrigin) {
+      return NextResponse.json({ error: "Requête interdite." }, { status: 403 });
+    }
+
+    return null;
+  }
+
+  if (fetchSite && !["same-origin", "same-site", "none"].includes(fetchSite)) {
     return NextResponse.json({ error: "Requête interdite." }, { status: 403 });
   }
 
