@@ -80,12 +80,12 @@ export function ApplicationsInsights({
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {stats.map((stat) => (
           <div
             key={stat.label}
             className={`rounded-xl border bg-card p-3 shadow-sm sm:p-4 ${
-              stat.fullWidth ? "col-span-2 xl:col-span-4" : ""
+              stat.fullWidth ? "col-span-2 lg:col-span-5" : ""
             }`}
           >
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground sm:text-xs">
