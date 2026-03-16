@@ -56,7 +56,7 @@ export function ApplicationDetailsSheet({
 }: ApplicationDetailsSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl p-0">
+      <SheetContent side="right" className="w-full p-0 sm:max-w-[60vw]">
         {application ? (
           <>
             <SheetHeader className="border-b bg-muted/30 p-5 pr-12">
