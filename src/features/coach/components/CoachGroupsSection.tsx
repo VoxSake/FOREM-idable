@@ -1,8 +1,15 @@
 "use client";
 
-import { Download, FolderPlus, Trash2, UserRoundPlus, X } from "lucide-react";
+import { Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
 import {
@@ -112,35 +119,41 @@ export function CoachGroupsSection({
                 <Button
                   type="button"
                   size="sm"
-                  className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+                  className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 sm:flex-none"
                   onClick={() => onExportGroup(group.name, group.members)}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
-                {group.canAddMembers && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                    onClick={() => onAddMember(group.id)}
-                  >
-                    <UserRoundPlus className="mr-2 h-4 w-4" />
-                    Ajouter
-                  </Button>
-                )}
-                {group.kind === "standard" && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-destructive hover:text-destructive sm:w-auto"
-                    onClick={() => onRemoveGroup(group.id, group.name)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Supprimer
-                  </Button>
+                {(group.canAddMembers || group.kind === "standard") && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto">
+                        <MoreHorizontal className="h-4 w-4" />
+                        Actions
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {group.canAddMembers && (
+                        <DropdownMenuItem onClick={() => onAddMember(group.id)}>
+                          <UserRoundPlus className="h-4 w-4" />
+                          Ajouter
+                        </DropdownMenuItem>
+                      )}
+                      {group.kind === "standard" && (
+                        <>
+                          {group.canAddMembers ? <DropdownMenuSeparator /> : null}
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => onRemoveGroup(group.id, group.name)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             </div>
