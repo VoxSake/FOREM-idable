@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 const CHANGE_EVENT = "forem-idable:coach-note-views-change";
 
@@ -8,14 +8,14 @@ function getStorageKey(userId: number) {
   return `forem_idable_coach_note_views_v1:${userId}`;
 }
 
-function readViews(userId?: number): Record<string, string> {
-  if (typeof window === "undefined" || !userId) return {};
+function readViewsSnapshot(userId?: number) {
+  if (typeof window === "undefined" || !userId) return "{}";
 
   try {
     const raw = localStorage.getItem(getStorageKey(userId));
-    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    return raw || "{}";
   } catch {
-    return {};
+    return "{}";
   }
 }
 
@@ -42,11 +42,19 @@ function subscribe(onStoreChange: () => void) {
 }
 
 export function useCoachNoteViews(userId?: number) {
-  return useSyncExternalStore<Record<string, string>>(
+  const snapshot = useSyncExternalStore(
     subscribe,
-    () => readViews(userId),
-    () => ({})
+    () => readViewsSnapshot(userId),
+    () => "{}"
   );
+
+  return useMemo(() => {
+    try {
+      return JSON.parse(snapshot) as Record<string, string>;
+    } catch {
+      return {};
+    }
+  }, [snapshot]);
 }
 
 export function markCoachNoteView(
@@ -56,7 +64,13 @@ export function markCoachNoteView(
 ) {
   if (typeof window === "undefined" || !userId || !latestSharedNoteAt) return;
 
-  const current = readViews(userId);
+  const current = (() => {
+    try {
+      return JSON.parse(readViewsSnapshot(userId)) as Record<string, string>;
+    } catch {
+      return {};
+    }
+  })();
   if (current[applicationId] === latestSharedNoteAt) return;
 
   try {
