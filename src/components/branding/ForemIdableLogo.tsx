@@ -17,9 +17,13 @@ export function ForemIdableLogo({ className }: ForemIdableLogoProps) {
         <rect x="14.5" y="16" width="16" height="8" rx="4" className="fill-primary" />
         <rect x="14.5" y="28" width="11" height="8" rx="4" className="fill-foreground/22" />
       </svg>
-      <span className="[font-family:var(--font-brand)] text-[1.45rem] leading-none font-semibold tracking-[-0.035em]">
-        <span className="text-foreground">FOREM</span>
-        <span className="text-primary">-idable</span>
+      <span className="flex items-end leading-none">
+        <span className="[font-family:var(--font-logo)] text-[1.32rem] font-bold tracking-[-0.065em] text-foreground">
+          FOREM
+        </span>
+        <span className="[font-family:var(--font-logo)] ml-[0.05em] text-[1.02rem] font-semibold tracking-[-0.06em] text-primary">
+          -idable
+        </span>
       </span>
     </div>
   );
