@@ -227,6 +227,27 @@ export function useApplications() {
 
   const saveNotes = (jobId: string, notes: string) => patchApplication(jobId, { notes });
   const saveProofs = (jobId: string, proofs: string) => patchApplication(jobId, { proofs });
+  const updateManualApplicationDetails = (
+    jobId: string,
+    currentJob: Job,
+    patch: {
+      company: string;
+      title: string;
+      contractType: string;
+      location: string;
+      url: string;
+    }
+  ) =>
+    patchApplication(jobId, {
+      job: {
+        ...currentJob,
+        company: patch.company.trim(),
+        title: patch.title.trim(),
+        contractType: patch.contractType.trim() || "Non précisé",
+        location: patch.location.trim() || "Non précisé",
+        url: patch.url.trim() || "#",
+      },
+    });
 
   const markFollowUpDone = (jobId: string) => {
     const now = new Date();
@@ -256,6 +277,7 @@ export function useApplications() {
     clearInterview,
     saveNotes,
     saveProofs,
+    updateManualApplicationDetails,
     markFollowUpDone,
     isApplied,
     isLoaded,

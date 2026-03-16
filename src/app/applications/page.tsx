@@ -67,6 +67,7 @@ export default function ApplicationsPage() {
     clearInterview,
     saveNotes,
     saveProofs,
+    updateManualApplicationDetails,
     markFollowUpDone,
     removeApplication,
     isLoaded,
@@ -369,7 +370,6 @@ export default function ApplicationsPage() {
               onApplyStatus={applyStatus}
               onMarkFollowUpDone={markFollowUpDone}
               onOpenInterview={openInterviewModal}
-              onRequestDelete={setDeleteJobId}
             />
           ))}
         </div>
@@ -433,8 +433,14 @@ export default function ApplicationsPage() {
         }
         onSaveNotes={saveSelectedNotes}
         onSaveProofs={saveSelectedProofs}
+        onSaveManualDetails={(input) =>
+          selectedApplication
+            ? updateManualApplicationDetails(selectedApplication.job.id, selectedApplication.job, input)
+            : Promise.resolve(false)
+        }
         onMarkFollowUpDone={markFollowUpDone}
         onOpenInterview={openInterviewModal}
+        onRequestDelete={setDeleteJobId}
       />
 
       <ManualApplicationDialog

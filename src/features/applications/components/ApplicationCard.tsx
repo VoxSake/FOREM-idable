@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, isAfter, isBefore } from "date-fns";
-import { CalendarDays, Clock3, Trash2 } from "lucide-react";
+import { CalendarDays, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
@@ -26,7 +26,6 @@ interface ApplicationCardProps {
   onApplyStatus: (jobId: string, status: ApplicationStatus) => void;
   onMarkFollowUpDone: (jobId: string) => void;
   onOpenInterview: (application: JobApplication) => void;
-  onRequestDelete: (jobId: string) => void;
 }
 
 export function ApplicationCard({
@@ -39,7 +38,6 @@ export function ApplicationCard({
   onApplyStatus,
   onMarkFollowUpDone,
   onOpenInterview,
-  onRequestDelete,
 }: ApplicationCardProps) {
   const followUpDue = new Date(application.followUpDueAt);
   const interviewDate = application.interviewAt ? new Date(application.interviewAt) : null;
@@ -163,7 +161,7 @@ export function ApplicationCard({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
                 size="sm"
@@ -191,19 +189,6 @@ export function ApplicationCard({
               >
                 <CalendarDays className="mr-2 h-4 w-4" />
                 Entretien
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8 self-center text-destructive hover:text-destructive"
-                title="Supprimer"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onRequestDelete(application.job.id);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
