@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import {
   CoachApiKeysTarget,
+  CoachCalendarRegenerationTarget,
   CoachDeleteUserTarget,
   CoachEditTarget,
   CoachMemberPickerGroup,
@@ -63,6 +64,9 @@ interface CoachDialogsProps {
   deleteUserTarget: CoachDeleteUserTarget | null;
   onDeleteUserOpenChange: (open: boolean) => void;
   onConfirmDeleteUser: () => void;
+  calendarRegenerationTarget: CoachCalendarRegenerationTarget | null;
+  onCalendarRegenerationOpenChange: (open: boolean) => void;
+  onConfirmCalendarRegeneration: () => void;
 }
 
 export function CoachDialogs({
@@ -104,6 +108,9 @@ export function CoachDialogs({
   deleteUserTarget,
   onDeleteUserOpenChange,
   onConfirmDeleteUser,
+  calendarRegenerationTarget,
+  onCalendarRegenerationOpenChange,
+  onConfirmCalendarRegeneration,
 }: CoachDialogsProps) {
   return (
     <>
@@ -332,6 +339,38 @@ export function CoachDialogs({
             </Button>
             <Button type="button" variant="destructive" onClick={onConfirmDeleteUser}>
               Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(calendarRegenerationTarget)}
+        onOpenChange={onCalendarRegenerationOpenChange}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Régénérer ce lien calendrier ?</DialogTitle>
+            <DialogDescription>
+              {calendarRegenerationTarget
+                ? `L'ancien lien sera invalidé pour ${calendarRegenerationTarget.label}. Les abonnements Google Calendar existants devront être recréés avec la nouvelle URL.`
+                : "Le lien calendrier actuel sera invalidé et remplacé."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onCalendarRegenerationOpenChange(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onConfirmCalendarRegeneration}
+            >
+              Régénérer
             </Button>
           </DialogFooter>
         </DialogContent>

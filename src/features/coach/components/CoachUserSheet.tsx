@@ -9,12 +9,20 @@ import {
   FilePenLine,
   FileText,
   LoaderCircle,
+  MoreHorizontal,
   Plus,
   Save,
   Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -182,29 +190,42 @@ function CoachUserSheetBody({
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
-          {canManageApiKeys && (
-            <Button type="button" size="sm" variant="outline" onClick={onOpenApiKeys}>
-              <FileKey2 className="mr-2 h-4 w-4" />
-              API
-            </Button>
-          )}
-          {canEditUser && (
-            <Button type="button" size="sm" variant="outline" onClick={onEdit}>
-              <FilePenLine className="mr-2 h-4 w-4" />
-              Editer
-            </Button>
-          )}
-          {isAdmin && (
-            <Button
-              type="button"
-              size="sm"
-              variant="destructive"
-              onClick={onDeleteUser}
-              disabled={user.id === currentUserId}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer
-            </Button>
+          {(canManageApiKeys || canEditUser || isAdmin) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" size="sm" variant="outline">
+                  <MoreHorizontal className="h-4 w-4" />
+                  Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {canManageApiKeys && (
+                  <DropdownMenuItem onClick={onOpenApiKeys}>
+                    <FileKey2 className="h-4 w-4" />
+                    API
+                  </DropdownMenuItem>
+                )}
+                {canEditUser && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <FilePenLine className="h-4 w-4" />
+                    Editer
+                  </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <>
+                    {canManageApiKeys || canEditUser ? <DropdownMenuSeparator /> : null}
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={onDeleteUser}
+                      disabled={user.id === currentUserId}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Supprimer
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </SheetHeader>

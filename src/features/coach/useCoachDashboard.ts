@@ -8,9 +8,11 @@ import {
 } from "@/lib/exportCoachApplicationsCsv";
 import { ApiKeySummary } from "@/types/externalApi";
 import { JobApplication } from "@/types/application";
+import { CalendarSubscriptionSummary } from "@/types/calendar";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import {
   CoachApiKeysTarget,
+  CoachCalendarRegenerationTarget,
   CoachDeleteUserTarget,
   CoachEditTarget,
   CoachGroupedUserGroup,
@@ -45,6 +47,8 @@ export function useCoachDashboard() {
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
   const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<CoachRevokeApiKeyTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
+  const [calendarRegenerationTarget, setCalendarRegenerationTarget] =
+    useState<CoachCalendarRegenerationTarget | null>(null);
   const [savingCoachNoteKey, setSavingCoachNoteKey] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -535,6 +539,65 @@ export function useCoachDashboard() {
     });
   };
 
+  const buildAbsoluteCalendarUrl = (subscription: CalendarSubscriptionSummary) => {
+    if (typeof window === "undefined") {
+      return subscription.path;
+    }
+
+    return `${window.location.origin}${subscription.path}`;
+  };
+
+  const writeCalendarUrl = async (
+    subscription: CalendarSubscriptionSummary,
+    label: string,
+    actionLabel: string
+  ) => {
+    const absoluteUrl = buildAbsoluteCalendarUrl(subscription);
+
+    try {
+      await navigator.clipboard.writeText(absoluteUrl);
+      setFeedback(`${actionLabel} : ${label}.`);
+      return true;
+    } catch {
+      setFeedback(`Calendrier prêt, mais copie impossible: ${label}.`);
+      return false;
+    }
+  };
+
+  const requestCalendarSubscription = async (input: {
+    scope: "group" | "all_groups";
+    groupId?: number | null;
+    regenerate?: boolean;
+    label: string;
+  }) => {
+    const response = await fetch("/api/coach/calendar-subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scope: input.scope,
+        groupId: input.groupId,
+        regenerate: input.regenerate === true,
+      }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      subscription?: CalendarSubscriptionSummary;
+    };
+
+    if (!response.ok || !data.subscription) {
+      setFeedback(data.error || "Calendrier indisponible.");
+      return false;
+    }
+
+    await writeCalendarUrl(
+      data.subscription,
+      input.label,
+      input.regenerate ? "Nouvelle URL calendrier régénérée et copiée" : "Nouvelle URL calendrier copiée"
+    );
+    return true;
+  };
+
   const exportUserApplications = () => {
     if (!selectedUser) return;
 
@@ -555,6 +618,34 @@ export function useCoachDashboard() {
 
     if (members.every((entry) => entry.applications.length === 0)) {
       setFeedback("Export généré avec des lignes vides: aucune candidature dans ce groupe.");
+    }
+  };
+
+  const copyGroupCalendarUrl = async (groupId: number, groupName: string) =>
+    requestCalendarSubscription({
+      scope: "group",
+      groupId,
+      label: `groupe ${groupName}`,
+    });
+
+  const copyAllGroupsCalendarUrl = async () =>
+    requestCalendarSubscription({
+      scope: "all_groups",
+      label: "tous les groupes bénéficiaires",
+    });
+
+  const regenerateCalendarUrl = async () => {
+    if (!calendarRegenerationTarget) return;
+
+    const success = await requestCalendarSubscription({
+      scope: calendarRegenerationTarget.scope,
+      groupId: calendarRegenerationTarget.groupId,
+      regenerate: true,
+      label: calendarRegenerationTarget.label,
+    });
+
+    if (success) {
+      setCalendarRegenerationTarget(null);
     }
   };
 
@@ -588,6 +679,8 @@ export function useCoachDashboard() {
     setRevokeApiKeyTarget,
     deleteUserTarget,
     setDeleteUserTarget,
+    calendarRegenerationTarget,
+    setCalendarRegenerationTarget,
     savingCoachNoteKey,
     newPassword,
     setNewPassword,
@@ -628,5 +721,8 @@ export function useCoachDashboard() {
     deleteSharedCoachNote,
     exportUserApplications,
     exportGroupApplications,
+    copyGroupCalendarUrl,
+    copyAllGroupsCalendarUrl,
+    regenerateCalendarUrl,
   };
 }

@@ -1,4 +1,5 @@
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
+import { CalendarSubscriptionScope } from "@/types/calendar";
 
 export type CoachGroupedGroupKind = "standard" | "ungrouped" | "coaches";
 export type CoachUserFilter = "all" | "due" | "interviews" | "accepted" | "rejected";
@@ -26,6 +27,12 @@ export interface CoachEditTarget {
 export interface CoachDeleteUserTarget {
   userId: number;
   email: string;
+}
+
+export interface CoachCalendarRegenerationTarget {
+  scope: CalendarSubscriptionScope;
+  groupId: number | null;
+  label: string;
 }
 
 export interface CoachApiKeysTarget {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
+import { CalendarDays, Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,8 +26,12 @@ interface CoachGroupsSectionProps {
   onUserFilterChange: (value: CoachUserFilter) => void;
   groupedUsers: CoachGroupedUserGroup[];
   onCreateGroup: () => void;
+  onCopyAllGroupsCalendar: () => void;
+  onRequestRegenerateAllGroupsCalendar: () => void;
   onAddMember: (groupId: number) => void;
   onExportGroup: (groupName: string, members: CoachUserSummary[]) => void;
+  onCopyGroupCalendar: (groupId: number, groupName: string) => void;
+  onRequestRegenerateGroupCalendar: (groupId: number, groupName: string) => void;
   onRemoveGroup: (groupId: number, groupName: string) => void;
   onOpenUser: (userId: number) => void;
   onRemoveMembership: (target: CoachRemoveMembershipTarget) => void;
@@ -41,8 +45,12 @@ export function CoachGroupsSection({
   onUserFilterChange,
   groupedUsers,
   onCreateGroup,
+  onCopyAllGroupsCalendar,
+  onRequestRegenerateAllGroupsCalendar,
   onAddMember,
   onExportGroup,
+  onCopyGroupCalendar,
+  onRequestRegenerateGroupCalendar,
   onRemoveGroup,
   onOpenUser,
   onRemoveMembership,
@@ -70,6 +78,27 @@ export function CoachGroupsSection({
             <FolderPlus className="mr-2 h-4 w-4" />
             Créer un groupe
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" className="w-full sm:w-auto">
+                <CalendarDays className="mr-2 h-4 w-4" />
+                Calendriers
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuItem onClick={onCopyAllGroupsCalendar}>
+                <CalendarDays className="h-4 w-4" />
+                Copier le calendrier global
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={onRequestRegenerateAllGroupsCalendar}
+              >
+                <Trash2 className="h-4 w-4" />
+                Régénérer le lien global
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -125,7 +154,7 @@ export function CoachGroupsSection({
                   <Download className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
-                {(group.canAddMembers || group.kind === "standard") && (
+                {(group.kind === "standard" || group.canAddMembers) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto">
@@ -134,15 +163,33 @@ export function CoachGroupsSection({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
+                      {group.kind === "standard" && (
+                        <>
+                          <DropdownMenuItem onClick={() => onCopyGroupCalendar(group.id, group.name)}>
+                            <CalendarDays className="h-4 w-4" />
+                            Copier calendrier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => onRequestRegenerateGroupCalendar(group.id, group.name)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Régénérer calendrier
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       {group.canAddMembers && (
-                        <DropdownMenuItem onClick={() => onAddMember(group.id)}>
-                          <UserRoundPlus className="h-4 w-4" />
-                          Ajouter
-                        </DropdownMenuItem>
+                        <>
+                          {group.kind === "standard" ? <DropdownMenuSeparator /> : null}
+                          <DropdownMenuItem onClick={() => onAddMember(group.id)}>
+                            <UserRoundPlus className="h-4 w-4" />
+                            Ajouter
+                          </DropdownMenuItem>
+                        </>
                       )}
                       {group.kind === "standard" && (
                         <>
-                          {group.canAddMembers ? <DropdownMenuSeparator /> : null}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             variant="destructive"
                             onClick={() => onRemoveGroup(group.id, group.name)}

@@ -156,6 +156,46 @@ CREATE INDEX IF NOT EXISTS password_reset_tokens_user_id_idx
 
 CREATE INDEX IF NOT EXISTS password_reset_tokens_expires_at_idx
   ON password_reset_tokens(expires_at);
+
+CREATE TABLE IF NOT EXISTS calendar_subscriptions (
+  id BIGSERIAL PRIMARY KEY,
+  scope TEXT NOT NULL,
+  group_id BIGINT REFERENCES coach_groups(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  key_prefix TEXT NOT NULL,
+  last_four TEXT NOT NULL,
+  created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_used_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ
+);
+
+ALTER TABLE calendar_subscriptions
+  ADD COLUMN IF NOT EXISTS group_id BIGINT REFERENCES coach_groups(id) ON DELETE CASCADE;
+
+ALTER TABLE calendar_subscriptions
+  ADD COLUMN IF NOT EXISTS created_by BIGINT REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE calendar_subscriptions
+  ADD COLUMN IF NOT EXISTS scope TEXT NOT NULL DEFAULT 'group';
+
+ALTER TABLE calendar_subscriptions
+  ADD COLUMN IF NOT EXISTS key_prefix TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE calendar_subscriptions
+  ADD COLUMN IF NOT EXISTS last_four TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE calendar_subscriptions
+  ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ;
+
+ALTER TABLE calendar_subscriptions
+  ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS calendar_subscriptions_scope_group_idx
+  ON calendar_subscriptions(scope, group_id, revoked_at);
+
+CREATE INDEX IF NOT EXISTS calendar_subscriptions_created_by_idx
+  ON calendar_subscriptions(created_by);
 `;
 
 export async function ensureDatabase() {

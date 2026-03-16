@@ -67,8 +67,26 @@ export default function CoachPage() {
         onUserFilterChange={coach.setUserFilter}
         groupedUsers={coach.groupedUsers}
         onCreateGroup={() => coach.setIsCreateGroupOpen(true)}
+        onCopyAllGroupsCalendar={() => void coach.copyAllGroupsCalendarUrl()}
+        onRequestRegenerateAllGroupsCalendar={() =>
+          coach.setCalendarRegenerationTarget({
+            scope: "all_groups",
+            groupId: null,
+            label: "tous les groupes bénéficiaires",
+          })
+        }
         onAddMember={coach.setMemberPickerGroupId}
         onExportGroup={coach.exportGroupApplications}
+        onCopyGroupCalendar={(groupId, groupName) =>
+          void coach.copyGroupCalendarUrl(groupId, groupName)
+        }
+        onRequestRegenerateGroupCalendar={(groupId, groupName) =>
+          coach.setCalendarRegenerationTarget({
+            scope: "group",
+            groupId,
+            label: `groupe ${groupName}`,
+          })
+        }
         onRemoveGroup={(groupId, groupName) => coach.setRemoveGroup({ groupId, groupName })}
         onOpenUser={coach.setSelectedUserId}
         onRemoveMembership={coach.setRemoveMembership}
@@ -193,6 +211,13 @@ export default function CoachPage() {
         deleteUserTarget={coach.deleteUserTarget}
         onDeleteUserOpenChange={(open) => !open && coach.setDeleteUserTarget(null)}
         onConfirmDeleteUser={() => void coach.deleteUser()}
+        calendarRegenerationTarget={coach.calendarRegenerationTarget}
+        onCalendarRegenerationOpenChange={(open) => {
+          if (!open) {
+            coach.setCalendarRegenerationTarget(null);
+          }
+        }}
+        onConfirmCalendarRegeneration={() => void coach.regenerateCalendarUrl()}
       />
     </div>
   );
