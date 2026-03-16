@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPasswordResetToken } from "@/lib/server/auth";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 import { isPasswordResetEnabled, sendPasswordResetEmail } from "@/lib/server/mail";
 
@@ -8,6 +9,9 @@ const GENERIC_SUCCESS_MESSAGE =
 
 export async function POST(request: NextRequest) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     if (!isPasswordResetEnabled()) {
       return NextResponse.json({ error: "Fonction désactivée." }, { status: 404 });
     }

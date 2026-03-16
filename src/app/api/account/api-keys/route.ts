@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createApiKey, listApiKeysForUser } from "@/lib/server/apiKeys";
 import { getCurrentUser } from "@/lib/server/auth";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 function canManageApiKeys(role: string) {
   return role === "coach" || role === "admin";
@@ -22,6 +23,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await getCurrentUser();
     if (!user || !canManageApiKeys(user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

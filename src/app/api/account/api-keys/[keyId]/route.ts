@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { revokeApiKey } from "@/lib/server/apiKeys";
 import { getCurrentUser } from "@/lib/server/auth";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 function parseKeyId(value: string) {
   const id = Number(value);
@@ -12,10 +13,13 @@ function canManageApiKeys(role: string) {
 }
 
 export async function DELETE(
-  _request: Request,
+  request: NextRequest,
   context: { params: Promise<{ keyId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await getCurrentUser();
     if (!user || !canManageApiKeys(user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

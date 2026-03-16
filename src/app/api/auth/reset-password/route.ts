@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resetPasswordWithToken } from "@/lib/server/auth";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 import { isPasswordResetEnabled } from "@/lib/server/mail";
 
 export async function POST(request: NextRequest) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     if (!isPasswordResetEnabled()) {
       return NextResponse.json({ error: "Fonction désactivée." }, { status: 404 });
     }

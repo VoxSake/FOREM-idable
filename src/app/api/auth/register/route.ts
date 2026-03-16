@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSession, createUser } from "@/lib/server/auth";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const rateLimit = await checkRateLimit({
       scope: "auth-register",
       limit: 6,
