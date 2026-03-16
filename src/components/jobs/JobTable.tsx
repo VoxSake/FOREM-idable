@@ -125,7 +125,7 @@ export function JobTable({
                             disabled={!isApplicationsLoaded}
                         >
                             <Send className={`mr-2 h-4 w-4 ${applied ? "fill-current" : ""}`} />
-                            {applied ? "Suivie" : "Suivre"}
+                            {applied ? "Ajoutée" : "Ajouter"}
                         </Button>
 
                         <Button
@@ -192,7 +192,7 @@ export function JobTable({
                         }
                         await onTrackApplication?.(job);
                     }}
-                    title={applied ? "Candidature déjà suivie" : "Marquer comme candidature envoyée"}
+                    title={applied ? "Déjà ajoutée au suivi" : "Ajouter au suivi des candidatures"}
                     disabled={!isApplicationsLoaded}
                 >
                     <Send className={`w-4 h-4 ${applied ? "fill-current" : ""}`} />
