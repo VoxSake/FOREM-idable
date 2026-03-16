@@ -25,6 +25,7 @@ interface CoachGroupsSectionProps {
   userFilter: CoachUserFilter;
   onUserFilterChange: (value: CoachUserFilter) => void;
   groupedUsers: CoachGroupedUserGroup[];
+  canRegenerateCalendars: boolean;
   onCreateGroup: () => void;
   onCopyAllGroupsCalendar: () => void;
   onRequestRegenerateAllGroupsCalendar: () => void;
@@ -44,6 +45,7 @@ export function CoachGroupsSection({
   userFilter,
   onUserFilterChange,
   groupedUsers,
+  canRegenerateCalendars,
   onCreateGroup,
   onCopyAllGroupsCalendar,
   onRequestRegenerateAllGroupsCalendar,
@@ -90,13 +92,15 @@ export function CoachGroupsSection({
                 <CalendarDays className="h-4 w-4" />
                 Copier le calendrier global
               </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={onRequestRegenerateAllGroupsCalendar}
-              >
-                <Trash2 className="h-4 w-4" />
-                Régénérer le lien global
-              </DropdownMenuItem>
+              {canRegenerateCalendars ? (
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={onRequestRegenerateAllGroupsCalendar}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Régénérer le lien global
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -169,13 +173,15 @@ export function CoachGroupsSection({
                             <CalendarDays className="h-4 w-4" />
                             Copier calendrier
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => onRequestRegenerateGroupCalendar(group.id, group.name)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Régénérer calendrier
-                          </DropdownMenuItem>
+                          {canRegenerateCalendars ? (
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => onRequestRegenerateGroupCalendar(group.id, group.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Régénérer calendrier
+                            </DropdownMenuItem>
+                          ) : null}
                         </>
                       )}
                       {group.canAddMembers && (

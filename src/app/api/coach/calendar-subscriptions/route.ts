@@ -45,6 +45,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Groupe invalide." }, { status: 400 });
     }
 
+    if (regenerate && actor.role !== "admin") {
+      return NextResponse.json({ error: "Régénération réservée aux admins." }, { status: 403 });
+    }
+
     const subscription = regenerate
       ? await regenerateCalendarSubscription({
           scope,

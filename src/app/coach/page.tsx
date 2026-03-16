@@ -66,6 +66,7 @@ export default function CoachPage() {
         userFilter={coach.userFilter}
         onUserFilterChange={coach.setUserFilter}
         groupedUsers={coach.groupedUsers}
+        canRegenerateCalendars={coach.user.role === "admin"}
         onCreateGroup={() => coach.setIsCreateGroupOpen(true)}
         onCopyAllGroupsCalendar={() => void coach.copyAllGroupsCalendarUrl()}
         onRequestRegenerateAllGroupsCalendar={() =>
