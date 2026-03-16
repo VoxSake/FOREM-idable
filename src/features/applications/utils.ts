@@ -45,24 +45,35 @@ export function applicationStatusLabel(status: ApplicationStatus) {
   }
 }
 
+function parseTime(value?: string | null) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
 function getApplicationSortTime(entry: JobApplication) {
   const candidates = [entry.appliedAt, entry.updatedAt, entry.job.publicationDate];
 
   for (const value of candidates) {
-    if (!value) continue;
-    const time = new Date(value).getTime();
-    if (!Number.isNaN(time)) {
+    const time = parseTime(value);
+    if (time !== null) {
       return time;
     }
   }
 
-  return 0;
+  return Number.NEGATIVE_INFINITY;
 }
 
 export function sortApplicationsByMostRecent(applications: JobApplication[]) {
-  return [...applications].sort(
-    (left, right) => getApplicationSortTime(right) - getApplicationSortTime(left)
-  );
+  return [...applications].sort((left, right) => {
+    const primaryDiff = getApplicationSortTime(right) - getApplicationSortTime(left);
+    if (primaryDiff !== 0) return primaryDiff;
+
+    const updatedDiff = (parseTime(right.updatedAt) ?? Number.NEGATIVE_INFINITY) - (parseTime(left.updatedAt) ?? Number.NEGATIVE_INFINITY);
+    if (updatedDiff !== 0) return updatedDiff;
+
+    return (parseTime(right.job.publicationDate) ?? Number.NEGATIVE_INFINITY) - (parseTime(left.job.publicationDate) ?? Number.NEGATIVE_INFINITY);
+  });
 }
 
 export function getLatestSharedCoachNoteAt(application: JobApplication) {

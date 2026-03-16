@@ -55,6 +55,24 @@ describe("applications utils", () => {
     ]);
   });
 
+  it("uses updatedAt to break ties when appliedAt is the same", () => {
+    const firstCreated = buildApplication({
+      job: { ...buildApplication().job, id: "job-older" },
+      appliedAt: "2026-03-12",
+      updatedAt: "2026-03-12T08:00:00.000Z",
+    });
+    const laterCreated = buildApplication({
+      job: { ...buildApplication().job, id: "job-newer" },
+      appliedAt: "2026-03-12",
+      updatedAt: "2026-03-12T10:00:00.000Z",
+    });
+
+    expect(sortApplicationsByMostRecent([firstCreated, laterCreated]).map((entry) => entry.job.id)).toEqual([
+      "job-newer",
+      "job-older",
+    ]);
+  });
+
   it("flags follow-up details only for actionable statuses", () => {
     expect(isFollowUpPending("in_progress")).toBe(true);
     expect(isFollowUpPending("follow_up")).toBe(true);
