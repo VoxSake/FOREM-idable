@@ -43,24 +43,24 @@ interface JobTableProps {
 
 const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
     title: {
-        head: "w-[42%]",
-        cell: "w-[42%] whitespace-normal align-top",
+        head: "w-[38%]",
+        cell: "w-[38%] whitespace-normal align-top",
     },
     location: {
-        head: "max-[380px]:hidden sm:w-[22%]",
-        cell: "max-[380px]:hidden sm:w-[22%]",
+        head: "max-[380px]:hidden sm:w-[20%]",
+        cell: "max-[380px]:hidden sm:w-[20%]",
     },
     contractType: {
         head: "hidden md:table-cell md:w-[120px] lg:w-[132px]",
         cell: "hidden md:table-cell md:w-[120px] lg:w-[132px] whitespace-normal",
     },
     publicationDate: {
-        head: "hidden lg:table-cell lg:w-[148px]",
-        cell: "hidden lg:table-cell lg:w-[148px]",
+        head: "hidden lg:table-cell lg:w-[172px]",
+        cell: "hidden lg:table-cell lg:w-[172px]",
     },
     actions: {
-        head: "text-right w-[96px] sm:w-[172px]",
-        cell: "whitespace-nowrap w-[96px] sm:w-[172px]",
+        head: "text-right w-[96px] sm:w-[196px]",
+        cell: "whitespace-nowrap w-[96px] sm:w-[196px]",
     },
 };
 export function JobTable({
