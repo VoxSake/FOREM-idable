@@ -7,6 +7,44 @@ import {
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
 
+function sanitizeText(value: string | undefined, fallback = "") {
+  return (value || "").trim() || fallback;
+}
+
+function sanitizeOptionalText(value: string | undefined) {
+  const trimmed = value?.trim() || "";
+  return trimmed || undefined;
+}
+
+function sanitizeUrl(value: string | undefined, fallback = "#") {
+  const trimmed = value?.trim() || "";
+  if (!trimmed) return fallback;
+
+  if (trimmed === "#") return "#";
+
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function sanitizeJob(input: Job): Job {
+  return {
+    ...input,
+    title: sanitizeText(input.title, "Sans intitulé"),
+    company: sanitizeOptionalText(input.company),
+    location: sanitizeText(input.location, "Non précisé"),
+    contractType: sanitizeText(input.contractType, "Non précisé"),
+    url: sanitizeUrl(input.url, "#"),
+  };
+}
+
+function isManualJob(job: Job) {
+  return job.url === "#" || job.id.startsWith("manual-");
+}
+
 function sortApplicationsByAppliedAt(applications: JobApplication[]) {
   return [...applications].sort((left, right) => {
     const leftTime = new Date(left.appliedAt).getTime();
@@ -87,28 +125,29 @@ export async function createTrackedApplicationForUser(input: {
   const existing = await getStoredApplication(input.userId, input.job.id);
   const appliedAt = input.appliedAt ? new Date(input.appliedAt) : new Date();
   const normalizedAppliedAt = Number.isNaN(appliedAt.getTime()) ? new Date() : appliedAt;
+  const sanitizedJob = sanitizeJob(input.job);
 
   const nextBase: JobApplication = existing
     ? {
         ...existing,
-        job: input.job,
+        job: sanitizedJob,
         appliedAt: input.appliedAt ?? existing.appliedAt,
         status: input.status ?? existing.status,
-        notes: input.notes ?? existing.notes,
-        proofs: input.proofs ?? existing.proofs,
+        notes: input.notes?.trim() ?? existing.notes,
+        proofs: input.proofs?.trim() ?? existing.proofs,
         interviewAt: input.interviewAt ?? existing.interviewAt,
-        interviewDetails: input.interviewDetails ?? existing.interviewDetails,
+        interviewDetails: input.interviewDetails?.trim() ?? existing.interviewDetails,
         updatedAt: new Date().toISOString(),
       }
     : {
-        ...buildApplication(input.job),
+        ...buildApplication(sanitizedJob),
         appliedAt: normalizedAppliedAt.toISOString(),
         followUpDueAt: addDays(normalizedAppliedAt, 7).toISOString(),
         status: input.status ?? "in_progress",
-        notes: input.notes,
-        proofs: input.proofs,
+        notes: input.notes?.trim(),
+        proofs: input.proofs?.trim(),
         interviewAt: input.interviewAt,
-        interviewDetails: input.interviewDetails,
+        interviewDetails: input.interviewDetails?.trim(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -159,9 +198,38 @@ export async function updateApplicationForUser(input: {
     throw new Error("Application not found");
   }
 
+  const nextPatch = { ...input.patch };
+  if (nextPatch.job) {
+    if (!isManualJob(existing.job)) {
+      throw new Error("Manual job editing forbidden");
+    }
+
+    nextPatch.job = {
+      ...existing.job,
+      ...sanitizeJob(nextPatch.job),
+      id: existing.job.id,
+      source: existing.job.source,
+      publicationDate: existing.job.publicationDate,
+      pdfUrl: existing.job.pdfUrl,
+      description: existing.job.description,
+    };
+  }
+
+  if (typeof nextPatch.notes === "string") {
+    nextPatch.notes = nextPatch.notes.trim();
+  }
+
+  if (typeof nextPatch.proofs === "string") {
+    nextPatch.proofs = nextPatch.proofs.trim();
+  }
+
+  if (typeof nextPatch.interviewDetails === "string") {
+    nextPatch.interviewDetails = nextPatch.interviewDetails.trim();
+  }
+
   const next = preserveApplicationCoachFields(existing, {
     ...existing,
-    ...input.patch,
+    ...nextPatch,
     updatedAt: new Date().toISOString(),
   });
 

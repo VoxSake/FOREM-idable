@@ -49,6 +49,12 @@ export async function PATCH(
     if (error instanceof Error && error.message === "Application not found") {
       return NextResponse.json({ error: "Candidature introuvable." }, { status: 404 });
     }
+    if (error instanceof Error && error.message === "Manual job editing forbidden") {
+      return NextResponse.json(
+        { error: "Seules les candidatures manuelles peuvent modifier ces champs." },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json({ error: "Impossible de mettre à jour la candidature." }, { status: 500 });
   }

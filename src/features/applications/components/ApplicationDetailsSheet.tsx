@@ -171,6 +171,16 @@ function ApplicationDetailsSheetBody({
               {isEditingManualDetails ? "Annuler" : "Éditer"}
             </Button>
           ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="text-destructive hover:text-destructive"
+            onClick={() => onRequestDelete(application.job.id)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Supprimer
+          </Button>
         </div>
       </SheetHeader>
 
@@ -430,15 +440,6 @@ function ApplicationDetailsSheetBody({
               Entretien
             </Button>
           </div>
-          <Button
-            type="button"
-            variant="destructive"
-            className="w-full"
-            onClick={() => onRequestDelete(application.job.id)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Supprimer la candidature
-          </Button>
         </div>
       </SheetFooter>
     </>
