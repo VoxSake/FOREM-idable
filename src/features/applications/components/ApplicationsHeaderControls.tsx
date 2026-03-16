@@ -45,15 +45,15 @@ export function ApplicationsHeaderControls({
           {dueCount > 0 ? `${dueCount} relance${dueCount > 1 ? "s" : ""} à faire` : "Aucune relance urgente"}
         </p>
       </div>
-      <div className="flex items-center gap-2 self-start sm:self-auto">
-        <Button type="button" onClick={onCreateManual}>
+      <div className="flex w-full flex-wrap items-center gap-2 self-start sm:w-auto sm:self-auto">
+        <Button type="button" className="flex-1 sm:flex-none" onClick={onCreateManual}>
           <Plus className="mr-2 h-4 w-4" />
           <span className="sm:hidden">Ajouter</span>
           <span className="hidden sm:inline">Ajouter manuellement</span>
         </Button>
         <Button
           type="button"
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
+          className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 sm:flex-none"
           onClick={onExportCsv}
           disabled={displayedCount === 0}
         >
@@ -62,7 +62,7 @@ export function ApplicationsHeaderControls({
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="w-full sm:w-auto">
               <MoreHorizontal className="h-4 w-4" />
               Actions
             </Button>
