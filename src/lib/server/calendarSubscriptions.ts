@@ -22,7 +22,7 @@ function buildSubscriptionPath(token: string) {
   return `/api/calendar/subscriptions/${encodeURIComponent(token)}`;
 }
 
-async function ensureStandardGroupExists(groupId: number) {
+async function getGroupById(groupId: number) {
   if (!db) throw new Error("Database unavailable");
 
   const result = await db.query<{ id: number; name: string }>(
@@ -34,6 +34,34 @@ async function ensureStandardGroupExists(groupId: number) {
   );
 
   return result.rows[0] ?? null;
+}
+
+async function resolveSubscriptionTarget(input: {
+  scope: CalendarSubscriptionScope;
+  groupId?: number | null;
+}) {
+  const groupId = input.scope === "group" ? input.groupId ?? null : null;
+
+  if (input.scope !== "group") {
+    return {
+      groupId: null,
+      groupName: null,
+    };
+  }
+
+  if (!groupId || groupId <= 0) {
+    throw new Error("Invalid group");
+  }
+
+  const group = await getGroupById(groupId);
+  if (!group) {
+    throw new Error("Group not found");
+  }
+
+  return {
+    groupId,
+    groupName: group.name,
+  };
 }
 
 async function createSubscription(input: {
@@ -98,28 +126,18 @@ export async function createCalendarSubscription(input: {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  const groupId = input.scope === "group" ? input.groupId ?? null : null;
-  if (input.scope === "group") {
-    if (!groupId || groupId <= 0) {
-      throw new Error("Invalid group");
-    }
-
-    const group = await ensureStandardGroupExists(groupId);
-    if (!group) {
-      throw new Error("Group not found");
-    }
-  }
+  const target = await resolveSubscriptionTarget(input);
 
   const created = await createSubscription({
     scope: input.scope,
-    groupId,
+    groupId: target.groupId,
     createdBy: input.actorId,
   });
 
   return toSubscriptionSummary({
     scope: input.scope,
-    groupId,
-    groupName: input.scope === "group" && groupId ? (await ensureStandardGroupExists(groupId))?.name ?? null : null,
+    groupId: target.groupId,
+    groupName: target.groupName,
     keyPrefix: created.row.key_prefix,
     lastFour: created.row.last_four,
     createdAt: created.row.created_at,
@@ -136,17 +154,7 @@ export async function regenerateCalendarSubscription(input: {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  const groupId = input.scope === "group" ? input.groupId ?? null : null;
-  if (input.scope === "group") {
-    if (!groupId || groupId <= 0) {
-      throw new Error("Invalid group");
-    }
-
-    const group = await ensureStandardGroupExists(groupId);
-    if (!group) {
-      throw new Error("Group not found");
-    }
-  }
+  const target = await resolveSubscriptionTarget(input);
 
   await db.query(
     `UPDATE calendar_subscriptions
@@ -154,19 +162,19 @@ export async function regenerateCalendarSubscription(input: {
      WHERE scope = $1
        AND group_id IS NOT DISTINCT FROM $2
        AND revoked_at IS NULL`,
-    [input.scope, groupId]
+    [input.scope, target.groupId]
   );
 
   const created = await createSubscription({
     scope: input.scope,
-    groupId,
+    groupId: target.groupId,
     createdBy: input.actorId,
   });
 
   return toSubscriptionSummary({
     scope: input.scope,
-    groupId,
-    groupName: input.scope === "group" && groupId ? (await ensureStandardGroupExists(groupId))?.name ?? null : null,
+    groupId: target.groupId,
+    groupName: target.groupName,
     keyPrefix: created.row.key_prefix,
     lastFour: created.row.last_four,
     createdAt: created.row.created_at,
@@ -226,6 +234,23 @@ async function listApplicationsForUsers(userIds: number[]) {
   return result.rows;
 }
 
+function buildCalendarFeedRows(input: {
+  applications: Array<{ user_id: number; application: CalendarFeedApplicationRow["application"] }>;
+  membersById: Map<number, Omit<CalendarFeedApplicationRow, "application">>;
+}) {
+  return input.applications
+    .map((row) => {
+      const member = input.membersById.get(row.user_id);
+      if (!member) return null;
+
+      return {
+        ...member,
+        application: row.application,
+      };
+    })
+    .filter((entry): entry is CalendarFeedApplicationRow => Boolean(entry));
+}
+
 export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
   calendarName: string;
   rows: CalendarFeedApplicationRow[];
@@ -233,10 +258,7 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  const group = await ensureStandardGroupExists(groupId);
-  if (!group) {
-    throw new Error("Group not found");
-  }
+  const target = await resolveSubscriptionTarget({ scope: "group", groupId });
 
   const membersResult = await db.query<{
     id: number;
@@ -262,25 +284,18 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
         userEmail: row.email,
         userFirstName: row.first_name,
         userLastName: row.last_name,
-        groupNames: [group.name] as string[],
+        groupNames: target.groupName ? [target.groupName] : [],
       },
     ] as const)
   );
 
-  const rows = applications
-    .map((row) => {
-      const member = membersById.get(row.user_id);
-      if (!member) return null;
-
-      return {
-        ...member,
-        application: row.application,
-      };
-    })
-    .filter((entry): entry is CalendarFeedApplicationRow => Boolean(entry));
+  const rows = buildCalendarFeedRows({
+    applications,
+    membersById,
+  });
 
   return {
-    calendarName: `FOREM-idable - Groupe ${group.name}`,
+    calendarName: `FOREM-idable - Groupe ${target.groupName}`,
     rows,
   };
 }
@@ -328,17 +343,10 @@ export async function listCalendarFeedRowsForAllGroups(): Promise<{
     ] as const)
   );
 
-  const rows = applications
-    .map((row) => {
-      const member = membersById.get(row.user_id);
-      if (!member) return null;
-
-      return {
-        ...member,
-        application: row.application,
-      };
-    })
-    .filter((entry): entry is CalendarFeedApplicationRow => Boolean(entry));
+  const rows = buildCalendarFeedRows({
+    applications,
+    membersById,
+  });
 
   return {
     calendarName: "FOREM-idable - Tous les groupes beneficiaires",

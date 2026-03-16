@@ -3,6 +3,14 @@ import Link from "next/link";
 const RECENT_UPDATES = [
   {
     month: "Mars 2026",
+    text: "Ajout d'une synchronisation calendrier coach via lien d'abonnement ICS par groupe standard ou au global, avec aide intégrée, exclusion du groupe Coaches du flux global et régénération réservée aux admins.",
+  },
+  {
+    month: "Mars 2026",
+    text: "UX affinée sur les actions coach et candidatures: boutons regroupés dans des menus Actions, side panels homogénéisés et toolbar mobile plus compacte.",
+  },
+  {
+    month: "Mars 2026",
     text: "Ajout d'un flux mot de passe oublié via email avec Resend, feature flag dédié et page de réinitialisation.",
   },
   {

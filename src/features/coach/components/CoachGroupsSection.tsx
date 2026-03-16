@@ -349,7 +349,7 @@ export function CoachGroupsSection({
           </DialogHeader>
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>
-              `Copier le lien` genere une URL privee a coller dans Google Calendar via
+              `Copier le lien de sync` copie une URL de calendrier a coller dans Google Calendar via
               `Ajouter un agenda` puis `A partir de l&apos;URL`.
             </p>
             <p>
@@ -361,8 +361,8 @@ export function CoachGroupsSection({
               rafraichissement.
             </p>
             <p>
-              `Regenerer le lien` invalide tous les anciens abonnements pour ce calendrier.
-              Seuls les admins peuvent faire cette action.
+              Si vous remplacez le lien utilise dans votre agenda, il faut re-ajouter la nouvelle
+              URL dans Google Calendar.
             </p>
             <p>
               Le lien global rassemble tous les groupes beneficiaires. Le groupe `Coaches` n&apos;y est

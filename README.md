@@ -19,6 +19,7 @@ Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, suivi de 
 - Comptes `user` / `coach` / `admin`
 - Candidatures et historique liés au compte utilisateur
 - API externe sécurisée pour export `JSON` / `CSV`
+- Synchronisation calendrier des entretiens pour `coach` / `admin` via lien d'abonnement ICS par groupe ou global
 - Export CSV (colonnes sélectionnables, métadonnées)
 - Comparateur d'offres
 - Provider principal: Forem
@@ -122,6 +123,29 @@ Authentification:
 Documentation complète:
 
 - [DOCAPI.md](./DOCAPI.md)
+
+## Synchronisation calendrier coach
+
+Les comptes `coach` et `admin` peuvent générer des liens d'abonnement calendrier depuis la page `Suivi coach`.
+
+Cas d'usage:
+
+- abonnement Google Calendar / Outlook / Apple Calendar
+- synchronisation des entretiens planifiés d'un groupe
+- calendrier global regroupant tous les groupes bénéficiaires
+
+Règles actuelles:
+
+- un lien par groupe standard peut être copié depuis `Suivi coach`
+- un lien global "tous les groupes bénéficiaires" est disponible
+- le groupe `Coaches` n'est jamais inclus dans le calendrier global
+- la régénération d'un lien invalide les anciens abonnements
+- la régénération est réservée aux comptes `admin`
+
+Important:
+
+- la mise à jour n'est pas instantanée: Google Calendar décide lui-même de la fréquence de rafraîchissement des flux ICS
+- si un entretien est ajouté, modifié ou supprimé, le flux source est immédiatement à jour côté FOREM-idable, mais l'agenda abonné peut mettre un certain temps à refléter le changement
 
 Le projet étant open source sous licence MIT, il peut aussi être self-hosted si un hébergement interne est requis pour des raisons de sécurité ou de conformité.
 

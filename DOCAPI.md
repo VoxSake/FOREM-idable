@@ -4,6 +4,12 @@ Documentation complète de l'API externe `FOREM-idable`, de la génération des 
 
 Cette documentation décrit l'état réellement implémenté dans l'application au moment de sa rédaction.
 
+Note importante:
+
+- la synchronisation calendrier coach via lien ICS n'utilise pas cette API externe Bearer
+- elle se gère depuis l'interface `Suivi coach`
+- les endpoints de calendrier sont internes au produit et distincts de l'API externe documentée ici
+
 ## Vue d'ensemble
 
 L'API externe permet à un compte `coach` ou `admin` d'extraire les données de suivi pour les intégrer ailleurs:
