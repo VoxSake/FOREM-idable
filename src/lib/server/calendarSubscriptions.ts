@@ -248,7 +248,6 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
      FROM coach_group_members
      INNER JOIN users ON users.id = coach_group_members.user_id
      WHERE coach_group_members.group_id = $1
-       AND users.role = 'user'
      ORDER BY users.last_name ASC, users.first_name ASC, users.email ASC`,
     [groupId]
   );
