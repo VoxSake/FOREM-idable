@@ -93,7 +93,9 @@ export function ResetPasswordContent() {
               </label>
               <Input
                 id="reset-password"
+                name="new-password"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="8 caractères minimum"
@@ -105,7 +107,9 @@ export function ResetPasswordContent() {
               </label>
               <Input
                 id="reset-password-confirm"
+                name="new-password-confirmation"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="Confirmer le mot de passe"

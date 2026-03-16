@@ -200,11 +200,17 @@ export function AuthSidebarPanel() {
             {mode === "register" ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input
+                  id="auth-sidebar-first-name"
+                  name="given-name"
+                  autoComplete="given-name"
                   value={firstName}
                   onChange={(event) => setFirstName(event.target.value)}
                   placeholder="Prénom"
                 />
                 <Input
+                  id="auth-sidebar-last-name"
+                  name="family-name"
+                  autoComplete="family-name"
                   value={lastName}
                   onChange={(event) => setLastName(event.target.value)}
                   placeholder="Nom"
@@ -212,13 +218,19 @@ export function AuthSidebarPanel() {
               </div>
             ) : null}
             <Input
+              id="auth-sidebar-email"
+              name="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="vous@example.com"
             />
             <Input
+              id={mode === "login" ? "auth-sidebar-current-password" : "auth-sidebar-new-password"}
+              name={mode === "login" ? "current-password" : "new-password"}
               type="password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Mot de passe (8 caractères minimum)"
@@ -235,7 +247,10 @@ export function AuthSidebarPanel() {
             ) : null}
             {mode === "register" ? (
               <Input
+                id="auth-sidebar-confirm-password"
+                name="new-password-confirmation"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="Confirmer le mot de passe"

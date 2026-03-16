@@ -250,6 +250,8 @@ export default function AccountPage() {
             <Label htmlFor="account-first-name">Prénom</Label>
             <Input
               id="account-first-name"
+              name="given-name"
+              autoComplete="given-name"
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
               placeholder="Prénom"
@@ -259,6 +261,8 @@ export default function AccountPage() {
             <Label htmlFor="account-last-name">Nom</Label>
             <Input
               id="account-last-name"
+              name="family-name"
+              autoComplete="family-name"
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}
               placeholder="Nom"
@@ -288,7 +292,9 @@ export default function AccountPage() {
             <Label htmlFor="account-password">Nouveau mot de passe</Label>
             <Input
               id="account-password"
+              name="new-password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="8 caractères minimum"
@@ -298,7 +304,9 @@ export default function AccountPage() {
             <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
             <Input
               id="account-password-confirm"
+              name="new-password-confirmation"
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Ressaisir le mot de passe"

@@ -68,7 +68,10 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
 
         <div className="space-y-3">
           <Input
+            id="forgot-password-email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="vous@example.com"

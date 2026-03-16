@@ -127,18 +127,38 @@ export function AuthRequiredDialog({
         <div className="space-y-3">
           {effectiveMode === "register" ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Prénom" />
-              <Input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Nom" />
+              <Input
+                id="auth-required-first-name"
+                name="given-name"
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                placeholder="Prénom"
+              />
+              <Input
+                id="auth-required-last-name"
+                name="family-name"
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                placeholder="Nom"
+              />
             </div>
           ) : null}
           <Input
+            id="auth-required-email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="vous@example.com"
           />
           <Input
+            id={effectiveMode === "login" ? "auth-required-current-password" : "auth-required-new-password"}
+            name={effectiveMode === "login" ? "current-password" : "new-password"}
             type="password"
+            autoComplete={effectiveMode === "login" ? "current-password" : "new-password"}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Mot de passe (8 caractères minimum)"
@@ -155,7 +175,10 @@ export function AuthRequiredDialog({
           ) : null}
           {effectiveMode === "register" ? (
             <Input
+              id="auth-required-confirm-password"
+              name="new-password-confirmation"
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Confirmer le mot de passe"
