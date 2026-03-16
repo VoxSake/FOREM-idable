@@ -60,7 +60,7 @@ export function InterviewDialog({
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Détails</label>
+            <label className="text-sm font-medium">Informations pratiques</label>
             <textarea
               className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
               value={form.interviewDetails}

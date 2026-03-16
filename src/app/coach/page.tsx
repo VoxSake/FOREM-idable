@@ -19,7 +19,7 @@ export default function CoachPage() {
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="flex items-center gap-3 text-muted-foreground">
           <LoaderCircle className="h-5 w-5 animate-spin" />
-          Chargement du suivi coach...
+          Chargement du suivi des bénéficiaires...
         </div>
       </div>
     );
@@ -40,13 +40,13 @@ export default function CoachPage() {
     <div className="mx-auto max-w-7xl space-y-6 animate-in fade-in duration-500">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-3xl font-black tracking-tight">Suivi coach</h1>
+          <h1 className="text-3xl font-black tracking-tight">Suivi des bénéficiaires</h1>
           <Badge variant="secondary" className="capitalize">
             {coach.user.role}
           </Badge>
         </div>
         <p className="text-lg text-muted-foreground">
-          Vue transverse sur tous les utilisateurs, leurs groupes et leurs candidatures.
+          Vue d&apos;ensemble sur les personnes suivies, leurs groupes et leurs candidatures.
         </p>
         {coach.feedback && <p className="text-sm text-muted-foreground">{coach.feedback}</p>}
       </div>

@@ -44,7 +44,7 @@ export function ResultsToolbar({
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="rounded-full shadow-sm" onClick={onExportAll}>
             <Download className="w-4 h-4 mr-2" />
-            Export CSV
+            Exporter en CSV
           </Button>
           <Button
             variant="outline"
@@ -54,7 +54,7 @@ export function ResultsToolbar({
             disabled={!canCopySearchLink}
           >
             {copied ? <Check className="w-4 h-4 mr-2" /> : <Link2 className="w-4 h-4 mr-2" />}
-            {copied ? "Lien copié" : "Copier lien"}
+            {copied ? "Lien copié" : "Copier la recherche"}
           </Button>
           {selectedCount > 0 && (
             <Button
@@ -64,7 +64,7 @@ export function ResultsToolbar({
               onClick={onExportSelected}
             >
               <CheckSquare className="w-4 h-4 mr-2" />
-              Export sélection
+              Exporter la sélection
             </Button>
           )}
         </div>

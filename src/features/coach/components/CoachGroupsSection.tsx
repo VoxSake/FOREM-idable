@@ -82,7 +82,7 @@ export function CoachGroupsSection({
         <div>
           <h2 className="text-xl font-bold">Groupes</h2>
           <p className="text-sm text-muted-foreground">
-            Recherche, suivi et gestion des users directement par groupe.
+            Recherche, suivi et gestion des personnes directement par groupe.
           </p>
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
@@ -94,13 +94,13 @@ export function CoachGroupsSection({
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="outline" className="w-full sm:w-auto">
                 <CalendarDays className="mr-2 h-4 w-4" />
-                Sync calendrier
+                Calendriers
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuItem onClick={onCopyAllGroupsCalendar}>
                 <CalendarDays className="h-4 w-4" />
-                Copier le lien global
+                Copier le lien d&apos;agenda global
               </DropdownMenuItem>
               {canRegenerateCalendars ? (
                 <DropdownMenuItem
@@ -119,7 +119,7 @@ export function CoachGroupsSection({
             className="w-full sm:w-auto"
             onClick={() => setIsCalendarHelpOpen(true)}
           >
-            Aide calendrier
+            Aide agenda
           </Button>
         </div>
       </div>
@@ -189,7 +189,7 @@ export function CoachGroupsSection({
                         <>
                           <DropdownMenuItem onClick={() => onCopyGroupCalendar(group.id, group.name)}>
                             <CalendarDays className="h-4 w-4" />
-                            Copier le lien de sync
+                            Copier le lien d&apos;agenda
                           </DropdownMenuItem>
                           {canRegenerateCalendars ? (
                             <DropdownMenuItem
@@ -207,7 +207,7 @@ export function CoachGroupsSection({
                           {group.kind === "standard" ? <DropdownMenuSeparator /> : null}
                           <DropdownMenuItem onClick={() => onAddMember(group.id)}>
                             <UserRoundPlus className="h-4 w-4" />
-                            Ajouter
+                            Ajouter un membre
                           </DropdownMenuItem>
                         </>
                       )}
@@ -219,7 +219,7 @@ export function CoachGroupsSection({
                             onClick={() => onRemoveGroup(group.id, group.name)}
                           >
                             <Trash2 className="h-4 w-4" />
-                            Supprimer
+                            Supprimer le groupe
                           </DropdownMenuItem>
                         </>
                       )}
@@ -349,7 +349,7 @@ export function CoachGroupsSection({
           </DialogHeader>
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>
-              `Copier le lien de sync` copie une URL de calendrier a coller dans Google Calendar via
+              `Copier le lien d&apos;agenda` copie une URL a coller dans Google Calendar via
               `Ajouter un agenda` puis `A partir de l&apos;URL`.
             </p>
             <p>

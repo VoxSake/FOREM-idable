@@ -202,13 +202,13 @@ function CoachUserSheetBody({
                 {canManageApiKeys && (
                   <DropdownMenuItem onClick={onOpenApiKeys}>
                     <FileKey2 className="h-4 w-4" />
-                    API
+                    Clés API
                   </DropdownMenuItem>
                 )}
                 {canEditUser && (
                   <DropdownMenuItem onClick={onEdit}>
                     <FilePenLine className="h-4 w-4" />
-                    Editer
+                    Éditer
                   </DropdownMenuItem>
                 )}
                 {isAdmin && (
@@ -321,7 +321,7 @@ function CoachUserSheetBody({
 
                       <div className="flex shrink-0 flex-col items-end gap-2">
                         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          {isOpen ? "Ouvert" : "Détails"}
+                          {isOpen ? "Masquer" : "Détails"}
                         </span>
                         <div className="rounded-full border border-border/70 bg-background/90 p-2 text-muted-foreground shadow-sm">
                           <ChevronDown
@@ -384,7 +384,7 @@ function CoachUserSheetBody({
                             </div>
                           </div>
                           <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
-                            <p className="mb-1 font-medium text-foreground">Preuves</p>
+                            <p className="mb-1 font-medium text-foreground">Pièces / références</p>
                             <div className="max-h-40 overflow-y-auto pr-1">
                               <p className="whitespace-pre-wrap">{application.proofs || "Aucune preuve"}</p>
                             </div>

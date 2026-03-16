@@ -225,7 +225,7 @@ export default function AccountPage() {
       <AccountAccessPrompt
         title="Mon compte"
         description="Connectez-vous pour gérer votre profil, votre mot de passe et vos clés API."
-        summary="Avec un compte, vous retrouvez votre suivi, vos paramètres personnels et, pour les coachs, vos accès API."
+        summary="Avec un compte, vous retrouvez votre suivi, vos paramètres personnels et, pour les coachs, vos clés API."
       />
     );
   }

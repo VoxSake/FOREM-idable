@@ -37,7 +37,7 @@ export function AppSidebar() {
     const { user } = useAuth();
     const navItems =
         user?.role === "coach" || user?.role === "admin"
-            ? [{ title: "Suivi coach", url: "/coach", icon: Users }, ...baseNavItems]
+            ? [{ title: "Suivi bénéficiaires", url: "/coach", icon: Users }, ...baseNavItems]
             : baseNavItems;
 
     return (

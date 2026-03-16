@@ -58,7 +58,7 @@ export function ApplicationsHeaderControls({
           disabled={displayedCount === 0}
         >
           <Download className="mr-2 h-4 w-4" />
-          Export Excel
+          Exporter en Excel
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -70,7 +70,7 @@ export function ApplicationsHeaderControls({
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={onExportCalendar} disabled={!canExportCalendar}>
               <CalendarDays className="h-4 w-4" />
-              Export calendrier
+              Exporter les entretiens
             </DropdownMenuItem>
             {selectedCount > 0 ? (
               <>

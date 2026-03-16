@@ -45,9 +45,9 @@ export function ManualApplicationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Encoder une candidature manuelle</DialogTitle>
+          <DialogTitle>Ajouter une candidature manuelle</DialogTitle>
           <DialogDescription>
-            Ajoutez une candidature faite ailleurs pour l&apos;inclure dans le tableau de suivi.
+            Ajoutez une candidature faite ailleurs pour l&apos;inclure dans votre suivi.
           </DialogDescription>
         </DialogHeader>
 
@@ -124,7 +124,7 @@ export function ManualApplicationDialog({
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <label className="text-sm font-medium">Preuves</label>
+            <label className="text-sm font-medium">Pièces / références</label>
             <textarea
               className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
               value={form.proofs}

@@ -141,8 +141,8 @@ export function CoachDialogs({
       <UserPickerDialog
         open={Boolean(memberPickerGroup)}
         onOpenChange={onMemberPickerOpenChange}
-        title={memberPickerGroup ? `Ajouter un user à ${memberPickerGroup.name}` : "Ajouter un user"}
-        description="Recherche dynamique parmi tous les utilisateurs."
+        title={memberPickerGroup ? `Ajouter une personne à ${memberPickerGroup.name}` : "Ajouter une personne"}
+        description="Recherche dynamique parmi toutes les personnes disponibles."
         users={assignableUsers}
         onSelect={(entry) => onMemberSelect(entry.id)}
       />
@@ -192,7 +192,7 @@ export function CoachDialogs({
       <Dialog open={Boolean(editTarget)} onOpenChange={onEditOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Editer l&apos;utilisateur</DialogTitle>
+            <DialogTitle>Éditer l&apos;utilisateur</DialogTitle>
             <DialogDescription>
               {editTarget
                 ? `Mettre à jour le profil de ${editTarget.email}. Le mot de passe est optionnel.`

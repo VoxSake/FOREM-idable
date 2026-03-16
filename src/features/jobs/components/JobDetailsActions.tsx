@@ -43,7 +43,7 @@ export function JobDetailsActions({
         className="w-full sm:w-auto whitespace-normal h-auto py-2.5 px-3 text-center"
       >
         <Send className="w-4 h-4 mr-2" />
-        {applied ? "Ajoutée au suivi" : "Ajouter au suivi"}
+        {applied ? "Déjà dans le suivi" : "Ajouter au suivi"}
       </Button>
       <Button
         variant="outline"
