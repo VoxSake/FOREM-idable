@@ -281,15 +281,15 @@ function CoachUserSheetBody({
                           <Badge variant={isDue ? "destructive" : "secondary"}>
                             {coachStatusLabel(application.status)}
                           </Badge>
-                          {isManual ? (
-                            <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
-                              MANUEL
-                            </Badge>
-                          ) : (
-                            <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
-                              SITE
-                            </Badge>
-                          )}
+                    {isManual ? (
+                      <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+                        Manuelle
+                      </Badge>
+                    ) : (
+                      <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                        Importée
+                      </Badge>
+                    )}
                         </div>
 
                         <div className="space-y-1 text-sm text-muted-foreground">

@@ -15,7 +15,7 @@ const RECENT_UPDATES = [
   },
   {
     month: "Mars 2026",
-    text: "Vue coach affinée: side panel plus large, candidatures repliables, note privée coach commune, notes partagées multiples avec auteurs/contributeurs, badge SITE/MANUEL et exports enrichis.",
+    text: "Vue coach affinée: side panel plus large, candidatures repliables, note privée coach commune, notes partagées multiples avec auteurs/contributeurs, badges Manuelle/Importée et exports enrichis.",
   },
   {
     month: "Mars 2026",
