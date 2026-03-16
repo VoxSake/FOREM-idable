@@ -1,8 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { CalendarDays, Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +67,7 @@ export function CoachGroupsSection({
   onRemoveMembership,
   onDemoteCoach,
 }: CoachGroupsSectionProps) {
+  const [isCalendarHelpOpen, setIsCalendarHelpOpen] = useState(false);
   const filterOptions: Array<{ value: CoachUserFilter; label: string }> = [
     { value: "all", label: "Tous" },
     { value: "due", label: "A relancer" },
@@ -84,13 +94,13 @@ export function CoachGroupsSection({
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="outline" className="w-full sm:w-auto">
                 <CalendarDays className="mr-2 h-4 w-4" />
-                Calendriers
+                Sync calendrier
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuItem onClick={onCopyAllGroupsCalendar}>
                 <CalendarDays className="h-4 w-4" />
-                Copier le calendrier global
+                Copier le lien global
               </DropdownMenuItem>
               {canRegenerateCalendars ? (
                 <DropdownMenuItem
@@ -103,6 +113,14 @@ export function CoachGroupsSection({
               ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full sm:w-auto"
+            onClick={() => setIsCalendarHelpOpen(true)}
+          >
+            Aide calendrier
+          </Button>
         </div>
       </div>
 
@@ -171,7 +189,7 @@ export function CoachGroupsSection({
                         <>
                           <DropdownMenuItem onClick={() => onCopyGroupCalendar(group.id, group.name)}>
                             <CalendarDays className="h-4 w-4" />
-                            Copier calendrier
+                            Copier le lien de sync
                           </DropdownMenuItem>
                           {canRegenerateCalendars ? (
                             <DropdownMenuItem
@@ -179,7 +197,7 @@ export function CoachGroupsSection({
                               onClick={() => onRequestRegenerateGroupCalendar(group.id, group.name)}
                             >
                               <Trash2 className="h-4 w-4" />
-                              Régénérer calendrier
+                              Régénérer le lien
                             </DropdownMenuItem>
                           ) : null}
                         </>
@@ -319,6 +337,45 @@ export function CoachGroupsSection({
           </div>
         ))}
       </div>
+
+      <Dialog open={isCalendarHelpOpen} onOpenChange={setIsCalendarHelpOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Synchronisation calendrier</DialogTitle>
+            <DialogDescription>
+              Les liens calendrier permettent d&apos;abonner Google Calendar, Outlook ou Apple Calendar
+              a un flux d&apos;entretiens mis a jour automatiquement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              `Copier le lien` genere une URL privee a coller dans Google Calendar via
+              `Ajouter un agenda` puis `A partir de l&apos;URL`.
+            </p>
+            <p>
+              Le calendrier se met ensuite a jour quand un entretien est ajoute, modifie ou
+              supprime dans FOREM-idable.
+            </p>
+            <p>
+              La synchronisation n&apos;est pas immediate: Google choisit lui-meme la frequence de
+              rafraichissement.
+            </p>
+            <p>
+              `Regenerer le lien` invalide tous les anciens abonnements pour ce calendrier.
+              Seuls les admins peuvent faire cette action.
+            </p>
+            <p>
+              Le lien global rassemble tous les groupes beneficiaires. Le groupe `Coaches` n&apos;y est
+              jamais inclus.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => setIsCalendarHelpOpen(false)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
