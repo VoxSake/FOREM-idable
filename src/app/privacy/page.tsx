@@ -80,14 +80,24 @@ export default function PrivacyPage() {
             </p>
           </div>
           <div>
-            <p className="font-semibold text-foreground">3. Données locales</p>
+            <p className="font-semibold text-foreground">3. Données de synchronisation calendrier</p>
+            <p>
+              Lorsqu&apos;un entretien est planifié, certaines informations strictement utiles à la
+              synchronisation d&apos;agenda peuvent être exposées dans un flux calendrier destiné aux
+              personnes autorisées à suivre un groupe. Cela peut inclure la date et l&apos;heure de
+              l&apos;entretien, l&apos;identité du bénéficiaire, le nom de l&apos;entreprise, le groupe
+              concerné, le lieu et, si vous l&apos;avez renseigné, un court détail d&apos;entretien.
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">4. Données locales</p>
             <p>
               Certaines préférences techniques restent conservées localement dans votre navigateur,
               comme le thème, l&apos;opérateur booléen par défaut et votre choix de consentement analytics.
             </p>
           </div>
           <div>
-            <p className="font-semibold text-foreground">4. Synchronisation</p>
+            <p className="font-semibold text-foreground">5. Synchronisation</p>
             <p>
               Si vous vous connectez, vos candidatures et votre historique de recherche sont
               enregistrés dans la base de données associée à votre compte afin d&apos;être retrouvés
@@ -95,7 +105,7 @@ export default function PrivacyPage() {
             </p>
           </div>
           <div>
-            <p className="font-semibold text-foreground">5. Clés API</p>
+            <p className="font-semibold text-foreground">6. Clés API</p>
             <p>
               Pour les comptes coach et admin, l&apos;application peut générer des clés API.
               Celles-ci sont stockées sous forme de hash, avec des métadonnées minimales comme le
@@ -104,14 +114,14 @@ export default function PrivacyPage() {
             </p>
           </div>
           <div>
-            <p className="font-semibold text-foreground">6. Statistiques optionnelles</p>
+            <p className="font-semibold text-foreground">7. Statistiques optionnelles</p>
             <p>
               Des statistiques de fréquentation via Umami peuvent être activées uniquement si vous y
               consentez. Elles ne sont pas nécessaires à l&apos;utilisation du service.
             </p>
           </div>
           <div>
-            <p className="font-semibold text-foreground">7. Emails transactionnels</p>
+            <p className="font-semibold text-foreground">8. Emails transactionnels</p>
             <p>
               Si la fonction de réinitialisation de mot de passe est activée, votre adresse email
               peut être utilisée pour vous envoyer un lien de changement de mot de passe via le
@@ -135,6 +145,13 @@ export default function PrivacyPage() {
             des sessions, prévention des abus, journalisation technique minimale, protection des
             accès et des exportations API. Base juridique principale: intérêt légitime à sécuriser
             le service.
+          </p>
+          <p>
+            <span className="font-semibold text-foreground">Coordination des entretiens</span>:
+            mise à disposition, pour les personnes autorisées au suivi d&apos;un groupe, d&apos;un flux
+            calendrier permettant de synchroniser les entretiens programmés dans un agenda externe.
+            Base juridique principale: intérêt légitime à organiser l&apos;accompagnement, la
+            coordination et le suivi opérationnel, dans le respect du principe de minimisation.
           </p>
           <p>
             <span className="font-semibold text-foreground">Réinitialisation de mot de passe</span>:
@@ -166,13 +183,19 @@ export default function PrivacyPage() {
           </p>
           <p>
             Certaines fonctionnalités donnent aussi accès aux données à d&apos;autres utilisateurs
-            autorisés par rôle dans l&apos;application, par exemple les comptes coach ou admin dans
-            le cadre du suivi de groupes et de candidatures.
+            autorisés dans l&apos;application, notamment dans le cadre du suivi de groupes, des
+            candidatures et, le cas échéant, de la synchronisation calendrier des entretiens.
           </p>
           <p>
             Si un transfert hors de l&apos;Espace économique européen devait intervenir via un
             prestataire technique, il devrait être encadré par les garanties appropriées prévues par
             le RGPD.
+          </p>
+          <p>
+            Si vous ou une personne autorisée choisissez d&apos;abonner un agenda tiers, comme Google
+            Calendar, Outlook ou Apple Calendar, les données incluses dans le flux calendrier seront
+            également traitées par ce service tiers selon ses propres conditions et sa propre
+            politique de confidentialité.
           </p>
         </div>
       </section>
@@ -200,6 +223,12 @@ export default function PrivacyPage() {
           <p>
             Les sessions expirent automatiquement. Les clés API peuvent être révoquées à tout moment
             et peuvent aussi expirer automatiquement si une date d&apos;expiration a été définie.
+          </p>
+          <p>
+            Les flux calendrier reflètent l&apos;état courant des entretiens enregistrés dans
+            l&apos;application. Lorsqu&apos;un entretien est modifié ou supprimé, la source est mise à
+            jour côté FOREM-idable, mais la disparition effective dans un agenda tiers dépend du
+            délai de resynchronisation appliqué par ce service tiers.
           </p>
         </div>
       </section>
@@ -262,7 +291,7 @@ export default function PrivacyPage() {
       <section className="rounded-xl border bg-card p-6 shadow-sm">
         <h2 className="text-xl font-bold">Mise à jour</h2>
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          Dernière mise à jour: 12 mars 2026. Cette page peut être adaptée si les fonctionnalités,
+          Dernière mise à jour: 16 mars 2026. Cette page peut être adaptée si les fonctionnalités,
           les traitements ou les obligations légales applicables évoluent.
         </p>
       </section>
