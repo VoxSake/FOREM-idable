@@ -250,13 +250,36 @@ export function CoachGroupsSection({
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 break-words font-medium">
-                            {getCoachUserDisplayName(entry)}
-                          </p>
-                          <Badge variant="secondary" className="capitalize">
-                            {entry.role}
-                          </Badge>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="min-w-0 break-words font-medium">
+                                {getCoachUserDisplayName(entry)}
+                              </p>
+                              <Badge variant="secondary" className="capitalize">
+                                {entry.role}
+                              </Badge>
+                            </div>
+                          </div>
+                          {group.kind === "standard" && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="mt-[-2px] h-8 w-8 shrink-0"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onRemoveMembership({
+                                  groupId: group.id,
+                                  userId: entry.id,
+                                  userEmail: entry.email,
+                                  groupName: group.name,
+                                });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                         <p className="break-all text-xs text-muted-foreground">{entry.email}</p>
                         <p className="text-xs text-muted-foreground">
@@ -304,25 +327,6 @@ export function CoachGroupsSection({
                               </Badge>
                             )}
                           </>
-                        )}
-                        {group.kind === "standard" && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onRemoveMembership({
-                                groupId: group.id,
-                                userId: entry.id,
-                                userEmail: entry.email,
-                                groupName: group.name,
-                              });
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
                         )}
                         {group.kind === "coaches" && entry.role === "coach" && (
                           <Button
