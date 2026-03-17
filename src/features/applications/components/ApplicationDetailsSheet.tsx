@@ -126,7 +126,7 @@ function ApplicationDetailsSheetBody({
   };
   const [isEditingManualDetails, setIsEditingManualDetails] = useState(false);
   const [followUpForm, setFollowUpForm] = useState(initialFollowUpForm);
-  const [followUpSaveState, setFollowUpSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [followUpSaveState, setFollowUpSaveState] = useState<"idle" | "error">("idle");
   const [manualDetailsForm, setManualDetailsForm] = useState({
     company: application.job.company || "",
     title: application.job.title,
@@ -136,8 +136,6 @@ function ApplicationDetailsSheetBody({
   });
 
   const saveFollowUpForm = async (nextForm: typeof initialFollowUpForm) => {
-    setFollowUpSaveState("saving");
-
     const normalizedForm = {
       enabled: nextForm.enabled,
       dueAt: nextForm.dueAt || defaultFollowUpDate,
@@ -146,7 +144,7 @@ function ApplicationDetailsSheetBody({
     const saved = await onSaveFollowUpSettings(normalizedForm);
     if (saved) {
       setFollowUpForm(normalizedForm);
-      setFollowUpSaveState("saved");
+      setFollowUpSaveState("idle");
       return;
     }
 
@@ -378,66 +376,50 @@ function ApplicationDetailsSheetBody({
                 {application.lastFollowUpAt ? (
                   <p>Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}</p>
                 ) : null}
+                {followUpSaveState === "error" ? (
+                  <p className="text-xs text-destructive">Impossible d&apos;enregistrer la relance.</p>
+                ) : null}
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p
-                  className={
-                    followUpSaveState === "error"
-                      ? "text-xs text-destructive"
-                      : "text-xs text-muted-foreground"
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setFollowUpForm((current) => ({
+                      ...current,
+                      dueAt: defaultFollowUpDate,
+                    }));
+                    setFollowUpSaveState("idle");
+                  }}
+                  disabled={followUpForm.dueAt === defaultFollowUpDate}
+                >
+                  Remettre a J+7
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    void saveFollowUpForm({
+                      enabled: !followUpForm.enabled,
+                      dueAt: followUpForm.dueAt || defaultFollowUpDate,
+                    })
                   }
                 >
-                  {followUpSaveState === "saving"
-                    ? "Enregistrement..."
-                    : followUpSaveState === "saved"
-                      ? "Relance mise a jour."
-                      : followUpSaveState === "error"
-                        ? "Impossible d'enregistrer la relance."
-                        : followUpForm.enabled
-                          ? "Modifiez la date puis mettez a jour la relance."
-                          : "Cette relance est desactivee tant que vous ne la reactivez pas."}
-                </p>
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setFollowUpForm((current) => ({
-                        ...current,
-                        dueAt: defaultFollowUpDate,
-                      }));
-                      setFollowUpSaveState("idle");
-                    }}
-                    disabled={followUpForm.dueAt === defaultFollowUpDate}
-                  >
-                    Remettre a J+7
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      void saveFollowUpForm({
-                        enabled: !followUpForm.enabled,
-                        dueAt: followUpForm.dueAt || defaultFollowUpDate,
-                      })
-                    }
-                  >
-                    {followUpForm.enabled ? "Desactiver la relance" : "Activer la relance"}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      void saveFollowUpForm({
-                        enabled: true,
-                        dueAt: followUpForm.dueAt || defaultFollowUpDate,
-                      })
-                    }
-                    disabled={!followUpForm.dueAt}
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Mettre a jour la relance
-                  </Button>
-                </div>
+                  {followUpForm.enabled ? "Desactiver la relance" : "Activer la relance"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() =>
+                    void saveFollowUpForm({
+                      enabled: true,
+                      dueAt: followUpForm.dueAt || defaultFollowUpDate,
+                    })
+                  }
+                  disabled={!followUpForm.dueAt}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Mettre a jour la relance
+                </Button>
               </div>
             </div>
           ) : (
