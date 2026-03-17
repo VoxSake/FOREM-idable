@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LocalPagination } from "@/components/ui/local-pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -142,14 +143,23 @@ function CoachUserSheetBody({
   onDeleteSharedCoachNote,
 }: CoachUserSheetBodyProps) {
   const sortedApplications = useMemo(() => sortApplicationsByMostRecent(user.applications), [user.applications]);
+  const applicationsPageSize = 10;
   const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
   const [privateNoteDrafts, setPrivateNoteDrafts] = useState<Record<string, string>>({});
   const [sharedNoteDrafts, setSharedNoteDrafts] = useState<Record<string, string>>({});
   const [newSharedNoteDrafts, setNewSharedNoteDrafts] = useState<Record<string, string>>({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [deleteSharedTarget, setDeleteSharedTarget] = useState<{
     jobId: string;
     noteId: string;
   } | null>(null);
+
+  const pageCount = Math.max(1, Math.ceil(sortedApplications.length / applicationsPageSize));
+  const effectivePage = Math.min(currentPage, pageCount);
+  const paginatedApplications = useMemo(() => {
+    const start = (effectivePage - 1) * applicationsPageSize;
+    return sortedApplications.slice(start, start + applicationsPageSize);
+  }, [effectivePage, sortedApplications]);
 
   const toggleExpanded = (jobId: string, nextOpen: boolean) => {
     setExpandedJobIds((current) =>
@@ -232,7 +242,8 @@ function CoachUserSheetBody({
 
       <div className="space-y-4 overflow-y-auto p-5">
         {sortedApplications.length > 0 ? (
-          sortedApplications.map((application) => {
+          <>
+          {paginatedApplications.map((application) => {
             const isDue = isApplicationDue(application);
             const isOpen = expandedJobIds.includes(application.job.id);
             const isManual = isManualApplication(application);
@@ -640,7 +651,16 @@ function CoachUserSheetBody({
                 </div>
               </Collapsible>
             );
-          })
+          })}
+          <LocalPagination
+            currentPage={effectivePage}
+            pageCount={pageCount}
+            totalCount={sortedApplications.length}
+            pageSize={applicationsPageSize}
+            itemLabel="candidatures"
+            onPageChange={setCurrentPage}
+          />
+          </>
         ) : (
           <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
             Aucune candidature enregistrée pour cet utilisateur.

@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { format, isAfter, isBefore } from "date-fns";
 import { BriefcaseBusiness, Clock3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LocalPagination } from "@/components/ui/local-pagination";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AccountAccessPrompt } from "@/components/auth/AccountAccessPrompt";
 import { useApplications } from "@/hooks/useApplications";
@@ -54,6 +55,8 @@ const emptyInterviewForm: InterviewFormState = {
   interviewDetails: "",
 };
 
+const APPLICATIONS_PAGE_SIZE = 20;
+
 export default function ApplicationsPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const {
@@ -80,6 +83,7 @@ export default function ApplicationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ApplicationStatus>("all");
   const [modeFilter, setModeFilter] = useState<ApplicationModeFilter>("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [manualForm, setManualForm] = useState<ManualApplicationFormState>(createManualForm);
   const [interviewForm, setInterviewForm] = useState<InterviewFormState>(emptyInterviewForm);
   const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
@@ -143,6 +147,17 @@ export default function ApplicationsPage() {
       })
     );
   }, [applications, hasUnreadCoachUpdate, modeFilter, now, search, statusFilter]);
+
+  const applicationsPageCount = Math.max(
+    1,
+    Math.ceil(filteredApplications.length / APPLICATIONS_PAGE_SIZE)
+  );
+  const effectiveApplicationsPage = Math.min(currentPage, applicationsPageCount);
+
+  const paginatedApplications = useMemo(() => {
+    const start = (effectiveApplicationsPage - 1) * APPLICATIONS_PAGE_SIZE;
+    return filteredApplications.slice(start, start + APPLICATIONS_PAGE_SIZE);
+  }, [effectiveApplicationsPage, filteredApplications]);
 
   const selectedApplication = useMemo(
     () => applications.find((entry) => entry.job.id === detailsJobId) ?? null,
@@ -348,31 +363,50 @@ export default function ApplicationsPage() {
         search={search}
         statusFilter={statusFilter}
         modeFilter={modeFilter}
-        onSearchChange={setSearch}
-        onStatusFilterChange={setStatusFilter}
-        onModeFilterChange={setModeFilter}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setCurrentPage(1);
+        }}
+        onStatusFilterChange={(value) => {
+          setStatusFilter(value);
+          setCurrentPage(1);
+        }}
+        onModeFilterChange={(value) => {
+          setModeFilter(value);
+          setCurrentPage(1);
+        }}
       />
 
       {filteredApplications.length > 0 ? (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {filteredApplications.map((application) => (
-            <ApplicationCard
-              key={application.job.id}
-              application={application}
-              now={now}
-              isSelected={selectedJobIds.has(application.job.id)}
-              hasUnreadCoachUpdate={hasUnreadCoachUpdate(application)}
-              onToggleSelection={toggleSelection}
-              onOpenDetails={(jobId) => {
-                setDetailsJobId(jobId);
-                markCoachUpdateSeen(applications.find((entry) => entry.job.id === jobId) ?? null);
-              }}
-              onApplyStatus={applyStatus}
-              onMarkFollowUpDone={markFollowUpDone}
-              onOpenInterview={openInterviewModal}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-3 xl:grid-cols-2">
+            {paginatedApplications.map((application) => (
+              <ApplicationCard
+                key={application.job.id}
+                application={application}
+                now={now}
+                isSelected={selectedJobIds.has(application.job.id)}
+                hasUnreadCoachUpdate={hasUnreadCoachUpdate(application)}
+                onToggleSelection={toggleSelection}
+                onOpenDetails={(jobId) => {
+                  setDetailsJobId(jobId);
+                  markCoachUpdateSeen(applications.find((entry) => entry.job.id === jobId) ?? null);
+                }}
+                onApplyStatus={applyStatus}
+                onMarkFollowUpDone={markFollowUpDone}
+                onOpenInterview={openInterviewModal}
+              />
+            ))}
+          </div>
+          <LocalPagination
+            currentPage={effectiveApplicationsPage}
+            pageCount={applicationsPageCount}
+            totalCount={filteredApplications.length}
+            pageSize={APPLICATIONS_PAGE_SIZE}
+            itemLabel="candidatures"
+            onPageChange={setCurrentPage}
+          />
+        </>
       ) : (
         <div className="h-96 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-dashed border-border mt-8">
           <BriefcaseBusiness className="w-12 h-12 text-muted-foreground/30" />
