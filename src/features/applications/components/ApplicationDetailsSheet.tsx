@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, format } from "date-fns";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CalendarDays, FilePenLine, Save, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,16 +119,15 @@ function ApplicationDetailsSheetBody({
 }: ApplicationDetailsSheetBodyProps) {
   const isManual = isManualApplication(application);
   const followUpEnabled = isFollowUpEnabled(application);
+  const defaultFollowUpDate = formatDefaultFollowUpDate(application.appliedAt);
+  const initialFollowUpForm = {
+    enabled: followUpEnabled,
+    dueAt: getEditableFollowUpDate(application.followUpDueAt, defaultFollowUpDate),
+  };
   const [isEditingManualDetails, setIsEditingManualDetails] = useState(false);
-  const [followUpForm, setFollowUpForm] = useState(() => {
-    const baseDate = application.followUpDueAt ? new Date(application.followUpDueAt) : addDays(new Date(), 7);
-    const normalizedDate = Number.isNaN(baseDate.getTime()) ? addDays(new Date(), 7) : baseDate;
-
-    return {
-      enabled: followUpEnabled,
-      dueAt: format(normalizedDate, "yyyy-MM-dd"),
-    };
-  });
+  const [followUpForm, setFollowUpForm] = useState(initialFollowUpForm);
+  const [followUpSaveState, setFollowUpSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const followUpRequestIdRef = useRef(0);
   const [manualDetailsForm, setManualDetailsForm] = useState({
     company: application.job.company || "",
     title: application.job.title,
@@ -136,6 +135,34 @@ function ApplicationDetailsSheetBody({
     location: application.job.location || "",
     url: application.job.url === "#" ? "" : application.job.url,
   });
+
+  const saveFollowUpForm = async (
+    nextForm: typeof initialFollowUpForm,
+    rollbackForm: typeof initialFollowUpForm
+  ) => {
+    const requestId = followUpRequestIdRef.current + 1;
+    followUpRequestIdRef.current = requestId;
+    setFollowUpSaveState("saving");
+
+    const normalizedForm = {
+      enabled: nextForm.enabled,
+      dueAt: nextForm.dueAt || defaultFollowUpDate,
+    };
+
+    const saved = await onSaveFollowUpSettings(normalizedForm);
+    if (requestId !== followUpRequestIdRef.current) {
+      return;
+    }
+
+    if (saved) {
+      setFollowUpForm(normalizedForm);
+      setFollowUpSaveState("saved");
+      return;
+    }
+
+    setFollowUpForm(rollbackForm);
+    setFollowUpSaveState("error");
+  };
 
   return (
     <>
@@ -340,12 +367,15 @@ function ApplicationDetailsSheetBody({
                   type="checkbox"
                   className="h-4 w-4 accent-primary"
                   checked={followUpForm.enabled}
-                  onChange={(event) =>
-                    setFollowUpForm((current) => ({
-                      ...current,
+                  onChange={async (event) => {
+                    const nextForm = {
                       enabled: event.target.checked,
-                    }))
-                  }
+                      dueAt: followUpForm.dueAt || defaultFollowUpDate,
+                    };
+
+                    setFollowUpForm(nextForm);
+                    await saveFollowUpForm(nextForm, followUpForm);
+                  }}
                 />
                 Relance active
               </label>
@@ -355,18 +385,21 @@ function ApplicationDetailsSheetBody({
                   type="date"
                   className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                   value={followUpForm.dueAt}
-                  onChange={(event) =>
-                    setFollowUpForm((current) => ({
-                      ...current,
+                  onChange={async (event) => {
+                    const nextForm = {
+                      ...followUpForm,
                       dueAt: event.target.value,
-                    }))
-                  }
+                    };
+
+                    setFollowUpForm(nextForm);
+                    await saveFollowUpForm(nextForm, followUpForm);
+                  }}
                   disabled={!followUpForm.enabled}
                 />
               </label>
               <div className="space-y-1 text-muted-foreground">
-                {followUpEnabled ? (
-                  <p>Prochaine relance: {formatApplicationDate(application.followUpDueAt)}</p>
+                {followUpForm.enabled ? (
+                  <p>Prochaine relance: {formatApplicationDate(followUpForm.dueAt)}</p>
                 ) : (
                   <p>Relance désactivée pour cette candidature.</p>
                 )}
@@ -374,43 +407,37 @@ function ApplicationDetailsSheetBody({
                   <p>Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}</p>
                 ) : null}
               </div>
-              <div className="flex flex-wrap justify-end gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p
+                  className={
+                    followUpSaveState === "error"
+                      ? "text-xs text-destructive"
+                      : "text-xs text-muted-foreground"
+                  }
+                >
+                  {followUpSaveState === "saving"
+                    ? "Enregistrement..."
+                    : followUpSaveState === "saved"
+                      ? "Relance mise a jour."
+                      : followUpSaveState === "error"
+                        ? "Impossible d'enregistrer la relance."
+                        : "Les changements sont enregistres automatiquement."}
+                </p>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() =>
-                    setFollowUpForm({
-                      enabled: followUpEnabled,
-                      dueAt: format(
-                        Number.isNaN(new Date(application.followUpDueAt).getTime())
-                          ? addDays(new Date(), 7)
-                          : new Date(application.followUpDueAt),
-                        "yyyy-MM-dd"
-                      ),
-                    })
-                  }
-                >
-                  Annuler
-                </Button>
-                <Button
-                  type="button"
                   onClick={async () => {
-                    const fallbackDate = format(addDays(new Date(), 7), "yyyy-MM-dd");
-                    const saved = await onSaveFollowUpSettings({
-                      enabled: followUpForm.enabled,
-                      dueAt: followUpForm.dueAt || fallbackDate,
-                    });
-                    if (saved) {
-                      setFollowUpForm((current) => ({
-                        ...current,
-                        dueAt: current.dueAt || fallbackDate,
-                      }));
-                    }
+                    const nextForm = {
+                      enabled: true,
+                      dueAt: defaultFollowUpDate,
+                    };
+
+                    setFollowUpForm(nextForm);
+                    await saveFollowUpForm(nextForm, followUpForm);
                   }}
-                  disabled={followUpForm.enabled && !followUpForm.dueAt}
+                  disabled={followUpForm.enabled && followUpForm.dueAt === defaultFollowUpDate}
                 >
-                  <Save className="mr-2 h-4 w-4" />
-                  Enregistrer
+                  Remettre a J+7
                 </Button>
               </div>
             </div>
@@ -530,4 +557,24 @@ function ApplicationDetailsSheetBody({
       </SheetFooter>
     </>
   );
+}
+
+function formatDefaultFollowUpDate(appliedAt: string) {
+  const baseDate = new Date(appliedAt);
+  const normalizedDate = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate;
+
+  return format(addDays(normalizedDate, 7), "yyyy-MM-dd");
+}
+
+function getEditableFollowUpDate(followUpDueAt: string | undefined, fallbackDate: string) {
+  if (!followUpDueAt) {
+    return fallbackDate;
+  }
+
+  const followUpDate = new Date(followUpDueAt);
+  if (Number.isNaN(followUpDate.getTime())) {
+    return fallbackDate;
+  }
+
+  return format(followUpDate, "yyyy-MM-dd");
 }
