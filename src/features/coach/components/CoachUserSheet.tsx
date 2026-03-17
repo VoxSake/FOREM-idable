@@ -243,6 +243,15 @@ function CoachUserSheetBody({
       <div className="space-y-4 overflow-y-auto p-5">
         {sortedApplications.length > 0 ? (
           <>
+          <LocalPagination
+            currentPage={effectivePage}
+            pageCount={pageCount}
+            totalCount={sortedApplications.length}
+            pageSize={applicationsPageSize}
+            itemLabel="candidatures"
+            onPageChange={setCurrentPage}
+            compact
+          />
           {paginatedApplications.map((application) => {
             const isDue = isApplicationDue(application);
             const isOpen = expandedJobIds.includes(application.job.id);
