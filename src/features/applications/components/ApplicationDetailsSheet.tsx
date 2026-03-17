@@ -1,5 +1,6 @@
 "use client";
 
+import { addDays, format } from "date-fns";
 import { useState } from "react";
 import { CalendarDays, FilePenLine, Save, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import {
   applicationStatusLabel,
   formatApplicationDate,
   formatApplicationDateTime,
+  isFollowUpEnabled,
   isManualApplication,
   shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
@@ -43,6 +45,7 @@ interface ApplicationDetailsSheetProps {
     location: string;
     url: string;
   }) => Promise<boolean>;
+  onSaveFollowUpSettings: (input: { enabled: boolean; dueAt: string }) => Promise<boolean>;
   onMarkFollowUpDone: (jobId: string) => void;
   onOpenInterview: (application: JobApplication) => void;
   onRequestDelete: (jobId: string) => void;
@@ -61,6 +64,7 @@ export function ApplicationDetailsSheet({
   onSaveNotes,
   onSaveProofs,
   onSaveManualDetails,
+  onSaveFollowUpSettings,
   onMarkFollowUpDone,
   onOpenInterview,
   onRequestDelete,
@@ -81,6 +85,7 @@ export function ApplicationDetailsSheet({
             onSaveNotes={onSaveNotes}
             onSaveProofs={onSaveProofs}
             onSaveManualDetails={onSaveManualDetails}
+            onSaveFollowUpSettings={onSaveFollowUpSettings}
             onMarkFollowUpDone={onMarkFollowUpDone}
             onOpenInterview={onOpenInterview}
             onRequestDelete={onRequestDelete}
@@ -107,12 +112,23 @@ function ApplicationDetailsSheetBody({
   onSaveNotes,
   onSaveProofs,
   onSaveManualDetails,
+  onSaveFollowUpSettings,
   onMarkFollowUpDone,
   onOpenInterview,
   onRequestDelete,
 }: ApplicationDetailsSheetBodyProps) {
   const isManual = isManualApplication(application);
+  const followUpEnabled = isFollowUpEnabled(application);
   const [isEditingManualDetails, setIsEditingManualDetails] = useState(false);
+  const [followUpForm, setFollowUpForm] = useState(() => {
+    const baseDate = application.followUpDueAt ? new Date(application.followUpDueAt) : addDays(new Date(), 7);
+    const normalizedDate = Number.isNaN(baseDate.getTime()) ? addDays(new Date(), 7) : baseDate;
+
+    return {
+      enabled: followUpEnabled,
+      dueAt: format(normalizedDate, "yyyy-MM-dd"),
+    };
+  });
   const [manualDetailsForm, setManualDetailsForm] = useState({
     company: application.job.company || "",
     title: application.job.title,
@@ -318,16 +334,86 @@ function ApplicationDetailsSheetBody({
         <div className="space-y-2">
           <p className="font-medium">Relance</p>
           {shouldShowFollowUpDetails(application.status) ? (
-            <>
-              <p className="text-muted-foreground">
-                Prochaine relance: {formatApplicationDate(application.followUpDueAt)}
-              </p>
-              {application.lastFollowUpAt ? (
-                <p className="text-muted-foreground">
-                  Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}
-                </p>
-              ) : null}
-            </>
+            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={followUpForm.enabled}
+                  onChange={(event) =>
+                    setFollowUpForm((current) => ({
+                      ...current,
+                      enabled: event.target.checked,
+                    }))
+                  }
+                />
+                Relance active
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Date de relance</span>
+                <input
+                  type="date"
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  value={followUpForm.dueAt}
+                  onChange={(event) =>
+                    setFollowUpForm((current) => ({
+                      ...current,
+                      dueAt: event.target.value,
+                    }))
+                  }
+                  disabled={!followUpForm.enabled}
+                />
+              </label>
+              <div className="space-y-1 text-muted-foreground">
+                {followUpEnabled ? (
+                  <p>Prochaine relance: {formatApplicationDate(application.followUpDueAt)}</p>
+                ) : (
+                  <p>Relance désactivée pour cette candidature.</p>
+                )}
+                {application.lastFollowUpAt ? (
+                  <p>Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}</p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setFollowUpForm({
+                      enabled: followUpEnabled,
+                      dueAt: format(
+                        Number.isNaN(new Date(application.followUpDueAt).getTime())
+                          ? addDays(new Date(), 7)
+                          : new Date(application.followUpDueAt),
+                        "yyyy-MM-dd"
+                      ),
+                    })
+                  }
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    const fallbackDate = format(addDays(new Date(), 7), "yyyy-MM-dd");
+                    const saved = await onSaveFollowUpSettings({
+                      enabled: followUpForm.enabled,
+                      dueAt: followUpForm.dueAt || fallbackDate,
+                    });
+                    if (saved) {
+                      setFollowUpForm((current) => ({
+                        ...current,
+                        dueAt: current.dueAt || fallbackDate,
+                      }));
+                    }
+                  }}
+                  disabled={followUpForm.enabled && !followUpForm.dueAt}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Enregistrer
+                </Button>
+              </div>
+            </div>
           ) : (
             <p className="text-muted-foreground">
               Aucune relance automatique sur une candidature clôturée.

@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
@@ -19,6 +20,22 @@ export function formatApplicationDateTime(value?: string) {
 
 export function isFollowUpPending(status: ApplicationStatus) {
   return status === "in_progress" || status === "follow_up";
+}
+
+export function isFollowUpEnabled(application: Pick<JobApplication, "followUpEnabled">) {
+  return application.followUpEnabled !== false;
+}
+
+export function isApplicationFollowUpDue(
+  application: Pick<JobApplication, "status" | "followUpDueAt" | "followUpEnabled">
+) {
+  const due = new Date(application.followUpDueAt);
+  return (
+    isFollowUpPending(application.status) &&
+    isFollowUpEnabled(application) &&
+    !Number.isNaN(due.getTime()) &&
+    !isAfter(due, new Date())
+  );
 }
 
 export function shouldShowFollowUpDetails(status: ApplicationStatus) {

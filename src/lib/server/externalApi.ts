@@ -23,10 +23,11 @@ function matchesSearch(haystack: string[], search?: string) {
   return haystack.join(" ").toLowerCase().includes(normalized);
 }
 
-function isDue(status: ApplicationStatus, dueAt: string) {
+function isDue(status: ApplicationStatus, dueAt: string, followUpEnabled?: boolean) {
   const due = new Date(dueAt);
   return (
     (status === "in_progress" || status === "follow_up") &&
+    followUpEnabled !== false &&
     !Number.isNaN(due.getTime()) &&
     !isAfter(due, new Date())
   );
@@ -198,7 +199,7 @@ export async function getExternalApplications(
     if (filters.groupId && !row.groupIds.includes(filters.groupId)) return false;
     if (filters.role && row.userRole !== filters.role) return false;
     if (filters.status && row.application.status !== filters.status) return false;
-    if (filters.dueOnly && !isDue(row.application.status, row.application.followUpDueAt)) return false;
+    if (filters.dueOnly && !isDue(row.application.status, row.application.followUpDueAt, row.application.followUpEnabled)) return false;
     if (filters.interviewOnly && row.application.status !== "interview") return false;
     if (filters.updatedAfter && row.application.updatedAt < filters.updatedAfter) return false;
     if (filters.updatedBefore && row.application.updatedAt > filters.updatedBefore) return false;

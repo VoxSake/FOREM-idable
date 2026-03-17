@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { format, isAfter, isBefore } from "date-fns";
+import { format, isBefore } from "date-fns";
 import { BriefcaseBusiness, Clock3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LocalPagination } from "@/components/ui/local-pagination";
@@ -26,7 +26,7 @@ import {
 import {
   ApplicationModeFilter,
   getLatestSharedCoachNoteAt,
-  isFollowUpPending,
+  isApplicationFollowUpDue,
   isManualApplication,
   sortApplicationsByMostRecent,
 } from "@/features/applications/utils";
@@ -72,6 +72,7 @@ export default function ApplicationsPage() {
     saveProofs,
     updateManualApplicationDetails,
     markFollowUpDone,
+    updateFollowUpSettings,
     removeApplication,
     isLoaded,
   } = useApplications();
@@ -100,7 +101,7 @@ export default function ApplicationsPage() {
   }, [coachNoteViews]);
 
   const dueCount = applications.filter(
-    (entry) => isFollowUpPending(entry.status) && !isAfter(new Date(entry.followUpDueAt), now)
+    (entry) => isApplicationFollowUpDue(entry)
   ).length;
   const upcomingInterviewCount = applications.filter((entry) => {
     if (!entry.interviewAt) return false;
@@ -119,11 +120,8 @@ export default function ApplicationsPage() {
         if (statusFilter !== "all" && entry.status !== statusFilter) return false;
 
         if (modeFilter === "due") {
-          const dueDate = new Date(entry.followUpDueAt);
           if (
-            !isFollowUpPending(entry.status) ||
-            Number.isNaN(dueDate.getTime()) ||
-            isAfter(dueDate, now)
+            !isApplicationFollowUpDue(entry)
           ) {
             return false;
           }
@@ -146,7 +144,7 @@ export default function ApplicationsPage() {
           .includes(normalizedSearch);
       })
     );
-  }, [applications, hasUnreadCoachUpdate, modeFilter, now, search, statusFilter]);
+  }, [applications, hasUnreadCoachUpdate, modeFilter, search, statusFilter]);
 
   const applicationsPageCount = Math.max(
     1,
@@ -470,6 +468,14 @@ export default function ApplicationsPage() {
         onSaveManualDetails={(input) =>
           selectedApplication
             ? updateManualApplicationDetails(selectedApplication.job.id, selectedApplication.job, input)
+            : Promise.resolve(false)
+        }
+        onSaveFollowUpSettings={(input) =>
+          selectedApplication
+            ? updateFollowUpSettings(selectedApplication.job.id, {
+                ...input,
+                status: selectedApplication.status,
+              })
             : Promise.resolve(false)
         }
         onMarkFollowUpDone={markFollowUpDone}

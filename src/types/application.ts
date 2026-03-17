@@ -39,6 +39,7 @@ export interface JobApplication {
   job: Job;
   appliedAt: string;
   followUpDueAt: string;
+  followUpEnabled?: boolean;
   lastFollowUpAt?: string | null;
   status: ApplicationStatus;
   notes?: string | null;

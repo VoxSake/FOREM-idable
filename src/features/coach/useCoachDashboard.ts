@@ -90,6 +90,7 @@ export function useCoachDashboard() {
               const due = new Date(item.followUpDueAt);
               return (
                 (item.status === "in_progress" || item.status === "follow_up") &&
+                item.followUpEnabled !== false &&
                 !Number.isNaN(due.getTime()) &&
                 due <= now
               );

@@ -112,12 +112,13 @@ export function useApplications() {
           | "notes"
           | "proofs"
           | "interviewAt"
-          | "interviewDetails"
-          | "lastFollowUpAt"
-          | "followUpDueAt"
-          | "appliedAt"
-          | "job"
-        >
+        | "interviewDetails"
+        | "lastFollowUpAt"
+        | "followUpDueAt"
+        | "followUpEnabled"
+        | "appliedAt"
+        | "job"
+      >
       >
     ) => {
       if (!user) return false;
@@ -255,9 +256,28 @@ export function useApplications() {
     return patchApplication(jobId, {
       lastFollowUpAt: now.toISOString(),
       followUpDueAt: addDays(now, 7).toISOString(),
+      followUpEnabled: true,
       status: "in_progress",
     });
   };
+
+  const updateFollowUpSettings = (
+    jobId: string,
+    input: {
+      enabled: boolean;
+      dueAt: string;
+      status: ApplicationStatus;
+    }
+  ) =>
+    patchApplication(jobId, {
+      followUpEnabled: input.enabled,
+      followUpDueAt: input.dueAt,
+      status: input.enabled
+        ? input.status
+        : input.status === "follow_up"
+          ? "in_progress"
+          : input.status,
+    });
 
   const isApplied = useCallback(
     (jobId: string) => applications.some((entry) => entry.job.id === jobId),
@@ -279,6 +299,7 @@ export function useApplications() {
     saveProofs,
     updateManualApplicationDetails,
     markFollowUpDone,
+    updateFollowUpSettings,
     isApplied,
     isLoaded,
     isAuthenticated: Boolean(user),

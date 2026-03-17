@@ -28,6 +28,7 @@ export async function PATCH(
           | "interviewDetails"
           | "lastFollowUpAt"
           | "followUpDueAt"
+          | "followUpEnabled"
           | "appliedAt"
           | "job"
         >

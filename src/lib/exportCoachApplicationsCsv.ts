@@ -96,7 +96,7 @@ export function exportCoachApplicationsToCSV(input: {
         application.job.contractType,
         application.job.location,
         formatDate(application.appliedAt),
-        formatDate(application.followUpDueAt),
+        application.followUpEnabled === false ? "" : formatDate(application.followUpDueAt),
         formatDate(application.lastFollowUpAt),
         formatDate(application.interviewAt),
         application.interviewDetails || "",

@@ -173,6 +173,7 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
         const due = new Date(item.followUpDueAt);
         return (
           (item.status === "in_progress" || item.status === "follow_up") &&
+          item.followUpEnabled !== false &&
           !Number.isNaN(due.getTime()) &&
           !isAfter(due, now)
         );

@@ -10,6 +10,7 @@ import {
   applicationStatusLabel,
   formatApplicationDate,
   formatApplicationDateTime,
+  isFollowUpEnabled,
   isFollowUpPending,
   isManualApplication,
   shouldShowFollowUpDetails,
@@ -42,10 +43,15 @@ export function ApplicationCard({
   const followUpDue = new Date(application.followUpDueAt);
   const interviewDate = application.interviewAt ? new Date(application.interviewAt) : null;
   const hasInterview = Boolean(interviewDate) && !Number.isNaN(interviewDate!.getTime());
+  const followUpEnabled = isFollowUpEnabled(application);
   const isDue =
-    isFollowUpPending(application.status) && !Number.isNaN(followUpDue.getTime()) && !isAfter(followUpDue, now);
+    isFollowUpPending(application.status) &&
+    followUpEnabled &&
+    !Number.isNaN(followUpDue.getTime()) &&
+    !isAfter(followUpDue, now);
   const isSoon =
     isFollowUpPending(application.status) &&
+    followUpEnabled &&
     !Number.isNaN(followUpDue.getTime()) &&
     isAfter(followUpDue, now) &&
     isBefore(followUpDue, addDays(now, 2));
@@ -147,11 +153,17 @@ export function ApplicationCard({
             <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
               {shouldShowFollowUpDetails(application.status) ? (
                 <>
-                  <p>Relance: {formatApplicationDate(application.followUpDueAt)}</p>
-                  {isSoon ? <p>Bientôt</p> : null}
-                  {application.lastFollowUpAt ? (
-                    <p>Dernière: {formatApplicationDate(application.lastFollowUpAt)}</p>
-                  ) : null}
+                  {followUpEnabled ? (
+                    <>
+                      <p>Relance: {formatApplicationDate(application.followUpDueAt)}</p>
+                      {isSoon ? <p>Bientôt</p> : null}
+                      {application.lastFollowUpAt ? (
+                        <p>Dernière: {formatApplicationDate(application.lastFollowUpAt)}</p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p>Relance désactivée.</p>
+                  )}
                 </>
               ) : (
                 <p>Aucune relance automatique sur une candidature clôturée.</p>

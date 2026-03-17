@@ -60,6 +60,7 @@ function buildApplication(job: Job): JobApplication {
     job,
     appliedAt: now.toISOString(),
     followUpDueAt: addDays(now, 7).toISOString(),
+    followUpEnabled: true,
     status: "in_progress",
     updatedAt: now.toISOString(),
   };
@@ -137,12 +138,14 @@ export async function createTrackedApplicationForUser(input: {
         proofs: input.proofs?.trim() ?? existing.proofs,
         interviewAt: input.interviewAt ?? existing.interviewAt,
         interviewDetails: input.interviewDetails?.trim() ?? existing.interviewDetails,
+        followUpEnabled: existing.followUpEnabled !== false,
         updatedAt: new Date().toISOString(),
       }
     : {
         ...buildApplication(sanitizedJob),
         appliedAt: normalizedAppliedAt.toISOString(),
         followUpDueAt: addDays(normalizedAppliedAt, 7).toISOString(),
+        followUpEnabled: true,
         status: input.status ?? "in_progress",
         notes: input.notes?.trim(),
         proofs: input.proofs?.trim(),
@@ -185,6 +188,7 @@ export async function updateApplicationForUser(input: {
       | "interviewDetails"
       | "lastFollowUpAt"
       | "followUpDueAt"
+      | "followUpEnabled"
       | "appliedAt"
       | "job"
     >
@@ -227,8 +231,13 @@ export async function updateApplicationForUser(input: {
     nextPatch.interviewDetails = nextPatch.interviewDetails.trim();
   }
 
+  if (typeof nextPatch.followUpEnabled !== "boolean") {
+    delete nextPatch.followUpEnabled;
+  }
+
   const next = preserveApplicationCoachFields(existing, {
     ...existing,
+    followUpEnabled: existing.followUpEnabled !== false,
     ...nextPatch,
     updatedAt: new Date().toISOString(),
   });

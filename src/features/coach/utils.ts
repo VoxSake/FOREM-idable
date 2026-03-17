@@ -56,6 +56,7 @@ export function isApplicationDue(application: JobApplication) {
   const due = new Date(application.followUpDueAt);
   return (
     (application.status === "in_progress" || application.status === "follow_up") &&
+    application.followUpEnabled !== false &&
     !Number.isNaN(due.getTime()) &&
     !isAfter(due, new Date())
   );

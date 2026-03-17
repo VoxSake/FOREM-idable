@@ -44,7 +44,7 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
       entry.job.contractType,
       entry.job.location,
       formatDate(entry.appliedAt),
-      formatDate(entry.followUpDueAt),
+      entry.followUpEnabled === false ? "" : formatDate(entry.followUpDueAt),
       formatDate(entry.interviewAt),
       STATUS_LABELS[entry.status],
       entry.notes || "",

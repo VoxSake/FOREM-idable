@@ -3,6 +3,8 @@ import {
   applicationStatusLabel,
   formatApplicationDate,
   formatApplicationDateTime,
+  isApplicationFollowUpDue,
+  isFollowUpEnabled,
   isFollowUpPending,
   isManualApplication,
   shouldShowFollowUpDetails,
@@ -83,6 +85,25 @@ describe("applications utils", () => {
     expect(shouldShowFollowUpDetails("interview")).toBe(false);
     expect(shouldShowFollowUpDetails("accepted")).toBe(false);
     expect(shouldShowFollowUpDetails("rejected")).toBe(false);
+
+    expect(isFollowUpEnabled(buildApplication())).toBe(true);
+    expect(isFollowUpEnabled(buildApplication({ followUpEnabled: false }))).toBe(false);
+    expect(isApplicationFollowUpDue(buildApplication())).toBe(true);
+    expect(
+      isApplicationFollowUpDue(
+        buildApplication({
+          followUpDueAt: "2026-03-01T09:00:00.000Z",
+        })
+      )
+    ).toBe(true);
+    expect(
+      isApplicationFollowUpDue(
+        buildApplication({
+          followUpDueAt: "2026-03-01T09:00:00.000Z",
+          followUpEnabled: false,
+        })
+      )
+    ).toBe(false);
   });
 
   it("detects manual applications and formats values safely", () => {
