@@ -103,6 +103,10 @@ describe("externalApi", () => {
     expect(response.groups).toHaveLength(1);
     expect(response.groups[0]).toMatchObject({
       id: 5,
+      createdBy: {
+        id: 1,
+        email: "admin@example.com",
+      },
       managerCoachId: 11,
       coachCount: 2,
       manager: {
@@ -123,6 +127,8 @@ describe("externalApi", () => {
         },
       ],
     });
+    expect(response.groups[0].createdBy).not.toHaveProperty("firstName");
+    expect(response.groups[0].createdBy).not.toHaveProperty("lastName");
     expect(response.groups[0].members).toBeUndefined();
   });
 

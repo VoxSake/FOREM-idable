@@ -186,7 +186,10 @@ export async function getExternalGroups(
         id: group.id,
         name: group.name,
         createdAt: group.createdAt,
-        createdBy: group.createdBy,
+        createdBy: {
+          id: group.createdBy.id,
+          email: group.createdBy.email,
+        },
         managerCoachId: group.managerCoachId,
         manager,
         coachCount: coaches.length,

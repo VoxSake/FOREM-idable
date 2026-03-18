@@ -7,7 +7,7 @@ export interface CoachGroupMember {
   firstName: string;
   lastName: string;
   role: UserRole;
-  lastSeenAt?: string | null;
+  lastSeenAt: string | null;
 }
 
 export interface CoachGroupSummary {
