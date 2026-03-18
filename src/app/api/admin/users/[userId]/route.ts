@@ -127,12 +127,44 @@ export async function DELETE(
       );
     }
 
+    await ensureDatabase();
+    if (!db) {
+      return NextResponse.json({ error: "Database unavailable" }, { status: 500 });
+    }
+
+    const targetResult = await db.query<{ role: UserRole; email: string }>(
+      `SELECT role, email
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [userId]
+    );
+    const target = targetResult.rows[0];
+
+    if (!target) {
+      return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+    }
+
     await deleteUserAccount(userId);
     await markCoachAction(admin.id);
     await recordAuditEvent({
       actorUserId: admin.id,
       action: "user_deleted",
-      targetUserId: userId,
+      payload: {
+        deletedUserId: userId,
+        deletedUserEmail: target.email,
+        deletedUserRole: target.role,
+      },
+    });
+    logServerEvent({
+      category: "admin",
+      action: "user_deleted",
+      meta: {
+        actorUserId: admin.id,
+        deletedUserId: userId,
+        deletedUserEmail: target.email,
+        deletedUserRole: target.role,
+      },
     });
     return NextResponse.json({ ok: true });
   } catch {
