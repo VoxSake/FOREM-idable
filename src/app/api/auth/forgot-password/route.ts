@@ -16,10 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Fonction désactivée." }, { status: 404 });
     }
 
+    const body = await request.json();
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+
     const rateLimit = await checkRateLimit({
       scope: "auth-forgot-password",
-      limit: 5,
-      windowMs: 10 * 60 * 1000,
+      limit: 3,
+      windowMs: 30 * 60 * 1000,
+      identifier: email || null,
     });
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -27,9 +31,6 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-
-    const body = await request.json();
-    const email = typeof body.email === "string" ? body.email.trim() : "";
 
     if (!email) {
       return NextResponse.json({ error: "Adresse email requise." }, { status: 400 });

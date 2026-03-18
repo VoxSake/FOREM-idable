@@ -13,10 +13,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Fonction désactivée." }, { status: 404 });
     }
 
+    const body = await request.json();
+    const token = typeof body.token === "string" ? body.token.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
     const rateLimit = await checkRateLimit({
       scope: "auth-reset-password",
-      limit: 10,
-      windowMs: 10 * 60 * 1000,
+      limit: 5,
+      windowMs: 30 * 60 * 1000,
+      identifier: token || null,
     });
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -24,10 +29,6 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-
-    const body = await request.json();
-    const token = typeof body.token === "string" ? body.token.trim() : "";
-    const password = typeof body.password === "string" ? body.password : "";
 
     if (!token || password.length < 8) {
       return NextResponse.json(

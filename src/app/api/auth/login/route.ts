@@ -8,10 +8,15 @@ export async function POST(request: NextRequest) {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
 
+    const body = await request.json();
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
     const rateLimit = await checkRateLimit({
       scope: "auth-login",
-      limit: 10,
-      windowMs: 5 * 60 * 1000,
+      limit: 5,
+      windowMs: 10 * 60 * 1000,
+      identifier: email || null,
     });
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -19,10 +24,6 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-
-    const body = await request.json();
-    const email = typeof body.email === "string" ? body.email.trim() : "";
-    const password = typeof body.password === "string" ? body.password : "";
 
     const user = await authenticateUser(email, password);
     if (!user) {

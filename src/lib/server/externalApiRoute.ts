@@ -18,7 +18,7 @@ const USER_ROLES: UserRole[] = ["user", "coach", "admin"];
 export async function requireExternalApiAccess() {
   const rateLimit = await checkRateLimit({
     scope: "external-api",
-    limit: 2000,
+    limit: 600,
     windowMs: 60 * 1000,
   });
   if (!rateLimit.allowed) {

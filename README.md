@@ -52,6 +52,7 @@ cp env.example .env.local
 - `PASSWORD_RESET_ENABLED=false` par défaut
 - `NEXT_PUBLIC_PASSWORD_RESET_ENABLED=false` par défaut
 - `APP_BASE_URL=...`
+- `REDIS_URL=...` pour un rate limit partagé entre instances
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=...`
 - `RESEND_REPLY_TO=...`

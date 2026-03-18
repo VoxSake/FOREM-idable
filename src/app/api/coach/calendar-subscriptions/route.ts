@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const rateLimit = await checkRateLimit({
       scope: "coach-calendar-subscriptions",
-      limit: 60,
+      limit: 30,
       windowMs: 60 * 1000,
     });
     if (!rateLimit.allowed) {

@@ -9,7 +9,7 @@ export async function GET(
   try {
     const rateLimit = await checkRateLimit({
       scope: "calendar-subscriptions",
-      limit: 240,
+      limit: 120,
       windowMs: 60 * 1000,
     });
     if (!rateLimit.allowed) {

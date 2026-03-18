@@ -8,10 +8,17 @@ export async function POST(request: NextRequest) {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
 
+    const body = await request.json();
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
+    const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
+
     const rateLimit = await checkRateLimit({
       scope: "auth-register",
-      limit: 6,
-      windowMs: 10 * 60 * 1000,
+      limit: 3,
+      windowMs: 60 * 60 * 1000,
+      identifier: email || null,
     });
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -19,12 +26,6 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-
-    const body = await request.json();
-    const email = typeof body.email === "string" ? body.email.trim() : "";
-    const password = typeof body.password === "string" ? body.password : "";
-    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
-    const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
 
     if (!email || !firstName || !lastName || !password || password.length < 8) {
       return NextResponse.json(
