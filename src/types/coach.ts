@@ -7,6 +7,7 @@ export interface CoachGroupMember {
   firstName: string;
   lastName: string;
   role: UserRole;
+  lastSeenAt?: string | null;
 }
 
 export interface CoachGroupSummary {
@@ -16,6 +17,8 @@ export interface CoachGroupSummary {
   createdBy: {
     id: number;
     email: string;
+    firstName: string;
+    lastName: string;
   };
   managerCoachId: number | null;
   members: CoachGroupMember[];

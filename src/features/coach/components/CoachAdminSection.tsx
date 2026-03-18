@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getCoachUserDisplayName } from "@/features/coach/utils";
+import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 
 interface CoachAdminSectionProps {
@@ -85,6 +85,12 @@ export function CoachAdminSection({
                   {entry.groupNames.length > 0
                     ? `Groupes: ${entry.groupNames.join(" • ")}`
                     : "Aucun groupe attribué"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Dernière connexion: {formatCoachDate(entry.lastSeenAt, true)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Dernière action coach: {formatCoachDate(entry.lastCoachActionAt, true)}
                 </p>
               </div>
               <Button

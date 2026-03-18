@@ -54,6 +54,7 @@ function toGroupParticipant(input: {
   first_name: string;
   last_name: string;
   role: UserRole;
+  last_seen_at?: string | null;
 }) {
   return {
     id: input.id,
@@ -61,6 +62,7 @@ function toGroupParticipant(input: {
     firstName: input.first_name,
     lastName: input.last_name,
     role: input.role,
+    lastSeenAt: input.last_seen_at ?? null,
   };
 }
 
@@ -226,6 +228,8 @@ export async function getCoachDashboard(
       created_at: string;
       created_by: number;
       created_by_email: string;
+      created_by_first_name: string;
+      created_by_last_name: string;
       manager_coach_user_id: number | null;
     }>(
       `SELECT coach_groups.id,
@@ -233,7 +237,9 @@ export async function getCoachDashboard(
               coach_groups.created_at,
               coach_groups.created_by,
               coach_groups.manager_coach_user_id,
-              users.email AS created_by_email
+              users.email AS created_by_email,
+              users.first_name AS created_by_first_name,
+              users.last_name AS created_by_last_name
        FROM coach_groups
        INNER JOIN users ON users.id = coach_groups.created_by
        ORDER BY coach_groups.name ASC, coach_groups.created_at DESC`
@@ -263,13 +269,15 @@ export async function getCoachDashboard(
       first_name: string;
       last_name: string;
       role: UserRole;
+      last_seen_at: string | null;
     }>(
       `SELECT coach_group_coaches.group_id,
               users.id AS user_id,
               users.email,
               users.first_name,
               users.last_name,
-              users.role
+              users.role,
+              users.last_seen_at
        FROM coach_group_coaches
        INNER JOIN users ON users.id = coach_group_coaches.user_id
        ORDER BY users.last_name ASC, users.first_name ASC, users.email ASC`
@@ -295,6 +303,8 @@ export async function getCoachDashboard(
       createdBy: {
         id: row.created_by,
         email: row.created_by_email,
+        firstName: row.created_by_first_name,
+        lastName: row.created_by_last_name,
       },
       managerCoachId: row.manager_coach_user_id,
       members: [],
@@ -315,6 +325,7 @@ export async function getCoachDashboard(
         first_name: row.first_name,
         last_name: row.last_name,
         role: row.role,
+        last_seen_at: row.last_seen_at,
       })
     );
   }

@@ -8,7 +8,7 @@ function sortGroupParticipantsByEmail<T extends { email: string }>(entries: T[])
 }
 
 function toGroupParticipant(
-  input: Pick<CoachUserSummary, "id" | "email" | "firstName" | "lastName" | "role">
+  input: Pick<CoachUserSummary, "id" | "email" | "firstName" | "lastName" | "role" | "lastSeenAt">
 ) {
   return {
     id: input.id,
@@ -16,6 +16,7 @@ function toGroupParticipant(
     firstName: input.firstName,
     lastName: input.lastName,
     role: input.role,
+    lastSeenAt: input.lastSeenAt,
   };
 }
 
@@ -278,9 +279,14 @@ export function insertGroupIntoDashboard(
     createdBy: {
       id: number;
       email: string;
+      firstName: string;
+      lastName: string;
     };
     managerCoachId: number | null;
-    initialCoach?: Pick<CoachUserSummary, "id" | "email" | "firstName" | "lastName" | "role"> | null;
+    initialCoach?: Pick<
+      CoachUserSummary,
+      "id" | "email" | "firstName" | "lastName" | "role" | "lastSeenAt"
+    > | null;
   }
 ): CoachDashboardData {
   return {
@@ -396,6 +402,7 @@ export function updateUserRoleInDashboard(
                 firstName: updatedUser.firstName,
                 lastName: updatedUser.lastName,
                 role: "coach" as UserRole,
+                lastSeenAt: updatedUser.lastSeenAt,
               },
             ].sort((left, right) => left.email.localeCompare(right.email, "fr"))
           : dashboard.availableCoaches.map((entry) =>

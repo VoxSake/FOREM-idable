@@ -74,7 +74,7 @@ export interface CoachGroupedUserGroup {
   id: number;
   name: string;
   createdById: number | null;
-  createdByEmail: string | null;
+  createdByLabel: string | null;
   managerCoachId: number | null;
   canAddMembers: boolean;
   canManageCoaches: boolean;

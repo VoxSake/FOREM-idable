@@ -176,9 +176,14 @@ export function useCoachDashboard() {
     createdBy: {
       id: number;
       email: string;
+      firstName: string;
+      lastName: string;
     };
     managerCoachId: number | null;
-    initialCoach?: Pick<CoachUserSummary, "id" | "email" | "firstName" | "lastName" | "role"> | null;
+    initialCoach?: Pick<
+      CoachUserSummary,
+      "id" | "email" | "firstName" | "lastName" | "role" | "lastSeenAt"
+    > | null;
   }) => {
     setDashboard((current) => {
       if (!current) return current;
@@ -329,6 +334,8 @@ export function useCoachDashboard() {
       createdBy: {
         id: user?.id ?? 0,
         email: creatorEmail,
+        firstName: user?.firstName ?? "",
+        lastName: user?.lastName ?? "",
       },
       managerCoachId: creatorRole === "coach" ? user?.id ?? null : null,
       initialCoach:
@@ -339,6 +346,7 @@ export function useCoachDashboard() {
               firstName: user?.firstName ?? "",
               lastName: user?.lastName ?? "",
               role: "coach",
+              lastSeenAt: null,
             }
           : null,
     });

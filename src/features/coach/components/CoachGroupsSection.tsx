@@ -20,8 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActivityMeta";
-import { getCoachUserDisplayName } from "@/features/coach/utils";
+import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
 import {
   CoachGroupedUserGroup,
   CoachRemoveCoachTarget,
@@ -182,49 +183,54 @@ export function CoachGroupsSection({
                   {group.kind === "standard"
                     ? ` • ${group.coaches.length} coach${group.coaches.length > 1 ? "s" : ""}`
                     : ""}
-                  {group.createdByEmail ? ` • créé par ${group.createdByEmail}` : ""}
+                  {group.createdByLabel ? ` • créé par ${group.createdByLabel}` : ""}
                 </p>
                 {group.kind === "standard" ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <TooltipProvider>
+                    <div className="mt-2 flex flex-wrap gap-2">
                     {group.coaches.length > 0 ? (
                       group.coaches.map((coach) => (
-                        <Badge
-                          key={`${group.id}-coach-${coach.id}`}
-                          variant="secondary"
-                          className="flex items-center gap-2 py-1"
-                        >
-                          <span className="max-w-52 truncate">
-                            {getCoachUserDisplayName(coach)}
-                          </span>
-                          {group.managerCoachId === coach.id ? (
-                            <span className="rounded-full bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground">
-                              Manager
-                            </span>
-                          ) : null}
-                          {canRemoveAssignedCoach(group.managerCoachId, coach.id) ? (
-                            <button
-                              type="button"
-                              className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onRemoveCoach({
-                                  groupId: group.id,
-                                  userId: coach.id,
-                                  userEmail: coach.email,
-                                  groupName: group.name,
-                                });
-                              }}
-                              aria-label={`Retirer ${coach.email} du groupe ${group.name}`}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          ) : null}
-                        </Badge>
+                        <Tooltip key={`${group.id}-coach-${coach.id}`}>
+                          <TooltipTrigger asChild>
+                            <Badge variant="secondary" className="flex items-center gap-2 py-1">
+                              <span className="max-w-52 truncate">
+                                {getCoachUserDisplayName(coach)}
+                              </span>
+                              {group.managerCoachId === coach.id ? (
+                                <span className="rounded-full bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground">
+                                  Manager
+                                </span>
+                              ) : null}
+                              {canRemoveAssignedCoach(group.managerCoachId, coach.id) ? (
+                                <button
+                                  type="button"
+                                  className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onRemoveCoach({
+                                      groupId: group.id,
+                                      userId: coach.id,
+                                      userEmail: coach.email,
+                                      groupName: group.name,
+                                    });
+                                  }}
+                                  aria-label={`Retirer ${coach.email} du groupe ${group.name}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              ) : null}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={6}>
+                            Dernière connexion: {formatCoachDate(coach.lastSeenAt, true)}
+                          </TooltipContent>
+                        </Tooltip>
                       ))
                     ) : (
                       <span className="text-xs text-muted-foreground">Aucun coach attribué.</span>
                     )}
-                  </div>
+                    </div>
+                  </TooltipProvider>
                 ) : null}
               </div>
               <div className="flex w-full flex-wrap gap-2 sm:w-auto">
