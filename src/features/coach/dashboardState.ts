@@ -3,6 +3,22 @@ import { JobApplication } from "@/types/application";
 import { UserRole } from "@/types/auth";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 
+function sortGroupParticipantsByEmail<T extends { email: string }>(entries: T[]) {
+  return [...entries].sort((left, right) => left.email.localeCompare(right.email, "fr"));
+}
+
+function toGroupParticipant(
+  input: Pick<CoachUserSummary, "id" | "email" | "firstName" | "lastName" | "role">
+) {
+  return {
+    id: input.id,
+    email: input.email,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    role: input.role,
+  };
+}
+
 export function summarizeUserApplications(
   entry: CoachUserSummary,
   nextApplications: JobApplication[]
@@ -109,16 +125,10 @@ export function addMembershipToDashboard(
     group.id === groupId && !group.members.some((member) => member.id === userId)
       ? {
           ...group,
-          members: [
+          members: sortGroupParticipantsByEmail([
             ...group.members,
-            {
-              id: targetUser.id,
-              email: targetUser.email,
-              firstName: targetUser.firstName,
-              lastName: targetUser.lastName,
-              role: targetUser.role,
-            },
-          ].sort((left, right) => left.email.localeCompare(right.email, "fr")),
+            toGroupParticipant(targetUser),
+          ]),
         }
       : group
   );
@@ -141,6 +151,121 @@ export function addMembershipToDashboard(
     ...dashboard,
     groups: nextGroups,
     users: nextUsers,
+  };
+}
+
+export function addCoachAssignmentToDashboard(
+  dashboard: CoachDashboardData,
+  groupId: number,
+  coachId: number
+): CoachDashboardData {
+  const targetCoach =
+    dashboard.availableCoaches.find((entry) => entry.id === coachId) ??
+    dashboard.users.find((entry) => entry.id === coachId && entry.role === "coach");
+
+  if (!targetCoach) {
+    return dashboard;
+  }
+
+  return {
+    ...dashboard,
+    groups: dashboard.groups.map((group) =>
+      group.id === groupId && !group.coaches.some((entry) => entry.id === coachId)
+        ? {
+            ...group,
+            coaches: sortGroupParticipantsByEmail([
+              ...group.coaches,
+              toGroupParticipant(targetCoach),
+            ]),
+          }
+        : group
+    ),
+  };
+}
+
+export function removeCoachAssignmentFromDashboard(
+  dashboard: CoachDashboardData,
+  groupId: number,
+  coachId: number
+): CoachDashboardData {
+  return {
+    ...dashboard,
+    groups: dashboard.groups.map((group) =>
+      group.id === groupId
+        ? {
+            ...group,
+            managerCoachId: group.managerCoachId === coachId ? null : group.managerCoachId,
+            coaches: group.coaches.filter((entry) => entry.id !== coachId),
+          }
+        : group
+    ),
+  };
+}
+
+export function setGroupManagerInDashboard(
+  dashboard: CoachDashboardData,
+  groupId: number,
+  coachId: number
+): CoachDashboardData {
+  return {
+    ...dashboard,
+    groups: dashboard.groups.map((group) =>
+      group.id === groupId
+        ? {
+            ...group,
+            managerCoachId: coachId,
+          }
+        : group
+    ),
+  };
+}
+
+export function updateManagedUserInDashboard(
+  dashboard: CoachDashboardData,
+  userId: number,
+  patch: Pick<CoachUserSummary, "firstName" | "lastName">
+): CoachDashboardData {
+  return {
+    ...dashboard,
+    users: dashboard.users.map((entry) =>
+      entry.id === userId
+        ? {
+            ...entry,
+            firstName: patch.firstName,
+            lastName: patch.lastName,
+          }
+        : entry
+    ),
+    groups: dashboard.groups.map((group) => ({
+      ...group,
+      members: group.members.map((entry) =>
+        entry.id === userId
+          ? {
+              ...entry,
+              firstName: patch.firstName,
+              lastName: patch.lastName,
+            }
+          : entry
+      ),
+      coaches: group.coaches.map((entry) =>
+        entry.id === userId
+          ? {
+              ...entry,
+              firstName: patch.firstName,
+              lastName: patch.lastName,
+            }
+          : entry
+      ),
+    })),
+    availableCoaches: dashboard.availableCoaches.map((entry) =>
+      entry.id === userId
+        ? {
+            ...entry,
+            firstName: patch.firstName,
+            lastName: patch.lastName,
+          }
+        : entry
+    ),
   };
 }
 

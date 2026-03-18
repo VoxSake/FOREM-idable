@@ -14,9 +14,13 @@ import {
 } from "@/features/coach/coachDashboardApi";
 import {
   addMembershipToDashboard,
+  addCoachAssignmentToDashboard,
   applyApplicationUpdateToDashboard,
   removeApplicationFromDashboard,
+  removeCoachAssignmentFromDashboard,
   removeMembershipFromDashboard,
+  setGroupManagerInDashboard,
+  updateManagedUserInDashboard,
   updateUserRoleInDashboard,
 } from "@/features/coach/dashboardState";
 import { ApiKeySummary } from "@/types/externalApi";
@@ -124,10 +128,41 @@ export function useCoachDashboard() {
     });
   };
 
+  const addCoachLocally = (groupId: number, coachId: number) => {
+    setDashboard((current) => {
+      if (!current) return current;
+      return addCoachAssignmentToDashboard(current, groupId, coachId);
+    });
+  };
+
+  const removeCoachLocally = (groupId: number, coachId: number) => {
+    setDashboard((current) => {
+      if (!current) return current;
+      return removeCoachAssignmentFromDashboard(current, groupId, coachId);
+    });
+  };
+
+  const setGroupManagerLocally = (groupId: number, coachId: number) => {
+    setDashboard((current) => {
+      if (!current) return current;
+      return setGroupManagerInDashboard(current, groupId, coachId);
+    });
+  };
+
   const updateUserRoleLocally = (userId: number, nextRole: "user" | "coach" | "admin") => {
     setDashboard((current) => {
       if (!current) return current;
       return updateUserRoleInDashboard(current, userId, nextRole);
+    });
+  };
+
+  const updateManagedUserLocally = (
+    userId: number,
+    patch: Pick<CoachUserSummary, "firstName" | "lastName">
+  ) => {
+    setDashboard((current) => {
+      if (!current) return current;
+      return updateManagedUserInDashboard(current, userId, patch);
     });
   };
 
@@ -265,6 +300,7 @@ export function useCoachDashboard() {
   };
 
   const promoteCoach = async (userId: number) => {
+    updateUserRoleLocally(userId, "coach");
     const response = await fetch("/api/admin/coaches", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -272,22 +308,19 @@ export function useCoachDashboard() {
     });
 
     if (!response.ok) {
+      updateUserRoleLocally(userId, "user");
       setFeedback("Promotion coach impossible.");
       return false;
     }
 
     setUndoAction(null);
     setIsPromoteCoachOpen(false);
-    await loadDashboard();
+    setFeedback("Utilisateur promu coach.");
     return true;
   };
 
   const addMember = async (groupId: number, userId: number) => {
-    if (groupId === -2) {
-      await promoteCoach(userId);
-      return;
-    }
-
+    addMembershipLocally(groupId, userId);
     const response = await fetch(`/api/coach/groups/${groupId}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -295,15 +328,18 @@ export function useCoachDashboard() {
     });
 
     if (!response.ok) {
+      removeMembershipLocally(groupId, userId);
       setFeedback("Ajout au groupe impossible.");
       return;
     }
 
     setUndoAction(null);
-    await loadDashboard();
+    setMemberPickerGroupId(null);
+    setFeedback("Membre ajouté au groupe.");
   };
 
   const addCoach = async (groupId: number, userId: number) => {
+    addCoachLocally(groupId, userId);
     const response = await fetch(`/api/coach/groups/${groupId}/coaches`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -311,15 +347,20 @@ export function useCoachDashboard() {
     });
 
     if (!response.ok) {
+      removeCoachLocally(groupId, userId);
       setFeedback("Attribution du coach impossible.");
       return;
     }
 
     setUndoAction(null);
-    await loadDashboard();
+    setCoachPickerGroupId(null);
+    setFeedback("Coach attribué au groupe.");
   };
 
   const setGroupManager = async (groupId: number, userId: number) => {
+    const previousManagerId =
+      dashboard?.groups.find((entry) => entry.id === groupId)?.managerCoachId ?? null;
+    setGroupManagerLocally(groupId, userId);
     const response = await fetch(`/api/coach/groups/${groupId}/manager`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -327,13 +368,27 @@ export function useCoachDashboard() {
     });
 
     if (!response.ok) {
+      setDashboard((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          groups: current.groups.map((entry) =>
+            entry.id === groupId
+              ? {
+                  ...entry,
+                  managerCoachId: previousManagerId,
+                }
+              : entry
+          ),
+        };
+      });
       setFeedback("Définition du manager impossible.");
       return;
     }
 
     setManagerPickerGroupId(null);
     setUndoAction(null);
-    await loadDashboard();
+    setFeedback("Manager du groupe mis à jour.");
   };
 
   const removeMember = async (groupId: number, userId: number) => {
@@ -365,18 +420,24 @@ export function useCoachDashboard() {
   };
 
   const removeAssignedCoach = async (groupId: number, userId: number) => {
+    const previousManagerId =
+      dashboard?.groups.find((entry) => entry.id === groupId)?.managerCoachId ?? null;
+    removeCoachLocally(groupId, userId);
     const response = await fetch(`/api/coach/groups/${groupId}/coaches?userId=${userId}`, {
       method: "DELETE",
     });
 
     if (!response.ok) {
+      addCoachLocally(groupId, userId);
+      if (previousManagerId) {
+        setGroupManagerLocally(groupId, previousManagerId);
+      }
       setFeedback("Retrait du coach impossible.");
       return;
     }
 
     setUndoAction(null);
     setFeedback("Coach retiré du groupe.");
-    await loadDashboard();
   };
 
   const demoteCoach = async (userId: number) => {
@@ -447,6 +508,10 @@ export function useCoachDashboard() {
       return;
     }
 
+    updateManagedUserLocally(editTarget.userId, {
+      firstName: editedFirstName,
+      lastName: editedLastName,
+    });
     setUndoAction(null);
     setFeedback(`Utilisateur mis à jour: ${editTarget.email}.`);
     setEditTarget(null);
@@ -454,7 +519,6 @@ export function useCoachDashboard() {
     setEditedLastName("");
     setNewPassword("");
     setConfirmNewPassword("");
-    await loadDashboard();
   };
 
   const deleteUser = async () => {
