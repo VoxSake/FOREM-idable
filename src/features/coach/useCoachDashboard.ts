@@ -59,9 +59,11 @@ export function useCoachDashboard() {
   const [removeGroup, setRemoveGroup] = useState<CoachRemoveGroupTarget | null>(null);
   const [editTarget, setEditTarget] = useState<CoachEditTarget | null>(null);
   const [apiKeysTarget, setApiKeysTarget] = useState<CoachApiKeysTarget | null>(null);
+  const [importTargetUserId, setImportTargetUserId] = useState<number | null>(null);
   const [managedApiKeys, setManagedApiKeys] = useState<ApiKeySummary[]>([]);
   const [apiKeysFeedback, setApiKeysFeedback] = useState<string | null>(null);
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
+  const [isImportingApplications, setIsImportingApplications] = useState(false);
   const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<CoachRevokeApiKeyTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
   const [calendarRegenerationTarget, setCalendarRegenerationTarget] =
@@ -298,6 +300,10 @@ export function useCoachDashboard() {
   const recentActivity = useMemo(
     () => buildCoachRecentActivity(dashboard?.users ?? []),
     [dashboard?.users]
+  );
+  const importTargetUser = useMemo(
+    () => dashboard?.users.find((entry) => entry.id === importTargetUserId) ?? null,
+    [dashboard, importTargetUserId]
   );
 
   const totalApplications = dashboard?.users.reduce((sum, entry) => sum + entry.applicationCount, 0) ?? 0;
@@ -852,6 +858,45 @@ export function useCoachDashboard() {
     }
   };
 
+  const importApplicationsForUser = async (
+    userId: number,
+    rows: Array<{
+      company: string;
+      contractType: string;
+      title: string;
+      appliedAt: string;
+      status: string;
+      notes: string;
+    }>
+  ) => {
+    setIsImportingApplications(true);
+
+    const response = await fetch(`/api/coach/users/${userId}/applications`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      importedCount?: number;
+    };
+
+    setIsImportingApplications(false);
+
+    if (!response.ok) {
+      setFeedback(data.error || "Import CSV impossible.");
+      return false;
+    }
+
+    setFeedback(
+      `Import CSV terminé: ${data.importedCount ?? rows.length} candidature${(data.importedCount ?? rows.length) > 1 ? "s" : ""} ajoutée${(data.importedCount ?? rows.length) > 1 ? "s" : ""}.`
+    );
+    setImportTargetUserId(null);
+    await loadDashboard();
+    return true;
+  };
+
   return {
     user,
     isAuthLoading,
@@ -876,9 +921,13 @@ export function useCoachDashboard() {
     setEditTarget,
     apiKeysTarget,
     setApiKeysTarget,
+    importTargetUser,
+    importTargetUserId,
+    setImportTargetUserId,
     managedApiKeys,
     apiKeysFeedback,
     isApiKeysLoading,
+    isImportingApplications,
     revokeApiKeyTarget,
     setRevokeApiKeyTarget,
     deleteUserTarget,
@@ -930,5 +979,6 @@ export function useCoachDashboard() {
     copyAllGroupsCalendarUrl,
     regenerateCalendarUrl,
     undoLastAction,
+    importApplicationsForUser,
   };
 }

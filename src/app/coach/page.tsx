@@ -5,6 +5,7 @@ import { LoaderCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
+import { CoachImportApplicationsDialog } from "@/features/coach/components/CoachImportApplicationsDialog";
 import { CoachPriorityBoard } from "@/features/coach/components/CoachPriorityBoard";
 import { CoachRecentActivity } from "@/features/coach/components/CoachRecentActivity";
 import { CoachGroupsSection } from "@/features/coach/components/CoachGroupsSection";
@@ -157,6 +158,7 @@ export default function CoachPage() {
         }}
         onExport={coach.exportUserApplications}
         onOpenApiKeys={() => void coach.openManagedUserApiKeys()}
+        onOpenImport={() => coach.setImportTargetUserId(coach.selectedUser?.id ?? null)}
         onEdit={() => {
           if (!coach.selectedUser) return;
           coach.setEditTarget({
@@ -271,6 +273,21 @@ export default function CoachPage() {
           }
         }}
         onConfirmCalendarRegeneration={() => void coach.regenerateCalendarUrl()}
+      />
+
+      <CoachImportApplicationsDialog
+        open={Boolean(coach.importTargetUser)}
+        userLabel={coach.importTargetUser ? coach.importTargetUser.email : "ce bénéficiaire"}
+        isImporting={coach.isImportingApplications}
+        onOpenChange={(open) => {
+          if (!open) {
+            coach.setImportTargetUserId(null);
+          }
+        }}
+        onImport={async (rows) => {
+          if (!coach.importTargetUser) return;
+          await coach.importApplicationsForUser(coach.importTargetUser.id, rows);
+        }}
       />
     </div>
   );

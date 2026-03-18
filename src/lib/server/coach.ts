@@ -6,9 +6,11 @@ import {
 } from "@/lib/coachNotes";
 import { getCurrentUser } from "@/lib/server/auth";
 import { db, ensureDatabase } from "@/lib/server/db";
+import { createTrackedApplicationForUser } from "@/lib/server/applications";
 import { CoachNoteAuthor, CoachSharedNote, JobApplication } from "@/types/application";
 import { AuthUser, UserRole } from "@/types/auth";
 import { CoachDashboardData, CoachGroupSummary, CoachUserSummary } from "@/types/coach";
+import { Job } from "@/types/job";
 
 type CoachCapableUser = AuthUser & { role: "coach" | "admin" };
 
@@ -397,4 +399,113 @@ export async function updateCoachApplicationNotes(input: {
   await markCoachAction(input.actor.id);
 
   return normalizeApplicationCoachNotes(nextApplication);
+}
+
+export interface CoachImportedApplicationInput {
+  company: string;
+  contractType?: string;
+  title: string;
+  appliedAt?: string;
+  status?: JobApplication["status"];
+  notes?: string;
+}
+
+function normalizeImportedStatus(value?: string) {
+  const normalized = value?.trim().toLowerCase();
+
+  switch (normalized) {
+    case "en cours":
+    case "encours":
+    case "in progress":
+      return "in_progress" as const;
+    case "relance":
+    case "a relancer":
+    case "à relancer":
+    case "suivi":
+      return "follow_up" as const;
+    case "entretien":
+    case "interview":
+      return "interview" as const;
+    case "refuse":
+    case "refusé":
+    case "refusee":
+    case "refusée":
+    case "rejetee":
+    case "rejetée":
+      return "rejected" as const;
+    case "accepte":
+    case "accepté":
+    case "acceptee":
+    case "acceptée":
+      return "accepted" as const;
+    default:
+      return "in_progress" as const;
+  }
+}
+
+function normalizeImportedDate(value?: string) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const frenchMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})$/);
+  if (frenchMatch) {
+    const [, day, month, year] = frenchMatch;
+    const normalizedYear = year.length === 2 ? `20${year}` : year;
+    const isoCandidate = `${normalizedYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    const parsed = new Date(`${isoCandidate}T00:00:00.000Z`);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+function buildImportedManualJob(input: CoachImportedApplicationInput): Job {
+  const appliedAt = normalizeImportedDate(input.appliedAt) ?? new Date().toISOString();
+  const fingerprint = `${input.company}|${input.title}|${appliedAt}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+
+  return {
+    id: `manual-import-${fingerprint || Math.random().toString(36).slice(2, 8)}`,
+    title: input.title.trim(),
+    company: input.company.trim(),
+    location: "Non précisé",
+    contractType: input.contractType?.trim() || "Non précisé",
+    publicationDate: appliedAt,
+    url: "#",
+    source: "forem",
+  };
+}
+
+export async function importCoachApplicationsForUser(input: {
+  actor: CoachCapableUser;
+  userId: number;
+  rows: CoachImportedApplicationInput[];
+}) {
+  const importedApplications: JobApplication[] = [];
+
+  for (const row of input.rows) {
+    if (!row.company.trim() || !row.title.trim()) {
+      continue;
+    }
+
+    const application = await createTrackedApplicationForUser({
+      userId: input.userId,
+      job: buildImportedManualJob(row),
+      appliedAt: normalizeImportedDate(row.appliedAt),
+      status: normalizeImportedStatus(row.status),
+      notes: row.notes?.trim(),
+    });
+
+    importedApplications.push(application);
+  }
+
+  await markCoachAction(input.actor.id);
+
+  return importedApplications;
 }

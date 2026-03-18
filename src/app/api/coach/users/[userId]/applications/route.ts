@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireCoachAccess, updateCoachApplicationNotes } from "@/lib/server/coach";
+import {
+  importCoachApplicationsForUser,
+  requireCoachAccess,
+  updateCoachApplicationNotes,
+} from "@/lib/server/coach";
 
 export async function PATCH(
   request: NextRequest,
@@ -56,6 +60,57 @@ export async function PATCH(
 
     return NextResponse.json(
       { error: "Impossible de mettre à jour les notes coach." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const viewer = await requireCoachAccess();
+    if (!viewer) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { userId } = await context.params;
+    const body = (await request.json()) as {
+      rows?: Array<{
+        company?: string;
+        contractType?: string;
+        title?: string;
+        appliedAt?: string;
+        status?: string;
+        notes?: string;
+      }>;
+    };
+
+    if (!Array.isArray(body.rows) || body.rows.length === 0) {
+      return NextResponse.json({ error: "Aucune ligne à importer." }, { status: 400 });
+    }
+
+    const importedApplications = await importCoachApplicationsForUser({
+      actor: viewer,
+      userId: Number(userId),
+      rows: body.rows.map((row) => ({
+        company: row.company ?? "",
+        contractType: row.contractType,
+        title: row.title ?? "",
+        appliedAt: row.appliedAt,
+        status: row.status as never,
+        notes: row.notes,
+      })),
+    });
+
+    return NextResponse.json({
+      importedCount: importedApplications.length,
+      applications: importedApplications,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Impossible d'importer le suivi CSV." },
       { status: 500 }
     );
   }

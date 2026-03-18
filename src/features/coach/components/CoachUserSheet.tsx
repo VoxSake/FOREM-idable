@@ -6,6 +6,7 @@ import {
   Download,
   ExternalLink,
   FileKey2,
+  FileSpreadsheet,
   FilePenLine,
   FileText,
   LoaderCircle,
@@ -64,6 +65,7 @@ interface CoachUserSheetProps {
   onOpenChange: (open: boolean) => void;
   onExport: () => void;
   onOpenApiKeys: () => void;
+  onOpenImport: () => void;
   onEdit: () => void;
   onDeleteUser: () => void;
   onSavePrivateCoachNote: (userId: number, jobId: string, content: string) => Promise<boolean>;
@@ -89,6 +91,7 @@ export function CoachUserSheet({
   onOpenChange,
   onExport,
   onOpenApiKeys,
+  onOpenImport,
   onEdit,
   onDeleteUser,
   onSavePrivateCoachNote,
@@ -111,6 +114,7 @@ export function CoachUserSheet({
             savingCoachNoteKey={savingCoachNoteKey}
             onExport={onExport}
             onOpenApiKeys={onOpenApiKeys}
+            onOpenImport={onOpenImport}
             onEdit={onEdit}
             onDeleteUser={onDeleteUser}
             onSavePrivateCoachNote={onSavePrivateCoachNote}
@@ -139,6 +143,7 @@ function CoachUserSheetBody({
   savingCoachNoteKey,
   onExport,
   onOpenApiKeys,
+  onOpenImport,
   onEdit,
   onDeleteUser,
   onSavePrivateCoachNote,
@@ -231,6 +236,10 @@ function CoachUserSheetBody({
                     Clés API
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={onOpenImport}>
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Importer un suivi (CSV)
+                </DropdownMenuItem>
                 {canEditUser && (
                   <DropdownMenuItem onClick={onEdit}>
                     <FilePenLine className="h-4 w-4" />
