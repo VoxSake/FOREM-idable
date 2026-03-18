@@ -117,10 +117,14 @@ export const coachGroups = pgTable(
     createdBy: bigint("created_by", { mode: "number" })
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    managerCoachUserId: bigint("manager_coach_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
     createdByIdx: index("coach_groups_created_by_idx").on(table.createdBy),
+    managerCoachUserIdIdx: index("coach_groups_manager_coach_user_id_idx").on(table.managerCoachUserId),
   })
 );
 

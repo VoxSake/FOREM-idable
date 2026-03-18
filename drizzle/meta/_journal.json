@@ -15,6 +15,13 @@
       "when": 1773856368045,
       "tag": "0001_fair_maginty",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773857590257,
+      "tag": "0002_abandoned_ender_wiggin",
+      "breakpoints": true
     }
   ]
 }

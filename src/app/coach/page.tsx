@@ -78,17 +78,6 @@ export default function CoachPage() {
         totalRejected={coach.totalRejected}
       />
 
-      {coach.user.role === "admin" ? (
-        <CoachAdminSection
-          coaches={coach.managedCoaches}
-          promotableUsers={coach.promotableUsers}
-          isPromoteCoachOpen={coach.isPromoteCoachOpen}
-          onPromoteCoachOpenChange={coach.setIsPromoteCoachOpen}
-          onPromoteCoach={(userId) => void coach.promoteCoach(userId)}
-          onDemoteCoach={(userId) => void coach.demoteCoach(userId)}
-        />
-      ) : null}
-
       {followedUserCount === 0 ? (
         <section className="rounded-2xl border border-dashed bg-card p-6 shadow-sm">
           <h2 className="text-xl font-bold">Aucun bénéficiaire suivi pour l&apos;instant</h2>
@@ -138,6 +127,7 @@ export default function CoachPage() {
           }
           onAddMember={coach.setMemberPickerGroupId}
           onAddCoach={coach.setCoachPickerGroupId}
+          onSetManager={coach.setManagerPickerGroupId}
           onExportGroup={coach.exportGroupApplications}
           onCopyGroupCalendar={(groupId, groupName) =>
             void coach.copyGroupCalendarUrl(groupId, groupName)
@@ -227,6 +217,10 @@ export default function CoachPage() {
         assignableCoaches={coach.assignableCoaches}
         onCoachPickerOpenChange={(open) => !open && coach.setCoachPickerGroupId(null)}
         onCoachSelect={(userId) => void coach.addCoach(coach.coachPickerGroup?.id ?? 0, userId)}
+        managerPickerGroup={coach.managerPickerGroup}
+        assignableManagers={coach.assignableManagers}
+        onManagerPickerOpenChange={(open) => !open && coach.setManagerPickerGroupId(null)}
+        onManagerSelect={(userId) => void coach.setGroupManager(coach.managerPickerGroup?.id ?? 0, userId)}
         removeMembership={coach.removeMembership}
         onRemoveMembershipOpenChange={(open) => !open && coach.setRemoveMembership(null)}
         onConfirmRemoveMembership={() => {
@@ -302,8 +296,19 @@ export default function CoachPage() {
             coach.setCalendarRegenerationTarget(null);
           }
         }}
-        onConfirmCalendarRegeneration={() => void coach.regenerateCalendarUrl()}
+          onConfirmCalendarRegeneration={() => void coach.regenerateCalendarUrl()}
       />
+
+      {coach.user.role === "admin" ? (
+        <CoachAdminSection
+          coaches={coach.managedCoaches}
+          promotableUsers={coach.promotableUsers}
+          isPromoteCoachOpen={coach.isPromoteCoachOpen}
+          onPromoteCoachOpenChange={coach.setIsPromoteCoachOpen}
+          onPromoteCoach={(userId) => void coach.promoteCoach(userId)}
+          onDemoteCoach={(userId) => void coach.demoteCoach(userId)}
+        />
+      ) : null}
 
       <CoachImportApplicationsDialog
         open={Boolean(coach.importTargetUser)}

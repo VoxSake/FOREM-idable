@@ -1,5 +1,6 @@
 import {
   CoachGroupedUserGroup,
+  CoachManagerPickerGroup,
   CoachMemberPickerGroup,
   CoachUserFilter,
 } from "@/features/coach/types";
@@ -11,6 +12,20 @@ export function buildMemberPickerGroup(
   memberPickerGroupId: number | null
 ): CoachMemberPickerGroup | null {
   return groups?.find((group) => group.id === memberPickerGroupId) ?? null;
+}
+
+export function buildManagerPickerGroup(
+  groups: CoachGroupSummary[] | undefined,
+  groupId: number | null
+): CoachManagerPickerGroup | null {
+  const group = groups?.find((entry) => entry.id === groupId);
+  if (!group) return null;
+
+  return {
+    id: group.id,
+    name: group.name,
+    coaches: group.coaches,
+  };
 }
 
 function getMostRelevantActivityTime(user: CoachUserSummary) {
@@ -96,6 +111,7 @@ export function buildGroupedUsers(input: {
       name: group.name,
       createdById: group.createdBy.id,
       createdByEmail: group.createdBy.email,
+      managerCoachId: group.managerCoachId,
       canAddMembers: true,
       canManageCoaches: true,
       kind: "standard" as const,
@@ -126,6 +142,7 @@ export function buildGroupedUsers(input: {
       name: "Aucun groupe attribué",
       createdById: null,
       createdByEmail: null,
+      managerCoachId: null,
       canAddMembers: false,
       canManageCoaches: false,
       kind: "ungrouped",

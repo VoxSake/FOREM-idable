@@ -44,6 +44,7 @@ interface CoachGroupsSectionProps {
   onRequestRegenerateAllGroupsCalendar: () => void;
   onAddMember: (groupId: number) => void;
   onAddCoach: (groupId: number) => void;
+  onSetManager: (groupId: number) => void;
   onExportGroup: (groupName: string, members: CoachUserSummary[]) => void;
   onCopyGroupCalendar: (groupId: number, groupName: string) => void;
   onRequestRegenerateGroupCalendar: (groupId: number, groupName: string) => void;
@@ -67,6 +68,7 @@ export function CoachGroupsSection({
   onRequestRegenerateAllGroupsCalendar,
   onAddMember,
   onAddCoach,
+  onSetManager,
   onExportGroup,
   onCopyGroupCalendar,
   onRequestRegenerateGroupCalendar,
@@ -85,8 +87,8 @@ export function CoachGroupsSection({
     { value: "accepted", label: "Acceptées" },
     { value: "rejected", label: "Refusées" },
   ];
-  const canRemoveAssignedCoach = (groupCreatedById: number) =>
-    currentUserRole === "admin" || groupCreatedById === currentUserId;
+  const canManageAssignedCoaches = (managerCoachId: number | null) =>
+    currentUserRole === "admin" || managerCoachId === currentUserId;
 
   return (
     <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
@@ -192,7 +194,12 @@ export function CoachGroupsSection({
                           <span className="max-w-52 truncate">
                             {getCoachUserDisplayName(coach)}
                           </span>
-                          {canRemoveAssignedCoach(group.createdById ?? 0) ? (
+                          {group.managerCoachId === coach.id ? (
+                            <span className="rounded-full bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground">
+                              Manager
+                            </span>
+                          ) : null}
+                          {canManageAssignedCoaches(group.managerCoachId) ? (
                             <button
                               type="button"
                               className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
@@ -263,11 +270,21 @@ export function CoachGroupsSection({
                           </DropdownMenuItem>
                         </>
                       )}
-                      {group.kind === "standard" && group.canManageCoaches ? (
-                        <DropdownMenuItem onClick={() => onAddCoach(group.id)}>
-                          <UserRoundPlus className="h-4 w-4" />
-                          Attribuer un coach
-                        </DropdownMenuItem>
+                      {group.kind === "standard" &&
+                      group.canManageCoaches &&
+                      canManageAssignedCoaches(group.managerCoachId) ? (
+                        <>
+                          <DropdownMenuItem onClick={() => onAddCoach(group.id)}>
+                            <UserRoundPlus className="h-4 w-4" />
+                            Attribuer un coach
+                          </DropdownMenuItem>
+                          {currentUserRole === "admin" ? (
+                            <DropdownMenuItem onClick={() => onSetManager(group.id)}>
+                              <UserRoundPlus className="h-4 w-4" />
+                              Définir le manager
+                            </DropdownMenuItem>
+                          ) : null}
+                        </>
                       ) : null}
                       {group.kind === "standard" && (
                         <>

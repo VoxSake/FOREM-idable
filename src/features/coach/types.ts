@@ -25,6 +25,12 @@ export interface CoachRemoveCoachTarget {
   groupName: string;
 }
 
+export interface CoachManagerPickerGroup {
+  id: number;
+  name: string;
+  coaches: CoachGroupSummary["coaches"];
+}
+
 export interface CoachRemoveGroupTarget {
   groupId: number;
   groupName: string;
@@ -69,6 +75,7 @@ export interface CoachGroupedUserGroup {
   name: string;
   createdById: number | null;
   createdByEmail: string | null;
+  managerCoachId: number | null;
   canAddMembers: boolean;
   canManageCoaches: boolean;
   kind: CoachGroupedGroupKind;

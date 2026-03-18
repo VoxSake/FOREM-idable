@@ -40,6 +40,7 @@ import {
   buildCoachRecentActivity,
   buildGroupedUsers,
   buildGroupExportRows,
+  buildManagerPickerGroup,
   buildMemberPickerGroup,
   buildUserExportRows,
 } from "@/features/coach/utils";
@@ -70,6 +71,7 @@ export function useCoachDashboard() {
   const [isPromoteCoachOpen, setIsPromoteCoachOpen] = useState(false);
   const [memberPickerGroupId, setMemberPickerGroupId] = useState<number | null>(null);
   const [coachPickerGroupId, setCoachPickerGroupId] = useState<number | null>(null);
+  const [managerPickerGroupId, setManagerPickerGroupId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [removeMembership, setRemoveMembership] = useState<CoachRemoveMembershipTarget | null>(null);
   const [removeCoach, setRemoveCoach] = useState<CoachRemoveCoachTarget | null>(null);
@@ -174,6 +176,10 @@ export function useCoachDashboard() {
     () => buildMemberPickerGroup(dashboard?.groups, coachPickerGroupId),
     [dashboard?.groups, coachPickerGroupId]
   );
+  const managerPickerGroup = useMemo(
+    () => buildManagerPickerGroup(dashboard?.groups, managerPickerGroupId),
+    [dashboard?.groups, managerPickerGroupId]
+  );
 
   const assignableUsers = useMemo(() => {
     if (!dashboard || !memberPickerGroup) return [];
@@ -187,6 +193,11 @@ export function useCoachDashboard() {
     const assignedCoachIds = new Set(coachPickerGroup.coaches.map((entry) => entry.id));
     return dashboard.availableCoaches.filter((entry) => !assignedCoachIds.has(entry.id));
   }, [coachPickerGroup, dashboard]);
+
+  const assignableManagers = useMemo(
+    () => managerPickerGroup?.coaches ?? [],
+    [managerPickerGroup]
+  );
 
   const groupedUsers: CoachGroupedUserGroup[] = useMemo(() => {
     if (!dashboard) return [];
@@ -304,6 +315,23 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction(null);
+    await loadDashboard();
+  };
+
+  const setGroupManager = async (groupId: number, userId: number) => {
+    const response = await fetch(`/api/coach/groups/${groupId}/manager`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      setFeedback("Définition du manager impossible.");
+      return;
+    }
+
+    setManagerPickerGroupId(null);
     setUndoAction(null);
     await loadDashboard();
   };
@@ -875,6 +903,8 @@ export function useCoachDashboard() {
     setMemberPickerGroupId,
     coachPickerGroupId,
     setCoachPickerGroupId,
+    managerPickerGroupId,
+    setManagerPickerGroupId,
     selectedUserId,
     setSelectedUserId,
     removeMembership,
@@ -918,8 +948,10 @@ export function useCoachDashboard() {
     canManageSelectedUserApiKeys,
     memberPickerGroup,
     coachPickerGroup,
+    managerPickerGroup,
     assignableUsers,
     assignableCoaches,
+    assignableManagers,
     groupedUsers,
     promotableUsers,
     managedCoaches,
@@ -934,6 +966,7 @@ export function useCoachDashboard() {
     promoteCoach,
     addMember,
     addCoach,
+    setGroupManager,
     removeMember,
     removeAssignedCoach,
     demoteCoach,

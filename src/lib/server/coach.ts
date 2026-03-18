@@ -93,10 +93,7 @@ export async function canManageCoachGroup(actor: CoachCapableUser, groupId: numb
   return Boolean(result.rows[0]?.exists);
 }
 
-export async function canRemoveCoachAssignmentFromGroup(
-  actor: CoachCapableUser,
-  groupId: number
-) {
+export async function canManageCoachAssignments(actor: CoachCapableUser, groupId: number) {
   if (actor.role === "admin") {
     return true;
   }
@@ -104,15 +101,22 @@ export async function canRemoveCoachAssignmentFromGroup(
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  const result = await db.query<{ created_by: number | null }>(
-    `SELECT created_by
+  const result = await db.query<{ manager_coach_user_id: number | null }>(
+    `SELECT manager_coach_user_id
      FROM coach_groups
      WHERE id = $1
      LIMIT 1`,
     [groupId]
   );
 
-  return result.rows[0]?.created_by === actor.id;
+  return result.rows[0]?.manager_coach_user_id === actor.id;
+}
+
+export async function canRemoveCoachAssignmentFromGroup(
+  actor: CoachCapableUser,
+  groupId: number
+) {
+  return canManageCoachAssignments(actor, groupId);
 }
 
 async function assertCanManageCoachGroup(actor: CoachCapableUser, groupId: number) {
@@ -216,11 +220,13 @@ export async function getCoachDashboard(
       created_at: string;
       created_by: number;
       created_by_email: string;
+      manager_coach_user_id: number | null;
     }>(
       `SELECT coach_groups.id,
               coach_groups.name,
               coach_groups.created_at,
               coach_groups.created_by,
+              coach_groups.manager_coach_user_id,
               users.email AS created_by_email
        FROM coach_groups
        INNER JOIN users ON users.id = coach_groups.created_by
@@ -284,6 +290,7 @@ export async function getCoachDashboard(
         id: row.created_by,
         email: row.created_by_email,
       },
+      managerCoachId: row.manager_coach_user_id,
       members: [],
       coaches: [],
     });
@@ -411,10 +418,10 @@ export async function createCoachGroup(name: string, actor: CoachCapableUser) {
   }
 
   const result = await db.query<{ id: number }>(
-    `INSERT INTO coach_groups (name, created_by)
-     VALUES ($1, $2)
+    `INSERT INTO coach_groups (name, created_by, manager_coach_user_id)
+     VALUES ($1, $2, $3)
      RETURNING id`,
-    [trimmed, actor.id]
+    [trimmed, actor.id, actor.role === "coach" ? actor.id : null]
   );
 
   if (actor.role === "coach") {
@@ -506,6 +513,12 @@ export async function setUserRole(userId: number, role: UserRole, actorId?: numb
        WHERE user_id = $1`,
       [userId]
     );
+    await db.query(
+      `UPDATE coach_groups
+       SET manager_coach_user_id = NULL
+       WHERE manager_coach_user_id = $1`,
+      [userId]
+    );
   }
 
   if (actorId) {
@@ -521,7 +534,10 @@ export async function addCoachToGroup(
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  await assertCanManageCoachGroup(actor, groupId);
+  const allowed = await canManageCoachAssignments(actor, groupId);
+  if (!allowed) {
+    throw new Error("Forbidden");
+  }
 
   const userResult = await db.query<{ role: UserRole }>(
     `SELECT role
@@ -562,6 +578,48 @@ export async function removeCoachFromGroup(
     `DELETE FROM coach_group_coaches
      WHERE group_id = $1
        AND user_id = $2`,
+    [groupId, coachUserId]
+  );
+
+  await db.query(
+    `UPDATE coach_groups
+     SET manager_coach_user_id = NULL
+     WHERE id = $1
+       AND manager_coach_user_id = $2`,
+    [groupId, coachUserId]
+  );
+
+  await markCoachAction(actor.id);
+}
+
+export async function setCoachGroupManager(
+  groupId: number,
+  coachUserId: number,
+  actor: AuthUser & { role: "admin" }
+) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const membershipResult = await db.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM coach_group_coaches
+       INNER JOIN users ON users.id = coach_group_coaches.user_id
+       WHERE coach_group_coaches.group_id = $1
+         AND coach_group_coaches.user_id = $2
+         AND users.role = 'coach'
+     ) AS exists`,
+    [groupId, coachUserId]
+  );
+
+  if (!membershipResult.rows[0]?.exists) {
+    throw new Error("Coach assignment required");
+  }
+
+  await db.query(
+    `UPDATE coach_groups
+     SET manager_coach_user_id = $2
+     WHERE id = $1`,
     [groupId, coachUserId]
   );
 

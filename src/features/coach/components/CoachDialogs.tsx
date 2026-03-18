@@ -17,6 +17,7 @@ import {
   CoachCalendarRegenerationTarget,
   CoachDeleteUserTarget,
   CoachEditTarget,
+  CoachManagerPickerGroup,
   CoachMemberPickerGroup,
   CoachRevokeApiKeyTarget,
   CoachRemoveGroupTarget,
@@ -40,6 +41,10 @@ interface CoachDialogsProps {
   assignableCoaches: CoachMemberPickerGroup["coaches"];
   onCoachPickerOpenChange: (open: boolean) => void;
   onCoachSelect: (userId: number) => void;
+  managerPickerGroup: CoachManagerPickerGroup | null;
+  assignableManagers: CoachManagerPickerGroup["coaches"];
+  onManagerPickerOpenChange: (open: boolean) => void;
+  onManagerSelect: (userId: number) => void;
   removeMembership: CoachRemoveMembershipTarget | null;
   onRemoveMembershipOpenChange: (open: boolean) => void;
   onConfirmRemoveMembership: () => void;
@@ -91,6 +96,10 @@ export function CoachDialogs({
   assignableCoaches,
   onCoachPickerOpenChange,
   onCoachSelect,
+  managerPickerGroup,
+  assignableManagers,
+  onManagerPickerOpenChange,
+  onManagerSelect,
   removeMembership,
   onRemoveMembershipOpenChange,
   onConfirmRemoveMembership,
@@ -169,6 +178,15 @@ export function CoachDialogs({
         description="Recherche parmi les comptes coach disponibles."
         users={assignableCoaches}
         onSelect={(entry) => onCoachSelect(entry.id)}
+      />
+
+      <UserPickerDialog
+        open={Boolean(managerPickerGroup)}
+        onOpenChange={onManagerPickerOpenChange}
+        title={managerPickerGroup ? `Définir le manager de ${managerPickerGroup.name}` : "Définir le manager"}
+        description="Le manager doit être un coach déjà attribué à ce groupe."
+        users={assignableManagers}
+        onSelect={(entry) => onManagerSelect(entry.id)}
       />
 
       <Dialog open={Boolean(removeMembership)} onOpenChange={onRemoveMembershipOpenChange}>

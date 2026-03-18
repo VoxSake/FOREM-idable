@@ -17,6 +17,7 @@ export interface CoachGroupSummary {
     id: number;
     email: string;
   };
+  managerCoachId: number | null;
   members: CoachGroupMember[];
   coaches: CoachGroupMember[];
 }
