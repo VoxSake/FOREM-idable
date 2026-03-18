@@ -56,6 +56,7 @@ cp env.example .env.local
 - `NEXT_PUBLIC_PASSWORD_RESET_ENABLED=false` par défaut
 - `APP_BASE_URL=...`
 - `REDIS_URL=...` pour un rate limit partagé entre instances
+- `SERVER_TIMING_LOGS=false` pour activer des logs structurés de timings DB/Redis côté serveur
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=...`
 - `RESEND_REPLY_TO=...`

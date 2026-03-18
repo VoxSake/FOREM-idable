@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { headers } from "next/headers";
 import { createClient } from "redis";
+import { logServerEvent, measureServerOperation } from "@/lib/server/observability";
 
 type RateLimitRedisClient = ReturnType<typeof createClient>;
 
@@ -14,6 +15,15 @@ type RateLimitResult = {
   remaining: number;
   retryAfterMs: number;
 };
+
+const REDIS_RATE_LIMIT_SCRIPT = `
+local current = redis.call("INCR", KEYS[1])
+if current == 1 then
+  redis.call("PEXPIRE", KEYS[1], ARGV[1])
+end
+local ttl = redis.call("PTTL", KEYS[1])
+return { current, ttl }
+`;
 
 declare global {
   var __foremIdableRateLimitStore: Map<string, Bucket> | undefined;
@@ -140,13 +150,18 @@ async function applyRedisRateLimit(input: {
   windowMs: number;
   client: RateLimitRedisClient;
 }): Promise<RateLimitResult> {
-  const count = await input.client.incr(input.key);
-
-  if (count === 1) {
-    await input.client.pExpire(input.key, input.windowMs);
-  }
-
-  const ttl = await input.client.pTTL(input.key);
+  const [count, ttl] = (await measureServerOperation({
+    category: "redis",
+    action: "rate-limit-eval",
+    meta: {
+      scope: input.key.split(":")[1] ?? "unknown",
+    },
+    run: async () =>
+      (await input.client.eval(REDIS_RATE_LIMIT_SCRIPT, {
+        keys: [input.key],
+        arguments: [String(input.windowMs)],
+      })) as [number, number],
+  })) ?? [1, input.windowMs];
   const retryAfterMs = ttl > 0 ? ttl : input.windowMs;
 
   return {
@@ -171,17 +186,38 @@ export async function checkRateLimit(input: {
   const redisClient = await getRedisClient();
 
   if (redisClient) {
-    return applyRedisRateLimit({
-      key,
-      limit: input.limit,
-      windowMs: input.windowMs,
-      client: redisClient,
-    });
+    try {
+      return await applyRedisRateLimit({
+        key,
+        limit: input.limit,
+        windowMs: input.windowMs,
+        client: redisClient,
+      });
+    } catch (error) {
+      console.error("Redis rate limit error", error);
+      logServerEvent({
+        category: "redis",
+        action: "rate-limit-fallback",
+        level: "warn",
+        meta: {
+          scope: input.scope,
+          reason: error instanceof Error ? error.message : "unknown",
+        },
+      });
+    }
   }
 
-  return applyMemoryRateLimit({
-    key,
-    limit: input.limit,
-    windowMs: input.windowMs,
+  return measureServerOperation({
+    category: "rate-limit",
+    action: "memory-fallback",
+    meta: {
+      scope: input.scope,
+    },
+    run: async () =>
+      applyMemoryRateLimit({
+        key,
+        limit: input.limit,
+        windowMs: input.windowMs,
+      }),
   });
 }

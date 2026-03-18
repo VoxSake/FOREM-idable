@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { runDatabaseMigrations } from "@/lib/server/migrations";
+import { logServerEvent } from "@/lib/server/observability";
 import * as schema from "@/lib/server/schema";
 
 declare global {
@@ -32,12 +33,67 @@ function getSslConfig() {
 function createPool() {
   if (!connectionString) return null;
 
-  return new Pool({
+  const pool = new Pool({
     connectionString,
     // Production runs on the private Coolify Docker network by default,
     // so SSL is disabled unless explicitly requested for an external database.
     ssl: getSslConfig(),
   });
+
+  function getStatementPreview(query: unknown) {
+    if (typeof query === "string") {
+      return query.trim().split(/\s+/).slice(0, 4).join(" ");
+    }
+
+    if (
+      query &&
+      typeof query === "object" &&
+      "text" in query &&
+      typeof query.text === "string"
+    ) {
+      return query.text.trim().split(/\s+/).slice(0, 4).join(" ");
+    }
+
+    return "unknown";
+  }
+
+  const originalQuery = pool.query.bind(pool);
+  pool.query = (async (...args: Parameters<typeof originalQuery>) => {
+    const start = performance.now();
+
+    try {
+      const result = await originalQuery(...args);
+      const statement = getStatementPreview(args[0]);
+
+      logServerEvent({
+        category: "db",
+        action: "query",
+        durationMs: performance.now() - start,
+        meta: {
+          statement,
+        },
+      });
+
+      return result;
+    } catch (error) {
+      const statement = getStatementPreview(args[0]);
+
+      logServerEvent({
+        category: "db",
+        action: "query",
+        level: "error",
+        durationMs: performance.now() - start,
+        meta: {
+          statement,
+          error: error instanceof Error ? error.message : "unknown",
+        },
+      });
+
+      throw error;
+    }
+  }) as typeof pool.query;
+
+  return pool;
 }
 
 export const db = globalThis.__foremIdablePool ?? createPool();
