@@ -3,6 +3,14 @@ import Link from "next/link";
 const RECENT_UPDATES = [
   {
     month: "Mars 2026",
+    text: "Ajout de l'import CSV côté coach avec modèle téléchargeable, auto-détection des colonnes, mapping manuel, correction des statuts non reconnus, gestion des doublons et choix explicite du format de date.",
+  },
+  {
+    month: "Mars 2026",
+    text: "Dashboard coach enrichi avec sections À traiter et Activité récente, plus édition et suppression de candidatures directement depuis chaque bloc candidature dans le sidepanel bénéficiaire.",
+  },
+  {
+    month: "Mars 2026",
     text: "Ajout d'une synchronisation calendrier coach via lien d'abonnement ICS par groupe standard ou au global, avec aide intégrée, exclusion du groupe Coaches du flux global et régénération réservée aux admins.",
   },
   {

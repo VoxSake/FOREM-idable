@@ -20,6 +20,8 @@ Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, suivi de 
 - Candidatures et historique liés au compte utilisateur
 - API externe sécurisée pour export `JSON` / `CSV`
 - Synchronisation calendrier des entretiens pour `coach` / `admin` via lien d'abonnement ICS par groupe ou global
+- Import CSV de candidatures côté coach avec auto-détection des colonnes, mapping manuel, gestion des statuts non reconnus et mise à jour des doublons existants
+- Dashboard coach enrichi avec sections `À traiter`, `Activité récente` et édition / suppression de candidatures depuis le sidepanel bénéficiaire
 - Export CSV (colonnes sélectionnables, métadonnées)
 - Comparateur d'offres
 - Provider principal: Forem
@@ -146,6 +148,23 @@ Important:
 
 - la mise à jour n'est pas instantanée: Google Calendar décide lui-même de la fréquence de rafraîchissement des flux ICS
 - si un entretien est ajouté, modifié ou supprimé, le flux source est immédiatement à jour côté FOREM-idable, mais l'agenda abonné peut mettre un certain temps à refléter le changement
+
+## Import CSV coach
+
+Les comptes `coach` et `admin` peuvent importer un suivi existant directement depuis le sidepanel d'un bénéficiaire.
+
+Fonctionnalités actuelles:
+
+- import `CSV` depuis `Suivi des bénéficiaires`
+- modèle CSV téléchargeable
+- auto-détection des colonnes les plus courantes
+- mapping manuel si les en-têtes diffèrent
+- choix explicite du format de date (`JJ-MM-AAAA` ou `MM-DD-YYYY`, avec `-` ou `/`, année sur 2 ou 4 chiffres)
+- correction manuelle des statuts non reconnus avant import
+- détection des doublons dans le fichier importé
+- mise à jour des candidatures existantes au lieu de créer un doublon si la candidature est déjà présente en base
+
+Les lignes importées sont créées comme candidatures manuelles.
 
 Le projet étant open source sous licence MIT, il peut aussi être self-hosted si un hébergement interne est requis pour des raisons de sécurité ou de conformité.
 
