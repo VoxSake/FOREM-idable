@@ -119,6 +119,8 @@ export default function CoachPage() {
 
       <div id="groupes" className="scroll-mt-6">
         <CoachGroupsSection
+          currentUserId={coach.user.id}
+          currentUserRole={coach.user.role}
           search={coach.search}
           onSearchChange={coach.setSearch}
           userFilter={coach.userFilter}

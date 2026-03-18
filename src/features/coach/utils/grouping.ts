@@ -94,6 +94,7 @@ export function buildGroupedUsers(input: {
     return {
       id: group.id,
       name: group.name,
+      createdById: group.createdBy.id,
       createdByEmail: group.createdBy.email,
       canAddMembers: true,
       canManageCoaches: true,
@@ -123,6 +124,7 @@ export function buildGroupedUsers(input: {
     {
       id: -1,
       name: "Aucun groupe attribué",
+      createdById: null,
       createdByEmail: null,
       canAddMembers: false,
       canManageCoaches: false,

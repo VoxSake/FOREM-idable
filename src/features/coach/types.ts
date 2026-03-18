@@ -67,6 +67,7 @@ export type CoachMemberPickerGroup = CoachGroupSummary;
 export interface CoachGroupedUserGroup {
   id: number;
   name: string;
+  createdById: number | null;
   createdByEmail: string | null;
   canAddMembers: boolean;
   canManageCoaches: boolean;

@@ -31,6 +31,8 @@ import {
 import { CoachUserSummary } from "@/types/coach";
 
 interface CoachGroupsSectionProps {
+  currentUserId: number;
+  currentUserRole: "coach" | "admin";
   search: string;
   onSearchChange: (value: string) => void;
   userFilter: CoachUserFilter;
@@ -52,6 +54,8 @@ interface CoachGroupsSectionProps {
 }
 
 export function CoachGroupsSection({
+  currentUserId,
+  currentUserRole,
   search,
   onSearchChange,
   userFilter,
@@ -81,6 +85,8 @@ export function CoachGroupsSection({
     { value: "accepted", label: "Acceptées" },
     { value: "rejected", label: "Refusées" },
   ];
+  const canRemoveAssignedCoach = (groupCreatedById: number) =>
+    currentUserRole === "admin" || groupCreatedById === currentUserId;
 
   return (
     <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
@@ -186,22 +192,24 @@ export function CoachGroupsSection({
                           <span className="max-w-52 truncate">
                             {getCoachUserDisplayName(coach)}
                           </span>
-                          <button
-                            type="button"
-                            className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onRemoveCoach({
-                                groupId: group.id,
-                                userId: coach.id,
-                                userEmail: coach.email,
-                                groupName: group.name,
-                              });
-                            }}
-                            aria-label={`Retirer ${coach.email} du groupe ${group.name}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
+                          {canRemoveAssignedCoach(group.createdById ?? 0) ? (
+                            <button
+                              type="button"
+                              className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onRemoveCoach({
+                                  groupId: group.id,
+                                  userId: coach.id,
+                                  userEmail: coach.email,
+                                  groupName: group.name,
+                                });
+                              }}
+                              aria-label={`Retirer ${coach.email} du groupe ${group.name}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          ) : null}
                         </Badge>
                       ))
                     ) : (

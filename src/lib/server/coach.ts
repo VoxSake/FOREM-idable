@@ -93,6 +93,28 @@ export async function canManageCoachGroup(actor: CoachCapableUser, groupId: numb
   return Boolean(result.rows[0]?.exists);
 }
 
+export async function canRemoveCoachAssignmentFromGroup(
+  actor: CoachCapableUser,
+  groupId: number
+) {
+  if (actor.role === "admin") {
+    return true;
+  }
+
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const result = await db.query<{ created_by: number | null }>(
+    `SELECT created_by
+     FROM coach_groups
+     WHERE id = $1
+     LIMIT 1`,
+    [groupId]
+  );
+
+  return result.rows[0]?.created_by === actor.id;
+}
+
 async function assertCanManageCoachGroup(actor: CoachCapableUser, groupId: number) {
   const allowed = await canManageCoachGroup(actor, groupId);
   if (!allowed) {
@@ -531,8 +553,10 @@ export async function removeCoachFromGroup(
 ) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
-
-  await assertCanManageCoachGroup(actor, groupId);
+  const allowed = await canRemoveCoachAssignmentFromGroup(actor, groupId);
+  if (!allowed) {
+    throw new Error("Forbidden");
+  }
 
   await db.query(
     `DELETE FROM coach_group_coaches
