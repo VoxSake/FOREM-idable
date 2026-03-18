@@ -34,6 +34,7 @@ import { isManualApplication, sortApplicationsByMostRecent } from "@/features/ap
 import {
   coachStatusLabel,
   formatCoachAuthorName,
+  formatCoachDate,
   isApplicationDue,
   summarizeCoachContributors,
 } from "@/features/coach/utils";
