@@ -75,6 +75,7 @@ interface CoachDialogsProps {
   onRevokeApiKeyOpenChange: (open: boolean) => void;
   onConfirmRevokeApiKey: () => void;
   deleteUserTarget: CoachDeleteUserTarget | null;
+  isDeletingUser: boolean;
   onDeleteUserOpenChange: (open: boolean) => void;
   onConfirmDeleteUser: () => void;
   calendarRegenerationTarget: CoachCalendarRegenerationTarget | null;
@@ -130,6 +131,7 @@ export function CoachDialogs({
   onRevokeApiKeyOpenChange,
   onConfirmRevokeApiKey,
   deleteUserTarget,
+  isDeletingUser,
   onDeleteUserOpenChange,
   onConfirmDeleteUser,
   calendarRegenerationTarget,
@@ -400,8 +402,13 @@ export function CoachDialogs({
             <Button type="button" variant="outline" onClick={() => onDeleteUserOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="button" variant="destructive" onClick={onConfirmDeleteUser}>
-              Supprimer
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onConfirmDeleteUser}
+              disabled={isDeletingUser}
+            >
+              {isDeletingUser ? "Suppression..." : "Supprimer"}
             </Button>
           </DialogFooter>
         </DialogContent>

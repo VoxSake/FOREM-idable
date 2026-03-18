@@ -288,6 +288,7 @@ export default function CoachPage() {
         }}
         onConfirmRevokeApiKey={() => void coach.revokeManagedApiKey()}
         deleteUserTarget={coach.deleteUserTarget}
+        isDeletingUser={coach.isDeletingUser}
         onDeleteUserOpenChange={(open) => !open && coach.setDeleteUserTarget(null)}
         onConfirmDeleteUser={() => void coach.deleteUser()}
         calendarRegenerationTarget={coach.calendarRegenerationTarget}

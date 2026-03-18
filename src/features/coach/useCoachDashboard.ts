@@ -92,6 +92,7 @@ export function useCoachDashboard() {
   const [isImportingApplications, setIsImportingApplications] = useState(false);
   const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<CoachRevokeApiKeyTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [calendarRegenerationTarget, setCalendarRegenerationTarget] =
     useState<CoachCalendarRegenerationTarget | null>(null);
   const [savingCoachNoteKey, setSavingCoachNoteKey] = useState<string | null>(null);
@@ -205,9 +206,11 @@ export function useCoachDashboard() {
     });
   };
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (options?: { preserveFeedback?: boolean }) => {
     setIsLoading(true);
-    setFeedback(null);
+    if (!options?.preserveFeedback) {
+      setFeedback(null);
+    }
 
     try {
       const { response, data } = await fetchCoachDashboard();
@@ -608,24 +611,32 @@ export function useCoachDashboard() {
 
   const deleteUser = async () => {
     if (!deleteUserTarget) return;
+    const target = deleteUserTarget;
+    setIsDeletingUser(true);
 
-    const response = await fetch(`/api/admin/users/${deleteUserTarget.userId}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/admin/users/${target.userId}`, {
+        method: "DELETE",
+      });
 
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
-    if (!response.ok) {
-      setFeedback(data.error || "Suppression utilisateur impossible.");
-      return;
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setFeedback(data.error || "Suppression utilisateur impossible.");
+        return;
+      }
+
+      setUndoAction(null);
+      if (selectedUserId === target.userId) {
+        setSelectedUserId(null);
+      }
+      setDeleteUserTarget(null);
+      setFeedback(`Compte supprimé: ${target.email}.`);
+      void loadDashboard({ preserveFeedback: true });
+    } catch {
+      setFeedback("Suppression utilisateur impossible.");
+    } finally {
+      setIsDeletingUser(false);
     }
-
-    setUndoAction(null);
-    if (selectedUserId === deleteUserTarget.userId) {
-      setSelectedUserId(null);
-    }
-    setFeedback(`Compte supprimé: ${deleteUserTarget.email}.`);
-    setDeleteUserTarget(null);
-    await loadDashboard();
   };
 
   const savePrivateCoachNote = async (
@@ -969,7 +980,7 @@ export function useCoachDashboard() {
       `Import CSV terminé: ${data.importedCount ?? rows.length} candidature${(data.importedCount ?? rows.length) > 1 ? "s" : ""} ajoutée${(data.importedCount ?? rows.length) > 1 ? "s" : ""}.`
     );
     setImportTargetUserId(null);
-    await loadDashboard();
+    await loadDashboard({ preserveFeedback: true });
     return {
       importedCount: data.importedCount ?? rows.length,
       createdCount: data.createdCount ?? 0,
@@ -1076,6 +1087,7 @@ export function useCoachDashboard() {
     revokeApiKeyTarget,
     setRevokeApiKeyTarget,
     deleteUserTarget,
+    isDeletingUser,
     setDeleteUserTarget,
     calendarRegenerationTarget,
     setCalendarRegenerationTarget,
