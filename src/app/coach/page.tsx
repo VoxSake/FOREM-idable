@@ -3,9 +3,11 @@
 import { LoaderCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
+import { CoachPriorityBoard } from "@/features/coach/components/CoachPriorityBoard";
 import { CoachGroupsSection } from "@/features/coach/components/CoachGroupsSection";
 import { CoachSummaryCards } from "@/features/coach/components/CoachSummaryCards";
 import { CoachUserSheet } from "@/features/coach/components/CoachUserSheet";
+import { buildCoachPrioritySections } from "@/features/coach/utils";
 import { useCoachDashboard } from "@/features/coach/useCoachDashboard";
 
 export default function CoachPage() {
@@ -13,6 +15,7 @@ export default function CoachPage() {
   const followedUserCount =
     coach.dashboard?.users.filter((entry) => entry.role === "user" || entry.groupIds.length > 0)
       .length ?? 0;
+  const prioritySections = buildCoachPrioritySections(coach.dashboard?.users ?? []);
 
   if (coach.isAuthLoading || coach.isLoading) {
     return (
@@ -59,6 +62,8 @@ export default function CoachPage() {
         totalAccepted={coach.totalAccepted}
         totalRejected={coach.totalRejected}
       />
+
+      <CoachPriorityBoard sections={prioritySections} onOpenUser={coach.setSelectedUserId} />
 
       <CoachGroupsSection
         search={coach.search}
