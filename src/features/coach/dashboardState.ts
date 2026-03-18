@@ -269,6 +269,83 @@ export function updateManagedUserInDashboard(
   };
 }
 
+export function insertGroupIntoDashboard(
+  dashboard: CoachDashboardData,
+  input: {
+    id: number;
+    name: string;
+    createdAt: string;
+    createdBy: {
+      id: number;
+      email: string;
+    };
+    managerCoachId: number | null;
+    initialCoach?: Pick<CoachUserSummary, "id" | "email" | "firstName" | "lastName" | "role"> | null;
+  }
+): CoachDashboardData {
+  return {
+    ...dashboard,
+    groups: [
+      {
+        id: input.id,
+        name: input.name,
+        createdAt: input.createdAt,
+        createdBy: input.createdBy,
+        managerCoachId: input.managerCoachId,
+        members: [],
+        coaches: input.initialCoach ? [toGroupParticipant(input.initialCoach)] : [],
+      },
+      ...dashboard.groups,
+    ].sort((left, right) => left.name.localeCompare(right.name, "fr")),
+  };
+}
+
+export function replaceGroupIdInDashboard(
+  dashboard: CoachDashboardData,
+  currentGroupId: number,
+  nextGroupId: number
+): CoachDashboardData {
+  return {
+    ...dashboard,
+    groups: dashboard.groups.map((group) =>
+      group.id === currentGroupId
+        ? {
+            ...group,
+            id: nextGroupId,
+          }
+        : group
+    ),
+    users: dashboard.users.map((entry) => ({
+      ...entry,
+      groupIds: entry.groupIds.map((groupId) => (groupId === currentGroupId ? nextGroupId : groupId)),
+    })),
+  };
+}
+
+export function removeGroupFromDashboard(
+  dashboard: CoachDashboardData,
+  groupId: number
+): CoachDashboardData {
+  const targetGroup = dashboard.groups.find((group) => group.id === groupId);
+  if (!targetGroup) {
+    return dashboard;
+  }
+
+  return {
+    ...dashboard,
+    groups: dashboard.groups.filter((group) => group.id !== groupId),
+    users: dashboard.users.map((entry) =>
+      entry.groupIds.includes(groupId)
+        ? {
+            ...entry,
+            groupIds: entry.groupIds.filter((id) => id !== groupId),
+            groupNames: entry.groupNames.filter((name) => name !== targetGroup.name),
+          }
+        : entry
+    ),
+  };
+}
+
 export function updateUserRoleInDashboard(
   dashboard: CoachDashboardData,
   userId: number,

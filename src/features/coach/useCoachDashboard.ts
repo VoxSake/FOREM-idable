@@ -16,9 +16,12 @@ import {
   addMembershipToDashboard,
   addCoachAssignmentToDashboard,
   applyApplicationUpdateToDashboard,
+  insertGroupIntoDashboard,
   removeApplicationFromDashboard,
   removeCoachAssignmentFromDashboard,
+  removeGroupFromDashboard,
   removeMembershipFromDashboard,
+  replaceGroupIdInDashboard,
   setGroupManagerInDashboard,
   updateManagedUserInDashboard,
   updateUserRoleInDashboard,
@@ -166,6 +169,37 @@ export function useCoachDashboard() {
     });
   };
 
+  const addGroupLocally = (input: {
+    id: number;
+    name: string;
+    createdAt: string;
+    createdBy: {
+      id: number;
+      email: string;
+    };
+    managerCoachId: number | null;
+    initialCoach?: Pick<CoachUserSummary, "id" | "email" | "firstName" | "lastName" | "role"> | null;
+  }) => {
+    setDashboard((current) => {
+      if (!current) return current;
+      return insertGroupIntoDashboard(current, input);
+    });
+  };
+
+  const replaceGroupIdLocally = (currentGroupId: number, nextGroupId: number) => {
+    setDashboard((current) => {
+      if (!current) return current;
+      return replaceGroupIdInDashboard(current, currentGroupId, nextGroupId);
+    });
+  };
+
+  const removeGroupLocally = (groupId: number) => {
+    setDashboard((current) => {
+      if (!current) return current;
+      return removeGroupFromDashboard(current, groupId);
+    });
+  };
+
   const loadDashboard = async () => {
     setIsLoading(true);
     setFeedback(null);
@@ -280,23 +314,60 @@ export function useCoachDashboard() {
   );
 
   const createGroup = async () => {
-    if (!groupName.trim()) return;
+    const trimmedGroupName = groupName.trim();
+    if (!trimmedGroupName) return;
+
+    const temporaryGroupId = -Date.now();
+    const createdAt = new Date().toISOString();
+    const creatorEmail = user?.email ?? dashboard?.viewer.email ?? "";
+    const creatorRole = user?.role;
+
+    addGroupLocally({
+      id: temporaryGroupId,
+      name: trimmedGroupName,
+      createdAt,
+      createdBy: {
+        id: user?.id ?? 0,
+        email: creatorEmail,
+      },
+      managerCoachId: creatorRole === "coach" ? user?.id ?? null : null,
+      initialCoach:
+        creatorRole === "coach"
+          ? {
+              id: user?.id ?? 0,
+              email: creatorEmail,
+              firstName: user?.firstName ?? "",
+              lastName: user?.lastName ?? "",
+              role: "coach",
+            }
+          : null,
+    });
 
     const response = await fetch("/api/coach/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: groupName }),
+      body: JSON.stringify({ name: trimmedGroupName }),
     });
 
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      group?: { id: number };
+    };
+
     if (!response.ok) {
-      setFeedback("Création du groupe impossible.");
+      removeGroupLocally(temporaryGroupId);
+      setFeedback(data.error || "Création du groupe impossible.");
       return;
+    }
+
+    if (data.group?.id) {
+      replaceGroupIdLocally(temporaryGroupId, data.group.id);
     }
 
     setUndoAction(null);
     setGroupName("");
     setIsCreateGroupOpen(false);
-    await loadDashboard();
+    setFeedback(`Groupe créé: ${trimmedGroupName}.`);
   };
 
   const promoteCoach = async (userId: number) => {
@@ -468,17 +539,22 @@ export function useCoachDashboard() {
   };
 
   const deleteGroup = async (groupId: number) => {
+    const previousDashboard = dashboard;
+    removeGroupLocally(groupId);
     const response = await fetch(`/api/coach/groups?groupId=${groupId}`, {
       method: "DELETE",
     });
 
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+
     if (!response.ok) {
-      setFeedback("Suppression du groupe impossible.");
+      setDashboard(previousDashboard);
+      setFeedback(data.error || "Suppression du groupe impossible.");
       return;
     }
 
     setUndoAction(null);
-    await loadDashboard();
+    setFeedback("Groupe supprimé.");
   };
 
   const updateManagedUser = async () => {
