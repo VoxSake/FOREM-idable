@@ -192,6 +192,10 @@ export default function CoachPage() {
         onDeleteSharedCoachNote={(userId, jobId, noteId) =>
           coach.deleteSharedCoachNote(userId, jobId, noteId)
         }
+        onUpdateApplication={(userId, jobId, patch) =>
+          coach.updateManagedApplication(userId, jobId, patch)
+        }
+        onDeleteApplication={(userId, jobId) => coach.deleteManagedApplication(userId, jobId)}
       />
 
       <CoachDialogs

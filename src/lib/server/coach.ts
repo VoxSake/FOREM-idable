@@ -6,7 +6,11 @@ import {
 } from "@/lib/coachNotes";
 import { getCurrentUser } from "@/lib/server/auth";
 import { db, ensureDatabase } from "@/lib/server/db";
-import { createTrackedApplicationForUser } from "@/lib/server/applications";
+import {
+  createTrackedApplicationForUser,
+  deleteApplicationForUser,
+  updateApplicationForUser,
+} from "@/lib/server/applications";
 import { CoachNoteAuthor, CoachSharedNote, JobApplication } from "@/types/application";
 import { AuthUser, UserRole } from "@/types/auth";
 import { CoachDashboardData, CoachGroupSummary, CoachUserSummary } from "@/types/coach";
@@ -557,4 +561,44 @@ export async function importCoachApplicationsForUser(input: {
     updatedCount,
     ignoredCount,
   };
+}
+
+export async function updateCoachManagedApplication(input: {
+  actor: CoachCapableUser;
+  userId: number;
+  jobId: string;
+  patch: Partial<
+    Pick<
+      JobApplication,
+      | "status"
+      | "notes"
+      | "proofs"
+      | "interviewAt"
+      | "interviewDetails"
+      | "lastFollowUpAt"
+      | "followUpDueAt"
+      | "followUpEnabled"
+      | "appliedAt"
+      | "job"
+    >
+  >;
+}) {
+  const application = await updateApplicationForUser({
+    userId: input.userId,
+    jobId: input.jobId,
+    patch: input.patch,
+  });
+
+  await markCoachAction(input.actor.id);
+
+  return application;
+}
+
+export async function deleteCoachManagedApplication(input: {
+  actor: CoachCapableUser;
+  userId: number;
+  jobId: string;
+}) {
+  await deleteApplicationForUser(input.userId, input.jobId);
+  await markCoachAction(input.actor.id);
 }

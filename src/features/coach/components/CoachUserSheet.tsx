@@ -52,6 +52,7 @@ import {
   summarizeCoachContributors,
 } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
+import { JobApplication } from "@/types/application";
 
 interface CoachUserSheetProps {
   currentUserId: number | undefined;
@@ -77,6 +78,28 @@ interface CoachUserSheetProps {
     content: string
   ) => Promise<boolean>;
   onDeleteSharedCoachNote: (userId: number, jobId: string, noteId: string) => Promise<boolean>;
+  onUpdateApplication: (
+    userId: number,
+    jobId: string,
+    patch: Partial<JobApplication>
+  ) => Promise<boolean>;
+  onDeleteApplication: (userId: number, jobId: string) => Promise<boolean>;
+}
+
+interface CoachApplicationEditDraft {
+  company: string;
+  title: string;
+  contractType: string;
+  location: string;
+  url: string;
+  appliedAt: string;
+  status: JobApplication["status"];
+  notes: string;
+  proofs: string;
+  interviewAt: string;
+  interviewDetails: string;
+  followUpEnabled: boolean;
+  followUpDueAt: string;
 }
 
 export function CoachUserSheet({
@@ -98,6 +121,8 @@ export function CoachUserSheet({
   onCreateSharedCoachNote,
   onUpdateSharedCoachNote,
   onDeleteSharedCoachNote,
+  onUpdateApplication,
+  onDeleteApplication,
 }: CoachUserSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -121,6 +146,8 @@ export function CoachUserSheet({
             onCreateSharedCoachNote={onCreateSharedCoachNote}
             onUpdateSharedCoachNote={onUpdateSharedCoachNote}
             onDeleteSharedCoachNote={onDeleteSharedCoachNote}
+            onUpdateApplication={onUpdateApplication}
+            onDeleteApplication={onDeleteApplication}
           />
         )}
       </SheetContent>
@@ -150,6 +177,8 @@ function CoachUserSheetBody({
   onCreateSharedCoachNote,
   onUpdateSharedCoachNote,
   onDeleteSharedCoachNote,
+  onUpdateApplication,
+  onDeleteApplication,
 }: CoachUserSheetBodyProps) {
   const sortedApplications = useMemo(() => sortApplicationsByMostRecent(user.applications), [user.applications]);
   const applicationsPageSize = 10;
@@ -170,6 +199,13 @@ function CoachUserSheetBody({
   const [sharedNoteDrafts, setSharedNoteDrafts] = useState<Record<string, string>>({});
   const [newSharedNoteDrafts, setNewSharedNoteDrafts] = useState<Record<string, string>>({});
   const [currentPage, setCurrentPage] = useState(initialFocusPage);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [applicationDraft, setApplicationDraft] = useState<CoachApplicationEditDraft | null>(null);
+  const [isSavingApplication, setIsSavingApplication] = useState(false);
+  const [deleteApplicationTarget, setDeleteApplicationTarget] = useState<{
+    jobId: string;
+    title: string;
+  } | null>(null);
   const [deleteSharedTarget, setDeleteSharedTarget] = useState<{
     jobId: string;
     noteId: string;
@@ -194,6 +230,34 @@ function CoachUserSheetBody({
     privateNoteDrafts[jobId] ?? fallback ?? "";
   const getSharedDraft = (noteId: string, fallback: string) =>
     sharedNoteDrafts[noteId] ?? fallback;
+
+  const openApplicationEditor = (application: CoachUserSummary["applications"][number]) => {
+    setEditingJobId(application.job.id);
+    setApplicationDraft({
+      company: application.job.company || "",
+      title: application.job.title,
+      contractType: application.job.contractType || "",
+      location: application.job.location || "",
+      url: application.job.url === "#" ? "" : application.job.url || "",
+      appliedAt: toEditableDate(application.appliedAt),
+      status: application.status,
+      notes: application.notes || "",
+      proofs: application.proofs || "",
+      interviewAt: toEditableDateTime(application.interviewAt),
+      interviewDetails: application.interviewDetails || "",
+      followUpEnabled: application.followUpEnabled !== false,
+      followUpDueAt: toEditableDate(application.followUpDueAt),
+    });
+    if (!expandedJobIds.includes(application.job.id)) {
+      setExpandedJobIds((current) => [...current, application.job.id]);
+    }
+  };
+
+  const resetApplicationEditor = () => {
+    setEditingJobId(null);
+    setApplicationDraft(null);
+    setIsSavingApplication(false);
+  };
 
   return (
     <>
@@ -281,6 +345,8 @@ function CoachUserSheetBody({
             const isDue = isApplicationDue(application);
             const isOpen = expandedJobIds.includes(application.job.id);
             const isManual = isManualApplication(application);
+            const isEditingApplication =
+              editingJobId === application.job.id && applicationDraft !== null;
             const privateCoachNote = application.privateCoachNote;
             const privateCoachNoteDraft = getPrivateDraft(
               application.job.id,
@@ -307,12 +373,13 @@ function CoachUserSheetBody({
                             : "bg-card hover:border-primary/50 hover:bg-primary/5"
                   }`}
                 >
-                  <CollapsibleTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex w-full items-start justify-between gap-4 p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                      aria-expanded={isOpen}
-                    >
+                  <div className="flex items-start gap-3 p-4">
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex min-w-0 flex-1 items-start justify-between gap-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                        aria-expanded={isOpen}
+                      >
                       <div className="min-w-0 space-y-2">
                         <div>
                           <p className="font-semibold">
@@ -376,26 +443,344 @@ function CoachUserSheetBody({
                           />
                         </div>
                       </div>
-                    </button>
-                  </CollapsibleTrigger>
+                      </button>
+                    </CollapsibleTrigger>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="shrink-0"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Actions candidature</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem
+                          onClick={() => openApplicationEditor(application)}
+                        >
+                          <FilePenLine className="h-4 w-4" />
+                          Éditer la candidature
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() =>
+                            setDeleteApplicationTarget({
+                              jobId: application.job.id,
+                              title: application.job.title,
+                            })
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Supprimer la candidature
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
                   <CollapsibleContent className="border-t px-4 pb-4 pt-4">
                     <div className="space-y-4">
-                      <div className="grid gap-3 lg:grid-cols-2">
-                        <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
-                          <p>Statut: {coachStatusLabel(application.status)}</p>
-                          <p>Type: {application.job.contractType || "Non précisé"}</p>
-                          {application.lastFollowUpAt && (
-                            <p>Dernière relance: {formatCoachDate(application.lastFollowUpAt)}</p>
-                          )}
+                      {isEditingApplication ? (
+                        <div className="space-y-4 rounded-xl border bg-background/80 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-medium text-foreground">Éditer la candidature</p>
+                            <Badge variant="outline">
+                              {isManual ? "Candidature manuelle" : "Candidature importée"}
+                            </Badge>
+                          </div>
+
+                          {isManual ? (
+                            <div className="grid gap-3 lg:grid-cols-2">
+                              <label className="space-y-1">
+                                <span className="text-xs text-muted-foreground">Entreprise</span>
+                                <input
+                                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                  value={applicationDraft.company}
+                                  onChange={(event) =>
+                                    setApplicationDraft((current) =>
+                                      current
+                                        ? { ...current, company: event.target.value }
+                                        : current
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label className="space-y-1">
+                                <span className="text-xs text-muted-foreground">Type</span>
+                                <input
+                                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                  value={applicationDraft.contractType}
+                                  onChange={(event) =>
+                                    setApplicationDraft((current) =>
+                                      current
+                                        ? { ...current, contractType: event.target.value }
+                                        : current
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label className="space-y-1 lg:col-span-2">
+                                <span className="text-xs text-muted-foreground">Intitulé</span>
+                                <input
+                                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                  value={applicationDraft.title}
+                                  onChange={(event) =>
+                                    setApplicationDraft((current) =>
+                                      current ? { ...current, title: event.target.value } : current
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label className="space-y-1">
+                                <span className="text-xs text-muted-foreground">Lieu</span>
+                                <input
+                                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                  value={applicationDraft.location}
+                                  onChange={(event) =>
+                                    setApplicationDraft((current) =>
+                                      current
+                                        ? { ...current, location: event.target.value }
+                                        : current
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label className="space-y-1">
+                                <span className="text-xs text-muted-foreground">Lien de l’offre</span>
+                                <input
+                                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                  value={applicationDraft.url}
+                                  onChange={(event) =>
+                                    setApplicationDraft((current) =>
+                                      current ? { ...current, url: event.target.value } : current
+                                    )
+                                  }
+                                  placeholder="https://..."
+                                />
+                              </label>
+                            </div>
+                          ) : null}
+
+                          <div className="grid gap-3 lg:grid-cols-2">
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Date d’envoi</span>
+                              <input
+                                type="date"
+                                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                value={applicationDraft.appliedAt}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current
+                                      ? { ...current, appliedAt: event.target.value }
+                                      : current
+                                  )
+                                }
+                              />
+                            </label>
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Statut</span>
+                              <select
+                                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                value={applicationDraft.status}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          status: event.target.value as JobApplication["status"],
+                                        }
+                                      : current
+                                  )
+                                }
+                              >
+                                <option value="in_progress">En cours</option>
+                                <option value="follow_up">Relance à faire</option>
+                                <option value="interview">Entretien</option>
+                                <option value="accepted">Acceptée</option>
+                                <option value="rejected">Refusée</option>
+                              </select>
+                            </label>
+                          </div>
+
+                          <div className="grid gap-3 lg:grid-cols-2">
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Relance active</span>
+                              <select
+                                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                value={applicationDraft.followUpEnabled ? "yes" : "no"}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          followUpEnabled: event.target.value === "yes",
+                                        }
+                                      : current
+                                  )
+                                }
+                              >
+                                <option value="yes">Oui</option>
+                                <option value="no">Non</option>
+                              </select>
+                            </label>
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Date de relance</span>
+                              <input
+                                type="date"
+                                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                value={applicationDraft.followUpDueAt}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current
+                                      ? { ...current, followUpDueAt: event.target.value }
+                                      : current
+                                  )
+                                }
+                              />
+                            </label>
+                          </div>
+
+                          <div className="grid gap-3 lg:grid-cols-2">
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Entretien</span>
+                              <input
+                                type="datetime-local"
+                                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                value={applicationDraft.interviewAt}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current
+                                      ? { ...current, interviewAt: event.target.value }
+                                      : current
+                                  )
+                                }
+                              />
+                            </label>
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Détails entretien</span>
+                              <textarea
+                                className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                value={applicationDraft.interviewDetails}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          interviewDetails: event.target.value,
+                                        }
+                                      : current
+                                  )
+                                }
+                              />
+                            </label>
+                          </div>
+
+                          <div className="grid gap-3 lg:grid-cols-2">
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Notes bénéficiaire</span>
+                              <textarea
+                                className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                value={applicationDraft.notes}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current ? { ...current, notes: event.target.value } : current
+                                  )
+                                }
+                              />
+                            </label>
+                            <label className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Pièces / références</span>
+                              <textarea
+                                className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                value={applicationDraft.proofs}
+                                onChange={(event) =>
+                                  setApplicationDraft((current) =>
+                                    current ? { ...current, proofs: event.target.value } : current
+                                  )
+                                }
+                              />
+                            </label>
+                          </div>
+
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={resetApplicationEditor}
+                              disabled={isSavingApplication}
+                            >
+                              Annuler
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={async () => {
+                                if (!applicationDraft) return;
+                                setIsSavingApplication(true);
+                                const saved = await onUpdateApplication(user.id, application.job.id, {
+                                  status: applicationDraft.status,
+                                  appliedAt: toIsoDate(applicationDraft.appliedAt) ?? application.appliedAt,
+                                  notes: applicationDraft.notes,
+                                  proofs: applicationDraft.proofs,
+                                  interviewAt: toIsoDateTime(applicationDraft.interviewAt),
+                                  interviewDetails: applicationDraft.interviewDetails,
+                                  followUpEnabled: applicationDraft.followUpEnabled,
+                                  followUpDueAt:
+                                    toIsoDate(applicationDraft.followUpDueAt) ?? application.followUpDueAt,
+                                  ...(isManual
+                                    ? {
+                                        job: {
+                                          ...application.job,
+                                          company: applicationDraft.company,
+                                          title: applicationDraft.title,
+                                          contractType: applicationDraft.contractType,
+                                          location: applicationDraft.location,
+                                          url: applicationDraft.url,
+                                        },
+                                      }
+                                    : {}),
+                                });
+                                setIsSavingApplication(false);
+                                if (saved) {
+                                  resetApplicationEditor();
+                                }
+                              }}
+                              disabled={
+                                isSavingApplication ||
+                                (isManual &&
+                                  (!applicationDraft.company.trim() ||
+                                    !applicationDraft.title.trim()))
+                              }
+                            >
+                              {isSavingApplication ? (
+                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Save className="mr-2 h-4 w-4" />
+                              )}
+                              Enregistrer les changements
+                            </Button>
+                          </div>
                         </div>
-                        <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
-                          <p>Offre: {isManual ? "Encodée manuellement" : "Issue du site"}</p>
-                          {application.interviewDetails && (
-                            <p className="mt-1 whitespace-pre-wrap">{application.interviewDetails}</p>
-                          )}
+                      ) : (
+                        <div className="grid gap-3 lg:grid-cols-2">
+                          <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
+                            <p>Statut: {coachStatusLabel(application.status)}</p>
+                            <p>Type: {application.job.contractType || "Non précisé"}</p>
+                            {application.lastFollowUpAt && (
+                              <p>Dernière relance: {formatCoachDate(application.lastFollowUpAt)}</p>
+                            )}
+                          </div>
+                          <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
+                            <p>Offre: {isManual ? "Encodée manuellement" : "Issue du site"}</p>
+                            {application.interviewDetails && (
+                              <p className="mt-1 whitespace-pre-wrap">{application.interviewDetails}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       <div className="flex flex-wrap gap-2">
                         {application.job.url && application.job.url !== "#" ? (
@@ -703,6 +1088,43 @@ function CoachUserSheetBody({
       </div>
 
       <Dialog
+        open={Boolean(deleteApplicationTarget)}
+        onOpenChange={(open) => !open && setDeleteApplicationTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer la candidature</DialogTitle>
+            <DialogDescription>
+              La candidature <strong>{deleteApplicationTarget?.title}</strong> sera retirée du suivi de{" "}
+              {getCoachUserDisplayName(user)}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteApplicationTarget(null)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={async () => {
+                if (!deleteApplicationTarget) return;
+                const deleted = await onDeleteApplication(user.id, deleteApplicationTarget.jobId);
+                if (deleted) {
+                  if (editingJobId === deleteApplicationTarget.jobId) {
+                    resetApplicationEditor();
+                  }
+                  setDeleteApplicationTarget(null);
+                }
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={Boolean(deleteSharedTarget)}
         onOpenChange={(open) => !open && setDeleteSharedTarget(null)}
       >
@@ -748,4 +1170,28 @@ function CoachUserSheetBody({
       </Dialog>
     </>
   );
+}
+
+function toEditableDate(value?: string | null) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+function toEditableDateTime(value?: string | null) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 16);
+}
+
+function toIsoDate(value: string) {
+  if (!value) return undefined;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+function toIsoDateTime(value: string) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }

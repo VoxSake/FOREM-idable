@@ -338,7 +338,7 @@ export function CoachImportApplicationsDialog({
           </div>
 
           {headers.length > 0 ? (
-            <label className="block space-y-1">
+            <label className="block space-y-2">
               <span className="text-sm font-medium">Format de date</span>
               <select
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm md:max-w-xs"

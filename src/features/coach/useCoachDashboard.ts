@@ -907,6 +907,62 @@ export function useCoachDashboard() {
     };
   };
 
+  const updateManagedApplication = async (
+    userId: number,
+    jobId: string,
+    patch: Partial<
+      Pick<
+        JobApplication,
+        | "status"
+        | "notes"
+        | "proofs"
+        | "interviewAt"
+        | "interviewDetails"
+        | "lastFollowUpAt"
+        | "followUpDueAt"
+        | "followUpEnabled"
+        | "appliedAt"
+        | "job"
+      >
+    >
+  ) => {
+    const response = await fetch(`/api/coach/users/${userId}/applications/${jobId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patch }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      application?: JobApplication;
+    };
+
+    if (!response.ok || !data.application) {
+      setFeedback(data.error || "Mise à jour de la candidature impossible.");
+      return false;
+    }
+
+    setFeedback("Candidature mise à jour.");
+    await loadDashboard();
+    return true;
+  };
+
+  const deleteManagedApplication = async (userId: number, jobId: string) => {
+    const response = await fetch(`/api/coach/users/${userId}/applications/${jobId}`, {
+      method: "DELETE",
+    });
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+
+    if (!response.ok) {
+      setFeedback(data.error || "Suppression de la candidature impossible.");
+      return false;
+    }
+
+    setFeedback("Candidature supprimée.");
+    await loadDashboard();
+    return true;
+  };
+
   return {
     user,
     isAuthLoading,
@@ -990,5 +1046,7 @@ export function useCoachDashboard() {
     regenerateCalendarUrl,
     undoLastAction,
     importApplicationsForUser,
+    updateManagedApplication,
+    deleteManagedApplication,
   };
 }
