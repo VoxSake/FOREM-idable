@@ -77,6 +77,37 @@ export function useCoachDashboard() {
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
   const deferredSearch = useDeferredValue(search);
 
+  const summarizeUserApplications = (
+    entry: CoachUserSummary,
+    nextApplications: JobApplication[]
+  ): CoachUserSummary => {
+    const now = new Date();
+
+    return {
+      ...entry,
+      applications: nextApplications,
+      applicationCount: nextApplications.length,
+      interviewCount: nextApplications.filter((item) => item.status === "interview").length,
+      dueCount: nextApplications.filter((item) => {
+        const due = new Date(item.followUpDueAt);
+        return (
+          (item.status === "in_progress" || item.status === "follow_up") &&
+          item.followUpEnabled !== false &&
+          !Number.isNaN(due.getTime()) &&
+          due <= now
+        );
+      }).length,
+      acceptedCount: nextApplications.filter((item) => item.status === "accepted").length,
+      rejectedCount: nextApplications.filter((item) => item.status === "rejected").length,
+      inProgressCount: nextApplications.filter((item) => item.status === "in_progress").length,
+      latestActivityAt:
+        nextApplications
+          .map((item) => item.updatedAt)
+          .filter(Boolean)
+          .sort((a, b) => (a > b ? -1 : 1))[0] ?? null,
+    };
+  };
+
   const applyApplicationUpdate = (userId: number, application: JobApplication) => {
     setDashboard((current) => {
       if (!current) return current;
@@ -89,40 +120,35 @@ export function useCoachDashboard() {
           }
 
           const nextApplications = entry.applications
-            .map((existing) =>
-              existing.job.id === application.job.id ? application : existing
-            )
+            .map((existing) => (existing.job.id === application.job.id ? application : existing))
             .sort((left, right) => {
               const leftTime = new Date(left.appliedAt).getTime();
               const rightTime = new Date(right.appliedAt).getTime();
               return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
             });
 
-          const now = new Date();
+          return summarizeUserApplications(entry, nextApplications);
+        }),
+      };
+    });
+  };
 
-          return {
-            ...entry,
-            applications: nextApplications,
-            applicationCount: nextApplications.length,
-            interviewCount: nextApplications.filter((item) => item.status === "interview").length,
-            dueCount: nextApplications.filter((item) => {
-              const due = new Date(item.followUpDueAt);
-              return (
-                (item.status === "in_progress" || item.status === "follow_up") &&
-                item.followUpEnabled !== false &&
-                !Number.isNaN(due.getTime()) &&
-                due <= now
-              );
-            }).length,
-            acceptedCount: nextApplications.filter((item) => item.status === "accepted").length,
-            rejectedCount: nextApplications.filter((item) => item.status === "rejected").length,
-            inProgressCount: nextApplications.filter((item) => item.status === "in_progress").length,
-            latestActivityAt:
-              nextApplications
-                .map((item) => item.updatedAt)
-                .filter(Boolean)
-                .sort((a, b) => (a > b ? -1 : 1))[0] ?? null,
-          };
+  const removeApplicationLocally = (userId: number, jobId: string) => {
+    setDashboard((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        users: current.users.map((entry) => {
+          if (entry.id !== userId) {
+            return entry;
+          }
+
+          const nextApplications = entry.applications.filter(
+            (application) => application.job.id !== jobId
+          );
+
+          return summarizeUserApplications(entry, nextApplications);
         }),
       };
     });
@@ -943,7 +969,7 @@ export function useCoachDashboard() {
     }
 
     setFeedback("Candidature mise à jour.");
-    await loadDashboard();
+    applyApplicationUpdate(userId, data.application);
     return true;
   };
 
@@ -959,7 +985,7 @@ export function useCoachDashboard() {
     }
 
     setFeedback("Candidature supprimée.");
-    await loadDashboard();
+    removeApplicationLocally(userId, jobId);
     return true;
   };
 
