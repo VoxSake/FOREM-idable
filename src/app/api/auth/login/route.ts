@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     const rateLimit = await checkRateLimit({
       scope: "auth-login",
-      limit: 5,
+      limit: 8,
       windowMs: 10 * 60 * 1000,
       identifier: email || null,
     });

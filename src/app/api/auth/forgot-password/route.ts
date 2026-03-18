@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     const rateLimit = await checkRateLimit({
       scope: "auth-forgot-password",
-      limit: 3,
+      limit: 5,
       windowMs: 30 * 60 * 1000,
       identifier: email || null,
     });
