@@ -7,6 +7,8 @@ Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, suivi de 
 - Next.js 16 (App Router)
 - React 19
 - Tailwind CSS + shadcn/ui
+- PostgreSQL + Drizzle ORM (schéma, migrations, couche data progressive)
+- Redis optionnel pour le rate limiting distribué
 - Vitest + Testing Library
 
 ## Fonctionnalités
@@ -17,8 +19,9 @@ Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, suivi de 
 - Bouton PDF direct par offre quand disponible (proxy serveur)
 - Suivi des candidatures, relances et entretiens
 - Comptes `user` / `coach` / `admin`
+- Attribution de un ou plusieurs coachs par groupe, avec notion de manager par groupe
 - Candidatures et historique liés au compte utilisateur
-- API externe sécurisée pour export `JSON` / `CSV`
+- API externe sécurisée pour export `JSON` / `CSV`, alignée sur les scopes coach/admin
 - Synchronisation calendrier des entretiens pour `coach` / `admin` via lien d'abonnement ICS par groupe ou global
 - Import CSV de candidatures côté coach avec auto-détection des colonnes, mapping manuel, gestion des statuts non reconnus et mise à jour des doublons existants
 - Dashboard coach enrichi avec sections `À traiter`, `Activité récente` et édition / suppression de candidatures depuis le sidepanel bénéficiaire
@@ -82,6 +85,14 @@ Pour activer la réinitialisation de mot de passe par email:
 4. Renseigner `RESEND_API_KEY`
 5. Définir une adresse d’envoi valide dans `RESEND_FROM_EMAIL`
 
+Pour activer un rate limit partagé entre plusieurs instances:
+
+1. Déployer un service Redis sur le réseau privé de l'application
+2. Définir `REDIS_URL`
+3. Redéployer l'application
+
+Sans `REDIS_URL`, l'application continue de fonctionner avec un fallback mémoire local.
+
 Pour personnaliser la page `Confidentialité`:
 
 1. Définir `PRIVACY_CONTROLLER_NAME`
@@ -127,6 +138,8 @@ Authentification:
 
 - génération d'une clé API depuis `Mon compte`
 - utilisation via header `Authorization: Bearer ...`
+
+Le contrat actuel expose aussi les coachs attribués et le manager de chaque groupe, et applique le même périmètre de visibilité que le dashboard coach.
 
 Documentation complète:
 
