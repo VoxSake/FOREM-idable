@@ -1,5 +1,9 @@
 import { randomUUID } from "crypto";
 import {
+  parseStoredJobApplication,
+  safeParseStoredJobApplication,
+} from "@/lib/server/applicationSchemas";
+import {
   normalizeApplicationCoachNotes,
   toCoachNoteAuthor,
 } from "@/lib/coachNotes";
@@ -365,9 +369,15 @@ export async function getCoachDashboard(
     );
 
     for (const row of applicationsResult.rows) {
+      const application = safeParseStoredJobApplication(
+        row.application,
+        `coach-dashboard:${row.user_id}`
+      );
+      if (!application) continue;
+
       applicationsByUser.set(row.user_id, [
         ...(applicationsByUser.get(row.user_id) ?? []),
-        normalizeApplicationCoachNotes(row.application),
+        normalizeApplicationCoachNotes(application),
       ]);
     }
   }
@@ -664,7 +674,12 @@ export async function updateCoachApplicationNotes(input: {
     [input.userId, input.jobId]
   );
 
-  const existing = existingResult.rows[0]?.application;
+  const existing = existingResult.rows[0]?.application
+    ? parseStoredJobApplication(
+        existingResult.rows[0].application,
+        `coach-update:${input.userId}:${input.jobId}`
+      )
+    : null;
   if (!existing) {
     throw new Error("Application not found");
   }

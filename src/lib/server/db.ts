@@ -1,8 +1,11 @@
 import { Pool } from "pg";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { runDatabaseMigrations } from "@/lib/server/migrations";
+import * as schema from "@/lib/server/schema";
 
 declare global {
   var __foremIdablePool: Pool | undefined;
+  var __foremIdableOrm: NodePgDatabase<typeof schema> | undefined;
   var __foremIdableMigrationPromise: Promise<void> | undefined;
 }
 
@@ -38,9 +41,15 @@ function createPool() {
 }
 
 export const db = globalThis.__foremIdablePool ?? createPool();
+export const orm =
+  globalThis.__foremIdableOrm ?? (db ? drizzle(db, { schema, casing: "snake_case" }) : null);
 
 if (db && !globalThis.__foremIdablePool) {
   globalThis.__foremIdablePool = db;
+}
+
+if (orm && !globalThis.__foremIdableOrm) {
+  globalThis.__foremIdableOrm = orm;
 }
 
 export async function ensureDatabase() {

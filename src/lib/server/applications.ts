@@ -1,4 +1,8 @@
 import { addDays } from "date-fns";
+import {
+  parseStoredJobApplication,
+  safeParseStoredJobApplication,
+} from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
 import {
   preserveApplicationCoachFields,
@@ -77,7 +81,8 @@ async function getStoredApplication(userId: number, jobId: string) {
     [userId, jobId]
   );
 
-  return result.rows[0]?.application ?? null;
+  const stored = result.rows[0]?.application;
+  return stored ? parseStoredJobApplication(stored, `user:${userId}:job:${jobId}`) : null;
 }
 
 async function getNextPosition(userId: number) {
@@ -106,7 +111,12 @@ export async function listApplicationsForUser(userId: number) {
   );
 
   return sortApplicationsByAppliedAt(
-    result.rows.map((row) => sanitizeApplicationForBeneficiary(row.application))
+    result.rows
+      .map((row, index) =>
+        safeParseStoredJobApplication(row.application, `user:${userId}:position:${index}`)
+      )
+      .filter((entry): entry is JobApplication => Boolean(entry))
+      .map((application) => sanitizeApplicationForBeneficiary(application))
   );
 }
 
@@ -155,6 +165,7 @@ export async function createTrackedApplicationForUser(input: {
       };
 
   const next = preserveApplicationCoachFields(existing, nextBase);
+  parseStoredJobApplication(next, `write:user:${input.userId}:job:${input.job.id}`);
 
   if (existing) {
     await db.query(
@@ -241,6 +252,7 @@ export async function updateApplicationForUser(input: {
     ...nextPatch,
     updatedAt: new Date().toISOString(),
   });
+  parseStoredJobApplication(next, `write:user:${input.userId}:job:${input.jobId}`);
 
   await db.query(
     `UPDATE user_applications

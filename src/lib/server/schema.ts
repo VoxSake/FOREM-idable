@@ -10,6 +10,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { UserRole } from "@/types/auth";
 
 export const users = pgTable("users", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -17,7 +18,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   firstName: text("first_name").notNull().default(""),
   lastName: text("last_name").notNull().default(""),
-  role: text("role").notNull().default("user"),
+  role: text("role").$type<UserRole>().notNull().default("user"),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   lastCoachActionAt: timestamp("last_coach_action_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

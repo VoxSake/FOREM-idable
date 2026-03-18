@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 import { buildCalendarIcsFeed } from "@/lib/calendarIcs";
+import { safeParseStoredJobApplication } from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { UserRole } from "@/types/auth";
 import { CalendarFeedApplicationRow, CalendarSubscriptionScope, CalendarSubscriptionSummary } from "@/types/calendar";
@@ -245,10 +246,15 @@ function buildCalendarFeedRows(input: {
     .map((row) => {
       const member = input.membersById.get(row.user_id);
       if (!member) return null;
+      const application = safeParseStoredJobApplication(
+        row.application,
+        `calendar:${row.user_id}`
+      );
+      if (!application) return null;
 
       return {
         ...member,
-        application: row.application,
+        application,
       };
     })
     .filter((entry): entry is CalendarFeedApplicationRow => Boolean(entry));

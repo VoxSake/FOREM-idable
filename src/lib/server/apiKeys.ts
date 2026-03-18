@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from "crypto";
+import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { headers } from "next/headers";
-import { db, ensureDatabase } from "@/lib/server/db";
+import { ensureDatabase, orm } from "@/lib/server/db";
+import { apiKeys, users } from "@/lib/server/schema";
 import { ApiKeyCreateResult, ApiKeySummary, ExternalApiActor } from "@/types/externalApi";
 
 function hashToken(token: string) {
@@ -19,26 +21,48 @@ function buildKeyMaterial() {
   };
 }
 
+function toApiKeySummary(row: {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  lastFour: string;
+  createdAt: Date;
+  expiresAt: Date | null;
+  lastUsedAt: Date | null;
+  revokedAt: Date | null;
+}): ApiKeySummary {
+  return {
+    id: row.id,
+    name: row.name,
+    keyPrefix: row.keyPrefix,
+    lastFour: row.lastFour,
+    createdAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt?.toISOString() ?? null,
+    lastUsedAt: row.lastUsedAt?.toISOString() ?? null,
+    revokedAt: row.revokedAt?.toISOString() ?? null,
+  };
+}
+
 export async function listApiKeysForUser(userId: number): Promise<ApiKeySummary[]> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
+  if (!orm) throw new Error("Database unavailable");
 
-  const result = await db.query<ApiKeySummary>(
-    `SELECT id,
-            name,
-            key_prefix AS "keyPrefix",
-            last_four AS "lastFour",
-            created_at AS "createdAt",
-            expires_at AS "expiresAt",
-            last_used_at AS "lastUsedAt",
-            revoked_at AS "revokedAt"
-     FROM api_keys
-     WHERE user_id = $1
-     ORDER BY created_at DESC`,
-    [userId]
-  );
+  const rows = await orm
+    .select({
+      id: apiKeys.id,
+      name: apiKeys.name,
+      keyPrefix: apiKeys.keyPrefix,
+      lastFour: apiKeys.lastFour,
+      createdAt: apiKeys.createdAt,
+      expiresAt: apiKeys.expiresAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+      revokedAt: apiKeys.revokedAt,
+    })
+    .from(apiKeys)
+    .where(eq(apiKeys.userId, userId))
+    .orderBy(desc(apiKeys.createdAt));
 
-  return result.rows;
+  return rows.map((row) => toApiKeySummary(row));
 }
 
 export async function createApiKey(
@@ -47,7 +71,7 @@ export async function createApiKey(
   expiresAt?: string | null
 ): Promise<ApiKeyCreateResult> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
+  if (!orm) throw new Error("Database unavailable");
 
   const trimmedName = name.trim();
   if (!trimmedName) {
@@ -60,38 +84,41 @@ export async function createApiKey(
   }
 
   const { plainTextKey, keyPrefix, lastFour, tokenHash } = buildKeyMaterial();
-  const result = await db.query<ApiKeySummary>(
-    `INSERT INTO api_keys (user_id, name, token_hash, key_prefix, last_four, expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id,
-               name,
-               key_prefix AS "keyPrefix",
-               last_four AS "lastFour",
-               created_at AS "createdAt",
-               expires_at AS "expiresAt",
-               last_used_at AS "lastUsedAt",
-               revoked_at AS "revokedAt"`,
-    [userId, trimmedName, tokenHash, keyPrefix, lastFour, normalizedExpiresAt?.toISOString() ?? null]
-  );
+  const [createdApiKey] = await orm
+    .insert(apiKeys)
+    .values({
+      userId,
+      name: trimmedName,
+      tokenHash,
+      keyPrefix,
+      lastFour,
+      expiresAt: normalizedExpiresAt,
+    })
+    .returning({
+      id: apiKeys.id,
+      name: apiKeys.name,
+      keyPrefix: apiKeys.keyPrefix,
+      lastFour: apiKeys.lastFour,
+      createdAt: apiKeys.createdAt,
+      expiresAt: apiKeys.expiresAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+      revokedAt: apiKeys.revokedAt,
+    });
 
   return {
-    apiKey: result.rows[0],
+    apiKey: toApiKeySummary(createdApiKey),
     plainTextKey,
   };
 }
 
 export async function revokeApiKey(userId: number, apiKeyId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
+  if (!orm) throw new Error("Database unavailable");
 
-  await db.query(
-    `UPDATE api_keys
-     SET revoked_at = NOW()
-     WHERE id = $1
-       AND user_id = $2
-       AND revoked_at IS NULL`,
-    [apiKeyId, userId]
-  );
+  await orm
+    .update(apiKeys)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(apiKeys.id, apiKeyId), eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
 }
 
 async function getBearerToken() {
@@ -107,53 +134,44 @@ async function getBearerToken() {
 
 export async function requireExternalApiActor(): Promise<ExternalApiActor | null> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
+  if (!orm) throw new Error("Database unavailable");
 
   const token = await getBearerToken();
   if (!token) return null;
 
   const tokenHash = hashToken(token);
-  const result = await db.query<{
-    id: number;
-    user_id: number;
-    email: string;
-    first_name: string;
-    last_name: string;
-    role: "coach" | "admin" | "user";
-  }>(
-    `SELECT api_keys.id,
-            api_keys.user_id,
-            users.email,
-            users.first_name,
-            users.last_name,
-            users.role
-     FROM api_keys
-     INNER JOIN users ON users.id = api_keys.user_id
-     WHERE api_keys.revoked_at IS NULL
-       AND (api_keys.expires_at IS NULL OR api_keys.expires_at > NOW())
-       AND api_keys.token_hash = $1
-       AND users.role IN ('coach', 'admin')`
-    ,
-    [tokenHash]
-  );
+  const [row] = await orm
+    .select({
+      apiKeyId: apiKeys.id,
+      userId: apiKeys.userId,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+    })
+    .from(apiKeys)
+    .innerJoin(users, eq(users.id, apiKeys.userId))
+    .where(
+      and(
+        isNull(apiKeys.revokedAt),
+        or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, new Date())),
+        eq(apiKeys.tokenHash, tokenHash),
+        or(eq(users.role, "coach"), eq(users.role, "admin"))
+      )
+    )
+    .limit(1);
 
-  const row = result.rows[0];
-  if (!row || row.role === "user") {
+  if (!row) {
     return null;
   }
 
-  await db.query(
-    `UPDATE api_keys
-     SET last_used_at = NOW()
-     WHERE id = $1`,
-    [row.id]
-  );
+  await orm.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.apiKeyId));
 
   return {
-    id: row.user_id,
+    id: row.userId,
     email: row.email,
-    firstName: row.first_name,
-    lastName: row.last_name,
-    role: row.role,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    role: row.role === "admin" ? "admin" : "coach",
   };
 }

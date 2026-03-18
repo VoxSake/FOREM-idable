@@ -1,4 +1,8 @@
 import { STORAGE_KEYS } from "@/lib/storageKeys";
+import {
+  parseStoredJobApplication,
+  safeParseStoredJobApplication,
+} from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
 import {
   normalizeApplicationCoachNotes,
@@ -135,7 +139,11 @@ async function persistNormalizedState(userId: number, values: Record<string, str
   );
   const applications = mergeApplicationsWithServerFields({
     incoming: incomingApplications,
-    existing: existingApplicationsResult.rows.map((row) => row.application),
+    existing: existingApplicationsResult.rows
+      .map((row, index) =>
+        safeParseStoredJobApplication(row.application, `user-state:${userId}:existing:${index}`)
+      )
+      .filter((entry): entry is JobApplication => Boolean(entry)),
   });
 
   await db.query("BEGIN");
@@ -154,6 +162,7 @@ async function persistNormalizedState(userId: number, values: Record<string, str
     }
 
     for (const [position, application] of applications.entries()) {
+      parseStoredJobApplication(application, `user-state:${userId}:write:${position}`);
       await db.query(
         `INSERT INTO user_applications (user_id, job_id, position, application)
          VALUES ($1, $2, $3, $4::jsonb)`,
@@ -260,7 +269,11 @@ export async function getUserState(userId: number): Promise<PersistedUserState |
   const values = buildValues({
     favorites: favoritesResult.rows.map((row) => row.job),
     applications: sanitizeApplicationsForBeneficiary(
-      applicationsResult.rows.map((row) => row.application)
+      applicationsResult.rows
+        .map((row, index) =>
+          safeParseStoredJobApplication(row.application, `user-state:${userId}:read:${index}`)
+        )
+        .filter((entry): entry is JobApplication => Boolean(entry))
     ),
     searchHistory: searchHistoryResult.rows.map((row) => row.entry),
     settings: settingsRow?.settings ?? {},
