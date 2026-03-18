@@ -6,6 +6,7 @@ import {
   ExternalApiApplicationRow,
   ExternalApiApplicationsResponse,
   ExternalApiFilters,
+  ExternalApiGroupCoachSummary,
   ExternalApiGroupSummary,
   ExternalApiGroupsResponse,
   ExternalApiStats,
@@ -14,7 +15,7 @@ import {
   ExternalApiUsersResponse,
 } from "@/types/externalApi";
 import { ApplicationStatus } from "@/types/application";
-import { CoachUserSummary } from "@/types/coach";
+import { CoachGroupMember, CoachUserSummary } from "@/types/coach";
 import { escapeCsvCell } from "@/lib/csv";
 
 function matchesSearch(haystack: string[], search?: string) {
@@ -84,6 +85,21 @@ function toExternalUserSummary(
   };
 }
 
+function toExternalGroupCoachSummary(
+  coach: CoachGroupMember,
+  managerCoachId: number | null
+): ExternalApiGroupCoachSummary {
+  return {
+    id: coach.id,
+    email: coach.email,
+    firstName: coach.firstName,
+    lastName: coach.lastName,
+    fullName: `${coach.firstName} ${coach.lastName}`.trim() || coach.email,
+    role: coach.role === "admin" ? "admin" : "coach",
+    isManager: managerCoachId === coach.id,
+  };
+}
+
 async function loadDashboard(
   actor: ExternalApiActor,
   filters?: {
@@ -139,22 +155,48 @@ export async function getExternalGroups(
   });
   const offset = normalizeOffset(filters.offset);
   const limit = normalizeLimit(filters.limit, 200);
+  const usersById = new Map(dashboard.users.map((entry) => [entry.id, entry]));
 
   let groups: ExternalApiGroupSummary[] = dashboard.groups
-    .filter((group) => matchesSearch([group.name, group.createdBy.email], filters.search))
+    .filter((group) =>
+      matchesSearch(
+        [
+          group.name,
+          group.createdBy.email,
+          ...group.coaches.flatMap((coach) => [
+            coach.email,
+            coach.firstName,
+            coach.lastName,
+            `${coach.firstName} ${coach.lastName}`.trim(),
+          ]),
+        ],
+        filters.search
+      )
+    )
     .map((group) => {
-      const members = dashboard.users.filter((entry) => group.members.some((member) => member.id === entry.id));
+      const members = group.members
+        .map((member) => usersById.get(member.id))
+        .filter((entry): entry is CoachUserSummary => Boolean(entry));
+      const coaches = group.coaches.map((coach) =>
+        toExternalGroupCoachSummary(coach, group.managerCoachId)
+      );
+      const manager = coaches.find((coach) => coach.isManager) ?? null;
+
       return {
         id: group.id,
         name: group.name,
         createdAt: group.createdAt,
         createdBy: group.createdBy,
+        managerCoachId: group.managerCoachId,
+        manager,
+        coachCount: coaches.length,
+        coaches,
         memberCount: members.length,
         totalApplications: members.reduce((sum, entry) => sum + entry.applicationCount, 0),
         totalInterviews: members.reduce((sum, entry) => sum + entry.interviewCount, 0),
-        members: members.map((entry) =>
-          toExternalUserSummary(entry, Boolean(filters.includeApplications))
-        ),
+        members: filters.includeApplications
+          ? members.map((entry) => toExternalUserSummary(entry, true))
+          : undefined,
       };
     });
 
@@ -278,6 +320,9 @@ export function buildGroupsCsv(groups: ExternalApiGroupsResponse["groups"]) {
     "Nom groupe",
     "Créé le",
     "Créé par",
+    "Manager",
+    "Nombre de coachs",
+    "Coachs attribués",
     "Membres",
     "Candidatures",
     "Entretiens",
@@ -288,6 +333,9 @@ export function buildGroupsCsv(groups: ExternalApiGroupsResponse["groups"]) {
     group.name,
     group.createdAt,
     group.createdBy.email,
+    group.manager?.fullName || "",
+    String(group.coachCount),
+    group.coaches.map((coach) => coach.fullName).join(" | "),
     String(group.memberCount),
     String(group.totalApplications),
     String(group.totalInterviews),

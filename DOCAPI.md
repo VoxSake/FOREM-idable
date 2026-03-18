@@ -54,15 +54,13 @@ Un `user` standard ne peut pas générer de clé API et ne peut pas appeler l'AP
 
 Les clés API donnent accès à l'ensemble des données visibles dans le suivi coach:
 
-- tous les utilisateurs
-- tous les groupes
-- toutes les candidatures
-- entretiens
-- relances
-- détails utilisateur
-- note privée coach commune
-- notes coach partagées
-- auteurs / contributeurs des notes partagées
+- `admin`: accès global à tous les utilisateurs, groupes, candidatures, entretiens et relances
+- `coach`: accès limité aux groupes qui lui sont attribués et aux bénéficiaires visibles dans ces groupes
+- les exports détaillés peuvent inclure:
+  - détails utilisateur
+  - note privée coach commune
+  - notes coach partagées
+  - auteurs / contributeurs des notes partagées
 
 ## Modèle de sécurité
 
@@ -119,6 +117,15 @@ L'API externe est strictement:
 - read-only
 - sans mutation
 - sans création ou suppression de données métier
+
+### Scope réel des données
+
+Le périmètre d'une clé API est toujours celui du dashboard coach du porteur:
+
+- un `admin` voit tout
+- un `coach` ne voit que les groupes qui lui sont attribués
+- les utilisateurs, candidatures, groupes et exports dérivés sont limités à ce même périmètre
+- si un bénéficiaire appartient à plusieurs groupes, il est visible par les coachs des groupes auxquels il appartient
 
 ## Générer une clé API
 
@@ -395,7 +402,24 @@ Authorization: Bearer VOTRE_CLE_API
   "capabilities": {
     "formats": ["json", "csv"],
     "searchFields": ["firstName", "lastName", "fullName", "email"],
-    "filters": ["search", "groupId", "userId", "role", "status", "dueOnly", "interviewOnly"]
+    "filters": [
+      "search",
+      "groupId",
+      "userId",
+      "role",
+      "status",
+      "dueOnly",
+      "interviewOnly",
+      "updatedAfter",
+      "updatedBefore",
+      "limit",
+      "offset",
+      "includeApplications"
+    ],
+    "scope": {
+      "visibility": "assigned_groups",
+      "description": "Accès limité aux groupes attribués au coach et aux bénéficiaires visibles dans ces groupes."
+    }
   }
 }
 ```
@@ -453,7 +477,7 @@ Retourne la liste des utilisateurs suivis.
       "fullName": "Jordi Brisbois",
       "role": "admin",
       "groupIds": [1, 5],
-      "groupNames": ["Promo A", "Coaches"],
+      "groupNames": ["Promo A", "Promo B"],
       "applicationCount": 15,
       "interviewCount": 2,
       "dueCount": 1,
@@ -499,8 +523,8 @@ Inclut:
 
 Les candidatures détaillées peuvent inclure aussi:
 
-- `coachNote`
-- `shareCoachNoteWithBeneficiary`
+- `privateCoachNote`
+- `sharedCoachNotes`
 
 #### Exemples
 
@@ -550,10 +574,76 @@ Chaque groupe contient:
 - nom
 - date de création
 - créateur
+- `managerCoachId`
+- `manager`
+- nombre de coachs attribués
+- liste des coachs attribués
 - nombre de membres
 - nombre de candidatures
 - nombre d'entretiens
 - membres si `includeApplications=1`
+
+Le manager d'un groupe est toujours un `coach` déjà attribué à ce groupe.
+
+#### Exemple JSON
+
+```json
+{
+  "actor": {},
+  "stats": {
+    "userCount": 12,
+    "groupCount": 3,
+    "applicationCount": 90,
+    "interviewCount": 7,
+    "dueCount": 11
+  },
+  "groups": [
+    {
+      "id": 5,
+      "name": "Promo A",
+      "createdAt": "2026-03-16T08:00:00.000Z",
+      "createdBy": {
+        "id": 2,
+        "email": "admin@example.com"
+      },
+      "managerCoachId": 11,
+      "manager": {
+        "id": 11,
+        "email": "coach@example.com",
+        "firstName": "Jordi",
+        "lastName": "Brisbois",
+        "fullName": "Jordi Brisbois",
+        "role": "coach",
+        "isManager": true
+      },
+      "coachCount": 2,
+      "coaches": [
+        {
+          "id": 11,
+          "email": "coach@example.com",
+          "firstName": "Jordi",
+          "lastName": "Brisbois",
+          "fullName": "Jordi Brisbois",
+          "role": "coach",
+          "isManager": true
+        },
+        {
+          "id": 14,
+          "email": "coach2@example.com",
+          "firstName": "Alex",
+          "lastName": "Martin",
+          "fullName": "Alex Martin",
+          "role": "coach",
+          "isManager": false
+        }
+      ],
+      "memberCount": 4,
+      "totalApplications": 18,
+      "totalInterviews": 3
+    }
+  ]
+}
+```
 
 #### CSV
 
@@ -563,6 +653,9 @@ Colonnes:
 - `Nom groupe`
 - `Créé le`
 - `Créé par`
+- `Manager`
+- `Nombre de coachs`
+- `Coachs attribués`
 - `Membres`
 - `Candidatures`
 - `Entretiens`
@@ -576,13 +669,15 @@ Retourne le détail d'un groupe.
 Inclut:
 
 - métadonnées du groupe
+- manager du groupe
+- coachs attribués au groupe
 - membres
 - candidatures des membres
 
 Les candidatures embarquées peuvent inclure aussi:
 
-- `coachNote`
-- `shareCoachNoteWithBeneficiary`
+- `privateCoachNote`
+- `sharedCoachNotes`
 
 #### CSV
 
@@ -641,8 +736,8 @@ Chaque ligne contient:
 
 La candidature complète peut inclure aussi:
 
-- `coachNote`
-- `shareCoachNoteWithBeneficiary`
+- `privateCoachNote`
+- `sharedCoachNotes`
 
 #### CSV
 
@@ -666,8 +761,10 @@ Colonnes:
 - `Statut`
 - `Notes`
 - `Preuves`
-- `Note coach`
-- `Partagée bénéficiaire`
+- `Note privée coach`
+- `Contributeurs note privée`
+- `Notes coach partagées`
+- `Contributeurs notes partagées`
 - `Lien`
 - `PDF`
 - `Mis à jour le`
@@ -744,10 +841,6 @@ Cas possibles:
 - clé invalide
 - clé révoquée
 - clé d'un compte sans rôle autorisé
-
-### `403 Forbidden`
-
-Utilisé côté gestion de clés si le compte n'est pas `coach` ou `admin`.
 
 ### `404 Not Found`
 

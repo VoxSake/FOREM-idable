@@ -110,6 +110,11 @@ npm run test:watch # tests en watch
 
 FOREM-idable expose une API externe en lecture seule pour les comptes `coach` et `admin`.
 
+Scopes actuels:
+
+- `admin`: accès global à toutes les données du suivi coach
+- `coach`: accès limité aux groupes qui lui sont attribués et aux bénéficiaires visibles dans ces groupes
+
 Cas d'usage principaux:
 
 - export Excel / Power Query
@@ -140,7 +145,7 @@ Règles actuelles:
 
 - un lien par groupe standard peut être copié depuis `Suivi coach`
 - un lien global "tous les groupes bénéficiaires" est disponible
-- le groupe `Coaches` n'est jamais inclus dans le calendrier global
+- le lien global ne contient que les groupes bénéficiaires réellement visibles par le compte courant
 - la régénération d'un lien invalide les anciens abonnements
 - la régénération est réservée aux comptes `admin`
 

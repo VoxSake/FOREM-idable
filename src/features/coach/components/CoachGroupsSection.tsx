@@ -460,8 +460,7 @@ export function CoachGroupsSection({
               URL dans Google Calendar.
             </p>
             <p>
-              Le lien global rassemble tous les groupes beneficiaires. Le groupe `Coaches` n&apos;y est
-              jamais inclus.
+              Le lien global rassemble tous les groupes beneficiaires visibles par votre compte.
             </p>
           </div>
           <DialogFooter>

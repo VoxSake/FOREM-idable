@@ -10,7 +10,27 @@ export async function GET() {
       capabilities: {
         formats: ["json", "csv"],
         searchFields: ["firstName", "lastName", "fullName", "email"],
-        filters: ["search", "groupId", "userId", "role", "status", "dueOnly", "interviewOnly"],
+        filters: [
+          "search",
+          "groupId",
+          "userId",
+          "role",
+          "status",
+          "dueOnly",
+          "interviewOnly",
+          "updatedAfter",
+          "updatedBefore",
+          "limit",
+          "offset",
+          "includeApplications",
+        ],
+        scope: {
+          visibility: actor.role === "admin" ? "global" : "assigned_groups",
+          description:
+            actor.role === "admin"
+              ? "Accès global à tous les groupes, bénéficiaires et candidatures."
+              : "Accès limité aux groupes attribués au coach et aux bénéficiaires visibles dans ces groupes.",
+        },
       },
     });
   } catch {

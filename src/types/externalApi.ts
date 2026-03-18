@@ -57,6 +57,16 @@ export interface ExternalApiUserSummary {
 
 export type ExternalApiUserDetail = ExternalApiUserSummary;
 
+export interface ExternalApiGroupCoachSummary {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  role: Extract<UserRole, "coach" | "admin">;
+  isManager: boolean;
+}
+
 export interface ExternalApiGroupSummary {
   id: number;
   name: string;
@@ -65,6 +75,10 @@ export interface ExternalApiGroupSummary {
     id: number;
     email: string;
   };
+  managerCoachId: number | null;
+  manager: ExternalApiGroupCoachSummary | null;
+  coachCount: number;
+  coaches: ExternalApiGroupCoachSummary[];
   memberCount: number;
   totalApplications: number;
   totalInterviews: number;

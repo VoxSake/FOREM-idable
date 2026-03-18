@@ -1,0 +1,203 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  buildGroupsCsv,
+  getExternalGroupDetail,
+  getExternalGroups,
+  getExternalUserDetail,
+} from "@/lib/server/externalApi";
+import { getCoachDashboard } from "@/lib/server/coach";
+import { CoachDashboardData } from "@/types/coach";
+import { ExternalApiActor } from "@/types/externalApi";
+
+vi.mock("@/lib/server/coach", () => ({
+  getCoachDashboard: vi.fn(),
+}));
+
+const actor: ExternalApiActor = {
+  id: 11,
+  email: "coach@example.com",
+  firstName: "Jordi",
+  lastName: "Brisbois",
+  role: "coach",
+};
+
+const dashboardFixture: CoachDashboardData = {
+  viewer: {
+    id: 11,
+    email: "coach@example.com",
+    firstName: "Jordi",
+    lastName: "Brisbois",
+    role: "coach",
+  },
+  users: [
+    {
+      id: 21,
+      email: "alice@example.com",
+      firstName: "Alice",
+      lastName: "Durand",
+      role: "user",
+      groupIds: [5],
+      groupNames: ["Promo A"],
+      applicationCount: 2,
+      interviewCount: 1,
+      dueCount: 1,
+      acceptedCount: 0,
+      rejectedCount: 0,
+      inProgressCount: 2,
+      latestActivityAt: "2026-03-18T10:00:00.000Z",
+      lastSeenAt: "2026-03-18T09:00:00.000Z",
+      lastCoachActionAt: null,
+      applications: [],
+    },
+  ],
+  groups: [
+    {
+      id: 5,
+      name: "Promo A",
+      createdAt: "2026-03-16T08:00:00.000Z",
+      createdBy: {
+        id: 1,
+        email: "admin@example.com",
+      },
+      managerCoachId: 11,
+      members: [
+        {
+          id: 21,
+          email: "alice@example.com",
+          firstName: "Alice",
+          lastName: "Durand",
+          role: "user",
+        },
+      ],
+      coaches: [
+        {
+          id: 11,
+          email: "coach@example.com",
+          firstName: "Jordi",
+          lastName: "Brisbois",
+          role: "coach",
+        },
+        {
+          id: 14,
+          email: "alex@example.com",
+          firstName: "Alex",
+          lastName: "Martin",
+          role: "coach",
+        },
+      ],
+    },
+  ],
+  availableCoaches: [],
+};
+
+describe("externalApi", () => {
+  const mockedGetCoachDashboard = vi.mocked(getCoachDashboard);
+
+  beforeEach(() => {
+    mockedGetCoachDashboard.mockResolvedValue(dashboardFixture);
+  });
+
+  it("serializes assigned coaches and manager in group exports", async () => {
+    const response = await getExternalGroups(actor);
+
+    expect(response.groups).toHaveLength(1);
+    expect(response.groups[0]).toMatchObject({
+      id: 5,
+      managerCoachId: 11,
+      coachCount: 2,
+      manager: {
+        id: 11,
+        fullName: "Jordi Brisbois",
+        isManager: true,
+      },
+      coaches: [
+        {
+          id: 11,
+          fullName: "Jordi Brisbois",
+          isManager: true,
+        },
+        {
+          id: 14,
+          fullName: "Alex Martin",
+          isManager: false,
+        },
+      ],
+    });
+    expect(response.groups[0].members).toBeUndefined();
+  });
+
+  it("includes members only when includeApplications is requested", async () => {
+    const response = await getExternalGroupDetail(actor, 5);
+
+    expect(response).not.toBeNull();
+    expect(response?.members).toEqual([
+      expect.objectContaining({
+        id: 21,
+        fullName: "Alice Durand",
+        applications: [],
+      }),
+    ]);
+  });
+
+  it("returns null when a scoped user is not visible in the dashboard", async () => {
+    mockedGetCoachDashboard.mockResolvedValueOnce({
+      ...dashboardFixture,
+      users: [],
+    });
+
+    await expect(getExternalUserDetail(actor, 99)).resolves.toBeNull();
+  });
+
+  it("exports manager and assigned coaches in group csv", () => {
+    const csv = buildGroupsCsv([
+      {
+        id: 5,
+        name: "Promo A",
+        createdAt: "2026-03-16T08:00:00.000Z",
+        createdBy: {
+          id: 1,
+          email: "admin@example.com",
+        },
+        managerCoachId: 11,
+        manager: {
+          id: 11,
+          email: "coach@example.com",
+          firstName: "Jordi",
+          lastName: "Brisbois",
+          fullName: "Jordi Brisbois",
+          role: "coach",
+          isManager: true,
+        },
+        coachCount: 2,
+        coaches: [
+          {
+            id: 11,
+            email: "coach@example.com",
+            firstName: "Jordi",
+            lastName: "Brisbois",
+            fullName: "Jordi Brisbois",
+            role: "coach",
+            isManager: true,
+          },
+          {
+            id: 14,
+            email: "alex@example.com",
+            firstName: "Alex",
+            lastName: "Martin",
+            fullName: "Alex Martin",
+            role: "coach",
+            isManager: false,
+          },
+        ],
+        memberCount: 1,
+        totalApplications: 2,
+        totalInterviews: 1,
+      },
+    ]);
+
+    expect(csv).toContain("Manager");
+    expect(csv).toContain("Nombre de coachs");
+    expect(csv).toContain("Jordi Brisbois");
+    expect(csv).toContain("Alex Martin");
+  });
+});

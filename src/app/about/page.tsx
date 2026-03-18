@@ -11,7 +11,7 @@ const RECENT_UPDATES = [
   },
   {
     month: "Mars 2026",
-    text: "Ajout d'une synchronisation calendrier coach via lien d'abonnement ICS par groupe standard ou au global, avec aide intégrée, exclusion du groupe Coaches du flux global et régénération réservée aux admins.",
+    text: "Ajout d'une synchronisation calendrier coach via lien d'abonnement ICS par groupe standard ou au global, avec aide intégrée, respect du périmètre visible par le compte courant et régénération réservée aux admins.",
   },
   {
     month: "Mars 2026",
