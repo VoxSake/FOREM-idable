@@ -36,11 +36,13 @@ type CoachUndoAction =
       label: string;
       groupId: number;
       userId: number;
+      groupName: string;
     }
   | {
       type: "demote-coach";
       label: string;
       userId: number;
+      previousRole: "coach" | "admin";
     };
 
 export function useCoachDashboard() {
@@ -120,6 +122,111 @@ export function useCoachDashboard() {
                 .sort((a, b) => (a > b ? -1 : 1))[0] ?? null,
           };
         }),
+      };
+    });
+  };
+
+  const removeMembershipLocally = (groupId: number, userId: number) => {
+    setDashboard((current) => {
+      if (!current) return current;
+
+      const targetGroup = current.groups.find((group) => group.id === groupId);
+      const nextGroups = current.groups.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              members: group.members.filter((member) => member.id !== userId),
+            }
+          : group
+      );
+
+      const nextUsers = current.users.map((entry) => {
+        if (entry.id !== userId) {
+          return entry;
+        }
+
+        return {
+          ...entry,
+          groupIds: entry.groupIds.filter((id) => id !== groupId),
+          groupNames:
+            targetGroup && entry.groupNames.includes(targetGroup.name)
+              ? entry.groupNames.filter((name) => name !== targetGroup.name)
+              : entry.groupNames,
+        };
+      });
+
+      return {
+        ...current,
+        groups: nextGroups,
+        users: nextUsers,
+      };
+    });
+  };
+
+  const addMembershipLocally = (groupId: number, userId: number) => {
+    setDashboard((current) => {
+      if (!current) return current;
+
+      const targetGroup = current.groups.find((group) => group.id === groupId);
+      const targetUser = current.users.find((entry) => entry.id === userId);
+      if (!targetGroup || !targetUser) {
+        return current;
+      }
+
+      const nextGroups = current.groups.map((group) =>
+        group.id === groupId && !group.members.some((member) => member.id === userId)
+          ? {
+              ...group,
+              members: [
+                ...group.members,
+                {
+                  id: targetUser.id,
+                  email: targetUser.email,
+                  firstName: targetUser.firstName,
+                  lastName: targetUser.lastName,
+                  role: targetUser.role,
+                },
+              ].sort((left, right) => left.email.localeCompare(right.email, "fr")),
+            }
+          : group
+      );
+
+      const nextUsers = current.users.map((entry) => {
+        if (entry.id !== userId) {
+          return entry;
+        }
+
+        return {
+          ...entry,
+          groupIds: entry.groupIds.includes(groupId) ? entry.groupIds : [...entry.groupIds, groupId],
+          groupNames: entry.groupNames.includes(targetGroup.name)
+            ? entry.groupNames
+            : [...entry.groupNames, targetGroup.name],
+        };
+      });
+
+      return {
+        ...current,
+        groups: nextGroups,
+        users: nextUsers,
+      };
+    });
+  };
+
+  const updateUserRoleLocally = (userId: number, nextRole: "user" | "coach" | "admin") => {
+    setDashboard((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        users: current.users.map((entry) =>
+          entry.id === userId
+            ? {
+                ...entry,
+                role: nextRole,
+              }
+            : entry
+        ),
       };
     });
   };
@@ -270,11 +377,19 @@ export function useCoachDashboard() {
   };
 
   const removeMember = async (groupId: number, userId: number) => {
+    const targetGroup = dashboard?.groups.find((group) => group.id === groupId);
+    if (!targetGroup) {
+      setFeedback("Groupe introuvable.");
+      return;
+    }
+
+    removeMembershipLocally(groupId, userId);
     const response = await fetch(`/api/coach/groups/${groupId}/members?userId=${userId}`, {
       method: "DELETE",
     });
 
     if (!response.ok) {
+      addMembershipLocally(groupId, userId);
       setFeedback("Suppression du groupe impossible.");
       return;
     }
@@ -284,17 +399,25 @@ export function useCoachDashboard() {
       label: "Retrait du groupe effectué.",
       groupId,
       userId,
+      groupName: targetGroup.name,
     });
     setFeedback("Membre retiré du groupe.");
-    await loadDashboard();
   };
 
   const demoteCoach = async (userId: number) => {
+    const targetUser = dashboard?.users.find((entry) => entry.id === userId);
+    if (!targetUser || (targetUser.role !== "coach" && targetUser.role !== "admin")) {
+      setFeedback("Utilisateur introuvable.");
+      return;
+    }
+
+    updateUserRoleLocally(userId, "user");
     const response = await fetch(`/api/admin/coaches?userId=${userId}`, {
       method: "DELETE",
     });
 
     if (!response.ok) {
+      updateUserRoleLocally(userId, targetUser.role);
       setFeedback("Retrait du rôle coach impossible.");
       return;
     }
@@ -303,9 +426,9 @@ export function useCoachDashboard() {
       type: "demote-coach",
       label: "Retrait du rôle coach effectué.",
       userId,
+      previousRole: targetUser.role,
     });
     setFeedback("Rôle coach retiré.");
-    await loadDashboard();
   };
 
   const deleteGroup = async (groupId: number) => {
@@ -692,6 +815,7 @@ export function useCoachDashboard() {
     if (!undoAction) return;
 
     if (undoAction.type === "remove-membership") {
+      addMembershipLocally(undoAction.groupId, undoAction.userId);
       const response = await fetch(`/api/coach/groups/${undoAction.groupId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -699,17 +823,18 @@ export function useCoachDashboard() {
       });
 
       if (!response.ok) {
+        removeMembershipLocally(undoAction.groupId, undoAction.userId);
         setFeedback("Impossible d'annuler le retrait du groupe.");
         return;
       }
 
       setUndoAction(null);
       setFeedback("Retrait du groupe annulé.");
-      await loadDashboard();
       return;
     }
 
     if (undoAction.type === "demote-coach") {
+      updateUserRoleLocally(undoAction.userId, undoAction.previousRole);
       const response = await fetch("/api/admin/coaches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -717,13 +842,13 @@ export function useCoachDashboard() {
       });
 
       if (!response.ok) {
+        updateUserRoleLocally(undoAction.userId, "user");
         setFeedback("Impossible d'annuler le retrait du rôle coach.");
         return;
       }
 
       setUndoAction(null);
       setFeedback("Retrait du rôle coach annulé.");
-      await loadDashboard();
     }
   };
 

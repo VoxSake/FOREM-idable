@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildCoachPrioritySections, buildCoachRecentActivity, isCoachUserInactive } from "@/features/coach/utils";
+import {
+  buildCoachPrioritySections,
+  buildCoachRecentActivity,
+  isCoachUserInactive,
+  isTrackedCoachBeneficiary,
+} from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
 
 function makeUser(overrides: Partial<CoachUserSummary>): CoachUserSummary {
@@ -176,5 +181,41 @@ describe("coach activity helpers", () => {
 
     expect(items[0]?.title).toBe("Note coach partagée mise à jour");
     expect(items[0]?.timestamp).toBe("2026-03-18T08:00:00.000Z");
+  });
+
+  it("treats grouped admins like beneficiaries in coach activity and priorities", () => {
+    const adminLearner = makeUser({
+      id: 4,
+      firstName: "Jordi",
+      role: "admin",
+      groupIds: [2],
+      groupNames: ["Parcours Dev"],
+      dueCount: 1,
+      applicationCount: 1,
+      latestActivityAt: "2026-03-16T09:00:00.000Z",
+      applications: [
+        {
+          job: {
+            id: "job-5",
+            title: "Frontend",
+            company: "Delta",
+            location: "Charleroi",
+            contractType: "CDD",
+            publicationDate: "2026-03-10T00:00:00.000Z",
+            url: "#",
+            source: "forem",
+          },
+          appliedAt: "2026-03-10T09:00:00.000Z",
+          followUpDueAt: "2026-03-15T09:00:00.000Z",
+          followUpEnabled: true,
+          status: "follow_up",
+          updatedAt: "2026-03-16T09:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(isTrackedCoachBeneficiary(adminLearner)).toBe(true);
+    expect(buildCoachPrioritySections([adminLearner], new Date("2026-03-18T12:00:00.000Z"))[0].total).toBe(1);
+    expect(buildCoachRecentActivity([adminLearner])[0]?.userName).toContain("Jordi");
   });
 });

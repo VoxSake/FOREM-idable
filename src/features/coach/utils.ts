@@ -62,8 +62,12 @@ export function isApplicationDue(application: JobApplication) {
   );
 }
 
+export function isTrackedCoachBeneficiary(user: CoachUserSummary) {
+  return user.role === "user" || user.groupIds.length > 0;
+}
+
 export function isCoachUserInactive(user: CoachUserSummary, now = new Date()) {
-  if (user.role !== "user" || user.applicationCount === 0) {
+  if (!isTrackedCoachBeneficiary(user) || user.applicationCount === 0) {
     return false;
   }
 
@@ -204,6 +208,7 @@ export function buildGroupedUsers(input: {
   const coachMembers = users.filter(
     (entry) =>
       (entry.role === "coach" || entry.role === "admin") &&
+      entry.groupIds.length === 0 &&
       matchesSearch(entry) &&
       matchesFilter(entry)
   );
@@ -255,7 +260,7 @@ export function buildCoachRecentActivity(
   const items: CoachRecentActivityItem[] = [];
 
   for (const user of users) {
-    if (user.role !== "user") {
+    if (!isTrackedCoachBeneficiary(user)) {
       continue;
     }
 
@@ -362,7 +367,7 @@ export function buildCoachPrioritySections(
   const startToday = startOfDay(now);
   const interviewWindowEnd = addDays(startToday, 7);
 
-  const beneficiaryUsers = users.filter((entry) => entry.role === "user");
+  const beneficiaryUsers = users.filter((entry) => isTrackedCoachBeneficiary(entry));
 
   const dueItems = beneficiaryUsers
     .map((user) => {
