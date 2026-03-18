@@ -405,6 +405,7 @@ export interface CoachImportedApplicationInput {
   company: string;
   contractType?: string;
   title: string;
+  location?: string;
   appliedAt?: string;
   status?: JobApplication["status"];
   notes?: string;
@@ -478,7 +479,7 @@ function buildImportedManualJob(input: CoachImportedApplicationInput): Job {
     id: `manual-import-${fingerprint || Math.random().toString(36).slice(2, 8)}`,
     title: input.title.trim(),
     company: input.company.trim(),
-    location: "Non précisé",
+    location: input.location?.trim() || "Non précisé",
     contractType: input.contractType?.trim() || "Non précisé",
     publicationDate: appliedAt,
     url: "#",
@@ -491,25 +492,59 @@ export async function importCoachApplicationsForUser(input: {
   userId: number;
   rows: CoachImportedApplicationInput[];
 }) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
   const importedApplications: JobApplication[] = [];
+  let createdCount = 0;
+  let updatedCount = 0;
+  let ignoredCount = 0;
+  const seenJobIds = new Set<string>();
 
   for (const row of input.rows) {
     if (!row.company.trim() || !row.title.trim()) {
+      ignoredCount += 1;
       continue;
     }
 
+    const job = buildImportedManualJob(row);
+    if (seenJobIds.has(job.id)) {
+      ignoredCount += 1;
+      continue;
+    }
+    seenJobIds.add(job.id);
+
+    const existingResult = await db.query<{ job_id: string }>(
+      `SELECT job_id
+       FROM user_applications
+       WHERE user_id = $1 AND job_id = $2
+       LIMIT 1`,
+      [input.userId, job.id]
+    );
+    const existed = Boolean(existingResult?.rows[0]);
+
     const application = await createTrackedApplicationForUser({
       userId: input.userId,
-      job: buildImportedManualJob(row),
+      job,
       appliedAt: normalizeImportedDate(row.appliedAt),
       status: normalizeImportedStatus(row.status),
       notes: row.notes?.trim(),
     });
 
     importedApplications.push(application);
+    if (existed) {
+      updatedCount += 1;
+    } else {
+      createdCount += 1;
+    }
   }
 
   await markCoachAction(input.actor.id);
 
-  return importedApplications;
+  return {
+    applications: importedApplications,
+    createdCount,
+    updatedCount,
+    ignoredCount,
+  };
 }

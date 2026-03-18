@@ -81,6 +81,7 @@ export async function POST(
         company?: string;
         contractType?: string;
         title?: string;
+        location?: string;
         appliedAt?: string;
         status?: string;
         notes?: string;
@@ -98,6 +99,7 @@ export async function POST(
         company: row.company ?? "",
         contractType: row.contractType,
         title: row.title ?? "",
+        location: row.location,
         appliedAt: row.appliedAt,
         status: row.status as never,
         notes: row.notes,
@@ -105,8 +107,11 @@ export async function POST(
     });
 
     return NextResponse.json({
-      importedCount: importedApplications.length,
-      applications: importedApplications,
+      importedCount: importedApplications.applications.length,
+      createdCount: importedApplications.createdCount,
+      updatedCount: importedApplications.updatedCount,
+      ignoredCount: importedApplications.ignoredCount,
+      applications: importedApplications.applications,
     });
   } catch {
     return NextResponse.json(

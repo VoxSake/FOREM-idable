@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Papa from "papaparse";
-import { LoaderCircle, Upload } from "lucide-react";
+import { Download, LoaderCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +17,7 @@ const IMPORT_FIELDS = [
   { key: "company", label: "Entreprise", required: true },
   { key: "contractType", label: "Type de contrat", required: false },
   { key: "title", label: "Intitulé de poste", required: true },
+  { key: "location", label: "Lieu", required: false },
   { key: "appliedAt", label: "Date d'envoi", required: false },
   { key: "status", label: "Statut", required: false },
   { key: "notes", label: "Note", required: false },
@@ -39,7 +40,12 @@ interface CoachImportApplicationsDialogProps {
   userLabel: string;
   isImporting: boolean;
   onOpenChange: (open: boolean) => void;
-  onImport: (rows: Array<Record<ImportFieldKey, string>>) => Promise<void>;
+  onImport: (rows: Array<Record<ImportFieldKey, string>>) => Promise<{
+    importedCount: number;
+    createdCount: number;
+    updatedCount: number;
+    ignoredCount: number;
+  } | null>;
 }
 
 function normalizeHeader(value: string) {
@@ -65,6 +71,7 @@ function detectFieldMapping(headers: string[]) {
     company: headerFor(["entreprise", "societe", "societe"]),
     contractType: headerFor(["contrat", "type de contrat", "type contrat"]),
     title: headerFor(["intitule poste", "intituler poste", "poste", "fonction", "intitule"]),
+    location: headerFor(["lieu", "ville", "localisation"]),
     appliedAt: headerFor(["date envoi", "date envois", "date candidature", "date"]),
     status: headerFor(["statut", "status"]),
     notes: headerFor(["note", "remarque", "commentaire"]),
@@ -118,15 +125,42 @@ export function CoachImportApplicationsDialog({
     company: "",
     contractType: "",
     title: "",
+    location: "",
     appliedAt: "",
     status: "",
     notes: "",
   });
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+  const [summary, setSummary] = useState<{
+    importedCount: number;
+    createdCount: number;
+    updatedCount: number;
+    ignoredCount: number;
+  } | null>(null);
 
   const hasRequiredMapping = mapping.company && mapping.title;
 
   const previewRows = useMemo(() => rows.slice(0, 5), [rows]);
+  const duplicateCount = useMemo(() => {
+    const seen = new Set<string>();
+    let duplicates = 0;
+
+    for (const row of rows) {
+      const company = (row[mapping.company] ?? "").trim().toLowerCase();
+      const title = (row[mapping.title] ?? "").trim().toLowerCase();
+      const appliedAt = mapping.appliedAt ? (row[mapping.appliedAt] ?? "").trim().toLowerCase() : "";
+      if (!company || !title) continue;
+
+      const fingerprint = `${company}|${title}|${appliedAt}`;
+      if (seen.has(fingerprint)) {
+        duplicates += 1;
+      } else {
+        seen.add(fingerprint);
+      }
+    }
+
+    return duplicates;
+  }, [mapping.appliedAt, mapping.company, mapping.title, rows]);
   const unresolvedStatuses = useMemo(() => {
     if (!mapping.status) {
       return [];
@@ -144,7 +178,7 @@ export function CoachImportApplicationsDialog({
       });
   }, [mapping.status, rows]);
 
-  const resetState = () => {
+  const resetState = (preserveSummary = false) => {
     setHeaders([]);
     setRows([]);
     setFeedback(null);
@@ -152,11 +186,37 @@ export function CoachImportApplicationsDialog({
       company: "",
       contractType: "",
       title: "",
+      location: "",
       appliedAt: "",
       status: "",
       notes: "",
     });
     setStatusOverrides({});
+    if (!preserveSummary) {
+      setSummary(null);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const csv = Papa.unparse([
+      {
+        Entreprise: "TB IMMO",
+        "Type de contrat": "Stage",
+        "Intitulé de poste": "Collaboratrice administrative",
+        Lieu: "Bruxelles",
+        "Date d'envoi": "13-03-23",
+        Statut: "En cours",
+        Note: "",
+      },
+    ]);
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "modele-import-suivi.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFile = async (file: File | null) => {
@@ -209,6 +269,7 @@ export function CoachImportApplicationsDialog({
         company: row[mapping.company] ?? "",
         contractType: mapping.contractType ? row[mapping.contractType] ?? "" : "",
         title: row[mapping.title] ?? "",
+        location: mapping.location ? row[mapping.location] ?? "" : "",
         appliedAt: mapping.appliedAt ? row[mapping.appliedAt] ?? "" : "",
         status: mapping.status
           ? normalizeStatusValue(row[mapping.status] ?? "") || statusOverrides[(row[mapping.status] ?? "").trim()] || ""
@@ -222,8 +283,11 @@ export function CoachImportApplicationsDialog({
       return;
     }
 
-    await onImport(mappedRows);
-    resetState();
+    const result = await onImport(mappedRows);
+    if (result) {
+      setSummary(result);
+      resetState(true);
+    }
   };
 
   return (
@@ -259,6 +323,12 @@ export function CoachImportApplicationsDialog({
               onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
             />
           </label>
+          <div className="flex justify-start">
+            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+              <Download className="mr-2 h-4 w-4" />
+              Télécharger un modèle CSV
+            </Button>
+          </div>
 
           {headers.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2">
@@ -323,6 +393,17 @@ export function CoachImportApplicationsDialog({
             </div>
           ) : null}
 
+          {rows.length > 0 ? (
+            <div className="rounded-xl border bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
+              <p>
+                {rows.length} ligne{rows.length > 1 ? "s" : ""} détectée{rows.length > 1 ? "s" : ""}.
+                {duplicateCount > 0
+                  ? ` ${duplicateCount} doublon${duplicateCount > 1 ? "s" : ""} interne${duplicateCount > 1 ? "s" : ""} sera${duplicateCount > 1 ? "ont" : ""} ignoré${duplicateCount > 1 ? "s" : ""}.`
+                  : " Aucun doublon interne détecté."}
+              </p>
+            </div>
+          ) : null}
+
           {previewRows.length > 0 ? (
             <div className="space-y-2">
               <p className="text-sm font-medium">Aperçu ({rows.length} lignes détectées)</p>
@@ -350,6 +431,17 @@ export function CoachImportApplicationsDialog({
                   </tbody>
                 </table>
               </div>
+            </div>
+          ) : null}
+
+          {summary ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm dark:border-emerald-900 dark:bg-emerald-950/20">
+              <p className="font-medium text-foreground">Dernier import terminé</p>
+              <p className="text-muted-foreground">
+                {summary.createdCount} créée{summary.createdCount > 1 ? "s" : ""} • {summary.updatedCount} mise
+                {summary.updatedCount > 1 ? "s" : ""} à jour • {summary.ignoredCount} ignorée
+                {summary.ignoredCount > 1 ? "s" : ""}.
+              </p>
             </div>
           ) : null}
 

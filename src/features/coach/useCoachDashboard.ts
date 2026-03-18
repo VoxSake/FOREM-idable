@@ -864,6 +864,7 @@ export function useCoachDashboard() {
       company: string;
       contractType: string;
       title: string;
+      location: string;
       appliedAt: string;
       status: string;
       notes: string;
@@ -880,13 +881,16 @@ export function useCoachDashboard() {
     const data = (await response.json().catch(() => ({}))) as {
       error?: string;
       importedCount?: number;
+      createdCount?: number;
+      updatedCount?: number;
+      ignoredCount?: number;
     };
 
     setIsImportingApplications(false);
 
     if (!response.ok) {
       setFeedback(data.error || "Import CSV impossible.");
-      return false;
+      return null;
     }
 
     setFeedback(
@@ -894,7 +898,12 @@ export function useCoachDashboard() {
     );
     setImportTargetUserId(null);
     await loadDashboard();
-    return true;
+    return {
+      importedCount: data.importedCount ?? rows.length,
+      createdCount: data.createdCount ?? 0,
+      updatedCount: data.updatedCount ?? 0,
+      ignoredCount: data.ignoredCount ?? 0,
+    };
   };
 
   return {
