@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCoachPrioritySections } from "@/features/coach/utils";
+import { buildCoachPrioritySections, buildCoachRecentActivity, isCoachUserInactive } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
 
 function makeUser(overrides: Partial<CoachUserSummary>): CoachUserSummary {
@@ -114,5 +114,67 @@ describe("buildCoachPrioritySections", () => {
 
     expect(sections[2].total).toBe(1);
     expect(sections[2].items[0]?.summary).toContain("Inactif depuis");
+  });
+});
+
+describe("coach activity helpers", () => {
+  it("detects inactive beneficiaries after 14 days", () => {
+    expect(
+      isCoachUserInactive(
+        makeUser({
+          latestActivityAt: "2026-03-01T09:00:00.000Z",
+          applicationCount: 2,
+        }),
+        new Date("2026-03-18T12:00:00.000Z")
+      )
+    ).toBe(true);
+  });
+
+  it("builds recent activity entries ordered from newest to oldest", () => {
+    const items = buildCoachRecentActivity([
+      makeUser({
+        id: 3,
+        firstName: "Carla",
+        latestActivityAt: "2026-03-17T09:00:00.000Z",
+        applications: [
+          {
+            job: {
+              id: "job-4",
+              title: "Data",
+              company: "Gamma",
+              location: "Mons",
+              contractType: "CDI",
+              publicationDate: "2026-03-01T00:00:00.000Z",
+              url: "#",
+              source: "forem",
+            },
+            appliedAt: "2026-03-01T09:00:00.000Z",
+            followUpDueAt: "2026-03-08T09:00:00.000Z",
+            followUpEnabled: true,
+            status: "in_progress",
+            updatedAt: "2026-03-17T09:00:00.000Z",
+            sharedCoachNotes: [
+              {
+                id: "note-1",
+                content: "Point fait",
+                createdAt: "2026-03-16T09:00:00.000Z",
+                updatedAt: "2026-03-18T08:00:00.000Z",
+                createdBy: {
+                  id: 10,
+                  firstName: "Coach",
+                  lastName: "One",
+                  email: "coach@example.com",
+                  role: "coach",
+                },
+                contributors: [],
+              },
+            ],
+          },
+        ],
+      }),
+    ]);
+
+    expect(items[0]?.title).toBe("Note coach partagée mise à jour");
+    expect(items[0]?.timestamp).toBe("2026-03-18T08:00:00.000Z");
   });
 });

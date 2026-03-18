@@ -70,8 +70,10 @@ export function CoachGroupsSection({
   const [isCalendarHelpOpen, setIsCalendarHelpOpen] = useState(false);
   const filterOptions: Array<{ value: CoachUserFilter; label: string }> = [
     { value: "all", label: "Tous" },
+    { value: "urgent", label: "Urgents" },
     { value: "due", label: "A relancer" },
     { value: "interviews", label: "Entretiens" },
+    { value: "inactive", label: "Inactifs" },
     { value: "accepted", label: "Acceptées" },
     { value: "rejected", label: "Refusées" },
   ];
@@ -148,7 +150,8 @@ export function CoachGroupsSection({
       </div>
 
       <div className="space-y-4">
-        {groupedUsers.map((group) => (
+        {groupedUsers.length > 0 ? (
+          groupedUsers.map((group) => (
           <div key={`${group.kind}-${group.id}`} className="rounded-xl border bg-muted/20 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
@@ -353,7 +356,19 @@ export function CoachGroupsSection({
               )}
             </div>
           </div>
-        ))}
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed bg-muted/10 p-6">
+            <p className="font-medium">Aucun résultat dans cette vue</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {search.trim()
+                ? "Essayez un autre nom, prénom ou email, ou retirez un filtre rapide."
+                : userFilter === "all"
+                  ? "Ajoutez un groupe ou un bénéficiaire pour commencer le suivi coach."
+                  : "Aucun bénéficiaire ne correspond à ce filtre pour l'instant."}
+            </p>
+          </div>
+        )}
       </div>
 
       <Dialog open={isCalendarHelpOpen} onOpenChange={setIsCalendarHelpOpen}>

@@ -2,7 +2,14 @@ import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 import { CalendarSubscriptionScope } from "@/types/calendar";
 
 export type CoachGroupedGroupKind = "standard" | "ungrouped" | "coaches";
-export type CoachUserFilter = "all" | "due" | "interviews" | "accepted" | "rejected";
+export type CoachUserFilter =
+  | "all"
+  | "urgent"
+  | "due"
+  | "interviews"
+  | "inactive"
+  | "accepted"
+  | "rejected";
 
 export interface CoachRemoveMembershipTarget {
   groupId: number;

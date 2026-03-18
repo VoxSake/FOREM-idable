@@ -62,6 +62,29 @@ export function isApplicationDue(application: JobApplication) {
   );
 }
 
+export function isCoachUserInactive(user: CoachUserSummary, now = new Date()) {
+  if (user.role !== "user" || user.applicationCount === 0) {
+    return false;
+  }
+
+  const latestActivity = parseTimestamp(user.latestActivityAt);
+  if (latestActivity === null) {
+    return true;
+  }
+
+  return differenceInCalendarDays(now, new Date(latestActivity)) >= 14;
+}
+
+export interface CoachRecentActivityItem {
+  id: string;
+  userId: number;
+  userName: string;
+  groupLabel: string;
+  title: string;
+  detail: string;
+  timestamp: string;
+}
+
 export function buildMemberPickerGroup(
   groups: CoachGroupSummary[] | undefined,
   memberPickerGroupId: number | null
@@ -117,10 +140,14 @@ export function buildGroupedUsers(input: {
 
   const matchesFilter = (user: CoachUserSummary) => {
     switch (userFilter) {
+      case "urgent":
+        return user.dueCount > 0 || user.interviewCount > 0 || isCoachUserInactive(user);
       case "due":
         return user.dueCount > 0;
       case "interviews":
         return user.interviewCount > 0;
+      case "inactive":
+        return isCoachUserInactive(user);
       case "accepted":
         return user.acceptedCount > 0;
       case "rejected":
@@ -217,8 +244,95 @@ export function buildGroupedUsers(input: {
   ];
 
   return [...standardGroups, ...syntheticGroups].filter(
-    (group) => group.members.length > 0 || !normalizedSearch
+    (group) => group.members.length > 0 || (!normalizedSearch && userFilter === "all")
   );
+}
+
+export function buildCoachRecentActivity(
+  users: CoachUserSummary[],
+  maxItems = 10
+): CoachRecentActivityItem[] {
+  const items: CoachRecentActivityItem[] = [];
+
+  for (const user of users) {
+    if (user.role !== "user") {
+      continue;
+    }
+
+    const groupLabel = user.groupNames[0] ?? "Aucun groupe";
+    const userName = getCoachUserDisplayName(user);
+
+    if (user.latestActivityAt && parseTimestamp(user.latestActivityAt) !== null) {
+      items.push({
+        id: `activity-${user.id}`,
+        userId: user.id,
+        userName,
+        groupLabel,
+        title: "Suivi mis à jour",
+        detail: `${user.applicationCount} candidature${user.applicationCount > 1 ? "s" : ""} dans le suivi`,
+        timestamp: user.latestActivityAt,
+      });
+    }
+
+    for (const application of user.applications) {
+      if (
+        application.interviewAt &&
+        parseTimestamp(application.interviewAt) !== null &&
+        application.updatedAt &&
+        parseTimestamp(application.updatedAt) !== null
+      ) {
+        items.push({
+          id: `interview-${user.id}-${application.job.id}`,
+          userId: user.id,
+          userName,
+          groupLabel,
+          title: "Entretien planifié",
+          detail: application.job.title,
+          timestamp: application.updatedAt,
+        });
+      }
+
+      if (application.privateCoachNote?.updatedAt && parseTimestamp(application.privateCoachNote.updatedAt) !== null) {
+        items.push({
+          id: `private-note-${user.id}-${application.job.id}`,
+          userId: user.id,
+          userName,
+          groupLabel,
+          title: "Note privée coach mise à jour",
+          detail: application.job.title,
+          timestamp: application.privateCoachNote.updatedAt,
+        });
+      }
+
+      for (const note of application.sharedCoachNotes ?? []) {
+        if (parseTimestamp(note.updatedAt) === null) {
+          continue;
+        }
+
+        items.push({
+          id: `shared-note-${note.id}`,
+          userId: user.id,
+          userName,
+          groupLabel,
+          title: "Note coach partagée mise à jour",
+          detail: application.job.title,
+          timestamp: note.updatedAt,
+        });
+      }
+    }
+  }
+
+  return items
+    .sort((left, right) => {
+      const leftTime = parseTimestamp(left.timestamp) ?? 0;
+      const rightTime = parseTimestamp(right.timestamp) ?? 0;
+      if (rightTime !== leftTime) {
+        return rightTime - leftTime;
+      }
+
+      return left.userName.localeCompare(right.userName, "fr");
+    })
+    .slice(0, maxItems);
 }
 
 export interface CoachPriorityItem {

@@ -23,17 +23,32 @@ import {
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
 import {
+  buildCoachRecentActivity,
   buildGroupedUsers,
   buildGroupExportRows,
   buildMemberPickerGroup,
   buildUserExportRows,
 } from "@/features/coach/utils";
 
+type CoachUndoAction =
+  | {
+      type: "remove-membership";
+      label: string;
+      groupId: number;
+      userId: number;
+    }
+  | {
+      type: "demote-coach";
+      label: string;
+      userId: number;
+    };
+
 export function useCoachDashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [dashboard, setDashboard] = useState<CoachDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [undoAction, setUndoAction] = useState<CoachUndoAction | null>(null);
   const [groupName, setGroupName] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [memberPickerGroupId, setMemberPickerGroupId] = useState<number | null>(null);
@@ -173,6 +188,10 @@ export function useCoachDashboard() {
       userFilter,
     });
   }, [dashboard, deferredSearch, user?.role, userFilter]);
+  const recentActivity = useMemo(
+    () => buildCoachRecentActivity(dashboard?.users ?? []),
+    [dashboard?.users]
+  );
 
   const totalApplications = dashboard?.users.reduce((sum, entry) => sum + entry.applicationCount, 0) ?? 0;
   const totalInterviews = dashboard?.users.reduce((sum, entry) => sum + entry.interviewCount, 0) ?? 0;
@@ -206,6 +225,7 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction(null);
     setGroupName("");
     setIsCreateGroupOpen(false);
     await loadDashboard();
@@ -223,6 +243,7 @@ export function useCoachDashboard() {
       return false;
     }
 
+    setUndoAction(null);
     await loadDashboard();
     return true;
   };
@@ -244,6 +265,7 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction(null);
     await loadDashboard();
   };
 
@@ -257,6 +279,13 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction({
+      type: "remove-membership",
+      label: "Retrait du groupe effectué.",
+      groupId,
+      userId,
+    });
+    setFeedback("Membre retiré du groupe.");
     await loadDashboard();
   };
 
@@ -270,6 +299,12 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction({
+      type: "demote-coach",
+      label: "Retrait du rôle coach effectué.",
+      userId,
+    });
+    setFeedback("Rôle coach retiré.");
     await loadDashboard();
   };
 
@@ -283,6 +318,7 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction(null);
     await loadDashboard();
   };
 
@@ -313,6 +349,7 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction(null);
     setFeedback(`Utilisateur mis à jour: ${editTarget.email}.`);
     setEditTarget(null);
     setEditedFirstName("");
@@ -335,6 +372,7 @@ export function useCoachDashboard() {
       return;
     }
 
+    setUndoAction(null);
     if (selectedUserId === deleteUserTarget.userId) {
       setSelectedUserId(null);
     }
@@ -650,6 +688,45 @@ export function useCoachDashboard() {
     }
   };
 
+  const undoLastAction = async () => {
+    if (!undoAction) return;
+
+    if (undoAction.type === "remove-membership") {
+      const response = await fetch(`/api/coach/groups/${undoAction.groupId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: undoAction.userId }),
+      });
+
+      if (!response.ok) {
+        setFeedback("Impossible d'annuler le retrait du groupe.");
+        return;
+      }
+
+      setUndoAction(null);
+      setFeedback("Retrait du groupe annulé.");
+      await loadDashboard();
+      return;
+    }
+
+    if (undoAction.type === "demote-coach") {
+      const response = await fetch("/api/admin/coaches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: undoAction.userId }),
+      });
+
+      if (!response.ok) {
+        setFeedback("Impossible d'annuler le retrait du rôle coach.");
+        return;
+      }
+
+      setUndoAction(null);
+      setFeedback("Retrait du rôle coach annulé.");
+      await loadDashboard();
+    }
+  };
+
   return {
     user,
     isAuthLoading,
@@ -657,6 +734,7 @@ export function useCoachDashboard() {
     isLoading,
     feedback,
     setFeedback,
+    undoAction,
     groupName,
     setGroupName,
     isCreateGroupOpen,
@@ -701,6 +779,7 @@ export function useCoachDashboard() {
     memberPickerGroup,
     assignableUsers,
     groupedUsers,
+    recentActivity,
     totalApplications,
     totalInterviews,
     totalDue,
@@ -725,5 +804,6 @@ export function useCoachDashboard() {
     copyGroupCalendarUrl,
     copyAllGroupsCalendarUrl,
     regenerateCalendarUrl,
+    undoLastAction,
   };
 }

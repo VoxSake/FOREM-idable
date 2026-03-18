@@ -2,8 +2,10 @@
 
 import { LoaderCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
 import { CoachPriorityBoard } from "@/features/coach/components/CoachPriorityBoard";
+import { CoachRecentActivity } from "@/features/coach/components/CoachRecentActivity";
 import { CoachGroupsSection } from "@/features/coach/components/CoachGroupsSection";
 import { CoachSummaryCards } from "@/features/coach/components/CoachSummaryCards";
 import { CoachUserSheet } from "@/features/coach/components/CoachUserSheet";
@@ -51,7 +53,16 @@ export default function CoachPage() {
         <p className="text-lg text-muted-foreground">
           Vue d&apos;ensemble sur les personnes suivies, leurs groupes et leurs candidatures.
         </p>
-        {coach.feedback && <p className="text-sm text-muted-foreground">{coach.feedback}</p>}
+        {coach.feedback || coach.undoAction ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 px-4 py-3 text-sm">
+            <p className="text-muted-foreground">{coach.feedback ?? coach.undoAction?.label}</p>
+            {coach.undoAction ? (
+              <Button type="button" size="sm" variant="outline" onClick={() => void coach.undoLastAction()}>
+                Annuler
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <CoachSummaryCards
@@ -63,7 +74,25 @@ export default function CoachPage() {
         totalRejected={coach.totalRejected}
       />
 
-      <CoachPriorityBoard sections={prioritySections} onOpenUser={coach.setSelectedUserId} />
+      {followedUserCount === 0 ? (
+        <section className="rounded-2xl border border-dashed bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-bold">Aucun bénéficiaire suivi pour l&apos;instant</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Commencez par créer un groupe, puis ajoutez un bénéficiaire pour centraliser ses candidatures,
+            ses relances et ses entretiens.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button type="button" onClick={() => coach.setIsCreateGroupOpen(true)}>
+              Créer un groupe
+            </Button>
+          </div>
+        </section>
+      ) : (
+        <>
+          <CoachPriorityBoard sections={prioritySections} onOpenUser={coach.setSelectedUserId} />
+          <CoachRecentActivity items={coach.recentActivity} onOpenUser={coach.setSelectedUserId} />
+        </>
+      )}
 
       <CoachGroupsSection
         search={coach.search}
