@@ -149,6 +149,8 @@ export function updateUserRoleInDashboard(
   userId: number,
   nextRole: UserRole
 ): CoachDashboardData {
+  const updatedUser = dashboard.users.find((entry) => entry.id === userId);
+
   return {
     ...dashboard,
     users: dashboard.users.map((entry) =>
@@ -156,8 +158,52 @@ export function updateUserRoleInDashboard(
         ? {
             ...entry,
             role: nextRole,
-          }
+        }
         : entry
     ),
+    groups: dashboard.groups.map((group) => ({
+      ...group,
+      members: group.members.map((entry) =>
+        entry.id === userId
+          ? {
+              ...entry,
+              role: nextRole,
+            }
+          : entry
+      ),
+      coaches:
+        nextRole === "coach"
+          ? group.coaches.map((entry) =>
+              entry.id === userId
+                ? {
+                    ...entry,
+                    role: nextRole,
+                  }
+                : entry
+            )
+          : group.coaches.filter((entry) => entry.id !== userId),
+    })),
+    availableCoaches:
+      nextRole === "coach"
+        ? updatedUser && !dashboard.availableCoaches.some((entry) => entry.id === userId)
+          ? [
+              ...dashboard.availableCoaches,
+              {
+                id: updatedUser.id,
+                email: updatedUser.email,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                role: "coach" as UserRole,
+              },
+            ].sort((left, right) => left.email.localeCompare(right.email, "fr"))
+          : dashboard.availableCoaches.map((entry) =>
+              entry.id === userId
+                ? {
+                    ...entry,
+                    role: "coach" as UserRole,
+                  }
+                : entry
+            )
+        : dashboard.availableCoaches.filter((entry) => entry.id !== userId),
   };
 }

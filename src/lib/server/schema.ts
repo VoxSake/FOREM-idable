@@ -141,6 +141,23 @@ export const coachGroupMembers = pgTable(
   })
 );
 
+export const coachGroupCoaches = pgTable(
+  "coach_group_coaches",
+  {
+    groupId: bigint("group_id", { mode: "number" })
+      .notNull()
+      .references(() => coachGroups.id, { onDelete: "cascade" }),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.groupId, table.userId] }),
+    userIdIdx: index("coach_group_coaches_user_id_idx").on(table.userId),
+  })
+);
+
 export const apiKeys = pgTable(
   "api_keys",
   {

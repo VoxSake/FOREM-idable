@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nom de groupe requis." }, { status: 400 });
     }
 
-    const group = await createCoachGroup(name, user.id);
+    const group = await createCoachGroup(name, user);
     return NextResponse.json({ group });
   } catch {
     return NextResponse.json({ error: "Création de groupe impossible." }, { status: 500 });
@@ -40,9 +40,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Groupe invalide." }, { status: 400 });
     }
 
-    await deleteCoachGroup(groupId, user.id);
+    await deleteCoachGroup(groupId, user);
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     return NextResponse.json({ error: "Suppression du groupe impossible." }, { status: 500 });
   }
 }

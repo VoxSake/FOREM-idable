@@ -24,6 +24,7 @@ import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActi
 import { getCoachUserDisplayName } from "@/features/coach/utils";
 import {
   CoachGroupedUserGroup,
+  CoachRemoveCoachTarget,
   CoachRemoveMembershipTarget,
   CoachUserFilter,
 } from "@/features/coach/types";
@@ -40,12 +41,14 @@ interface CoachGroupsSectionProps {
   onCopyAllGroupsCalendar: () => void;
   onRequestRegenerateAllGroupsCalendar: () => void;
   onAddMember: (groupId: number) => void;
+  onAddCoach: (groupId: number) => void;
   onExportGroup: (groupName: string, members: CoachUserSummary[]) => void;
   onCopyGroupCalendar: (groupId: number, groupName: string) => void;
   onRequestRegenerateGroupCalendar: (groupId: number, groupName: string) => void;
   onRemoveGroup: (groupId: number, groupName: string) => void;
   onOpenUser: (userId: number) => void;
   onRemoveMembership: (target: CoachRemoveMembershipTarget) => void;
+  onRemoveCoach: (target: CoachRemoveCoachTarget) => void;
   onDemoteCoach: (userId: number) => void;
 }
 
@@ -60,12 +63,14 @@ export function CoachGroupsSection({
   onCopyAllGroupsCalendar,
   onRequestRegenerateAllGroupsCalendar,
   onAddMember,
+  onAddCoach,
   onExportGroup,
   onCopyGroupCalendar,
   onRequestRegenerateGroupCalendar,
   onRemoveGroup,
   onOpenUser,
   onRemoveMembership,
+  onRemoveCoach,
   onDemoteCoach,
 }: CoachGroupsSectionProps) {
   const [isCalendarHelpOpen, setIsCalendarHelpOpen] = useState(false);
@@ -170,8 +175,46 @@ export function CoachGroupsSection({
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {group.members.length} membre{group.members.length > 1 ? "s" : ""}
+                  {group.kind === "standard"
+                    ? ` • ${group.coaches.length} coach${group.coaches.length > 1 ? "s" : ""}`
+                    : ""}
                   {group.createdByEmail ? ` • créé par ${group.createdByEmail}` : ""}
                 </p>
+                {group.kind === "standard" ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {group.coaches.length > 0 ? (
+                      group.coaches.map((coach) => (
+                        <Badge
+                          key={`${group.id}-coach-${coach.id}`}
+                          variant="secondary"
+                          className="flex items-center gap-2 py-1"
+                        >
+                          <span className="max-w-52 truncate">
+                            {getCoachUserDisplayName(coach)}
+                          </span>
+                          <button
+                            type="button"
+                            className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onRemoveCoach({
+                                groupId: group.id,
+                                userId: coach.id,
+                                userEmail: coach.email,
+                                groupName: group.name,
+                              });
+                            }}
+                            aria-label={`Retirer ${coach.email} du groupe ${group.name}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Aucun coach attribué.</span>
+                    )}
+                  </div>
+                ) : null}
               </div>
               <div className="flex w-full flex-wrap gap-2 sm:w-auto">
                 <Button
@@ -218,6 +261,12 @@ export function CoachGroupsSection({
                           </DropdownMenuItem>
                         </>
                       )}
+                      {group.kind === "standard" && group.canManageCoaches ? (
+                        <DropdownMenuItem onClick={() => onAddCoach(group.id)}>
+                          <UserRoundPlus className="h-4 w-4" />
+                          Attribuer un coach
+                        </DropdownMenuItem>
+                      ) : null}
                       {group.kind === "standard" && (
                         <>
                           <DropdownMenuSeparator />

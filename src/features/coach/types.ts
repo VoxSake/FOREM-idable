@@ -18,6 +18,13 @@ export interface CoachRemoveMembershipTarget {
   groupName: string;
 }
 
+export interface CoachRemoveCoachTarget {
+  groupId: number;
+  userId: number;
+  userEmail: string;
+  groupName: string;
+}
+
 export interface CoachRemoveGroupTarget {
   groupId: number;
   groupName: string;
@@ -62,6 +69,7 @@ export interface CoachGroupedUserGroup {
   name: string;
   createdByEmail: string | null;
   canAddMembers: boolean;
+  canManageCoaches: boolean;
   kind: CoachGroupedGroupKind;
   totalApplications: number;
   totalInterviews: number;
@@ -69,4 +77,5 @@ export interface CoachGroupedUserGroup {
   totalAccepted: number;
   totalRejected: number;
   members: CoachUserSummary[];
+  coaches: CoachGroupSummary["coaches"];
 }

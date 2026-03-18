@@ -30,6 +30,7 @@ import {
   CoachEditTarget,
   CoachGroupedUserGroup,
   CoachMemberPickerGroup,
+  CoachRemoveCoachTarget,
   CoachUserFilter,
   CoachRevokeApiKeyTarget,
   CoachRemoveGroupTarget,
@@ -67,8 +68,10 @@ export function useCoachDashboard() {
   const [groupName, setGroupName] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [memberPickerGroupId, setMemberPickerGroupId] = useState<number | null>(null);
+  const [coachPickerGroupId, setCoachPickerGroupId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [removeMembership, setRemoveMembership] = useState<CoachRemoveMembershipTarget | null>(null);
+  const [removeCoach, setRemoveCoach] = useState<CoachRemoveCoachTarget | null>(null);
   const [removeGroup, setRemoveGroup] = useState<CoachRemoveGroupTarget | null>(null);
   const [editTarget, setEditTarget] = useState<CoachEditTarget | null>(null);
   const [apiKeysTarget, setApiKeysTarget] = useState<CoachApiKeysTarget | null>(null);
@@ -166,6 +169,10 @@ export function useCoachDashboard() {
     () => buildMemberPickerGroup(dashboard?.groups, memberPickerGroupId),
     [dashboard?.groups, memberPickerGroupId]
   );
+  const coachPickerGroup: CoachMemberPickerGroup | null = useMemo(
+    () => buildMemberPickerGroup(dashboard?.groups, coachPickerGroupId),
+    [dashboard?.groups, coachPickerGroupId]
+  );
 
   const assignableUsers = useMemo(() => {
     if (!dashboard || !memberPickerGroup) return [];
@@ -176,6 +183,13 @@ export function useCoachDashboard() {
     const memberIds = new Set(memberPickerGroup.members.map((entry) => entry.id));
     return dashboard.users.filter((entry) => !memberIds.has(entry.id));
   }, [dashboard, memberPickerGroup]);
+
+  const assignableCoaches = useMemo(() => {
+    if (!dashboard || !coachPickerGroup) return [];
+
+    const assignedCoachIds = new Set(coachPickerGroup.coaches.map((entry) => entry.id));
+    return dashboard.availableCoaches.filter((entry) => !assignedCoachIds.has(entry.id));
+  }, [coachPickerGroup, dashboard]);
 
   const groupedUsers: CoachGroupedUserGroup[] = useMemo(() => {
     if (!dashboard) return [];
@@ -273,6 +287,22 @@ export function useCoachDashboard() {
     await loadDashboard();
   };
 
+  const addCoach = async (groupId: number, userId: number) => {
+    const response = await fetch(`/api/coach/groups/${groupId}/coaches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      setFeedback("Attribution du coach impossible.");
+      return;
+    }
+
+    setUndoAction(null);
+    await loadDashboard();
+  };
+
   const removeMember = async (groupId: number, userId: number) => {
     const targetGroup = dashboard?.groups.find((group) => group.id === groupId);
     if (!targetGroup) {
@@ -299,6 +329,21 @@ export function useCoachDashboard() {
       groupName: targetGroup.name,
     });
     setFeedback("Membre retiré du groupe.");
+  };
+
+  const removeAssignedCoach = async (groupId: number, userId: number) => {
+    const response = await fetch(`/api/coach/groups/${groupId}/coaches?userId=${userId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      setFeedback("Retrait du coach impossible.");
+      return;
+    }
+
+    setUndoAction(null);
+    setFeedback("Coach retiré du groupe.");
+    await loadDashboard();
   };
 
   const demoteCoach = async (userId: number) => {
@@ -821,10 +866,14 @@ export function useCoachDashboard() {
     setIsCreateGroupOpen,
     memberPickerGroupId,
     setMemberPickerGroupId,
+    coachPickerGroupId,
+    setCoachPickerGroupId,
     selectedUserId,
     setSelectedUserId,
     removeMembership,
     setRemoveMembership,
+    removeCoach,
+    setRemoveCoach,
     removeGroup,
     setRemoveGroup,
     editTarget,
@@ -861,7 +910,9 @@ export function useCoachDashboard() {
     canEditSelectedUser,
     canManageSelectedUserApiKeys,
     memberPickerGroup,
+    coachPickerGroup,
     assignableUsers,
+    assignableCoaches,
     groupedUsers,
     recentActivity,
     totalApplications,
@@ -872,7 +923,9 @@ export function useCoachDashboard() {
     loadDashboard,
     createGroup,
     addMember,
+    addCoach,
     removeMember,
+    removeAssignedCoach,
     demoteCoach,
     deleteGroup,
     updateManagedUser,

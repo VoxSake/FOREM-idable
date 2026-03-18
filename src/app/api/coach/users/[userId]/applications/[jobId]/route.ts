@@ -52,6 +52,9 @@ export async function PATCH(
 
     return NextResponse.json({ application });
   } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     if (error instanceof Error && error.message === "Application not found") {
       return NextResponse.json({ error: "Candidature introuvable." }, { status: 404 });
     }
@@ -90,7 +93,11 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     return NextResponse.json(
       { error: "Impossible de supprimer la candidature." },
       { status: 500 }

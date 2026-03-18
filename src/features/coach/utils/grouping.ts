@@ -19,6 +19,7 @@ export function buildMemberPickerGroup(
           createdAt: "",
           createdBy: { id: 0, email: "" },
           members: [],
+          coaches: [],
         }
       : null)
   );
@@ -108,6 +109,7 @@ export function buildGroupedUsers(input: {
       name: group.name,
       createdByEmail: group.createdBy.email,
       canAddMembers: true,
+      canManageCoaches: true,
       kind: "standard" as const,
       totalApplications: members.reduce((sum, entry) => sum + entry.applicationCount, 0),
       totalInterviews: members.reduce((sum, entry) => sum + entry.interviewCount, 0),
@@ -115,6 +117,7 @@ export function buildGroupedUsers(input: {
       totalAccepted: members.reduce((sum, entry) => sum + entry.acceptedCount, 0),
       totalRejected: members.reduce((sum, entry) => sum + entry.rejectedCount, 0),
       members: visibleMembers,
+      coaches: group.coaches,
     };
   });
 
@@ -145,6 +148,7 @@ export function buildGroupedUsers(input: {
       name: "Aucun groupe attribué",
       createdByEmail: null,
       canAddMembers: false,
+      canManageCoaches: false,
       kind: "ungrouped",
       totalApplications: allUngroupedMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
       totalInterviews: allUngroupedMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
@@ -152,12 +156,14 @@ export function buildGroupedUsers(input: {
       totalAccepted: allUngroupedMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
       totalRejected: allUngroupedMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
       members: sortMembers(ungroupedMembers),
+      coaches: [],
     },
     {
       id: -2,
       name: "Coaches",
       createdByEmail: null,
       canAddMembers: canManageCoachGroup,
+      canManageCoaches: false,
       kind: "coaches",
       totalApplications: allCoachMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
       totalInterviews: allCoachMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
@@ -165,6 +171,7 @@ export function buildGroupedUsers(input: {
       totalAccepted: allCoachMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
       totalRejected: allCoachMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
       members: sortMembers(coachMembers),
+      coaches: [],
     },
   ];
 

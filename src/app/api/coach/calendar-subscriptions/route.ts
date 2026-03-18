@@ -5,7 +5,7 @@ import {
   createCalendarSubscription,
   regenerateCalendarSubscription,
 } from "@/lib/server/calendarSubscriptions";
-import { markCoachAction, requireCoachAccess } from "@/lib/server/coach";
+import { canManageCoachGroup, markCoachAction, requireCoachAccess } from "@/lib/server/coach";
 import { CalendarSubscriptionScope } from "@/types/calendar";
 
 function parseScope(value: unknown): CalendarSubscriptionScope | null {
@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
 
     if (scope === "group" && (!Number.isInteger(groupId) || groupId <= 0)) {
       return NextResponse.json({ error: "Groupe invalide." }, { status: 400 });
+    }
+
+    if (scope === "group" && !(await canManageCoachGroup(actor, groupId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (regenerate && actor.role !== "admin") {

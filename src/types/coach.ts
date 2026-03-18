@@ -18,6 +18,7 @@ export interface CoachGroupSummary {
     email: string;
   };
   members: CoachGroupMember[];
+  coaches: CoachGroupMember[];
 }
 
 export interface CoachUserSummary {
@@ -44,4 +45,5 @@ export interface CoachDashboardData {
   viewer: AuthUser;
   users: CoachUserSummary[];
   groups: CoachGroupSummary[];
+  availableCoaches: CoachGroupMember[];
 }

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addUserToCoachGroup, removeUserFromCoachGroup, requireCoachAccess } from "@/lib/server/coach";
+import {
+  addCoachToGroup,
+  removeCoachFromGroup,
+  requireCoachAccess,
+} from "@/lib/server/coach";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 function parseGroupId(value: string) {
@@ -29,14 +33,17 @@ export async function POST(
       return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
     }
 
-    await addUserToCoachGroup(groupId, userId, user);
+    await addCoachToGroup(groupId, userId, user);
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (error instanceof Error && error.message === "Coach required") {
+      return NextResponse.json({ error: "Seuls les comptes coach peuvent être attribués." }, { status: 400 });
+    }
 
-    return NextResponse.json({ error: "Ajout au groupe impossible." }, { status: 500 });
+    return NextResponse.json({ error: "Attribution du coach impossible." }, { status: 500 });
   }
 }
 
@@ -61,13 +68,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
     }
 
-    await removeUserFromCoachGroup(groupId, userId, user);
+    await removeCoachFromGroup(groupId, userId, user);
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    return NextResponse.json({ error: "Suppression du groupe impossible." }, { status: 500 });
+    return NextResponse.json({ error: "Retrait du coach impossible." }, { status: 500 });
   }
 }

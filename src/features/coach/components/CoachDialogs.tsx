@@ -20,6 +20,7 @@ import {
   CoachMemberPickerGroup,
   CoachRevokeApiKeyTarget,
   CoachRemoveGroupTarget,
+  CoachRemoveCoachTarget,
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
 import { formatCoachDate } from "@/features/coach/utils";
@@ -35,9 +36,16 @@ interface CoachDialogsProps {
   assignableUsers: CoachUserSummary[];
   onMemberPickerOpenChange: (open: boolean) => void;
   onMemberSelect: (userId: number) => void;
+  coachPickerGroup: CoachMemberPickerGroup | null;
+  assignableCoaches: CoachMemberPickerGroup["coaches"];
+  onCoachPickerOpenChange: (open: boolean) => void;
+  onCoachSelect: (userId: number) => void;
   removeMembership: CoachRemoveMembershipTarget | null;
   onRemoveMembershipOpenChange: (open: boolean) => void;
   onConfirmRemoveMembership: () => void;
+  removeCoach: CoachRemoveCoachTarget | null;
+  onRemoveCoachOpenChange: (open: boolean) => void;
+  onConfirmRemoveCoach: () => void;
   removeGroup: CoachRemoveGroupTarget | null;
   onRemoveGroupOpenChange: (open: boolean) => void;
   onConfirmRemoveGroup: () => void;
@@ -79,9 +87,16 @@ export function CoachDialogs({
   assignableUsers,
   onMemberPickerOpenChange,
   onMemberSelect,
+  coachPickerGroup,
+  assignableCoaches,
+  onCoachPickerOpenChange,
+  onCoachSelect,
   removeMembership,
   onRemoveMembershipOpenChange,
   onConfirmRemoveMembership,
+  removeCoach,
+  onRemoveCoachOpenChange,
+  onConfirmRemoveCoach,
   removeGroup,
   onRemoveGroupOpenChange,
   onConfirmRemoveGroup,
@@ -119,7 +134,7 @@ export function CoachDialogs({
           <DialogHeader>
             <DialogTitle>Créer un groupe</DialogTitle>
             <DialogDescription>
-              Le groupe sera visible par tous les coaches et admins.
+              Les admins verront toujours le groupe. Un coach créateur y sera attribué automatiquement.
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -147,6 +162,15 @@ export function CoachDialogs({
         onSelect={(entry) => onMemberSelect(entry.id)}
       />
 
+      <UserPickerDialog
+        open={Boolean(coachPickerGroup)}
+        onOpenChange={onCoachPickerOpenChange}
+        title={coachPickerGroup ? `Attribuer un coach à ${coachPickerGroup.name}` : "Attribuer un coach"}
+        description="Recherche parmi les comptes coach disponibles."
+        users={assignableCoaches}
+        onSelect={(entry) => onCoachSelect(entry.id)}
+      />
+
       <Dialog open={Boolean(removeMembership)} onOpenChange={onRemoveMembershipOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -162,6 +186,27 @@ export function CoachDialogs({
               Annuler
             </Button>
             <Button type="button" variant="destructive" onClick={onConfirmRemoveMembership}>
+              Retirer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(removeCoach)} onOpenChange={onRemoveCoachOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Retirer ce coach du groupe ?</DialogTitle>
+            <DialogDescription>
+              {removeCoach
+                ? `${removeCoach.userEmail} ne sera plus attribué à ${removeCoach.groupName}.`
+                : "Ce coach ne sera plus attribué au groupe."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onRemoveCoachOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button type="button" variant="destructive" onClick={onConfirmRemoveCoach}>
               Retirer
             </Button>
           </DialogFooter>

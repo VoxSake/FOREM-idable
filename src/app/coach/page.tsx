@@ -123,6 +123,7 @@ export default function CoachPage() {
             })
           }
           onAddMember={coach.setMemberPickerGroupId}
+          onAddCoach={coach.setCoachPickerGroupId}
           onExportGroup={coach.exportGroupApplications}
           onCopyGroupCalendar={(groupId, groupName) =>
             void coach.copyGroupCalendarUrl(groupId, groupName)
@@ -137,6 +138,7 @@ export default function CoachPage() {
           onRemoveGroup={(groupId, groupName) => coach.setRemoveGroup({ groupId, groupName })}
           onOpenUser={coach.setSelectedUserId}
           onRemoveMembership={coach.setRemoveMembership}
+          onRemoveCoach={coach.setRemoveCoach}
           onDemoteCoach={(userId) => void coach.demoteCoach(userId)}
         />
       </div>
@@ -208,12 +210,23 @@ export default function CoachPage() {
         assignableUsers={coach.assignableUsers}
         onMemberPickerOpenChange={(open) => !open && coach.setMemberPickerGroupId(null)}
         onMemberSelect={(userId) => void coach.addMember(coach.memberPickerGroup?.id ?? 0, userId)}
+        coachPickerGroup={coach.coachPickerGroup}
+        assignableCoaches={coach.assignableCoaches}
+        onCoachPickerOpenChange={(open) => !open && coach.setCoachPickerGroupId(null)}
+        onCoachSelect={(userId) => void coach.addCoach(coach.coachPickerGroup?.id ?? 0, userId)}
         removeMembership={coach.removeMembership}
         onRemoveMembershipOpenChange={(open) => !open && coach.setRemoveMembership(null)}
         onConfirmRemoveMembership={() => {
           if (!coach.removeMembership) return;
           void coach.removeMember(coach.removeMembership.groupId, coach.removeMembership.userId);
           coach.setRemoveMembership(null);
+        }}
+        removeCoach={coach.removeCoach}
+        onRemoveCoachOpenChange={(open) => !open && coach.setRemoveCoach(null)}
+        onConfirmRemoveCoach={() => {
+          if (!coach.removeCoach) return;
+          void coach.removeAssignedCoach(coach.removeCoach.groupId, coach.removeCoach.userId);
+          coach.setRemoveCoach(null);
         }}
         removeGroup={coach.removeGroup}
         onRemoveGroupOpenChange={(open) => !open && coach.setRemoveGroup(null)}

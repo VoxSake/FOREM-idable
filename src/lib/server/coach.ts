@@ -42,6 +42,94 @@ function matchesDashboardSearch(
     .includes(normalized);
 }
 
+function toGroupParticipant(input: {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: UserRole;
+}) {
+  return {
+    id: input.id,
+    email: input.email,
+    firstName: input.first_name,
+    lastName: input.last_name,
+    role: input.role,
+  };
+}
+
+async function getManagedGroupIdsForCoach(userId: number) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const result = await db.query<{ group_id: number }>(
+    `SELECT group_id
+     FROM coach_group_coaches
+     WHERE user_id = $1`,
+    [userId]
+  );
+
+  return result.rows.map((row) => row.group_id);
+}
+
+export async function canManageCoachGroup(actor: CoachCapableUser, groupId: number) {
+  if (actor.role === "admin") {
+    return true;
+  }
+
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const result = await db.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM coach_group_coaches
+       WHERE group_id = $1
+         AND user_id = $2
+     ) AS exists`,
+    [groupId, actor.id]
+  );
+
+  return Boolean(result.rows[0]?.exists);
+}
+
+async function assertCanManageCoachGroup(actor: CoachCapableUser, groupId: number) {
+  const allowed = await canManageCoachGroup(actor, groupId);
+  if (!allowed) {
+    throw new Error("Forbidden");
+  }
+}
+
+export async function canAccessCoachUser(actor: CoachCapableUser, userId: number) {
+  if (actor.role === "admin") {
+    return true;
+  }
+
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const result = await db.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM coach_group_members
+       INNER JOIN coach_group_coaches
+         ON coach_group_coaches.group_id = coach_group_members.group_id
+       WHERE coach_group_members.user_id = $1
+         AND coach_group_coaches.user_id = $2
+     ) AS exists`,
+    [userId, actor.id]
+  );
+
+  return Boolean(result.rows[0]?.exists);
+}
+
+async function assertCanAccessCoachUser(actor: CoachCapableUser, userId: number) {
+  const allowed = await canAccessCoachUser(actor, userId);
+  if (!allowed) {
+    throw new Error("Forbidden");
+  }
+}
+
 export async function markCoachAction(userId: number) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
@@ -80,7 +168,7 @@ export async function getCoachDashboard(
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  const [usersResult, groupsResult, membersResult] = await Promise.all([
+  const [usersResult, groupsResult, membersResult, coachesResult, managedGroupIds] = await Promise.all([
     db.query<{
       id: number;
       email: string;
@@ -134,10 +222,38 @@ export async function getCoachDashboard(
        INNER JOIN users ON users.id = coach_group_members.user_id
        ORDER BY users.last_name ASC, users.first_name ASC, users.email ASC`
     ),
+    db.query<{
+      group_id: number;
+      user_id: number;
+      email: string;
+      first_name: string;
+      last_name: string;
+      role: UserRole;
+    }>(
+      `SELECT coach_group_coaches.group_id,
+              users.id AS user_id,
+              users.email,
+              users.first_name,
+              users.last_name,
+              users.role
+       FROM coach_group_coaches
+       INNER JOIN users ON users.id = coach_group_coaches.user_id
+       ORDER BY users.last_name ASC, users.first_name ASC, users.email ASC`
+    ),
+    viewer.role === "admin" ? Promise.resolve([]) : getManagedGroupIdsForCoach(viewer.id),
   ]);
+
+  const visibleGroupIds =
+    viewer.role === "admin"
+      ? new Set(groupsResult.rows.map((row) => row.id))
+      : new Set(managedGroupIds);
 
   const groupsById = new Map<number, CoachGroupSummary>();
   for (const row of groupsResult.rows) {
+    if (!visibleGroupIds.has(row.id)) {
+      continue;
+    }
+
     groupsById.set(row.id, {
       id: row.id,
       name: row.name,
@@ -147,22 +263,40 @@ export async function getCoachDashboard(
         email: row.created_by_email,
       },
       members: [],
+      coaches: [],
     });
   }
 
   const groupIdsByUser = new Map<number, number[]>();
   const groupNamesByUser = new Map<number, string[]>();
+  for (const row of coachesResult.rows) {
+    const group = groupsById.get(row.group_id);
+    if (!group) continue;
+
+    group.coaches.push(
+      toGroupParticipant({
+        id: row.user_id,
+        email: row.email,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        role: row.role,
+      })
+    );
+  }
+
   for (const row of membersResult.rows) {
     const group = groupsById.get(row.group_id);
     if (!group) continue;
 
-    group.members.push({
-      id: row.user_id,
-      email: row.email,
-      firstName: row.first_name,
-      lastName: row.last_name,
-      role: row.role,
-    });
+    group.members.push(
+      toGroupParticipant({
+        id: row.user_id,
+        email: row.email,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        role: row.role,
+      })
+    );
 
     groupIdsByUser.set(row.user_id, [...(groupIdsByUser.get(row.user_id) ?? []), row.group_id]);
     groupNamesByUser.set(row.user_id, [...(groupNamesByUser.get(row.user_id) ?? []), group.name]);
@@ -171,6 +305,10 @@ export async function getCoachDashboard(
   const scopedUserRows = usersResult.rows.filter((row) => {
     const groupIds = groupIdsByUser.get(row.id) ?? [];
     const groupNames = groupNamesByUser.get(row.id) ?? [];
+
+    if (viewer.role !== "admin" && groupIds.length === 0) {
+      return false;
+    }
 
     if (filters.userId && row.id !== filters.userId) return false;
     if (filters.groupId && !groupIds.includes(filters.groupId)) return false;
@@ -227,10 +365,21 @@ export async function getCoachDashboard(
     viewer,
     users,
     groups: Array.from(groupsById.values()),
+    availableCoaches: usersResult.rows
+      .filter((row) => row.role === "coach")
+      .map((row) =>
+        toGroupParticipant({
+          id: row.id,
+          email: row.email,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          role: row.role,
+        })
+      ),
   };
 }
 
-export async function createCoachGroup(name: string, createdBy: number) {
+export async function createCoachGroup(name: string, actor: CoachCapableUser) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
@@ -243,17 +392,28 @@ export async function createCoachGroup(name: string, createdBy: number) {
     `INSERT INTO coach_groups (name, created_by)
      VALUES ($1, $2)
      RETURNING id`,
-    [trimmed, createdBy]
+    [trimmed, actor.id]
   );
 
-  await markCoachAction(createdBy);
+  if (actor.role === "coach") {
+    await db.query(
+      `INSERT INTO coach_group_coaches (group_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (group_id, user_id) DO NOTHING`,
+      [result.rows[0].id, actor.id]
+    );
+  }
+
+  await markCoachAction(actor.id);
 
   return result.rows[0];
 }
 
-export async function deleteCoachGroup(groupId: number, actorId?: number) {
+export async function deleteCoachGroup(groupId: number, actor: CoachCapableUser) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+
+  await assertCanManageCoachGroup(actor, groupId);
 
   await db.query(
     `DELETE FROM coach_groups
@@ -261,14 +421,16 @@ export async function deleteCoachGroup(groupId: number, actorId?: number) {
     [groupId]
   );
 
-  if (actorId) {
-    await markCoachAction(actorId);
-  }
+  await markCoachAction(actor.id);
 }
 
-export async function addUserToCoachGroup(groupId: number, userId: number, actorId?: number) {
+export async function addUserToCoachGroup(groupId: number, userId: number, actor?: CoachCapableUser) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+
+  if (actor) {
+    await assertCanManageCoachGroup(actor, groupId);
+  }
 
   await db.query(
     `INSERT INTO coach_group_members (group_id, user_id)
@@ -277,14 +439,22 @@ export async function addUserToCoachGroup(groupId: number, userId: number, actor
     [groupId, userId]
   );
 
-  if (actorId) {
-    await markCoachAction(actorId);
+  if (actor) {
+    await markCoachAction(actor.id);
   }
 }
 
-export async function removeUserFromCoachGroup(groupId: number, userId: number, actorId?: number) {
+export async function removeUserFromCoachGroup(
+  groupId: number,
+  userId: number,
+  actor?: CoachCapableUser
+) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+
+  if (actor) {
+    await assertCanManageCoachGroup(actor, groupId);
+  }
 
   await db.query(
     `DELETE FROM coach_group_members
@@ -292,8 +462,8 @@ export async function removeUserFromCoachGroup(groupId: number, userId: number, 
     [groupId, userId]
   );
 
-  if (actorId) {
-    await markCoachAction(actorId);
+  if (actor) {
+    await markCoachAction(actor.id);
   }
 }
 
@@ -308,9 +478,70 @@ export async function setUserRole(userId: number, role: UserRole, actorId?: numb
     [userId, role]
   );
 
+  if (role !== "coach" && role !== "admin") {
+    await db.query(
+      `DELETE FROM coach_group_coaches
+       WHERE user_id = $1`,
+      [userId]
+    );
+  }
+
   if (actorId) {
     await markCoachAction(actorId);
   }
+}
+
+export async function addCoachToGroup(
+  groupId: number,
+  coachUserId: number,
+  actor: CoachCapableUser
+) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  await assertCanManageCoachGroup(actor, groupId);
+
+  const userResult = await db.query<{ role: UserRole }>(
+    `SELECT role
+     FROM users
+     WHERE id = $1
+     LIMIT 1`,
+    [coachUserId]
+  );
+
+  const role = userResult.rows[0]?.role;
+  if (role !== "coach") {
+    throw new Error("Coach required");
+  }
+
+  await db.query(
+    `INSERT INTO coach_group_coaches (group_id, user_id)
+     VALUES ($1, $2)
+     ON CONFLICT (group_id, user_id) DO NOTHING`,
+    [groupId, coachUserId]
+  );
+
+  await markCoachAction(actor.id);
+}
+
+export async function removeCoachFromGroup(
+  groupId: number,
+  coachUserId: number,
+  actor: CoachCapableUser
+) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  await assertCanManageCoachGroup(actor, groupId);
+
+  await db.query(
+    `DELETE FROM coach_group_coaches
+     WHERE group_id = $1
+       AND user_id = $2`,
+    [groupId, coachUserId]
+  );
+
+  await markCoachAction(actor.id);
 }
 
 function withContributor<T extends { contributors: CoachNoteAuthor[] }>(
@@ -336,6 +567,7 @@ export async function updateCoachApplicationNotes(input: {
 }) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+  await assertCanAccessCoachUser(input.actor, input.userId);
   const actor = toCoachNoteAuthor(input.actor);
 
   const existingResult = await db.query<{ application: JobApplication }>(
@@ -531,6 +763,7 @@ export async function importCoachApplicationsForUser(input: {
 }) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+  await assertCanAccessCoachUser(input.actor, input.userId);
 
   const importedApplications: JobApplication[] = [];
   let createdCount = 0;
@@ -608,6 +841,8 @@ export async function updateCoachManagedApplication(input: {
     >
   >;
 }) {
+  await assertCanAccessCoachUser(input.actor, input.userId);
+
   const application = await updateApplicationForUser({
     userId: input.userId,
     jobId: input.jobId,
@@ -624,6 +859,7 @@ export async function deleteCoachManagedApplication(input: {
   userId: number;
   jobId: string;
 }) {
+  await assertCanAccessCoachUser(input.actor, input.userId);
   await deleteApplicationForUser(input.userId, input.jobId);
   await markCoachAction(input.actor.id);
 }

@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "crypto";
 import { buildCalendarIcsFeed } from "@/lib/calendarIcs";
 import { db, ensureDatabase } from "@/lib/server/db";
+import { UserRole } from "@/types/auth";
 import { CalendarFeedApplicationRow, CalendarSubscriptionScope, CalendarSubscriptionSummary } from "@/types/calendar";
 
 function hashToken(token: string) {
@@ -192,10 +193,12 @@ export async function resolveCalendarSubscription(token: string) {
     scope: CalendarSubscriptionScope;
     group_id: number | null;
     group_name: string | null;
+    created_by: number;
   }>(
     `SELECT calendar_subscriptions.id,
             calendar_subscriptions.scope,
             calendar_subscriptions.group_id,
+            calendar_subscriptions.created_by,
             coach_groups.name AS group_name
      FROM calendar_subscriptions
      LEFT JOIN coach_groups ON coach_groups.id = calendar_subscriptions.group_id
@@ -300,12 +303,56 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
   };
 }
 
-export async function listCalendarFeedRowsForAllGroups(): Promise<{
+async function resolveCalendarActorScope(actorId: number) {
+  if (!db) throw new Error("Database unavailable");
+
+  const actorResult = await db.query<{ role: UserRole }>(
+    `SELECT role
+     FROM users
+     WHERE id = $1
+     LIMIT 1`,
+    [actorId]
+  );
+
+  const role = actorResult.rows[0]?.role;
+  if (!role) {
+    throw new Error("Actor not found");
+  }
+
+  if (role === "admin") {
+    return {
+      role,
+      managedGroupIds: null,
+    };
+  }
+
+  const groupsResult = await db.query<{ group_id: number }>(
+    `SELECT group_id
+     FROM coach_group_coaches
+     WHERE user_id = $1`,
+    [actorId]
+  );
+
+  return {
+    role,
+    managedGroupIds: groupsResult.rows.map((row) => row.group_id),
+  };
+}
+
+export async function listCalendarFeedRowsForAllGroups(actorId: number): Promise<{
   calendarName: string;
   rows: CalendarFeedApplicationRow[];
 }> {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+
+  const actorScope = await resolveCalendarActorScope(actorId);
+  if (actorScope.managedGroupIds && actorScope.managedGroupIds.length === 0) {
+    return {
+      calendarName: "FOREM-idable - Mes groupes beneficiaires",
+      rows: [],
+    };
+  }
 
   const membersResult = await db.query<{
     id: number;
@@ -322,10 +369,10 @@ export async function listCalendarFeedRowsForAllGroups(): Promise<{
      FROM users
      INNER JOIN coach_group_members ON coach_group_members.user_id = users.id
      INNER JOIN coach_groups ON coach_groups.id = coach_group_members.group_id
-     WHERE users.role = 'user'
+     WHERE ($1::bigint[] IS NULL OR coach_group_members.group_id = ANY($1::bigint[]))
      GROUP BY users.id, users.email, users.first_name, users.last_name
      ORDER BY users.last_name ASC, users.first_name ASC, users.email ASC`,
-    []
+    [actorScope.managedGroupIds]
   );
 
   const memberIds = membersResult.rows.map((row) => row.id);
@@ -349,7 +396,10 @@ export async function listCalendarFeedRowsForAllGroups(): Promise<{
   });
 
   return {
-    calendarName: "FOREM-idable - Tous les groupes beneficiaires",
+    calendarName:
+      actorScope.role === "admin"
+        ? "FOREM-idable - Tous les groupes beneficiaires"
+        : "FOREM-idable - Mes groupes beneficiaires",
     rows,
   };
 }
@@ -361,7 +411,7 @@ export async function buildCalendarSubscriptionIcs(token: string) {
   const feed =
     subscription.scope === "group" && subscription.group_id
       ? await listCalendarFeedRowsForGroup(subscription.group_id)
-      : await listCalendarFeedRowsForAllGroups();
+      : await listCalendarFeedRowsForAllGroups(subscription.created_by);
 
   await touchCalendarSubscriptionUsage(subscription.id);
 
