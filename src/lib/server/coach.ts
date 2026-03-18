@@ -17,9 +17,29 @@ import { CoachDashboardData, CoachGroupSummary, CoachUserSummary } from "@/types
 import { Job } from "@/types/job";
 
 type CoachCapableUser = AuthUser & { role: "coach" | "admin" };
+interface CoachDashboardFilters {
+  userId?: number | null;
+  groupId?: number | null;
+  role?: UserRole | null;
+  search?: string | null;
+}
 
 function canCoach(role: UserRole) {
   return role === "coach" || role === "admin";
+}
+
+function matchesDashboardSearch(
+  haystack: Array<string | null | undefined>,
+  search?: string | null
+) {
+  const normalized = search?.trim().toLowerCase();
+  if (!normalized) return true;
+
+  return haystack
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(normalized);
 }
 
 export async function markCoachAction(userId: number) {
@@ -53,11 +73,14 @@ export async function requireAdminAccess(): Promise<(AuthUser & { role: "admin" 
   return user as AuthUser & { role: "admin" };
 }
 
-export async function getCoachDashboard(viewer: CoachCapableUser): Promise<CoachDashboardData> {
+export async function getCoachDashboard(
+  viewer: CoachCapableUser,
+  filters: CoachDashboardFilters = {}
+): Promise<CoachDashboardData> {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  const [usersResult, groupsResult, membersResult, applicationsResult] = await Promise.all([
+  const [usersResult, groupsResult, membersResult] = await Promise.all([
     db.query<{
       id: number;
       email: string;
@@ -111,14 +134,6 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
        INNER JOIN users ON users.id = coach_group_members.user_id
        ORDER BY users.last_name ASC, users.first_name ASC, users.email ASC`
     ),
-    db.query<{
-      user_id: number;
-      application: JobApplication;
-    }>(
-      `SELECT user_id, application
-       FROM user_applications
-       ORDER BY user_id ASC, position ASC`
-    ),
   ]);
 
   const groupsById = new Map<number, CoachGroupSummary>();
@@ -153,15 +168,44 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
     groupNamesByUser.set(row.user_id, [...(groupNamesByUser.get(row.user_id) ?? []), group.name]);
   }
 
+  const scopedUserRows = usersResult.rows.filter((row) => {
+    const groupIds = groupIdsByUser.get(row.id) ?? [];
+    const groupNames = groupNamesByUser.get(row.id) ?? [];
+
+    if (filters.userId && row.id !== filters.userId) return false;
+    if (filters.groupId && !groupIds.includes(filters.groupId)) return false;
+    if (filters.role && row.role !== filters.role) return false;
+
+    return matchesDashboardSearch(
+      [row.first_name, row.last_name, `${row.first_name} ${row.last_name}`.trim(), row.email, ...groupNames],
+      filters.search
+    );
+  });
+
+  const scopedUserIds = scopedUserRows.map((row) => row.id);
   const applicationsByUser = new Map<number, JobApplication[]>();
-  for (const row of applicationsResult.rows) {
-    applicationsByUser.set(row.user_id, [
-      ...(applicationsByUser.get(row.user_id) ?? []),
-      normalizeApplicationCoachNotes(row.application),
-    ]);
+
+  if (scopedUserIds.length > 0) {
+    const applicationsResult = await db.query<{
+      user_id: number;
+      application: JobApplication;
+    }>(
+      `SELECT user_id, application
+       FROM user_applications
+       WHERE user_id = ANY($1::bigint[])
+       ORDER BY user_id ASC, position ASC`,
+      [scopedUserIds]
+    );
+
+    for (const row of applicationsResult.rows) {
+      applicationsByUser.set(row.user_id, [
+        ...(applicationsByUser.get(row.user_id) ?? []),
+        normalizeApplicationCoachNotes(row.application),
+      ]);
+    }
   }
 
-  const users: CoachUserSummary[] = usersResult.rows.map((row) => {
+  const users: CoachUserSummary[] = scopedUserRows.map((row) => {
     const applications = applicationsByUser.get(row.id) ?? [];
 
     return {

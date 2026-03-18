@@ -84,28 +84,32 @@ function toExternalUserSummary(
   };
 }
 
-async function loadDashboard(actor: ExternalApiActor) {
-  return getCoachDashboard(actor);
+async function loadDashboard(
+  actor: ExternalApiActor,
+  filters?: {
+    userId?: number | null;
+    groupId?: number | null;
+    role?: ExternalApiFilters["role"];
+    search?: string | null;
+  }
+) {
+  return getCoachDashboard(actor, filters);
 }
 
 export async function getExternalUsers(
   actor: ExternalApiActor,
   filters: ExternalApiFilters = {}
 ): Promise<ExternalApiUsersResponse> {
-  const dashboard = await loadDashboard(actor);
+  const dashboard = await loadDashboard(actor, {
+    userId: filters.userId,
+    groupId: filters.groupId,
+    role: filters.role,
+    search: filters.search,
+  });
   const offset = normalizeOffset(filters.offset);
   const limit = normalizeLimit(filters.limit, 200);
 
-  const users = dashboard.users.filter((entry) => {
-    if (filters.userId && entry.id !== filters.userId) return false;
-    if (filters.groupId && !entry.groupIds.includes(filters.groupId)) return false;
-    if (filters.role && entry.role !== filters.role) return false;
-
-    return matchesSearch(
-      [entry.firstName, entry.lastName, `${entry.firstName} ${entry.lastName}`.trim(), entry.email],
-      filters.search
-    );
-  });
+  const users = dashboard.users;
 
   const serializedUsers = users
     .slice(offset, offset + limit)
@@ -119,7 +123,7 @@ export async function getExternalUsers(
 }
 
 export async function getExternalUserDetail(actor: ExternalApiActor, userId: number): Promise<ExternalApiUserDetail | null> {
-  const dashboard = await loadDashboard(actor);
+  const dashboard = await loadDashboard(actor, { userId });
   const user = dashboard.users.find((entry) => entry.id === userId);
   if (!user) return null;
 
@@ -130,7 +134,9 @@ export async function getExternalGroups(
   actor: ExternalApiActor,
   filters: ExternalApiFilters = {}
 ): Promise<ExternalApiGroupsResponse> {
-  const dashboard = await loadDashboard(actor);
+  const dashboard = await loadDashboard(actor, {
+    groupId: filters.groupId,
+  });
   const offset = normalizeOffset(filters.offset);
   const limit = normalizeLimit(filters.limit, 200);
 
@@ -177,7 +183,11 @@ export async function getExternalApplications(
   actor: ExternalApiActor,
   filters: ExternalApiFilters = {}
 ): Promise<ExternalApiApplicationsResponse> {
-  const dashboard = await loadDashboard(actor);
+  const dashboard = await loadDashboard(actor, {
+    userId: filters.userId,
+    groupId: filters.groupId,
+    role: filters.role,
+  });
   const offset = normalizeOffset(filters.offset);
   const limit = normalizeLimit(filters.limit, 500);
 
