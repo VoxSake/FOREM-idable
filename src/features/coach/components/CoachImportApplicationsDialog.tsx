@@ -16,10 +16,18 @@ import {
 const IMPORT_FIELDS = [
   { key: "company", label: "Entreprise", required: true },
   { key: "contractType", label: "Type de contrat", required: false },
-  { key: "title", label: "Intitulé du poste", required: true },
+  { key: "title", label: "Intitulé de poste", required: true },
   { key: "appliedAt", label: "Date d'envoi", required: false },
   { key: "status", label: "Statut", required: false },
   { key: "notes", label: "Note", required: false },
+] as const;
+
+const STATUS_OPTIONS = [
+  { value: "in_progress", label: "En cours" },
+  { value: "follow_up", label: "Relance à faire" },
+  { value: "interview", label: "Entretien" },
+  { value: "accepted", label: "Acceptée" },
+  { value: "rejected", label: "Refusée" },
 ] as const;
 
 type ImportFieldKey = (typeof IMPORT_FIELDS)[number]["key"];
@@ -63,6 +71,39 @@ function detectFieldMapping(headers: string[]) {
   } satisfies Record<ImportFieldKey, string>;
 }
 
+function normalizeStatusValue(value?: string) {
+  const normalized = value?.trim().toLowerCase();
+
+  switch (normalized) {
+    case "en cours":
+    case "encours":
+    case "in progress":
+      return "in_progress";
+    case "relance":
+    case "a relancer":
+    case "à relancer":
+    case "suivi":
+      return "follow_up";
+    case "entretien":
+    case "interview":
+      return "interview";
+    case "refuse":
+    case "refusé":
+    case "refusee":
+    case "refusée":
+    case "rejetee":
+    case "rejetée":
+      return "rejected";
+    case "accepte":
+    case "accepté":
+    case "acceptee":
+    case "acceptée":
+      return "accepted";
+    default:
+      return "";
+  }
+}
+
 export function CoachImportApplicationsDialog({
   open,
   userLabel,
@@ -81,10 +122,27 @@ export function CoachImportApplicationsDialog({
     status: "",
     notes: "",
   });
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
 
   const hasRequiredMapping = mapping.company && mapping.title;
 
   const previewRows = useMemo(() => rows.slice(0, 5), [rows]);
+  const unresolvedStatuses = useMemo(() => {
+    if (!mapping.status) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    return rows
+      .map((row) => (row[mapping.status] ?? "").trim())
+      .filter((status) => {
+        if (!status) return false;
+        if (normalizeStatusValue(status)) return false;
+        if (seen.has(status)) return false;
+        seen.add(status);
+        return true;
+      });
+  }, [mapping.status, rows]);
 
   const resetState = () => {
     setHeaders([]);
@@ -98,6 +156,7 @@ export function CoachImportApplicationsDialog({
       status: "",
       notes: "",
     });
+    setStatusOverrides({});
   };
 
   const handleFile = async (file: File | null) => {
@@ -136,7 +195,12 @@ export function CoachImportApplicationsDialog({
 
   const handleImport = async () => {
     if (!hasRequiredMapping) {
-      setFeedback("Les colonnes Entreprise et Intitulé du poste sont obligatoires.");
+      setFeedback("Les colonnes Entreprise et Intitulé de poste sont obligatoires.");
+      return;
+    }
+
+    if (unresolvedStatuses.some((status) => !statusOverrides[status])) {
+      setFeedback("Choisissez un vrai statut pour chaque valeur non reconnue avant l'import.");
       return;
     }
 
@@ -146,7 +210,9 @@ export function CoachImportApplicationsDialog({
         contractType: mapping.contractType ? row[mapping.contractType] ?? "" : "",
         title: row[mapping.title] ?? "",
         appliedAt: mapping.appliedAt ? row[mapping.appliedAt] ?? "" : "",
-        status: mapping.status ? row[mapping.status] ?? "" : "",
+        status: mapping.status
+          ? normalizeStatusValue(row[mapping.status] ?? "") || statusOverrides[(row[mapping.status] ?? "").trim()] || ""
+          : "",
         notes: mapping.notes ? row[mapping.notes] ?? "" : "",
       }))
       .filter((row) => row.company.trim() && row.title.trim());
@@ -221,6 +287,39 @@ export function CoachImportApplicationsDialog({
                   </select>
                 </label>
               ))}
+            </div>
+          ) : null}
+
+          {unresolvedStatuses.length > 0 ? (
+            <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+              <p className="text-sm font-medium">Statuts à confirmer</p>
+              <p className="text-xs text-muted-foreground">
+                Certaines valeurs de statut ne sont pas reconnues automatiquement. Choisis leur équivalent avant l&apos;import.
+              </p>
+              <div className="grid gap-3 md:grid-cols-2">
+                {unresolvedStatuses.map((status) => (
+                  <label key={status} className="space-y-1">
+                    <span className="text-sm font-medium">{status}</span>
+                    <select
+                      className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                      value={statusOverrides[status] ?? ""}
+                      onChange={(event) =>
+                        setStatusOverrides((current) => ({
+                          ...current,
+                          [status]: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Choisir un statut</option>
+                      {STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
             </div>
           ) : null}
 
