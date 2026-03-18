@@ -419,8 +419,8 @@ export function CoachImportApplicationsDialog({
               <p>
                 {rows.length} ligne{rows.length > 1 ? "s" : ""} détectée{rows.length > 1 ? "s" : ""}.
                 {duplicateCount > 0
-                  ? ` ${duplicateCount} doublon${duplicateCount > 1 ? "s" : ""} interne${duplicateCount > 1 ? "s" : ""} sera${duplicateCount > 1 ? "ont" : ""} ignoré${duplicateCount > 1 ? "s" : ""}.`
-                  : " Aucun doublon interne détecté."}
+                  ? ` ${duplicateCount} doublon${duplicateCount > 1 ? "s" : ""} dans ce fichier CSV sera${duplicateCount > 1 ? "ont" : ""} ignoré${duplicateCount > 1 ? "s" : ""}.`
+                  : " Aucun doublon dans ce fichier CSV."}
               </p>
             </div>
           ) : null}
