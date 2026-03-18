@@ -59,6 +59,7 @@ interface CoachUserSheetProps {
   canManageApiKeys: boolean;
   open: boolean;
   user: CoachUserSummary | null;
+  initialJobId?: string | null;
   savingCoachNoteKey: string | null;
   onOpenChange: (open: boolean) => void;
   onExport: () => void;
@@ -83,6 +84,7 @@ export function CoachUserSheet({
   canManageApiKeys,
   open,
   user,
+  initialJobId,
   savingCoachNoteKey,
   onOpenChange,
   onExport,
@@ -99,12 +101,13 @@ export function CoachUserSheet({
       <SheetContent side="right" className="w-full p-0 sm:max-w-[60vw]">
         {user && (
           <CoachUserSheetBody
-            key={user.id}
+            key={`${user.id}:${initialJobId ?? "base"}`}
             currentUserId={currentUserId}
             isAdmin={isAdmin}
             canEditUser={canEditUser}
             canManageApiKeys={canManageApiKeys}
             user={user}
+            initialJobId={initialJobId}
             savingCoachNoteKey={savingCoachNoteKey}
             onExport={onExport}
             onOpenApiKeys={onOpenApiKeys}
@@ -132,6 +135,7 @@ function CoachUserSheetBody({
   canEditUser,
   canManageApiKeys,
   user,
+  initialJobId,
   savingCoachNoteKey,
   onExport,
   onOpenApiKeys,
@@ -144,11 +148,23 @@ function CoachUserSheetBody({
 }: CoachUserSheetBodyProps) {
   const sortedApplications = useMemo(() => sortApplicationsByMostRecent(user.applications), [user.applications]);
   const applicationsPageSize = 10;
-  const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
+  const initialFocusPage = (() => {
+    if (!initialJobId) {
+      return 1;
+    }
+
+    const jobIndex = sortedApplications.findIndex((application) => application.job.id === initialJobId);
+    if (jobIndex < 0) {
+      return 1;
+    }
+
+    return Math.floor(jobIndex / applicationsPageSize) + 1;
+  })();
+  const [expandedJobIds, setExpandedJobIds] = useState<string[]>(initialJobId ? [initialJobId] : []);
   const [privateNoteDrafts, setPrivateNoteDrafts] = useState<Record<string, string>>({});
   const [sharedNoteDrafts, setSharedNoteDrafts] = useState<Record<string, string>>({});
   const [newSharedNoteDrafts, setNewSharedNoteDrafts] = useState<Record<string, string>>({});
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialFocusPage);
   const [deleteSharedTarget, setDeleteSharedTarget] = useState<{
     jobId: string;
     noteId: string;

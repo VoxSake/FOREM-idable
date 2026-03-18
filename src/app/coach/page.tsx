@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { useCoachDashboard } from "@/features/coach/useCoachDashboard";
 
 export default function CoachPage() {
   const coach = useCoachDashboard();
+  const [activityTargetJobId, setActivityTargetJobId] = useState<string | null>(null);
   const followedUserCount =
     coach.dashboard?.users.filter((entry) => entry.role === "user" || entry.groupIds.length > 0)
       .length ?? 0;
@@ -92,7 +94,13 @@ export default function CoachPage() {
           <div id="a-traiter" className="scroll-mt-6">
             <CoachPriorityBoard sections={prioritySections} onOpenUser={coach.setSelectedUserId} />
           </div>
-          <CoachRecentActivity items={coach.recentActivity} onOpenUser={coach.setSelectedUserId} />
+          <CoachRecentActivity
+            items={coach.recentActivity}
+            onOpenItem={(userId, jobId) => {
+              setActivityTargetJobId(jobId);
+              coach.setSelectedUserId(userId);
+            }}
+          />
         </>
       )}
 
@@ -139,8 +147,14 @@ export default function CoachPage() {
         canManageApiKeys={Boolean(coach.canManageSelectedUserApiKeys)}
         open={Boolean(coach.selectedUser)}
         user={coach.selectedUser}
+        initialJobId={activityTargetJobId}
         savingCoachNoteKey={coach.savingCoachNoteKey}
-        onOpenChange={(open) => !open && coach.setSelectedUserId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            coach.setSelectedUserId(null);
+            setActivityTargetJobId(null);
+          }
+        }}
         onExport={coach.exportUserApplications}
         onOpenApiKeys={() => void coach.openManagedUserApiKeys()}
         onEdit={() => {

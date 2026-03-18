@@ -82,6 +82,7 @@ export function isCoachUserInactive(user: CoachUserSummary, now = new Date()) {
 export interface CoachRecentActivityItem {
   id: string;
   userId: number;
+  jobId: string | null;
   userName: string;
   groupLabel: string;
   title: string;
@@ -267,19 +268,20 @@ export function buildCoachRecentActivity(
     const groupLabel = user.groupNames[0] ?? "Aucun groupe";
     const userName = getCoachUserDisplayName(user);
 
-    if (user.latestActivityAt && parseTimestamp(user.latestActivityAt) !== null) {
-      items.push({
-        id: `activity-${user.id}`,
-        userId: user.id,
-        userName,
-        groupLabel,
-        title: "Suivi mis à jour",
-        detail: `${user.applicationCount} candidature${user.applicationCount > 1 ? "s" : ""} dans le suivi`,
-        timestamp: user.latestActivityAt,
-      });
-    }
-
     for (const application of user.applications) {
+      if (parseTimestamp(application.updatedAt) !== null) {
+        items.push({
+          id: `application-${user.id}-${application.job.id}`,
+          userId: user.id,
+          jobId: application.job.id,
+          userName,
+          groupLabel,
+          title: application.job.title,
+          detail: `${application.job.company || "Entreprise non précisée"} • candidature mise à jour`,
+          timestamp: application.updatedAt,
+        });
+      }
+
       if (
         application.interviewAt &&
         parseTimestamp(application.interviewAt) !== null &&
@@ -289,39 +291,12 @@ export function buildCoachRecentActivity(
         items.push({
           id: `interview-${user.id}-${application.job.id}`,
           userId: user.id,
+          jobId: application.job.id,
           userName,
           groupLabel,
-          title: "Entretien planifié",
-          detail: application.job.title,
-          timestamp: application.updatedAt,
-        });
-      }
-
-      if (application.privateCoachNote?.updatedAt && parseTimestamp(application.privateCoachNote.updatedAt) !== null) {
-        items.push({
-          id: `private-note-${user.id}-${application.job.id}`,
-          userId: user.id,
-          userName,
-          groupLabel,
-          title: "Note privée coach mise à jour",
-          detail: application.job.title,
-          timestamp: application.privateCoachNote.updatedAt,
-        });
-      }
-
-      for (const note of application.sharedCoachNotes ?? []) {
-        if (parseTimestamp(note.updatedAt) === null) {
-          continue;
-        }
-
-        items.push({
-          id: `shared-note-${note.id}`,
-          userId: user.id,
-          userName,
-          groupLabel,
-          title: "Note coach partagée mise à jour",
-          detail: application.job.title,
-          timestamp: note.updatedAt,
+          title: application.job.title,
+          detail: `${application.job.company || "Entreprise non précisée"} • entretien planifié`,
+          timestamp: application.interviewAt,
         });
       }
     }

@@ -158,29 +158,15 @@ describe("coach activity helpers", () => {
             followUpEnabled: true,
             status: "in_progress",
             updatedAt: "2026-03-17T09:00:00.000Z",
-            sharedCoachNotes: [
-              {
-                id: "note-1",
-                content: "Point fait",
-                createdAt: "2026-03-16T09:00:00.000Z",
-                updatedAt: "2026-03-18T08:00:00.000Z",
-                createdBy: {
-                  id: 10,
-                  firstName: "Coach",
-                  lastName: "One",
-                  email: "coach@example.com",
-                  role: "coach",
-                },
-                contributors: [],
-              },
-            ],
+            interviewAt: "2026-03-18T08:00:00.000Z",
           },
         ],
       }),
     ]);
 
-    expect(items[0]?.title).toBe("Note coach partagée mise à jour");
-    expect(items[0]?.timestamp).toBe("2026-03-18T08:00:00.000Z");
+    expect(items[0]?.title).toBe("Data");
+    expect(items[0]?.detail).toContain("entretien planifié");
+    expect(items[0]?.jobId).toBe("job-4");
   });
 
   it("treats grouped admins like beneficiaries in coach activity and priorities", () => {

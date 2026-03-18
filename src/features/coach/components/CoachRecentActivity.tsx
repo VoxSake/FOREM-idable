@@ -7,21 +7,17 @@ import { CoachRecentActivityItem, formatCoachDate } from "@/features/coach/utils
 
 interface CoachRecentActivityProps {
   items: CoachRecentActivityItem[];
-  onOpenUser: (userId: number) => void;
+  onOpenItem: (userId: number, jobId: string | null) => void;
 }
 
-type CoachRecentActivityTab = "all" | "notes" | "interviews";
+type CoachRecentActivityTab = "all" | "interviews";
 
-export function CoachRecentActivity({ items, onOpenUser }: CoachRecentActivityProps) {
+export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityProps) {
   const [activeTab, setActiveTab] = useState<CoachRecentActivityTab>("all");
   const filteredItems = useMemo(() => {
     const matchingItems = items.filter((item) => {
-      if (activeTab === "notes") {
-        return item.title.includes("Note");
-      }
-
       if (activeTab === "interviews") {
-        return item.title.includes("Entretien");
+        return item.detail.includes("entretien planifié");
       }
 
       return true;
@@ -32,7 +28,6 @@ export function CoachRecentActivity({ items, onOpenUser }: CoachRecentActivityPr
 
   const tabs: Array<{ id: CoachRecentActivityTab; label: string }> = [
     { id: "all", label: "Tout" },
-    { id: "notes", label: "Notes" },
     { id: "interviews", label: "Entretiens" },
   ];
 
@@ -44,7 +39,7 @@ export function CoachRecentActivity({ items, onOpenUser }: CoachRecentActivityPr
           <h2 className="text-xl font-bold">Activité récente</h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          Derniers mouvements utiles dans le suivi: notes coach, candidatures mises à jour et entretiens planifiés.
+          Derniers mouvements utiles dans le suivi: candidatures mises à jour et entretiens planifiés.
         </p>
       </div>
 
@@ -74,7 +69,7 @@ export function CoachRecentActivity({ items, onOpenUser }: CoachRecentActivityPr
                   key={item.id}
                   type="button"
                   className="flex w-full items-start justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 text-left transition hover:border-primary/30 hover:bg-muted/40"
-                  onClick={() => onOpenUser(item.userId)}
+                  onClick={() => onOpenItem(item.userId, item.jobId)}
                 >
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
