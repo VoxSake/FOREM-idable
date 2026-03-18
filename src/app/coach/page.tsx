@@ -284,9 +284,9 @@ export default function CoachPage() {
             coach.setImportTargetUserId(null);
           }
         }}
-        onImport={(rows) => {
+        onImport={(rows, dateFormat) => {
           if (!coach.importTargetUser) return Promise.resolve(null);
-          return coach.importApplicationsForUser(coach.importTargetUser.id, rows);
+          return coach.importApplicationsForUser(coach.importTargetUser.id, dateFormat, rows);
         }}
       />
     </div>

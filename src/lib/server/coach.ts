@@ -411,6 +411,8 @@ export interface CoachImportedApplicationInput {
   notes?: string;
 }
 
+export type CoachImportDateFormat = "dmy" | "mdy";
+
 function normalizeImportedStatus(value?: string) {
   const normalized = value?.trim().toLowerCase();
 
@@ -448,15 +450,17 @@ function normalizeImportedStatus(value?: string) {
   }
 }
 
-function normalizeImportedDate(value?: string) {
+function normalizeImportedDate(value?: string, dateFormat: CoachImportDateFormat = "dmy") {
   const trimmed = value?.trim();
   if (!trimmed) {
     return undefined;
   }
 
-  const frenchMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})$/);
-  if (frenchMatch) {
-    const [, day, month, year] = frenchMatch;
+  const delimitedMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})$/);
+  if (delimitedMatch) {
+    const [, first, second, year] = delimitedMatch;
+    const day = dateFormat === "mdy" ? second : first;
+    const month = dateFormat === "mdy" ? first : second;
     const normalizedYear = year.length === 2 ? `20${year}` : year;
     const isoCandidate = `${normalizedYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     const parsed = new Date(`${isoCandidate}T00:00:00.000Z`);
@@ -467,8 +471,11 @@ function normalizeImportedDate(value?: string) {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
 }
 
-function buildImportedManualJob(input: CoachImportedApplicationInput): Job {
-  const appliedAt = normalizeImportedDate(input.appliedAt) ?? new Date().toISOString();
+function buildImportedManualJob(
+  input: CoachImportedApplicationInput,
+  dateFormat: CoachImportDateFormat
+): Job {
+  const appliedAt = normalizeImportedDate(input.appliedAt, dateFormat) ?? new Date().toISOString();
   const fingerprint = `${input.company}|${input.title}|${appliedAt}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -491,6 +498,7 @@ export async function importCoachApplicationsForUser(input: {
   actor: CoachCapableUser;
   userId: number;
   rows: CoachImportedApplicationInput[];
+  dateFormat?: CoachImportDateFormat;
 }) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
@@ -501,13 +509,15 @@ export async function importCoachApplicationsForUser(input: {
   let ignoredCount = 0;
   const seenJobIds = new Set<string>();
 
+  const dateFormat = input.dateFormat ?? "dmy";
+
   for (const row of input.rows) {
     if (!row.company.trim() || !row.title.trim()) {
       ignoredCount += 1;
       continue;
     }
 
-    const job = buildImportedManualJob(row);
+    const job = buildImportedManualJob(row, dateFormat);
     if (seenJobIds.has(job.id)) {
       ignoredCount += 1;
       continue;
@@ -526,7 +536,7 @@ export async function importCoachApplicationsForUser(input: {
     const application = await createTrackedApplicationForUser({
       userId: input.userId,
       job,
-      appliedAt: normalizeImportedDate(row.appliedAt),
+      appliedAt: normalizeImportedDate(row.appliedAt, dateFormat),
       status: normalizeImportedStatus(row.status),
       notes: row.notes?.trim(),
     });

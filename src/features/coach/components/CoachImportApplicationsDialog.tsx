@@ -32,6 +32,7 @@ const STATUS_OPTIONS = [
 ] as const;
 
 type ImportFieldKey = (typeof IMPORT_FIELDS)[number]["key"];
+type ImportDateFormat = "dmy" | "mdy";
 
 type CsvRecord = Record<string, string>;
 
@@ -40,7 +41,10 @@ interface CoachImportApplicationsDialogProps {
   userLabel: string;
   isImporting: boolean;
   onOpenChange: (open: boolean) => void;
-  onImport: (rows: Array<Record<ImportFieldKey, string>>) => Promise<{
+  onImport: (
+    rows: Array<Record<ImportFieldKey, string>>,
+    dateFormat: ImportDateFormat
+  ) => Promise<{
     importedCount: number;
     createdCount: number;
     updatedCount: number;
@@ -131,6 +135,7 @@ export function CoachImportApplicationsDialog({
     notes: "",
   });
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+  const [dateFormat, setDateFormat] = useState<ImportDateFormat>("dmy");
   const [summary, setSummary] = useState<{
     importedCount: number;
     createdCount: number;
@@ -191,6 +196,7 @@ export function CoachImportApplicationsDialog({
       status: "",
       notes: "",
     });
+    setDateFormat("dmy");
     setStatusOverrides({});
     if (!preserveSummary) {
       setSummary(null);
@@ -283,7 +289,7 @@ export function CoachImportApplicationsDialog({
       return;
     }
 
-    const result = await onImport(mappedRows);
+    const result = await onImport(mappedRows, dateFormat);
     if (result) {
       setSummary(result);
       resetState(true);
@@ -300,7 +306,7 @@ export function CoachImportApplicationsDialog({
         onOpenChange(nextOpen);
       }}
     >
-      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-hidden p-0 sm:max-w-3xl">
+      <DialogContent className="flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden p-0 sm:max-w-3xl">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>Importer un suivi (CSV)</DialogTitle>
           <DialogDescription>
@@ -309,7 +315,7 @@ export function CoachImportApplicationsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto px-6 pb-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
           <div className="space-y-4">
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-muted/10 px-6 py-8 text-center">
             <Upload className="h-5 w-5 text-muted-foreground" />
@@ -330,6 +336,20 @@ export function CoachImportApplicationsDialog({
               Télécharger un modèle CSV
             </Button>
           </div>
+
+          {headers.length > 0 ? (
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Format de date</span>
+              <select
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm md:max-w-xs"
+                value={dateFormat}
+                onChange={(event) => setDateFormat(event.target.value as ImportDateFormat)}
+              >
+                <option value="dmy">JJ-MM-AAAA / JJ/MM/AA</option>
+                <option value="mdy">MM-DD-YYYY / MM/DD/YY</option>
+              </select>
+            </label>
+          ) : null}
 
           {headers.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2">

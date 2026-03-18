@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  CoachImportDateFormat,
   importCoachApplicationsForUser,
   requireCoachAccess,
   updateCoachApplicationNotes,
@@ -77,6 +78,7 @@ export async function POST(
 
     const { userId } = await context.params;
     const body = (await request.json()) as {
+      dateFormat?: CoachImportDateFormat;
       rows?: Array<{
         company?: string;
         contractType?: string;
@@ -95,6 +97,7 @@ export async function POST(
     const importedApplications = await importCoachApplicationsForUser({
       actor: viewer,
       userId: Number(userId),
+      dateFormat: body.dateFormat === "mdy" ? "mdy" : "dmy",
       rows: body.rows.map((row) => ({
         company: row.company ?? "",
         contractType: row.contractType,

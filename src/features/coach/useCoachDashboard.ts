@@ -860,6 +860,7 @@ export function useCoachDashboard() {
 
   const importApplicationsForUser = async (
     userId: number,
+    dateFormat: "dmy" | "mdy",
     rows: Array<{
       company: string;
       contractType: string;
@@ -875,7 +876,7 @@ export function useCoachDashboard() {
     const response = await fetch(`/api/coach/users/${userId}/applications`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rows }),
+      body: JSON.stringify({ dateFormat, rows }),
     });
 
     const data = (await response.json().catch(() => ({}))) as {
