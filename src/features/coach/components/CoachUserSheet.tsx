@@ -3,10 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   ChevronDown,
-  Download,
   ExternalLink,
-  FileKey2,
-  FileSpreadsheet,
   FilePenLine,
   FileText,
   LoaderCircle,
@@ -28,26 +25,15 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { CoachUserSheetDialogs } from "@/features/coach/components/CoachUserSheetDialogs";
+import { CoachUserSheetHeader } from "@/features/coach/components/CoachUserSheetHeader";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { isManualApplication, sortApplicationsByMostRecent } from "@/features/applications/utils";
 import {
   coachStatusLabel,
   formatCoachAuthorName,
-  formatCoachDate,
-  getCoachUserDisplayName,
   isApplicationDue,
   summarizeCoachContributors,
 } from "@/features/coach/utils";
@@ -261,83 +247,18 @@ function CoachUserSheetBody({
 
   return (
     <>
-      <SheetHeader className="border-b bg-muted/30 p-5 pr-12">
-        <SheetTitle>{getCoachUserDisplayName(user)}</SheetTitle>
-        <SheetDescription>
-          <span className="block text-sm">{user.email}</span>
-          <span className="block">
-            {user.groupNames.length > 0 ? user.groupNames.join(" • ") : "Aucun groupe assigné"}
-          </span>
-          <span className="block">
-            Dernière connexion: {formatCoachDate(user.lastSeenAt, true)}
-          </span>
-          {user.role === "coach" || user.role === "admin" ? (
-            <span className="block">
-              Dernière action coach: {formatCoachDate(user.lastCoachActionAt, true)}
-            </span>
-          ) : (
-            <span className="block">Dernière activité: {formatCoachDate(user.latestActivityAt)}</span>
-          )}
-        </SheetDescription>
-        <div className="flex flex-wrap gap-2 pt-2">
-          <Badge variant="secondary" className="capitalize">
-            {user.role}
-          </Badge>
-          <Badge variant="outline">{user.applicationCount} candidatures</Badge>
-          <Badge variant="outline">{user.interviewCount} entretien(s)</Badge>
-          <Badge variant="outline">{user.dueCount} relance(s) dues</Badge>
-          <Button
-            type="button"
-            size="sm"
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
-            onClick={onExport}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-          {(canManageApiKeys || canEditUser || isAdmin) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" size="sm" variant="outline">
-                  <MoreHorizontal className="h-4 w-4" />
-                  Actions
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {canManageApiKeys && (
-                  <DropdownMenuItem onClick={onOpenApiKeys}>
-                    <FileKey2 className="h-4 w-4" />
-                    Clés API
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={onOpenImport}>
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Importer un suivi (CSV)
-                </DropdownMenuItem>
-                {canEditUser && (
-                  <DropdownMenuItem onClick={onEdit}>
-                    <FilePenLine className="h-4 w-4" />
-                    Éditer
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <>
-                    {canManageApiKeys || canEditUser ? <DropdownMenuSeparator /> : null}
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={onDeleteUser}
-                      disabled={user.id === currentUserId}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </SheetHeader>
+      <CoachUserSheetHeader
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        canEditUser={canEditUser}
+        canManageApiKeys={canManageApiKeys}
+        user={user}
+        onExport={onExport}
+        onOpenApiKeys={onOpenApiKeys}
+        onOpenImport={onOpenImport}
+        onEdit={onEdit}
+        onDeleteUser={onDeleteUser}
+      />
 
       <div className="space-y-4 overflow-y-auto p-5">
         {sortedApplications.length > 0 ? (
@@ -1097,87 +1018,18 @@ function CoachUserSheetBody({
         )}
       </div>
 
-      <Dialog
-        open={Boolean(deleteApplicationTarget)}
-        onOpenChange={(open) => !open && setDeleteApplicationTarget(null)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Supprimer la candidature</DialogTitle>
-            <DialogDescription>
-              La candidature <strong>{deleteApplicationTarget?.title}</strong> sera retirée du suivi de{" "}
-              {getCoachUserDisplayName(user)}.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDeleteApplicationTarget(null)}>
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={async () => {
-                if (!deleteApplicationTarget) return;
-                const deleted = await onDeleteApplication(user.id, deleteApplicationTarget.jobId);
-                if (deleted) {
-                  if (editingJobId === deleteApplicationTarget.jobId) {
-                    resetApplicationEditor();
-                  }
-                  setDeleteApplicationTarget(null);
-                }
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(deleteSharedTarget)}
-        onOpenChange={(open) => !open && setDeleteSharedTarget(null)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Supprimer la note partagée</DialogTitle>
-            <DialogDescription>
-              Cette note ne sera plus visible par le bénéficiaire. Cette action est irréversible.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDeleteSharedTarget(null)}>
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={async () => {
-                if (!deleteSharedTarget) return;
-                const deleted = await onDeleteSharedCoachNote(
-                  user.id,
-                  deleteSharedTarget.jobId,
-                  deleteSharedTarget.noteId
-                );
-                if (deleted) {
-                  setDeleteSharedTarget(null);
-                }
-              }}
-              disabled={
-                !deleteSharedTarget ||
-                savingCoachNoteKey === `delete:${deleteSharedTarget.noteId}`
-              }
-            >
-              {deleteSharedTarget && savingCoachNoteKey === `delete:${deleteSharedTarget.noteId}` ? (
-                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CoachUserSheetDialogs
+        user={user}
+        editingJobId={editingJobId}
+        deleteApplicationTarget={deleteApplicationTarget}
+        deleteSharedTarget={deleteSharedTarget}
+        savingCoachNoteKey={savingCoachNoteKey}
+        onDeleteApplicationTargetChange={setDeleteApplicationTarget}
+        onDeleteSharedTargetChange={setDeleteSharedTarget}
+        onResetApplicationEditor={resetApplicationEditor}
+        onDeleteApplication={onDeleteApplication}
+        onDeleteSharedCoachNote={onDeleteSharedCoachNote}
+      />
     </>
   );
 }

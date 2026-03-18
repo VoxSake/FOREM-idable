@@ -6,6 +6,19 @@ import {
   CoachApplicationExportRow,
   exportCoachApplicationsToCSV,
 } from "@/lib/exportCoachApplicationsCsv";
+import {
+  fetchCoachDashboard,
+  fetchManagedUserApiKeys,
+  requestCalendarSubscription as requestCalendarSubscriptionApi,
+  requestCoachApplicationNote,
+} from "@/features/coach/coachDashboardApi";
+import {
+  addMembershipToDashboard,
+  applyApplicationUpdateToDashboard,
+  removeApplicationFromDashboard,
+  removeMembershipFromDashboard,
+  updateUserRoleInDashboard,
+} from "@/features/coach/dashboardState";
 import { ApiKeySummary } from "@/types/externalApi";
 import { JobApplication } from "@/types/application";
 import { CalendarSubscriptionSummary } from "@/types/calendar";
@@ -77,185 +90,38 @@ export function useCoachDashboard() {
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
   const deferredSearch = useDeferredValue(search);
 
-  const summarizeUserApplications = (
-    entry: CoachUserSummary,
-    nextApplications: JobApplication[]
-  ): CoachUserSummary => {
-    const now = new Date();
-
-    return {
-      ...entry,
-      applications: nextApplications,
-      applicationCount: nextApplications.length,
-      interviewCount: nextApplications.filter((item) => item.status === "interview").length,
-      dueCount: nextApplications.filter((item) => {
-        const due = new Date(item.followUpDueAt);
-        return (
-          (item.status === "in_progress" || item.status === "follow_up") &&
-          item.followUpEnabled !== false &&
-          !Number.isNaN(due.getTime()) &&
-          due <= now
-        );
-      }).length,
-      acceptedCount: nextApplications.filter((item) => item.status === "accepted").length,
-      rejectedCount: nextApplications.filter((item) => item.status === "rejected").length,
-      inProgressCount: nextApplications.filter((item) => item.status === "in_progress").length,
-      latestActivityAt:
-        nextApplications
-          .map((item) => item.updatedAt)
-          .filter(Boolean)
-          .sort((a, b) => (a > b ? -1 : 1))[0] ?? null,
-    };
-  };
-
   const applyApplicationUpdate = (userId: number, application: JobApplication) => {
     setDashboard((current) => {
       if (!current) return current;
-
-      return {
-        ...current,
-        users: current.users.map((entry) => {
-          if (entry.id !== userId) {
-            return entry;
-          }
-
-          const nextApplications = entry.applications
-            .map((existing) => (existing.job.id === application.job.id ? application : existing))
-            .sort((left, right) => {
-              const leftTime = new Date(left.appliedAt).getTime();
-              const rightTime = new Date(right.appliedAt).getTime();
-              return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
-            });
-
-          return summarizeUserApplications(entry, nextApplications);
-        }),
-      };
+      return applyApplicationUpdateToDashboard(current, userId, application);
     });
   };
 
   const removeApplicationLocally = (userId: number, jobId: string) => {
     setDashboard((current) => {
       if (!current) return current;
-
-      return {
-        ...current,
-        users: current.users.map((entry) => {
-          if (entry.id !== userId) {
-            return entry;
-          }
-
-          const nextApplications = entry.applications.filter(
-            (application) => application.job.id !== jobId
-          );
-
-          return summarizeUserApplications(entry, nextApplications);
-        }),
-      };
+      return removeApplicationFromDashboard(current, userId, jobId);
     });
   };
 
   const removeMembershipLocally = (groupId: number, userId: number) => {
     setDashboard((current) => {
       if (!current) return current;
-
-      const targetGroup = current.groups.find((group) => group.id === groupId);
-      const nextGroups = current.groups.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              members: group.members.filter((member) => member.id !== userId),
-            }
-          : group
-      );
-
-      const nextUsers = current.users.map((entry) => {
-        if (entry.id !== userId) {
-          return entry;
-        }
-
-        return {
-          ...entry,
-          groupIds: entry.groupIds.filter((id) => id !== groupId),
-          groupNames:
-            targetGroup && entry.groupNames.includes(targetGroup.name)
-              ? entry.groupNames.filter((name) => name !== targetGroup.name)
-              : entry.groupNames,
-        };
-      });
-
-      return {
-        ...current,
-        groups: nextGroups,
-        users: nextUsers,
-      };
+      return removeMembershipFromDashboard(current, groupId, userId);
     });
   };
 
   const addMembershipLocally = (groupId: number, userId: number) => {
     setDashboard((current) => {
       if (!current) return current;
-
-      const targetGroup = current.groups.find((group) => group.id === groupId);
-      const targetUser = current.users.find((entry) => entry.id === userId);
-      if (!targetGroup || !targetUser) {
-        return current;
-      }
-
-      const nextGroups = current.groups.map((group) =>
-        group.id === groupId && !group.members.some((member) => member.id === userId)
-          ? {
-              ...group,
-              members: [
-                ...group.members,
-                {
-                  id: targetUser.id,
-                  email: targetUser.email,
-                  firstName: targetUser.firstName,
-                  lastName: targetUser.lastName,
-                  role: targetUser.role,
-                },
-              ].sort((left, right) => left.email.localeCompare(right.email, "fr")),
-            }
-          : group
-      );
-
-      const nextUsers = current.users.map((entry) => {
-        if (entry.id !== userId) {
-          return entry;
-        }
-
-        return {
-          ...entry,
-          groupIds: entry.groupIds.includes(groupId) ? entry.groupIds : [...entry.groupIds, groupId],
-          groupNames: entry.groupNames.includes(targetGroup.name)
-            ? entry.groupNames
-            : [...entry.groupNames, targetGroup.name],
-        };
-      });
-
-      return {
-        ...current,
-        groups: nextGroups,
-        users: nextUsers,
-      };
+      return addMembershipToDashboard(current, groupId, userId);
     });
   };
 
   const updateUserRoleLocally = (userId: number, nextRole: "user" | "coach" | "admin") => {
     setDashboard((current) => {
       if (!current) return current;
-
-      return {
-        ...current,
-        users: current.users.map((entry) =>
-          entry.id === userId
-            ? {
-                ...entry,
-                role: nextRole,
-              }
-            : entry
-        ),
-      };
+      return updateUserRoleInDashboard(current, userId, nextRole);
     });
   };
 
@@ -264,8 +130,7 @@ export function useCoachDashboard() {
     setFeedback(null);
 
     try {
-      const response = await fetch("/api/coach/dashboard", { cache: "no-store" });
-      const data = (await response.json()) as { error?: string; dashboard?: CoachDashboardData };
+      const { response, data } = await fetchCoachDashboard();
 
       if (!response.ok || !data.dashboard) {
         setDashboard(null);
@@ -543,20 +408,12 @@ export function useCoachDashboard() {
   ) => {
     setSavingCoachNoteKey(`private:${jobId}`);
 
-    const response = await fetch(`/api/coach/users/${userId}/applications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jobId,
-        action: "save-private",
-        content,
-      }),
+    const { response, data } = await requestCoachApplicationNote({
+      userId,
+      jobId,
+      action: "save-private",
+      content,
     });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      application?: JobApplication;
-    };
     if (!response.ok) {
       setFeedback(data.error || "Note coach impossible à enregistrer.");
       setSavingCoachNoteKey(null);
@@ -574,20 +431,12 @@ export function useCoachDashboard() {
   const createSharedCoachNote = async (userId: number, jobId: string, content: string) => {
     setSavingCoachNoteKey(`create:${jobId}`);
 
-    const response = await fetch(`/api/coach/users/${userId}/applications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jobId,
-        action: "create-shared",
-        content,
-      }),
+    const { response, data } = await requestCoachApplicationNote({
+      userId,
+      jobId,
+      action: "create-shared",
+      content,
     });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      application?: JobApplication;
-    };
     if (!response.ok) {
       setFeedback(data.error || "Note partagée impossible à créer.");
       setSavingCoachNoteKey(null);
@@ -610,21 +459,13 @@ export function useCoachDashboard() {
   ) => {
     setSavingCoachNoteKey(`shared:${noteId}`);
 
-    const response = await fetch(`/api/coach/users/${userId}/applications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jobId,
-        noteId,
-        action: "update-shared",
-        content,
-      }),
+    const { response, data } = await requestCoachApplicationNote({
+      userId,
+      jobId,
+      noteId,
+      action: "update-shared",
+      content,
     });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      application?: JobApplication;
-    };
     if (!response.ok) {
       setFeedback(data.error || "Note partagée impossible à mettre à jour.");
       setSavingCoachNoteKey(null);
@@ -642,20 +483,12 @@ export function useCoachDashboard() {
   const deleteSharedCoachNote = async (userId: number, jobId: string, noteId: string) => {
     setSavingCoachNoteKey(`delete:${noteId}`);
 
-    const response = await fetch(`/api/coach/users/${userId}/applications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jobId,
-        noteId,
-        action: "delete-shared",
-      }),
+    const { response, data } = await requestCoachApplicationNote({
+      userId,
+      jobId,
+      noteId,
+      action: "delete-shared",
     });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      application?: JobApplication;
-    };
     if (!response.ok) {
       setFeedback(data.error || "Suppression de la note partagée impossible.");
       setSavingCoachNoteKey(null);
@@ -684,13 +517,7 @@ export function useCoachDashboard() {
     setIsApiKeysLoading(true);
 
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}/api-keys`, {
-        cache: "no-store",
-      });
-      const data = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        apiKeys?: ApiKeySummary[];
-      };
+      const { response, data } = await fetchManagedUserApiKeys(selectedUser.id);
 
       if (!response.ok || !data.apiKeys) {
         setApiKeysFeedback(data.error || "Chargement des clés API impossible.");
@@ -764,20 +591,11 @@ export function useCoachDashboard() {
     regenerate?: boolean;
     label: string;
   }) => {
-    const response = await fetch("/api/coach/calendar-subscriptions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        scope: input.scope,
-        groupId: input.groupId,
-        regenerate: input.regenerate === true,
-      }),
+    const { response, data } = await requestCalendarSubscriptionApi({
+      scope: input.scope,
+      groupId: input.groupId,
+      regenerate: input.regenerate,
     });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      subscription?: CalendarSubscriptionSummary;
-    };
 
     if (!response.ok || !data.subscription) {
       setFeedback(data.error || "Calendrier indisponible.");

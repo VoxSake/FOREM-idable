@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto";
-import { isAfter } from "date-fns";
 import {
   normalizeApplicationCoachNotes,
   toCoachNoteAuthor,
@@ -11,6 +10,7 @@ import {
   deleteApplicationForUser,
   updateApplicationForUser,
 } from "@/lib/server/applications";
+import { buildCoachApplicationSummary } from "@/features/coach/applicationSummary";
 import { CoachNoteAuthor, CoachSharedNote, JobApplication } from "@/types/application";
 import { AuthUser, UserRole } from "@/types/auth";
 import { CoachDashboardData, CoachGroupSummary, CoachUserSummary } from "@/types/coach";
@@ -161,7 +161,6 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
     ]);
   }
 
-  const now = new Date();
   const users: CoachUserSummary[] = usersResult.rows.map((row) => {
     const applications = applicationsByUser.get(row.id) ?? [];
 
@@ -173,25 +172,7 @@ export async function getCoachDashboard(viewer: CoachCapableUser): Promise<Coach
       role: row.role,
       groupIds: groupIdsByUser.get(row.id) ?? [],
       groupNames: groupNamesByUser.get(row.id) ?? [],
-      applicationCount: applications.length,
-      interviewCount: applications.filter((item) => item.status === "interview").length,
-      dueCount: applications.filter((item) => {
-        const due = new Date(item.followUpDueAt);
-        return (
-          (item.status === "in_progress" || item.status === "follow_up") &&
-          item.followUpEnabled !== false &&
-          !Number.isNaN(due.getTime()) &&
-          !isAfter(due, now)
-        );
-      }).length,
-      acceptedCount: applications.filter((item) => item.status === "accepted").length,
-      rejectedCount: applications.filter((item) => item.status === "rejected").length,
-      inProgressCount: applications.filter((item) => item.status === "in_progress").length,
-      latestActivityAt:
-        applications
-          .map((item) => item.updatedAt)
-          .filter(Boolean)
-          .sort((a, b) => (a > b ? -1 : 1))[0] ?? null,
+      ...buildCoachApplicationSummary(applications),
       lastSeenAt: row.last_seen_at,
       lastCoachActionAt: row.last_coach_action_at,
       applications,

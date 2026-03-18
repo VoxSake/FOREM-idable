@@ -1,0 +1,174 @@
+import {
+  CoachGroupedUserGroup,
+  CoachMemberPickerGroup,
+  CoachUserFilter,
+} from "@/features/coach/types";
+import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
+import { getCoachUserDisplayName, isCoachUserInactive } from "@/features/coach/utils/formatting";
+
+export function buildMemberPickerGroup(
+  groups: CoachGroupSummary[] | undefined,
+  memberPickerGroupId: number | null
+): CoachMemberPickerGroup | null {
+  return (
+    groups?.find((group) => group.id === memberPickerGroupId) ??
+    (memberPickerGroupId === -2
+      ? {
+          id: -2,
+          name: "Coaches",
+          createdAt: "",
+          createdBy: { id: 0, email: "" },
+          members: [],
+        }
+      : null)
+  );
+}
+
+function getMostRelevantActivityTime(user: CoachUserSummary) {
+  const timestamps =
+    user.role === "coach" || user.role === "admin"
+      ? [user.lastCoachActionAt, user.lastSeenAt, user.latestActivityAt]
+      : [user.latestActivityAt];
+
+  for (const value of timestamps) {
+    const time = value ? new Date(value).getTime() : 0;
+    if (!Number.isNaN(time) && time > 0) {
+      return time;
+    }
+  }
+
+  return 0;
+}
+
+function matchesSearch(user: CoachUserSummary, normalizedSearch: string) {
+  return (
+    !normalizedSearch ||
+    [user.firstName, user.lastName, `${user.firstName} ${user.lastName}`.trim(), user.email]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearch)
+  );
+}
+
+function matchesFilter(user: CoachUserSummary, userFilter: CoachUserFilter) {
+  switch (userFilter) {
+    case "urgent":
+      return user.dueCount > 0 || user.interviewCount > 0 || isCoachUserInactive(user);
+    case "due":
+      return user.dueCount > 0;
+    case "interviews":
+      return user.interviewCount > 0;
+    case "inactive":
+      return isCoachUserInactive(user);
+    case "accepted":
+      return user.acceptedCount > 0;
+    case "rejected":
+      return user.rejectedCount > 0;
+    case "all":
+    default:
+      return true;
+  }
+}
+
+function sortMembers(members: CoachUserSummary[]) {
+  return [...members].sort((left, right) => {
+    if (right.dueCount !== left.dueCount) return right.dueCount - left.dueCount;
+
+    const leftLatest = getMostRelevantActivityTime(left);
+    const rightLatest = getMostRelevantActivityTime(right);
+    if (rightLatest !== leftLatest) return rightLatest - leftLatest;
+
+    if (right.applicationCount !== left.applicationCount) {
+      return right.applicationCount - left.applicationCount;
+    }
+
+    return getCoachUserDisplayName(left).localeCompare(getCoachUserDisplayName(right), "fr");
+  });
+}
+
+export function buildGroupedUsers(input: {
+  groups: CoachGroupSummary[];
+  users: CoachUserSummary[];
+  normalizedSearch: string;
+  canManageCoachGroup: boolean;
+  userFilter: CoachUserFilter;
+}): CoachGroupedUserGroup[] {
+  const { groups, users, normalizedSearch, canManageCoachGroup, userFilter } = input;
+
+  const standardGroups = groups.map((group) => {
+    const members = users.filter((entry) => group.members.some((member) => member.id === entry.id));
+    const visibleMembers = sortMembers(
+      members.filter(
+        (entry) => matchesSearch(entry, normalizedSearch) && matchesFilter(entry, userFilter)
+      )
+    );
+
+    return {
+      id: group.id,
+      name: group.name,
+      createdByEmail: group.createdBy.email,
+      canAddMembers: true,
+      kind: "standard" as const,
+      totalApplications: members.reduce((sum, entry) => sum + entry.applicationCount, 0),
+      totalInterviews: members.reduce((sum, entry) => sum + entry.interviewCount, 0),
+      totalDue: members.reduce((sum, entry) => sum + entry.dueCount, 0),
+      totalAccepted: members.reduce((sum, entry) => sum + entry.acceptedCount, 0),
+      totalRejected: members.reduce((sum, entry) => sum + entry.rejectedCount, 0),
+      members: visibleMembers,
+    };
+  });
+
+  const ungroupedMembers = users.filter(
+    (entry) =>
+      entry.role === "user" &&
+      entry.groupIds.length === 0 &&
+      matchesSearch(entry, normalizedSearch) &&
+      matchesFilter(entry, userFilter)
+  );
+  const coachMembers = users.filter(
+    (entry) =>
+      (entry.role === "coach" || entry.role === "admin") &&
+      entry.groupIds.length === 0 &&
+      matchesSearch(entry, normalizedSearch) &&
+      matchesFilter(entry, userFilter)
+  );
+  const allUngroupedMembers = users.filter(
+    (entry) => entry.role === "user" && entry.groupIds.length === 0
+  );
+  const allCoachMembers = users.filter(
+    (entry) => entry.role === "coach" || entry.role === "admin"
+  );
+
+  const syntheticGroups: CoachGroupedUserGroup[] = [
+    {
+      id: -1,
+      name: "Aucun groupe attribué",
+      createdByEmail: null,
+      canAddMembers: false,
+      kind: "ungrouped",
+      totalApplications: allUngroupedMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
+      totalInterviews: allUngroupedMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
+      totalDue: allUngroupedMembers.reduce((sum, entry) => sum + entry.dueCount, 0),
+      totalAccepted: allUngroupedMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
+      totalRejected: allUngroupedMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
+      members: sortMembers(ungroupedMembers),
+    },
+    {
+      id: -2,
+      name: "Coaches",
+      createdByEmail: null,
+      canAddMembers: canManageCoachGroup,
+      kind: "coaches",
+      totalApplications: allCoachMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
+      totalInterviews: allCoachMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
+      totalDue: allCoachMembers.reduce((sum, entry) => sum + entry.dueCount, 0),
+      totalAccepted: allCoachMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
+      totalRejected: allCoachMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
+      members: sortMembers(coachMembers),
+    },
+  ];
+
+  return [...standardGroups, ...syntheticGroups].filter(
+    (group) => group.members.length > 0 || (!normalizedSearch && userFilter === "all")
+  );
+}
