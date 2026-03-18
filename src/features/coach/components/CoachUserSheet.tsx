@@ -268,6 +268,16 @@ function CoachUserSheetBody({
           <span className="block">
             {user.groupNames.length > 0 ? user.groupNames.join(" • ") : "Aucun groupe assigné"}
           </span>
+          <span className="block">
+            Dernière connexion: {formatCoachDate(user.lastSeenAt, true)}
+          </span>
+          {user.role === "coach" || user.role === "admin" ? (
+            <span className="block">
+              Dernière action coach: {formatCoachDate(user.lastCoachActionAt, true)}
+            </span>
+          ) : (
+            <span className="block">Dernière activité: {formatCoachDate(user.latestActivityAt)}</span>
+          )}
         </SheetDescription>
         <div className="flex flex-wrap gap-2 pt-2">
           <Badge variant="secondary" className="capitalize">
