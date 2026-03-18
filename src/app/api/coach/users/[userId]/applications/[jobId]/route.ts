@@ -4,6 +4,7 @@ import {
   requireCoachAccess,
   updateCoachManagedApplication,
 } from "@/lib/server/coach";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { JobApplication } from "@/types/application";
 
 export async function PATCH(
@@ -11,6 +12,9 @@ export async function PATCH(
   context: { params: Promise<{ userId: string; jobId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const viewer = await requireCoachAccess();
     if (!viewer) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -66,10 +70,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ userId: string; jobId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const viewer = await requireCoachAccess();
     if (!viewer) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

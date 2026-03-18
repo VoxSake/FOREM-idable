@@ -4,6 +4,7 @@ import {
   createTrackedApplicationForUser,
   listApplicationsForUser,
 } from "@/lib/server/applications";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { ApplicationStatus } from "@/types/application";
 import { Job } from "@/types/job";
 
@@ -23,6 +24,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

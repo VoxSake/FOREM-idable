@@ -5,12 +5,16 @@ import {
   requireCoachAccess,
   updateCoachApplicationNotes,
 } from "@/lib/server/coach";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const viewer = await requireCoachAccess();
     if (!viewer) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -71,6 +75,9 @@ export async function POST(
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const viewer = await requireCoachAccess();
     if (!viewer) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

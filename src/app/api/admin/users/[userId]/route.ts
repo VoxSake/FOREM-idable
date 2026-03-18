@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { deleteUserAccount, setUserPassword, updateUserProfile } from "@/lib/server/auth";
 import { markCoachAction, requireAdminAccess, requireCoachAccess } from "@/lib/server/coach";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { UserRole } from "@/types/auth";
 
 function parseUserId(value: string) {
@@ -14,6 +15,9 @@ export async function PATCH(
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const actor = await requireCoachAccess();
     if (!actor) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -75,10 +79,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const admin = await requireAdminAccess();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

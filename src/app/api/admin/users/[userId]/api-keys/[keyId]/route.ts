@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { markCoachAction, requireAdminAccess } from "@/lib/server/coach";
 import { revokeApiKey } from "@/lib/server/apiKeys";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 function parseInteger(value: string) {
   const parsed = Number(value);
@@ -8,10 +9,13 @@ function parseInteger(value: string) {
 }
 
 export async function DELETE(
-  _request: Request,
+  request: NextRequest,
   context: { params: Promise<{ userId: string; keyId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const admin = await requireAdminAccess();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

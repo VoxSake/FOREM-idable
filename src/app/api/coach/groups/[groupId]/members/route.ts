@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addUserToCoachGroup, removeUserFromCoachGroup, requireCoachAccess } from "@/lib/server/coach";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 function parseGroupId(value: string) {
   const groupId = Number(value);
@@ -11,6 +12,9 @@ export async function POST(
   context: { params: Promise<{ groupId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await requireCoachAccess();
     if (!user) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -37,6 +41,9 @@ export async function DELETE(
   context: { params: Promise<{ groupId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await requireCoachAccess();
     if (!user) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

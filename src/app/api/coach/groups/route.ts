@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCoachGroup, deleteCoachGroup, requireCoachAccess } from "@/lib/server/coach";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 export async function POST(request: NextRequest) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await requireCoachAccess();
     if (!user) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -23,6 +27,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await requireCoachAccess();
     if (!user) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

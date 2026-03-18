@@ -4,6 +4,7 @@ import {
   deleteApplicationForUser,
   updateApplicationForUser,
 } from "@/lib/server/applications";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { JobApplication } from "@/types/application";
 
 export async function PATCH(
@@ -11,6 +12,9 @@ export async function PATCH(
   context: { params: Promise<{ jobId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -62,10 +66,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ jobId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
