@@ -67,6 +67,7 @@ export function useCoachDashboard() {
   const [undoAction, setUndoAction] = useState<CoachUndoAction | null>(null);
   const [groupName, setGroupName] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [isPromoteCoachOpen, setIsPromoteCoachOpen] = useState(false);
   const [memberPickerGroupId, setMemberPickerGroupId] = useState<number | null>(null);
   const [coachPickerGroupId, setCoachPickerGroupId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -176,10 +177,6 @@ export function useCoachDashboard() {
 
   const assignableUsers = useMemo(() => {
     if (!dashboard || !memberPickerGroup) return [];
-    if (memberPickerGroup.id === -2) {
-      return dashboard.users.filter((entry) => entry.role === "user");
-    }
-
     const memberIds = new Set(memberPickerGroup.members.map((entry) => entry.id));
     return dashboard.users.filter((entry) => !memberIds.has(entry.id));
   }, [dashboard, memberPickerGroup]);
@@ -198,10 +195,9 @@ export function useCoachDashboard() {
       groups: dashboard.groups,
       users: dashboard.users,
       normalizedSearch: deferredSearch.trim().toLowerCase(),
-      canManageCoachGroup: user?.role === "admin",
       userFilter,
     });
-  }, [dashboard, deferredSearch, user?.role, userFilter]);
+  }, [dashboard, deferredSearch, userFilter]);
   const recentActivity = useMemo(
     () => buildCoachRecentActivity(dashboard?.users ?? []),
     [dashboard?.users]
@@ -216,6 +212,14 @@ export function useCoachDashboard() {
   const totalDue = dashboard?.users.reduce((sum, entry) => sum + entry.dueCount, 0) ?? 0;
   const totalAccepted = dashboard?.users.reduce((sum, entry) => sum + entry.acceptedCount, 0) ?? 0;
   const totalRejected = dashboard?.users.reduce((sum, entry) => sum + entry.rejectedCount, 0) ?? 0;
+  const promotableUsers = useMemo(
+    () => dashboard?.users.filter((entry) => entry.role === "user") ?? [],
+    [dashboard?.users]
+  );
+  const managedCoaches = useMemo(
+    () => dashboard?.users.filter((entry) => entry.role === "coach") ?? [],
+    [dashboard?.users]
+  );
   const canEditSelectedUser = useMemo(() => {
     if (!selectedUser || !user) return false;
     if (user.role === "admin") return true;
@@ -262,6 +266,7 @@ export function useCoachDashboard() {
     }
 
     setUndoAction(null);
+    setIsPromoteCoachOpen(false);
     await loadDashboard();
     return true;
   };
@@ -864,6 +869,8 @@ export function useCoachDashboard() {
     setGroupName,
     isCreateGroupOpen,
     setIsCreateGroupOpen,
+    isPromoteCoachOpen,
+    setIsPromoteCoachOpen,
     memberPickerGroupId,
     setMemberPickerGroupId,
     coachPickerGroupId,
@@ -914,6 +921,8 @@ export function useCoachDashboard() {
     assignableUsers,
     assignableCoaches,
     groupedUsers,
+    promotableUsers,
+    managedCoaches,
     recentActivity,
     totalApplications,
     totalInterviews,
@@ -922,6 +931,7 @@ export function useCoachDashboard() {
     totalRejected,
     loadDashboard,
     createGroup,
+    promoteCoach,
     addMember,
     addCoach,
     removeMember,

@@ -49,7 +49,6 @@ interface CoachGroupsSectionProps {
   onOpenUser: (userId: number) => void;
   onRemoveMembership: (target: CoachRemoveMembershipTarget) => void;
   onRemoveCoach: (target: CoachRemoveCoachTarget) => void;
-  onDemoteCoach: (userId: number) => void;
 }
 
 export function CoachGroupsSection({
@@ -71,7 +70,6 @@ export function CoachGroupsSection({
   onOpenUser,
   onRemoveMembership,
   onRemoveCoach,
-  onDemoteCoach,
 }: CoachGroupsSectionProps) {
   const [isCalendarHelpOpen, setIsCalendarHelpOpen] = useState(false);
   const filterOptions: Array<{ value: CoachUserFilter; label: string }> = [
@@ -163,15 +161,11 @@ export function CoachGroupsSection({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold">{group.name}</p>
-                  {group.kind !== "coaches" && (
-                    <>
-                      <Badge variant="outline">{group.totalApplications} candidatures</Badge>
-                      <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
-                      {group.totalDue > 0 && <Badge variant="destructive">{group.totalDue} relance(s)</Badge>}
-                      {group.totalAccepted > 0 && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">{group.totalAccepted} acceptée(s)</Badge>}
-                      {group.totalRejected > 0 && <Badge className="bg-rose-600 text-white hover:bg-rose-600">{group.totalRejected} refusée(s)</Badge>}
-                    </>
-                  )}
+                  <Badge variant="outline">{group.totalApplications} candidatures</Badge>
+                  <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
+                  {group.totalDue > 0 && <Badge variant="destructive">{group.totalDue} relance(s)</Badge>}
+                  {group.totalAccepted > 0 && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">{group.totalAccepted} acceptée(s)</Badge>}
+                  {group.totalRejected > 0 && <Badge className="bg-rose-600 text-white hover:bg-rose-600">{group.totalRejected} refusée(s)</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {group.members.length} membre{group.members.length > 1 ? "s" : ""}
@@ -345,47 +339,31 @@ export function CoachGroupsSection({
                         />
                       </div>
                       <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-                        {group.kind !== "coaches" && (
-                          <>
-                            {entry.applicationCount > 0 ? (
-                              <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
-                            ) : (
-                              <Badge variant="outline">Aucune candidature</Badge>
-                            )}
-                            {entry.interviewCount > 0 && (
-                              <Badge className="bg-sky-600 text-white hover:bg-sky-600">
-                                {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
-                              </Badge>
-                            )}
-                            {entry.dueCount > 0 && (
-                              <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>
-                            )}
-                            {entry.acceptedCount > 0 && (
-                              <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
-                                {entry.acceptedCount} acceptée{entry.acceptedCount > 1 ? "s" : ""}
-                              </Badge>
-                            )}
-                            {entry.rejectedCount > 0 && (
-                              <Badge className="bg-rose-600 text-white hover:bg-rose-600">
-                                {entry.rejectedCount} refusée{entry.rejectedCount > 1 ? "s" : ""}
-                              </Badge>
-                            )}
-                          </>
-                        )}
-                        {group.kind === "coaches" && entry.role === "coach" && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onDemoteCoach(entry.id);
-                            }}
-                          >
-                            Retirer coach
-                          </Button>
-                        )}
+                        <>
+                          {entry.applicationCount > 0 ? (
+                            <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
+                          ) : (
+                            <Badge variant="outline">Aucune candidature</Badge>
+                          )}
+                          {entry.interviewCount > 0 && (
+                            <Badge className="bg-sky-600 text-white hover:bg-sky-600">
+                              {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
+                            </Badge>
+                          )}
+                          {entry.dueCount > 0 && (
+                            <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>
+                          )}
+                          {entry.acceptedCount > 0 && (
+                            <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
+                              {entry.acceptedCount} acceptée{entry.acceptedCount > 1 ? "s" : ""}
+                            </Badge>
+                          )}
+                          {entry.rejectedCount > 0 && (
+                            <Badge className="bg-rose-600 text-white hover:bg-rose-600">
+                              {entry.rejectedCount} refusée{entry.rejectedCount > 1 ? "s" : ""}
+                            </Badge>
+                          )}
+                        </>
                       </div>
                     </div>
                   </div>

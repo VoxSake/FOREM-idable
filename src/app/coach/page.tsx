@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CoachAdminSection } from "@/features/coach/components/CoachAdminSection";
 import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
 import { CoachImportApplicationsDialog } from "@/features/coach/components/CoachImportApplicationsDialog";
 import { CoachPriorityBoard } from "@/features/coach/components/CoachPriorityBoard";
@@ -77,6 +78,17 @@ export default function CoachPage() {
         totalRejected={coach.totalRejected}
       />
 
+      {coach.user.role === "admin" ? (
+        <CoachAdminSection
+          coaches={coach.managedCoaches}
+          promotableUsers={coach.promotableUsers}
+          isPromoteCoachOpen={coach.isPromoteCoachOpen}
+          onPromoteCoachOpenChange={coach.setIsPromoteCoachOpen}
+          onPromoteCoach={(userId) => void coach.promoteCoach(userId)}
+          onDemoteCoach={(userId) => void coach.demoteCoach(userId)}
+        />
+      ) : null}
+
       {followedUserCount === 0 ? (
         <section className="rounded-2xl border border-dashed bg-card p-6 shadow-sm">
           <h2 className="text-xl font-bold">Aucun bénéficiaire suivi pour l&apos;instant</h2>
@@ -139,7 +151,6 @@ export default function CoachPage() {
           onOpenUser={coach.setSelectedUserId}
           onRemoveMembership={coach.setRemoveMembership}
           onRemoveCoach={coach.setRemoveCoach}
-          onDemoteCoach={(userId) => void coach.demoteCoach(userId)}
         />
       </div>
 

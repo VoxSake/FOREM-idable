@@ -1,7 +1,7 @@
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 import { CalendarSubscriptionScope } from "@/types/calendar";
 
-export type CoachGroupedGroupKind = "standard" | "ungrouped" | "coaches";
+export type CoachGroupedGroupKind = "standard" | "ungrouped";
 export type CoachUserFilter =
   | "all"
   | "urgent"
