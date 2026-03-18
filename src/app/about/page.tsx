@@ -67,6 +67,13 @@ const RECENT_UPDATES = [
   },
 ];
 
+const UPDATES_BY_MONTH = Object.entries(
+  RECENT_UPDATES.reduce<Record<string, string[]>>((accumulator, update) => {
+    accumulator[update.month] = [...(accumulator[update.month] ?? []), update.text];
+    return accumulator;
+  }, {})
+);
+
 export default function AboutPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-500">
@@ -162,11 +169,34 @@ export default function AboutPage() {
 
       <section className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
         <h2 className="text-xl font-bold">Nouveautés récentes</h2>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          {RECENT_UPDATES.map((update) => (
-            <p key={`${update.month}-${update.text}`}>
-              <span className="font-semibold text-foreground">{update.month}</span> - {update.text}
-            </p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {UPDATES_BY_MONTH.map(([month, updates]) => (
+            <div key={month} className="rounded-xl border bg-muted/20 p-4">
+              <p className="text-sm font-semibold text-foreground">{month}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {updates.length} mise{updates.length > 1 ? "s" : ""} à jour
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-3">
+          {UPDATES_BY_MONTH.map(([month, updates]) => (
+            <div key={month} className="rounded-xl border bg-muted/10 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-foreground">{month}</h3>
+                <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                  {updates.length} élément{updates.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                {updates.map((update) => (
+                  <div key={`${month}-${update}`} className="flex gap-3">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
+                    <p>{update}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </section>
