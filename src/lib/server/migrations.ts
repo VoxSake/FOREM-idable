@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
 import { Pool } from "pg";
+import { logServerEvent } from "@/lib/server/observability";
 
 interface MigrationJournalEntry {
   idx: number;
@@ -120,28 +121,40 @@ async function applyMigration(pool: Pool, migration: MigrationFile) {
 }
 
 export async function runDatabaseMigrations(pool: Pool) {
-  await ensureMigrationTable(pool);
+  try {
+    await ensureMigrationTable(pool);
 
-  const migrations = await readMigrationFiles();
-  if (migrations.length === 0) {
-    return;
-  }
-
-  const latestApplied = await getLatestAppliedMigration(pool);
-  if (latestApplied === null) {
-    if (await hasLegacySchema(pool)) {
-      for (const migration of migrations) {
-        await markMigrationAsApplied(pool, migration);
-      }
+    const migrations = await readMigrationFiles();
+    if (migrations.length === 0) {
       return;
     }
-  }
 
-  for (const migration of migrations) {
-    if (latestApplied !== null && latestApplied >= migration.folderMillis) {
-      continue;
+    const latestApplied = await getLatestAppliedMigration(pool);
+    if (latestApplied === null) {
+      if (await hasLegacySchema(pool)) {
+        for (const migration of migrations) {
+          await markMigrationAsApplied(pool, migration);
+        }
+        return;
+      }
     }
 
-    await applyMigration(pool, migration);
+    for (const migration of migrations) {
+      if (latestApplied !== null && latestApplied >= migration.folderMillis) {
+        continue;
+      }
+
+      await applyMigration(pool, migration);
+    }
+  } catch (error) {
+    logServerEvent({
+      category: "db",
+      action: "migration_failed",
+      level: "error",
+      meta: {
+        error: error instanceof Error ? error.message : "unknown",
+      },
+    });
+    throw error;
   }
 }

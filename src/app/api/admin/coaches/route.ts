@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAccess, setUserRole } from "@/lib/server/coach";
+import { withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 export async function POST(request: NextRequest) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -22,10 +24,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Promotion coach impossible." }, { status: 500 });
-  }
+  }});
 }
 
 export async function DELETE(request: NextRequest) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -44,5 +47,5 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Retrait du rôle coach impossible." }, { status: 500 });
-  }
+  }});
 }

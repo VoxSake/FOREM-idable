@@ -7,8 +7,10 @@ import {
   normalizeApplicationCoachNotes,
   toCoachNoteAuthor,
 } from "@/lib/coachNotes";
+import { recordAuditEvent } from "@/lib/server/auditLog";
 import { getCurrentUser } from "@/lib/server/auth";
 import { db, ensureDatabase } from "@/lib/server/db";
+import { logServerEvent } from "@/lib/server/observability";
 import {
   createTrackedApplicationForUser,
   deleteApplicationForUser,
@@ -444,6 +446,17 @@ export async function createCoachGroup(name: string, actor: CoachCapableUser) {
   }
 
   await markCoachAction(actor.id);
+  await recordAuditEvent({
+    actorUserId: actor.id,
+    action: "group_created",
+    groupId: result.rows[0].id,
+    payload: { actorRole: actor.role },
+  });
+  logServerEvent({
+    category: "coach",
+    action: "group_created",
+    meta: { actorUserId: actor.id, groupId: result.rows[0].id, actorRole: actor.role },
+  });
 
   return result.rows[0];
 }
@@ -461,6 +474,17 @@ export async function deleteCoachGroup(groupId: number, actor: CoachCapableUser)
   );
 
   await markCoachAction(actor.id);
+  await recordAuditEvent({
+    actorUserId: actor.id,
+    action: "group_deleted",
+    groupId,
+    payload: { actorRole: actor.role },
+  });
+  logServerEvent({
+    category: "coach",
+    action: "group_deleted",
+    meta: { actorUserId: actor.id, groupId, actorRole: actor.role },
+  });
 }
 
 export async function addUserToCoachGroup(groupId: number, userId: number, actor?: CoachCapableUser) {
@@ -480,6 +504,13 @@ export async function addUserToCoachGroup(groupId: number, userId: number, actor
 
   if (actor) {
     await markCoachAction(actor.id);
+    await recordAuditEvent({
+      actorUserId: actor.id,
+      action: "group_member_added",
+      targetUserId: userId,
+      groupId,
+      payload: { actorRole: actor.role },
+    });
   }
 }
 
@@ -503,12 +534,28 @@ export async function removeUserFromCoachGroup(
 
   if (actor) {
     await markCoachAction(actor.id);
+    await recordAuditEvent({
+      actorUserId: actor.id,
+      action: "group_member_removed",
+      targetUserId: userId,
+      groupId,
+      payload: { actorRole: actor.role },
+    });
   }
 }
 
 export async function setUserRole(userId: number, role: UserRole, actorId?: number) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+
+  const previousResult = await db.query<{ role: UserRole }>(
+    `SELECT role
+     FROM users
+     WHERE id = $1
+     LIMIT 1`,
+    [userId]
+  );
+  const previousRole = previousResult.rows[0]?.role ?? null;
 
   await db.query(
     `UPDATE users
@@ -533,6 +580,17 @@ export async function setUserRole(userId: number, role: UserRole, actorId?: numb
 
   if (actorId) {
     await markCoachAction(actorId);
+    await recordAuditEvent({
+      actorUserId: actorId,
+      action: "admin_role_changed",
+      targetUserId: userId,
+      payload: { fromRole: previousRole, toRole: role },
+    });
+    logServerEvent({
+      category: "admin",
+      action: "role_changed",
+      meta: { actorUserId: actorId, targetUserId: userId, fromRole: previousRole, toRole: role },
+    });
   }
 }
 
@@ -570,6 +628,13 @@ export async function addCoachToGroup(
   );
 
   await markCoachAction(actor.id);
+  await recordAuditEvent({
+    actorUserId: actor.id,
+    action: "group_coach_assigned",
+    targetUserId: coachUserId,
+    groupId,
+    payload: { actorRole: actor.role },
+  });
 }
 
 export async function removeCoachFromGroup(
@@ -604,6 +669,13 @@ export async function removeCoachFromGroup(
   );
 
   await markCoachAction(actor.id);
+  await recordAuditEvent({
+    actorUserId: actor.id,
+    action: "group_coach_removed",
+    targetUserId: coachUserId,
+    groupId,
+    payload: { actorRole: actor.role },
+  });
 }
 
 export async function setCoachGroupManager(
@@ -638,6 +710,12 @@ export async function setCoachGroupManager(
   );
 
   await markCoachAction(actor.id);
+  await recordAuditEvent({
+    actorUserId: actor.id,
+    action: "group_manager_changed",
+    targetUserId: coachUserId,
+    groupId,
+  });
 }
 
 function withContributor<T extends { contributors: CoachNoteAuthor[] }>(
@@ -913,6 +991,29 @@ export async function importCoachApplicationsForUser(input: {
   }
 
   await markCoachAction(input.actor.id);
+  await recordAuditEvent({
+    actorUserId: input.actor.id,
+    action: "coach_csv_import_completed",
+    targetUserId: input.userId,
+    payload: {
+      createdCount,
+      updatedCount,
+      ignoredCount,
+      importedCount: importedApplications.length,
+    },
+  });
+  logServerEvent({
+    category: "coach",
+    action: "csv_import_completed",
+    meta: {
+      actorUserId: input.actor.id,
+      targetUserId: input.userId,
+      createdCount,
+      updatedCount,
+      ignoredCount,
+      importedCount: importedApplications.length,
+    },
+  });
 
   return {
     applications: importedApplications,

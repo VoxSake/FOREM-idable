@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addUserToCoachGroup, removeUserFromCoachGroup, requireCoachAccess } from "@/lib/server/coach";
+import { withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 function parseGroupId(value: string) {
@@ -11,6 +12,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ groupId: string }> }
 ) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -37,13 +39,14 @@ export async function POST(
     }
 
     return NextResponse.json({ error: "Ajout au groupe impossible." }, { status: 500 });
-  }
+  }});
 }
 
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ groupId: string }> }
 ) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -69,5 +72,5 @@ export async function DELETE(
     }
 
     return NextResponse.json({ error: "Suppression du groupe impossible." }, { status: 500 });
-  }
+  }});
 }

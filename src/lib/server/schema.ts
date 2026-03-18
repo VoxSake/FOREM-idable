@@ -229,3 +229,28 @@ export const calendarSubscriptions = pgTable(
     createdByIdx: index("calendar_subscriptions_created_by_idx").on(table.createdBy),
   })
 );
+
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    actorUserId: bigint("actor_user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    targetUserId: bigint("target_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    groupId: bigint("group_id", { mode: "number" }).references(() => coachGroups.id, {
+      onDelete: "set null",
+    }),
+    payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    actorUserIdIdx: index("audit_logs_actor_user_id_idx").on(table.actorUserId),
+    targetUserIdIdx: index("audit_logs_target_user_id_idx").on(table.targetUserId),
+    groupIdIdx: index("audit_logs_group_id_idx").on(table.groupId),
+    actionIdx: index("audit_logs_action_idx").on(table.action, table.createdAt),
+  })
+);

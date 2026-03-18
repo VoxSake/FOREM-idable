@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recordAuditEvent } from "@/lib/server/auditLog";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { deleteUserAccount, setUserPassword, updateUserProfile } from "@/lib/server/auth";
 import { markCoachAction, requireAdminAccess, requireCoachAccess } from "@/lib/server/coach";
+import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { UserRole } from "@/types/auth";
 
@@ -14,6 +16,7 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ userId: string }> }
 ) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -71,17 +74,37 @@ export async function PATCH(
     }
 
     await markCoachAction(actor.id);
+    await recordAuditEvent({
+      actorUserId: actor.id,
+      action: "user_profile_updated",
+      targetUserId: userId,
+      payload: {
+        passwordUpdated: Boolean(password),
+        actorRole: actor.role,
+      },
+    });
+    logServerEvent({
+      category: "admin",
+      action: "user_profile_updated",
+      meta: {
+        actorUserId: actor.id,
+        targetUserId: userId,
+        actorRole: actor.role,
+        passwordUpdated: Boolean(password),
+      },
+    });
 
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Mise à jour utilisateur impossible." }, { status: 500 });
-  }
+  }});
 }
 
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ userId: string }> }
 ) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -106,8 +129,13 @@ export async function DELETE(
 
     await deleteUserAccount(userId);
     await markCoachAction(admin.id);
+    await recordAuditEvent({
+      actorUserId: admin.id,
+      action: "user_deleted",
+      targetUserId: userId,
+    });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Suppression utilisateur impossible." }, { status: 500 });
-  }
+  }});
 }

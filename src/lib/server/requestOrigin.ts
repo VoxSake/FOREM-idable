@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logServerEvent } from "@/lib/server/observability";
 
 function normalizeOrigin(value: string) {
   return value.replace(/\/+$/, "");
@@ -40,6 +41,16 @@ export function rejectCrossOriginRequest(request: NextRequest) {
 
   if (receivedOrigin) {
     if (receivedOrigin !== expectedOrigin) {
+      logServerEvent({
+        category: "security",
+        action: "csrf_blocked",
+        level: "warn",
+        meta: {
+          expectedOrigin,
+          receivedOrigin,
+          fetchSite,
+        },
+      });
       return NextResponse.json({ error: "Requête interdite." }, { status: 403 });
     }
 
@@ -47,6 +58,15 @@ export function rejectCrossOriginRequest(request: NextRequest) {
   }
 
   if (fetchSite === "cross-site") {
+    logServerEvent({
+      category: "security",
+      action: "csrf_blocked",
+      level: "warn",
+      meta: {
+        expectedOrigin,
+        fetchSite,
+      },
+    });
     return NextResponse.json({ error: "Requête interdite." }, { status: 403 });
   }
 

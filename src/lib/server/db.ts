@@ -58,21 +58,28 @@ function createPool() {
   }
 
   const originalQuery = pool.query.bind(pool);
+  const slowQueryThresholdMs = Number(process.env.DB_SLOW_QUERY_MS ?? "200");
   pool.query = (async (...args: Parameters<typeof originalQuery>) => {
     const start = performance.now();
 
     try {
       const result = await originalQuery(...args);
       const statement = getStatementPreview(args[0]);
+      const durationMs = performance.now() - start;
 
-      logServerEvent({
-        category: "db",
-        action: "query",
-        durationMs: performance.now() - start,
-        meta: {
-          statement,
-        },
-      });
+      if (durationMs >= slowQueryThresholdMs) {
+        logServerEvent({
+          category: "db",
+          action: "slow_query",
+          level: "warn",
+          durationMs,
+          meta: {
+            statement,
+            thresholdMs: slowQueryThresholdMs,
+          },
+          timing: true,
+        });
+      }
 
       return result;
     } catch (error) {
@@ -85,8 +92,10 @@ function createPool() {
         durationMs: performance.now() - start,
         meta: {
           statement,
+          thresholdMs: slowQueryThresholdMs,
           error: error instanceof Error ? error.message : "unknown",
         },
+        timing: true,
       });
 
       throw error;

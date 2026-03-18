@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAccess, setCoachGroupManager } from "@/lib/server/coach";
+import { withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 function parseGroupId(value: string) {
@@ -11,6 +12,7 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ groupId: string }> }
 ) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -40,5 +42,5 @@ export async function PUT(
     }
 
     return NextResponse.json({ error: "Définition du manager impossible." }, { status: 500 });
-  }
+  }});
 }

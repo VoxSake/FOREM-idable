@@ -1,53 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSession, createUser } from "@/lib/server/auth";
+import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 
 export async function POST(request: NextRequest) {
-  try {
-    const forbidden = rejectCrossOriginRequest(request);
-    if (forbidden) return forbidden;
+  return withRequestContext(request, async () => {
+    try {
+      const forbidden = rejectCrossOriginRequest(request);
+      if (forbidden) return forbidden;
 
-    const body = await request.json();
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-    const password = typeof body.password === "string" ? body.password : "";
-    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
-    const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
+      const body = await request.json();
+      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+      const password = typeof body.password === "string" ? body.password : "";
+      const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
+      const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
 
-    const rateLimit = await checkRateLimit({
-      scope: "auth-register",
-      limit: 3,
-      windowMs: 60 * 60 * 1000,
-      identifier: email || null,
-    });
-    if (!rateLimit.allowed) {
+      const rateLimit = await checkRateLimit({
+        scope: "auth-register",
+        limit: 3,
+        windowMs: 60 * 60 * 1000,
+        identifier: email || null,
+      });
+      if (!rateLimit.allowed) {
+        logServerEvent({
+          category: "security",
+          action: "auth_rate_limited",
+          level: "warn",
+          meta: { scope: "auth-register", retryAfterMs: rateLimit.retryAfterMs },
+        });
+        return NextResponse.json(
+          { error: "Trop de tentatives. Réessayez dans quelques minutes." },
+          { status: 429 }
+        );
+      }
+
+      if (!email || !firstName || !lastName || !password || password.length < 8) {
+        return NextResponse.json(
+          {
+            error:
+              "Nom, prénom, adresse email et mot de passe valide requis (8 caractères minimum).",
+          },
+          { status: 400 }
+        );
+      }
+
+      const user = await createUser(email, password, firstName, lastName);
+      await createSession(user.id);
+
+      return NextResponse.json({ user });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to register";
+      const isDuplicate = message.includes("duplicate") || message.includes("unique");
+
       return NextResponse.json(
-        { error: "Trop de tentatives. Réessayez dans quelques minutes." },
-        { status: 429 }
+        { error: isDuplicate ? "Inscription impossible." : "Inscription impossible." },
+        { status: isDuplicate ? 409 : 500 }
       );
     }
-
-    if (!email || !firstName || !lastName || !password || password.length < 8) {
-      return NextResponse.json(
-        {
-          error:
-            "Nom, prénom, adresse email et mot de passe valide requis (8 caractères minimum).",
-        },
-        { status: 400 }
-      );
-    }
-
-    const user = await createUser(email, password, firstName, lastName);
-    await createSession(user.id);
-
-    return NextResponse.json({ user });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to register";
-    const isDuplicate = message.includes("duplicate") || message.includes("unique");
-
-    return NextResponse.json(
-      { error: isDuplicate ? "Inscription impossible." : "Inscription impossible." },
-      { status: isDuplicate ? 409 : 500 }
-    );
-  }
+  });
 }

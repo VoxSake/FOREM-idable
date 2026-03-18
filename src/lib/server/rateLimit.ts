@@ -187,12 +187,27 @@ export async function checkRateLimit(input: {
 
   if (redisClient) {
     try {
-      return await applyRedisRateLimit({
+      const result = await applyRedisRateLimit({
         key,
         limit: input.limit,
         windowMs: input.windowMs,
         client: redisClient,
       });
+      if (!result.allowed) {
+        logServerEvent({
+          category: "security",
+          action: "rate_limit_blocked",
+          level: "warn",
+          meta: {
+            scope: input.scope,
+            limit: input.limit,
+            windowMs: input.windowMs,
+            backend: "redis",
+            retryAfterMs: result.retryAfterMs,
+          },
+        });
+      }
+      return result;
     } catch (error) {
       console.error("Redis rate limit error", error);
       logServerEvent({
@@ -207,7 +222,7 @@ export async function checkRateLimit(input: {
     }
   }
 
-  return measureServerOperation({
+  const result = await measureServerOperation({
     category: "rate-limit",
     action: "memory-fallback",
     meta: {
@@ -220,4 +235,19 @@ export async function checkRateLimit(input: {
         windowMs: input.windowMs,
       }),
   });
+  if (!result.allowed) {
+    logServerEvent({
+      category: "security",
+      action: "rate_limit_blocked",
+      level: "warn",
+      meta: {
+        scope: input.scope,
+        limit: input.limit,
+        windowMs: input.windowMs,
+        backend: "memory",
+        retryAfterMs: result.retryAfterMs,
+      },
+    });
+  }
+  return result;
 }

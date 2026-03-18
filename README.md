@@ -57,6 +57,8 @@ cp env.example .env.local
 - `APP_BASE_URL=...`
 - `REDIS_URL=...` pour un rate limit partagé entre instances
 - `SERVER_TIMING_LOGS=false` pour activer des logs structurés de timings DB/Redis côté serveur
+- `SERVER_AUDIT_LOGS=true` pour conserver les logs structurés d'auth, sécurité et actions critiques
+- `DB_SLOW_QUERY_MS=200` pour définir le seuil des requêtes SQL considérées lentes
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=...`
 - `RESEND_REPLY_TO=...`

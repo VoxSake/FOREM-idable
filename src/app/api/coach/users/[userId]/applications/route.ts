@@ -5,12 +5,14 @@ import {
   requireCoachAccess,
   updateCoachApplicationNotes,
 } from "@/lib/server/coach";
+import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ userId: string }> }
 ) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -70,13 +72,14 @@ export async function PATCH(
       { error: "Impossible de mettre à jour les notes coach." },
       { status: 500 }
     );
-  }
+  }});
 }
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ userId: string }> }
 ) {
+  return withRequestContext(request, async () => {
   try {
     const forbidden = rejectCrossOriginRequest(request);
     if (forbidden) return forbidden;
@@ -131,9 +134,19 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    logServerEvent({
+      category: "coach",
+      action: "csv_import_failed",
+      level: "error",
+      meta: {
+        targetUserId: Number((await context.params).userId),
+        error: error instanceof Error ? error.message : "unknown",
+      },
+    });
+
     return NextResponse.json(
       { error: "Impossible d'importer le suivi CSV." },
       { status: 500 }
     );
-  }
+  }});
 }
