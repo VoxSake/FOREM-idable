@@ -300,8 +300,8 @@ export function CoachImportApplicationsDialog({
         onOpenChange(nextOpen);
       }}
     >
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-hidden p-0 sm:max-w-3xl">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>Importer un suivi (CSV)</DialogTitle>
           <DialogDescription>
             Importer un tableau CSV de candidatures pour {userLabel}. Les lignes seront créées comme
@@ -309,7 +309,8 @@ export function CoachImportApplicationsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="overflow-y-auto px-6 pb-4">
+          <div className="space-y-4">
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-muted/10 px-6 py-8 text-center">
             <Upload className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm font-medium">Choisir un fichier CSV</span>
@@ -445,10 +446,11 @@ export function CoachImportApplicationsDialog({
             </div>
           ) : null}
 
-          {feedback ? <p className="text-sm text-destructive">{feedback}</p> : null}
+            {feedback ? <p className="text-sm text-destructive">{feedback}</p> : null}
+          </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t px-6 py-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
