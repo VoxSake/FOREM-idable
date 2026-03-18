@@ -497,13 +497,14 @@ export function useCoachDashboard() {
     const response = await fetch(`/api/coach/groups/${groupId}/coaches?userId=${userId}`, {
       method: "DELETE",
     });
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
 
     if (!response.ok) {
       addCoachLocally(groupId, userId);
       if (previousManagerId) {
         setGroupManagerLocally(groupId, previousManagerId);
       }
-      setFeedback("Retrait du coach impossible.");
+      setFeedback(data.error || "Retrait du coach impossible.");
       return;
     }
 

@@ -302,6 +302,7 @@ export default function CoachPage() {
       {coach.user.role === "admin" ? (
         <CoachAdminSection
           coaches={coach.managedCoaches}
+          groups={coach.dashboard?.groups ?? []}
           promotableUsers={coach.promotableUsers}
           isPromoteCoachOpen={coach.isPromoteCoachOpen}
           onPromoteCoachOpenChange={coach.setIsPromoteCoachOpen}

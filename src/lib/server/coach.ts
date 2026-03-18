@@ -569,6 +569,10 @@ export async function removeCoachFromGroup(
 ) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+
+  if (actor.role === "coach" && actor.id === coachUserId) {
+    throw new Error("SelfRemovalForbidden");
+  }
   const allowed = await canRemoveCoachAssignmentFromGroup(actor, groupId);
   if (!allowed) {
     throw new Error("Forbidden");

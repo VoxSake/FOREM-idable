@@ -74,6 +74,12 @@ export async function DELETE(
     if (error instanceof Error && error.message === "Forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (error instanceof Error && error.message === "SelfRemovalForbidden") {
+      return NextResponse.json(
+        { error: "Un coach ne peut pas se retirer lui-même d'un groupe attribué." },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({ error: "Retrait du coach impossible." }, { status: 500 });
   }

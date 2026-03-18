@@ -1,14 +1,24 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { ShieldPlus, ShieldX } from "lucide-react";
 import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getCoachUserDisplayName } from "@/features/coach/utils";
-import { CoachUserSummary } from "@/types/coach";
+import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
 
 interface CoachAdminSectionProps {
   coaches: CoachUserSummary[];
+  groups: CoachGroupSummary[];
   promotableUsers: CoachUserSummary[];
   isPromoteCoachOpen: boolean;
   onPromoteCoachOpenChange: (open: boolean) => void;
@@ -18,12 +28,31 @@ interface CoachAdminSectionProps {
 
 export function CoachAdminSection({
   coaches,
+  groups,
   promotableUsers,
   isPromoteCoachOpen,
   onPromoteCoachOpenChange,
   onPromoteCoach,
   onDemoteCoach,
 }: CoachAdminSectionProps) {
+  const [demotionTargetId, setDemotionTargetId] = useState<number | null>(null);
+  const demotionTarget = coaches.find((entry) => entry.id === demotionTargetId) ?? null;
+  const demotionSummary = useMemo(() => {
+    if (!demotionTarget) return null;
+
+    const coachedGroups = groups
+      .filter((group) => group.coaches.some((coach) => coach.id === demotionTarget.id))
+      .map((group) => group.name);
+    const managedGroups = groups
+      .filter((group) => group.managerCoachId === demotionTarget.id)
+      .map((group) => group.name);
+
+    return {
+      coachedGroups,
+      managedGroups,
+    };
+  }, [demotionTarget, groups]);
+
   return (
     <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -39,7 +68,7 @@ export function CoachAdminSection({
         </Button>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         {coaches.length > 0 ? (
           coaches.map((entry) => (
             <div
@@ -61,7 +90,7 @@ export function CoachAdminSection({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onDemoteCoach(entry.id)}
+                onClick={() => setDemotionTargetId(entry.id)}
               >
                 <ShieldX className="mr-2 h-4 w-4" />
                 Rétrograder
@@ -83,6 +112,58 @@ export function CoachAdminSection({
         users={promotableUsers}
         onSelect={(entry) => onPromoteCoach(entry.id)}
       />
+
+      <Dialog
+        open={Boolean(demotionTarget)}
+        onOpenChange={(open) => !open && setDemotionTargetId(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Rétrograder ce coach ?</DialogTitle>
+            <DialogDescription>
+              {demotionTarget
+                ? `${demotionTarget.email} perdra son rôle coach, ses attributions de groupe et ses éventuels rôles de manager.`
+                : "Ce coach perdra son rôle."}
+            </DialogDescription>
+          </DialogHeader>
+          {demotionSummary ? (
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div>
+                <p className="font-medium text-foreground">Groupes attribués</p>
+                <p>
+                  {demotionSummary.coachedGroups.length > 0
+                    ? demotionSummary.coachedGroups.join(" • ")
+                    : "Aucun groupe attribué"}
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Groupes managés</p>
+                <p>
+                  {demotionSummary.managedGroups.length > 0
+                    ? demotionSummary.managedGroups.join(" • ")
+                    : "Aucun groupe managé"}
+                </p>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDemotionTargetId(null)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (!demotionTarget) return;
+                onDemoteCoach(demotionTarget.id);
+                setDemotionTargetId(null);
+              }}
+            >
+              Confirmer la rétrogradation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

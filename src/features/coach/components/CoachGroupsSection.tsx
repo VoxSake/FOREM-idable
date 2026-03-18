@@ -89,6 +89,8 @@ export function CoachGroupsSection({
   ];
   const canManageAssignedCoaches = (managerCoachId: number | null) =>
     currentUserRole === "admin" || managerCoachId === currentUserId;
+  const canRemoveAssignedCoach = (managerCoachId: number | null, coachId: number) =>
+    canManageAssignedCoaches(managerCoachId) && !(currentUserRole === "coach" && coachId === currentUserId);
 
   return (
     <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
@@ -199,7 +201,7 @@ export function CoachGroupsSection({
                               Manager
                             </span>
                           ) : null}
-                          {canManageAssignedCoaches(group.managerCoachId) ? (
+                          {canRemoveAssignedCoach(group.managerCoachId, coach.id) ? (
                             <button
                               type="button"
                               className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
@@ -333,25 +335,41 @@ export function CoachGroupsSection({
                               </Badge>
                             </div>
                           </div>
-                          {group.kind === "standard" && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="mt-[-2px] h-8 w-8 shrink-0"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onRemoveMembership({
-                                  groupId: group.id,
-                                  userId: entry.id,
-                                  userEmail: entry.email,
-                                  groupName: group.name,
-                                });
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
+                          {group.kind === "standard" ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="mt-[-2px] h-8 w-8 shrink-0"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onRemoveMembership({
+                                      groupId: group.id,
+                                      userId: entry.id,
+                                      userEmail: entry.email,
+                                      groupName: group.name,
+                                    });
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Retirer du groupe
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : null}
                         </div>
                         <p className="break-all text-xs text-muted-foreground">{entry.email}</p>
                         <p className="text-xs text-muted-foreground">
