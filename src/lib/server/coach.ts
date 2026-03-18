@@ -414,18 +414,21 @@ function normalizeImportedStatus(value?: string) {
   const normalized = value?.trim().toLowerCase();
 
   switch (normalized) {
+    case "in_progress":
     case "en cours":
     case "encours":
     case "in progress":
       return "in_progress" as const;
+    case "follow_up":
     case "relance":
     case "a relancer":
     case "à relancer":
     case "suivi":
       return "follow_up" as const;
-    case "entretien":
     case "interview":
+    case "entretien":
       return "interview" as const;
+    case "rejected":
     case "refuse":
     case "refusé":
     case "refusee":
@@ -433,6 +436,7 @@ function normalizeImportedStatus(value?: string) {
     case "rejetee":
     case "rejetée":
       return "rejected" as const;
+    case "accepted":
     case "accepte":
     case "accepté":
     case "acceptee":
