@@ -35,10 +35,16 @@ export function AppSidebar() {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const { user } = useAuth();
+    const isCoachPage = pathname === "/coach";
     const navItems =
         user?.role === "coach" || user?.role === "admin"
             ? [{ title: "Suivi bénéficiaires", url: "/coach", icon: Users }, ...baseNavItems]
             : baseNavItems;
+    const coachSubNavItems = [
+        { title: "À traiter", url: "/coach#a-traiter" },
+        { title: "Activité récente", url: "/coach#activite-recente" },
+        { title: "Groupes", url: "/coach#groupes" },
+    ];
 
     return (
         <Sidebar>
@@ -77,6 +83,19 @@ export function AppSidebar() {
                                             <span>{item.title}</span>
                                         </Link>
                                     </SidebarMenuButton>
+                                    {item.url === "/coach" && isCoachPage ? (
+                                        <div className="ml-6 mt-2 space-y-1 border-l border-border/70 pl-3">
+                                            {coachSubNavItems.map((subItem) => (
+                                                <Link
+                                                    key={subItem.title}
+                                                    href={subItem.url}
+                                                    className="block text-sm text-muted-foreground transition hover:text-foreground"
+                                                >
+                                                    {subItem.title}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : null}
                                 </SidebarMenuItem>
                             ))}
                         </SidebarMenu>

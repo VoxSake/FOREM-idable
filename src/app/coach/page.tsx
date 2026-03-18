@@ -89,44 +89,48 @@ export default function CoachPage() {
         </section>
       ) : (
         <>
-          <CoachPriorityBoard sections={prioritySections} onOpenUser={coach.setSelectedUserId} />
+          <div id="a-traiter" className="scroll-mt-6">
+            <CoachPriorityBoard sections={prioritySections} onOpenUser={coach.setSelectedUserId} />
+          </div>
           <CoachRecentActivity items={coach.recentActivity} onOpenUser={coach.setSelectedUserId} />
         </>
       )}
 
-      <CoachGroupsSection
-        search={coach.search}
-        onSearchChange={coach.setSearch}
-        userFilter={coach.userFilter}
-        onUserFilterChange={coach.setUserFilter}
-        groupedUsers={coach.groupedUsers}
-        canRegenerateCalendars={coach.user.role === "admin"}
-        onCreateGroup={() => coach.setIsCreateGroupOpen(true)}
-        onCopyAllGroupsCalendar={() => void coach.copyAllGroupsCalendarUrl()}
-        onRequestRegenerateAllGroupsCalendar={() =>
-          coach.setCalendarRegenerationTarget({
-            scope: "all_groups",
-            groupId: null,
-            label: "tous les groupes bénéficiaires",
-          })
-        }
-        onAddMember={coach.setMemberPickerGroupId}
-        onExportGroup={coach.exportGroupApplications}
-        onCopyGroupCalendar={(groupId, groupName) =>
-          void coach.copyGroupCalendarUrl(groupId, groupName)
-        }
-        onRequestRegenerateGroupCalendar={(groupId, groupName) =>
-          coach.setCalendarRegenerationTarget({
-            scope: "group",
-            groupId,
-            label: `groupe ${groupName}`,
-          })
-        }
-        onRemoveGroup={(groupId, groupName) => coach.setRemoveGroup({ groupId, groupName })}
-        onOpenUser={coach.setSelectedUserId}
-        onRemoveMembership={coach.setRemoveMembership}
-        onDemoteCoach={(userId) => void coach.demoteCoach(userId)}
-      />
+      <div id="groupes" className="scroll-mt-6">
+        <CoachGroupsSection
+          search={coach.search}
+          onSearchChange={coach.setSearch}
+          userFilter={coach.userFilter}
+          onUserFilterChange={coach.setUserFilter}
+          groupedUsers={coach.groupedUsers}
+          canRegenerateCalendars={coach.user.role === "admin"}
+          onCreateGroup={() => coach.setIsCreateGroupOpen(true)}
+          onCopyAllGroupsCalendar={() => void coach.copyAllGroupsCalendarUrl()}
+          onRequestRegenerateAllGroupsCalendar={() =>
+            coach.setCalendarRegenerationTarget({
+              scope: "all_groups",
+              groupId: null,
+              label: "tous les groupes bénéficiaires",
+            })
+          }
+          onAddMember={coach.setMemberPickerGroupId}
+          onExportGroup={coach.exportGroupApplications}
+          onCopyGroupCalendar={(groupId, groupName) =>
+            void coach.copyGroupCalendarUrl(groupId, groupName)
+          }
+          onRequestRegenerateGroupCalendar={(groupId, groupName) =>
+            coach.setCalendarRegenerationTarget({
+              scope: "group",
+              groupId,
+              label: `groupe ${groupName}`,
+            })
+          }
+          onRemoveGroup={(groupId, groupName) => coach.setRemoveGroup({ groupId, groupName })}
+          onOpenUser={coach.setSelectedUserId}
+          onRemoveMembership={coach.setRemoveMembership}
+          onDemoteCoach={(userId) => void coach.demoteCoach(userId)}
+        />
+      </div>
 
       <CoachUserSheet
         currentUserId={coach.user.id}
