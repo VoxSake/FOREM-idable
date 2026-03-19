@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Copy,
   KeyRound,
@@ -41,34 +42,84 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useSettings } from "@/hooks/useSettings";
+import { useForm } from "react-hook-form";
 import { AuthUser } from "@/types/auth";
 import { ApiKeyCreateResult, ApiKeySummary } from "@/types/externalApi";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  firstName: z.string().trim().min(1, "Le prénom est requis."),
+  lastName: z.string().trim().min(1, "Le nom est requis."),
+});
+
+const passwordSchema = z
+  .object({
+    password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
+    confirmPassword: z.string().min(8, "La confirmation doit contenir au moins 8 caractères."),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Les mots de passe ne correspondent pas.",
+  });
+
+const apiKeySchema = z.object({
+  name: z.string().trim().min(1, "Le nom de la clé est requis."),
+  expiry: z.enum(["none", "30", "90", "365"]),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
+type ApiKeyFormValues = z.infer<typeof apiKeySchema>;
+type FeedbackState = {
+  type: "success" | "error";
+  message: string;
+};
 
 export default function AccountPage() {
   const { user, isLoading, refresh, setUser } = useAuth();
   const { settings, updateSettings, isLoaded: isSettingsLoaded } = useSettings();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [profileFeedback, setProfileFeedback] = useState<string | null>(null);
-  const [passwordFeedback, setPasswordFeedback] = useState<string | null>(null);
+  const [profileFeedback, setProfileFeedback] = useState<FeedbackState | null>(null);
+  const [passwordFeedback, setPasswordFeedback] = useState<FeedbackState | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKeySummary[]>([]);
-  const [apiKeyName, setApiKeyName] = useState("");
-  const [apiKeyExpiry, setApiKeyExpiry] = useState("none");
-  const [apiKeyFeedback, setApiKeyFeedback] = useState<string | null>(null);
+  const [apiKeyFeedback, setApiKeyFeedback] = useState<FeedbackState | null>(null);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
   const [isCreatingApiKey, setIsCreatingApiKey] = useState(false);
   const [revokingApiKeyId, setRevokingApiKeyId] = useState<number | null>(null);
+  const profileForm = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    mode: "onChange",
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+    },
+  });
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
+    mode: "onChange",
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
+  const apiKeyForm = useForm<ApiKeyFormValues>({
+    resolver: zodResolver(apiKeySchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      expiry: "none",
+    },
+  });
 
   useEffect(() => {
     if (!user) return;
-    setFirstName(user.firstName);
-    setLastName(user.lastName);
-  }, [user]);
+    profileForm.reset({
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
+  }, [profileForm, user]);
 
   const canManageApiKeys = user?.role === "coach" || user?.role === "admin";
   const sectionClassName = "overflow-hidden shadow-sm";
@@ -89,14 +140,20 @@ export default function AccountPage() {
         if (cancelled) return;
 
         if (!response.ok || !data.apiKeys) {
-          setApiKeyFeedback(data.error || "Chargement des clés API impossible.");
+          setApiKeyFeedback({
+            type: "error",
+            message: data.error || "Chargement des clés API impossible.",
+          });
           return;
         }
 
         setApiKeys(data.apiKeys);
       } catch {
         if (!cancelled) {
-          setApiKeyFeedback("Chargement des clés API impossible.");
+          setApiKeyFeedback({
+            type: "error",
+            message: "Chargement des clés API impossible.",
+          });
         }
       } finally {
         if (!cancelled) {
@@ -112,7 +169,7 @@ export default function AccountPage() {
     };
   }, [canManageApiKeys]);
 
-  const saveProfile = async () => {
+  const saveProfile = async (values: ProfileFormValues) => {
     setIsSavingProfile(true);
     setProfileFeedback(null);
 
@@ -120,31 +177,39 @@ export default function AccountPage() {
       const response = await fetch("/api/account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName }),
+        body: JSON.stringify(values),
       });
       const data = (await response.json()) as { error?: string; user?: AuthUser };
 
       if (!response.ok || !data.user) {
-        setProfileFeedback(data.error || "Mise à jour impossible.");
+        setProfileFeedback({
+          type: "error",
+          message: data.error || "Mise à jour impossible.",
+        });
         return;
       }
 
       setUser(data.user);
+      profileForm.reset({
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+      });
       await refresh();
-      setProfileFeedback("Nom et prénom mis à jour.");
+      setProfileFeedback({
+        type: "success",
+        message: "Nom et prénom mis à jour.",
+      });
     } catch {
-      setProfileFeedback("Mise à jour impossible.");
+      setProfileFeedback({
+        type: "error",
+        message: "Mise à jour impossible.",
+      });
     } finally {
       setIsSavingProfile(false);
     }
   };
 
-  const savePassword = async () => {
-    if (password !== confirmPassword) {
-      setPasswordFeedback("Les mots de passe ne correspondent pas.");
-      return;
-    }
-
+  const savePassword = async (values: PasswordFormValues) => {
     setIsSavingPassword(true);
     setPasswordFeedback(null);
 
@@ -152,55 +217,74 @@ export default function AccountPage() {
       const response = await fetch("/api/account/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: values.password }),
       });
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setPasswordFeedback(data.error || "Mise à jour impossible.");
+        setPasswordFeedback({
+          type: "error",
+          message: data.error || "Mise à jour impossible.",
+        });
         return;
       }
 
-      setPassword("");
-      setConfirmPassword("");
-      setPasswordFeedback("Mot de passe mis à jour.");
+      passwordForm.reset();
+      setPasswordFeedback({
+        type: "success",
+        message: "Mot de passe mis à jour.",
+      });
     } catch {
-      setPasswordFeedback("Mise à jour impossible.");
+      setPasswordFeedback({
+        type: "error",
+        message: "Mise à jour impossible.",
+      });
     } finally {
       setIsSavingPassword(false);
     }
   };
 
-  const createApiKey = async () => {
+  const createApiKey = async (values: ApiKeyFormValues) => {
     setIsCreatingApiKey(true);
     setApiKeyFeedback(null);
     setNewApiKey(null);
 
     const expiresAt =
-      apiKeyExpiry === "none"
+      values.expiry === "none"
         ? null
-        : new Date(Date.now() + Number(apiKeyExpiry) * 24 * 60 * 60 * 1000).toISOString();
+        : new Date(Date.now() + Number(values.expiry) * 24 * 60 * 60 * 1000).toISOString();
 
     try {
       const response = await fetch("/api/account/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: apiKeyName, expiresAt }),
+        body: JSON.stringify({ name: values.name, expiresAt }),
       });
       const data = (await response.json()) as { error?: string } & Partial<ApiKeyCreateResult>;
 
       if (!response.ok || !data.apiKey || !data.plainTextKey) {
-        setApiKeyFeedback(data.error || "Création de la clé API impossible.");
+        setApiKeyFeedback({
+          type: "error",
+          message: data.error || "Création de la clé API impossible.",
+        });
         return;
       }
 
-      setApiKeyName("");
-      setApiKeyExpiry("none");
+      apiKeyForm.reset({
+        name: "",
+        expiry: "none",
+      });
       setNewApiKey(data.plainTextKey);
-      setApiKeyFeedback("Clé API créée. Copie-la maintenant: elle ne sera plus réaffichée.");
+      setApiKeyFeedback({
+        type: "success",
+        message: "Clé API créée. Copie-la maintenant: elle ne sera plus réaffichée.",
+      });
       setApiKeys((current) => [data.apiKey as ApiKeySummary, ...current]);
     } catch {
-      setApiKeyFeedback("Création de la clé API impossible.");
+      setApiKeyFeedback({
+        type: "error",
+        message: "Création de la clé API impossible.",
+      });
     } finally {
       setIsCreatingApiKey(false);
     }
@@ -216,7 +300,10 @@ export default function AccountPage() {
       });
       const data = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
-        setApiKeyFeedback(data.error || "Révocation impossible.");
+        setApiKeyFeedback({
+          type: "error",
+          message: data.error || "Révocation impossible.",
+        });
         return;
       }
 
@@ -225,9 +312,15 @@ export default function AccountPage() {
           entry.id === keyId ? { ...entry, revokedAt: new Date().toISOString() } : entry
         )
       );
-      setApiKeyFeedback("Clé API révoquée.");
+      setApiKeyFeedback({
+        type: "success",
+        message: "Clé API révoquée.",
+      });
     } catch {
-      setApiKeyFeedback("Révocation impossible.");
+      setApiKeyFeedback({
+        type: "error",
+        message: "Révocation impossible.",
+      });
     } finally {
       setRevokingApiKeyId(null);
     }
@@ -238,9 +331,15 @@ export default function AccountPage() {
 
     try {
       await navigator.clipboard.writeText(newApiKey);
-      setApiKeyFeedback("Clé API copiée.");
+      setApiKeyFeedback({
+        type: "success",
+        message: "Clé API copiée.",
+      });
     } catch {
-      setApiKeyFeedback("Copie impossible, sélectionne la clé manuellement.");
+      setApiKeyFeedback({
+        type: "error",
+        message: "Copie impossible, sélectionne la clé manuellement.",
+      });
     }
   };
 
@@ -301,45 +400,66 @@ export default function AccountPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Separator />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="account-first-name">Prénom</Label>
-                <Input
-                  id="account-first-name"
-                  name="given-name"
-                  autoComplete="given-name"
-                  value={firstName}
-                  onChange={(event) => setFirstName(event.target.value)}
-                  placeholder="Prénom"
-                />
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={profileForm.handleSubmit(async (values) => {
+                await saveProfile(values);
+              })}
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="account-first-name">Prénom</Label>
+                  <Input
+                    id="account-first-name"
+                    autoComplete="given-name"
+                    placeholder="Prénom"
+                    {...profileForm.register("firstName")}
+                    aria-invalid={profileForm.formState.errors.firstName ? "true" : "false"}
+                  />
+                  {profileForm.formState.errors.firstName ? (
+                    <p className="text-sm text-destructive">
+                      {profileForm.formState.errors.firstName.message}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="account-last-name">Nom</Label>
+                  <Input
+                    id="account-last-name"
+                    autoComplete="family-name"
+                    placeholder="Nom"
+                    {...profileForm.register("lastName")}
+                    aria-invalid={profileForm.formState.errors.lastName ? "true" : "false"}
+                  />
+                  {profileForm.formState.errors.lastName ? (
+                    <p className="text-sm text-destructive">
+                      {profileForm.formState.errors.lastName.message}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="account-last-name">Nom</Label>
-                <Input
-                  id="account-last-name"
-                  name="family-name"
-                  autoComplete="family-name"
-                  value={lastName}
-                  onChange={(event) => setLastName(event.target.value)}
-                  placeholder="Nom"
-                />
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  type="submit"
+                  disabled={
+                    isSavingProfile ||
+                    !profileForm.formState.isDirty ||
+                    !profileForm.formState.isValid
+                  }
+                >
+                  Enregistrer le profil
+                </Button>
+                {profileFeedback ? (
+                  <Alert
+                    variant={profileFeedback.type === "error" ? "destructive" : "default"}
+                    className="min-w-0 flex-1"
+                  >
+                    <AlertTitle>Mise à jour du profil</AlertTitle>
+                    <AlertDescription>{profileFeedback.message}</AlertDescription>
+                  </Alert>
+                ) : null}
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                onClick={() => void saveProfile()}
-                disabled={isSavingProfile || !firstName.trim() || !lastName.trim()}
-              >
-                Enregistrer le profil
-              </Button>
-              {profileFeedback ? (
-                <Alert className="min-w-0 flex-1">
-                  <AlertTitle>Mise à jour du profil</AlertTitle>
-                  <AlertDescription>{profileFeedback}</AlertDescription>
-                </Alert>
-              ) : null}
-            </div>
+            </form>
           </CardContent>
         </Card>
 
@@ -359,53 +479,69 @@ export default function AccountPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             <Separator />
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="account-password">Nouveau mot de passe</Label>
-                <Input
-                  id="account-password"
-                  name="new-password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="8 caractères minimum"
-                />
+            <form
+              className="flex flex-col gap-5"
+              onSubmit={passwordForm.handleSubmit(async (values) => {
+                await savePassword(values);
+              })}
+            >
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="account-password">Nouveau mot de passe</Label>
+                  <Input
+                    id="account-password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="8 caractères minimum"
+                    {...passwordForm.register("password")}
+                    aria-invalid={passwordForm.formState.errors.password ? "true" : "false"}
+                  />
+                  {passwordForm.formState.errors.password ? (
+                    <p className="text-sm text-destructive">
+                      {passwordForm.formState.errors.password.message}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex flex-col gap-2 border-t border-border/60 pt-4">
+                  <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
+                  <Input
+                    id="account-password-confirm"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Ressaisir le mot de passe"
+                    {...passwordForm.register("confirmPassword")}
+                    aria-invalid={passwordForm.formState.errors.confirmPassword ? "true" : "false"}
+                  />
+                  {passwordForm.formState.errors.confirmPassword ? (
+                    <p className="text-sm text-destructive">
+                      {passwordForm.formState.errors.confirmPassword.message}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-              <div className="flex flex-col gap-2 border-t border-border/60 pt-4">
-                <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
-                <Input
-                  id="account-password-confirm"
-                  name="new-password-confirmation"
-                  type="password"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="Ressaisir le mot de passe"
-                />
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={
+                    isSavingPassword ||
+                    !passwordForm.formState.isDirty ||
+                    !passwordForm.formState.isValid
+                  }
+                >
+                  Changer le mot de passe
+                </Button>
+                {passwordFeedback ? (
+                  <Alert
+                    variant={passwordFeedback.type === "error" ? "destructive" : "default"}
+                    className="min-w-0 flex-1"
+                  >
+                    <AlertTitle>Mot de passe</AlertTitle>
+                    <AlertDescription>{passwordFeedback.message}</AlertDescription>
+                  </Alert>
+                ) : null}
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void savePassword()}
-                disabled={
-                  isSavingPassword ||
-                  password.length < 8 ||
-                  confirmPassword.length < 8 ||
-                  password !== confirmPassword
-                }
-              >
-                Changer le mot de passe
-              </Button>
-              {passwordFeedback ? (
-                <Alert className="min-w-0 flex-1">
-                  <AlertTitle>Mot de passe</AlertTitle>
-                  <AlertDescription>{passwordFeedback}</AlertDescription>
-                </Alert>
-              ) : null}
-            </div>
+            </form>
           </CardContent>
         </Card>
 
@@ -467,14 +603,34 @@ export default function AccountPage() {
             <CardContent className="flex flex-col gap-4">
               <Separator />
 
-              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <form
+                className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+                onSubmit={apiKeyForm.handleSubmit(async (values) => {
+                  await createApiKey(values);
+                })}
+              >
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
-                  <Input
-                    value={apiKeyName}
-                    onChange={(event) => setApiKeyName(event.target.value)}
-                    placeholder="Ex: Excel Jordi, Power Query coach, Zapier..."
-                  />
-                  <Select value={apiKeyExpiry} onValueChange={setApiKeyExpiry}>
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      placeholder="Ex: Excel Jordi, Power Query coach, Zapier..."
+                      {...apiKeyForm.register("name")}
+                      aria-invalid={apiKeyForm.formState.errors.name ? "true" : "false"}
+                    />
+                    {apiKeyForm.formState.errors.name ? (
+                      <p className="text-sm text-destructive">
+                        {apiKeyForm.formState.errors.name.message}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Select
+                    value={apiKeyForm.watch("expiry")}
+                    onValueChange={(value) =>
+                      apiKeyForm.setValue("expiry", value as ApiKeyFormValues["expiry"], {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Expiration" />
                     </SelectTrigger>
@@ -489,13 +645,12 @@ export default function AccountPage() {
                   </Select>
                 </div>
                 <Button
-                  type="button"
-                  onClick={() => void createApiKey()}
-                  disabled={isCreatingApiKey || !apiKeyName.trim()}
+                  type="submit"
+                  disabled={isCreatingApiKey || !apiKeyForm.formState.isValid}
                 >
                   Générer une clé
                 </Button>
-              </div>
+              </form>
 
               {newApiKey ? (
                 <Alert>
@@ -589,9 +744,12 @@ export default function AccountPage() {
               </div>
 
               {apiKeyFeedback ? (
-                <Alert className="min-w-0">
+                <Alert
+                  variant={apiKeyFeedback.type === "error" ? "destructive" : "default"}
+                  className="min-w-0"
+                >
                   <AlertTitle>Clés API</AlertTitle>
-                  <AlertDescription>{apiKeyFeedback}</AlertDescription>
+                  <AlertDescription>{apiKeyFeedback.message}</AlertDescription>
                 </Alert>
               ) : null}
             </CardContent>
