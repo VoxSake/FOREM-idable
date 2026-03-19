@@ -6,12 +6,6 @@ import { CalendarDays, FilePenLine, Save, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -236,13 +230,10 @@ function ApplicationDetailsSheetBody({
       </SheetHeader>
 
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5 text-sm">
-        <Card className="gap-4 py-0 shadow-none">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base">Informations de l&apos;offre</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <section className="flex flex-col gap-3">
+          <h3 className="font-medium">Informations de l&apos;offre</h3>
           {isManual && isEditingManualDetails ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">Entreprise</span>
                 <Input
@@ -347,14 +338,10 @@ function ApplicationDetailsSheetBody({
               </p>
             </div>
           )}
-          </CardContent>
-        </Card>
+        </section>
 
-        <Card className="gap-4 py-0 shadow-none">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base">Statut</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <section className="flex flex-col gap-3">
+          <h3 className="font-medium">Statut</h3>
           <Select
             value={displayStatus}
             onValueChange={(value) => onApplyStatus(application.job.id, value as ApplicationStatus)}
@@ -372,14 +359,10 @@ function ApplicationDetailsSheetBody({
               </SelectGroup>
             </SelectContent>
           </Select>
-          </CardContent>
-        </Card>
+        </section>
 
-        <Card className="gap-4 py-0 shadow-none">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base">Relance</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <section className="flex flex-col gap-3">
+          <h3 className="font-medium">Relance</h3>
           {shouldShowFollowUpDetails(application.status) ? (
             <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
               <p className="font-medium text-foreground">
@@ -462,14 +445,10 @@ function ApplicationDetailsSheetBody({
               Aucune relance automatique sur une candidature clôturée.
             </p>
           )}
-          </CardContent>
-        </Card>
+        </section>
 
-        <Card className="gap-4 py-0 shadow-none">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base">Entretien</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+        <section className="flex flex-col gap-3">
+          <h3 className="font-medium">Entretien</h3>
           <p className="text-muted-foreground">
             {application.interviewAt
               ? formatApplicationDateTime(application.interviewAt ?? undefined)
@@ -480,14 +459,10 @@ function ApplicationDetailsSheetBody({
               {application.interviewDetails}
             </p>
           ) : null}
-          </CardContent>
-        </Card>
+        </section>
 
-        <Card className="gap-4 py-0 shadow-none">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base">Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+        <section className="flex flex-col gap-3">
+          <h3 className="font-medium">Notes</h3>
           <Textarea
             className="min-h-40"
             value={notesDraft}
@@ -505,14 +480,10 @@ function ApplicationDetailsSheetBody({
               Enregistrer
             </Button>
           </div>
-          </CardContent>
-        </Card>
+        </section>
 
-        <Card className="gap-4 py-0 shadow-none">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base">Preuves / références</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+        <section className="flex flex-col gap-3">
+          <h3 className="font-medium">Preuves / références</h3>
           <Textarea
             className="min-h-32"
             value={proofsDraft}
@@ -529,15 +500,11 @@ function ApplicationDetailsSheetBody({
               Enregistrer
             </Button>
           </div>
-          </CardContent>
-        </Card>
+        </section>
 
         {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
-          <Card className="gap-4 py-0 shadow-none">
-            <CardHeader className="pb-0">
-              <CardTitle className="text-base">Notes du coach</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
+          <section className="flex flex-col gap-3">
+            <h3 className="font-medium">Notes du coach</h3>
               {application.sharedCoachNotes.map((note) => (
                 <div
                   key={note.id}
@@ -555,8 +522,7 @@ function ApplicationDetailsSheetBody({
                   <p className="mt-3 whitespace-pre-wrap text-sm">{note.content}</p>
                 </div>
               ))}
-            </CardContent>
-          </Card>
+          </section>
         ) : null}
       </div>
 
