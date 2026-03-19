@@ -2,13 +2,6 @@ import { runtimeConfig } from "@/config/runtime";
 import { PrivacyConsentControls } from "@/components/consent/PrivacyConsentControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 const DATA_CATEGORIES = [
   {
@@ -91,26 +84,24 @@ export default function PrivacyPage() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 animate-in fade-in duration-500">
-      <Card className="overflow-hidden shadow-sm">
-        <CardHeader className="gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">RGPD</Badge>
-            <Badge variant="secondary">Transparence</Badge>
-          </div>
-          <CardTitle className="text-3xl font-black tracking-tight">Confidentialité</CardTitle>
-          <CardDescription className="max-w-3xl text-base">
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline">RGPD</Badge>
+          <Badge variant="secondary">Transparence</Badge>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-black tracking-tight">Confidentialité</h1>
+          <p className="max-w-3xl text-base text-muted-foreground">
             Cette page explique quelles données peuvent être traitées par FOREM-idable, pourquoi,
             sur quelle base et comment exercer vos droits.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+          </p>
+        </div>
+      </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Cadre général</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-bold">Cadre général</h2>
+          <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             <p>
               FOREM-idable est un projet gratuit et open source, mis à disposition sous licence MIT.
               L&apos;application permet de rechercher des offres d&apos;emploi, de suivre des
@@ -122,14 +113,12 @@ export default function PrivacyPage() {
               général sur la protection des données (RGPD) et des principes rappelés par
               l&apos;Autorité de protection des données belge.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Responsable du traitement</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
+        <section className="rounded-xl border bg-card p-5 shadow-sm">
+          <h2 className="text-xl font-bold">Responsable du traitement</h2>
+          <div className="mt-4 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
             <p className="font-semibold text-foreground">
               {runtimeConfig.privacy.controllerName}
             </p>
@@ -151,53 +140,47 @@ export default function PrivacyPage() {
                 {sourceUrl}
               </a>
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Données traitées</CardTitle>
-          <CardDescription>
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-bold">Données traitées</h2>
+          <p className="text-sm text-muted-foreground">
             Les catégories de données potentiellement concernées par le fonctionnement du service.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
           {DATA_CATEGORIES.map((category, index) => (
-            <Card key={category.title} className="shadow-none">
-              <CardHeader className="gap-2">
-                <CardTitle className="text-base">
-                  {index + 1}. {category.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-sm leading-6 text-muted-foreground">
+            <div key={category.title} className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm">
+              <h3 className="text-base font-semibold">
+                {index + 1}. {category.title}
+              </h3>
+              <div className="text-sm leading-6 text-muted-foreground">
                 {category.text}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Finalités et bases juridiques</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-bold">Finalités et bases juridiques</h2>
+        <div className="flex flex-col gap-4">
           {LEGAL_BASIS.map((item) => (
             <div key={item.title} className="flex flex-col gap-1 text-sm leading-6 text-muted-foreground">
               <p className="font-semibold text-foreground">{item.title}</p>
               <p>{item.text}</p>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Destinataires et accès aux données</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-bold">Destinataires et accès aux données</h2>
+          <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             <p>
               Les données ne sont pas vendues. Elles peuvent être accessibles, dans la limite du
               nécessaire, au responsable du traitement et aux prestataires techniques indispensables
@@ -220,39 +203,35 @@ export default function PrivacyPage() {
               calendrier seront également traitées par ce service tiers selon ses propres conditions
               et sa propre politique de confidentialité.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Choix des statistiques</CardTitle>
-            <CardDescription>
+        <section className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl font-bold">Choix des statistiques</h2>
+            <p className="text-sm text-muted-foreground">
               Les statistiques restent facultatives et configurables à tout moment.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </p>
+          </div>
+          <div className="mt-4">
             <PrivacyConsentControls />
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Durées de conservation</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-bold">Durées de conservation</h2>
+        <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
           {RETENTION_POINTS.map((point) => (
             <p key={point}>{point}</p>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Vos droits</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-bold">Vos droits</h2>
+          <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             {RIGHTS.map((item) => (
               <p key={item}>{item}</p>
             ))}
@@ -275,8 +254,8 @@ export default function PrivacyPage() {
                 www.autoriteprotectiondonnees.be
               </a>
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
         <Alert>
           <AlertTitle>Transparence technique</AlertTitle>
@@ -301,15 +280,13 @@ export default function PrivacyPage() {
         </Alert>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Mise à jour</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm leading-6 text-muted-foreground">
+      <section className="border-t pt-6">
+        <h2 className="text-xl font-bold">Mise à jour</h2>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Dernière mise à jour: 16 mars 2026. Cette page peut être adaptée si les fonctionnalités,
           les traitements ou les obligations légales applicables évoluent.
-        </CardContent>
-      </Card>
+        </p>
+      </section>
     </div>
   );
 }
