@@ -151,31 +151,53 @@ export function ApplicationsInsights({
                   onModeFilterChange(value as ApplicationModeFilter);
                 }
               }}
-              className="grid w-full grid-cols-2 gap-2 lg:grid-cols-5 lg:gap-0"
+              className="grid w-full grid-cols-2 gap-2 lg:hidden"
             >
               {QUICK_FILTERS.map((filter, index) => {
                 const isLastOddItem =
                   QUICK_FILTERS.length % 2 === 1 && index === QUICK_FILTERS.length - 1;
 
                 return (
+                  <ToggleGroupItem
+                    key={filter.value}
+                    value={filter.value}
+                    size="sm"
+                    aria-label={`Filtrer: ${filter.label}`}
+                    className={cn(
+                      "w-full justify-center rounded-md border shadow-none data-[spacing=0]:rounded-md data-[spacing=0]:border data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md",
+                      "data-[spacing=0]:data-[variant=outline]:border-l data-[spacing=0]:data-[variant=outline]:first:border-l",
+                      isLastOddItem && "col-span-2"
+                    )}
+                  >
+                    {filter.value === "all" ? <Filter data-icon="inline-start" /> : null}
+                    {filter.label}
+                  </ToggleGroupItem>
+                );
+              })}
+            </ToggleGroup>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              value={modeFilter}
+              onValueChange={(value) => {
+                if (value) {
+                  onModeFilterChange(value as ApplicationModeFilter);
+                }
+              }}
+              className="hidden w-full lg:grid lg:grid-cols-5"
+            >
+              {QUICK_FILTERS.map((filter) => (
                 <ToggleGroupItem
                   key={filter.value}
                   value={filter.value}
                   size="sm"
                   aria-label={`Filtrer: ${filter.label}`}
-                  className={cn(
-                    "w-full justify-center rounded-md border shadow-none data-[spacing=0]:rounded-md data-[spacing=0]:border data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md",
-                    "data-[spacing=0]:data-[variant=outline]:border-l data-[spacing=0]:data-[variant=outline]:first:border-l",
-                    isLastOddItem && "col-span-2 lg:col-span-1",
-                    "lg:w-full lg:rounded-none lg:data-[spacing=0]:first:rounded-l-md lg:data-[spacing=0]:last:rounded-r-md",
-                    "lg:data-[spacing=0]:rounded-none lg:data-[spacing=0]:data-[variant=outline]:border-l-0 lg:data-[spacing=0]:data-[variant=outline]:first:border-l"
-                  )}
+                  className="w-full justify-center"
                 >
                   {filter.value === "all" ? <Filter data-icon="inline-start" /> : null}
                   {filter.label}
                 </ToggleGroupItem>
-                );
-              })}
+              ))}
             </ToggleGroup>
           </div>
         </CardContent>

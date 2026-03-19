@@ -25,7 +25,7 @@ describe("ApplicationsInsights", () => {
     fireEvent.change(screen.getByPlaceholderText(/rechercher une entreprise/i), {
       target: { value: "Acme" },
     });
-    fireEvent.click(screen.getByRole("radio", { name: /filtrer: manuel/i }));
+    fireEvent.click(screen.getAllByRole("radio", { name: /filtrer: manuel/i })[0]);
 
     expect(onSearchChange).toHaveBeenCalledWith("Acme");
     expect(onModeFilterChange).toHaveBeenCalledWith("manual");
