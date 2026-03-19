@@ -18,6 +18,18 @@ let
             QuoteStyle = QuoteStyle.Csv
         ]
     ),
-    PromotedHeaders = Table.PromoteHeaders(CsvData, [PromoteAllScalars = true])
+    PromotedHeaders = Table.PromoteHeaders(CsvData, [PromoteAllScalars = true]),
+    Typed = Table.TransformColumnTypes(
+        PromotedHeaders,
+        {
+            {"ID groupe", Int64.Type},
+            {"Nombre de coachs", Int64.Type},
+            {"Membres", Int64.Type},
+            {"Candidatures", Int64.Type},
+            {"Entretiens", Int64.Type},
+            {"Cree le", type datetime}
+        },
+        "fr-FR"
+    )
 in
-    PromotedHeaders
+    Typed

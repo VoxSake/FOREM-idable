@@ -19,6 +19,20 @@ let
             QuoteStyle = QuoteStyle.Csv
         ]
     ),
-    PromotedHeaders = Table.PromoteHeaders(CsvData, [PromoteAllScalars = true])
+    PromotedHeaders = Table.PromoteHeaders(CsvData, [PromoteAllScalars = true]),
+    Typed = Table.TransformColumnTypes(
+        PromotedHeaders,
+        {
+            {"ID", Int64.Type},
+            {"Candidatures", Int64.Type},
+            {"Entretiens", Int64.Type},
+            {"Relances dues", Int64.Type},
+            {"Acceptees", Int64.Type},
+            {"Refusees", Int64.Type},
+            {"En cours", Int64.Type},
+            {"Derniere activite", type datetime}
+        },
+        "fr-FR"
+    )
 in
-    PromotedHeaders
+    Typed
