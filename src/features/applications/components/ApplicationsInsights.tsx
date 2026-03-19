@@ -156,7 +156,7 @@ export function ApplicationsInsights({
                   onModeFilterChange(value as ApplicationModeFilter);
                 }
               }}
-              className="flex w-full flex-wrap"
+              className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-0"
             >
               {QUICK_FILTERS.map((filter) => (
                 <ToggleGroupItem
@@ -164,6 +164,7 @@ export function ApplicationsInsights({
                   value={filter.value}
                   size="sm"
                   aria-label={`Filtrer: ${filter.label}`}
+                  className="w-full justify-center rounded-md border shadow-none sm:w-auto sm:rounded-none sm:data-[spacing=0]:first:rounded-l-md sm:data-[spacing=0]:last:rounded-r-md"
                 >
                   {filter.value === "all" ? <Filter data-icon="inline-start" /> : null}
                   {filter.label}

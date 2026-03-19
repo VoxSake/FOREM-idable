@@ -1,6 +1,5 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,6 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { JobApplication } from "@/types/application";
 
 export interface InterviewFormState {
@@ -50,24 +51,24 @@ export function InterviewDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Date et heure</label>
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Date et heure</span>
             <Input
               type="datetime-local"
               value={form.interviewAt}
               onChange={(event) => onFormChange({ ...form, interviewAt: event.target.value })}
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Informations pratiques</label>
-            <textarea
-              className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Informations pratiques</span>
+            <Textarea
+              className="min-h-28"
               value={form.interviewDetails}
               onChange={(event) => onFormChange({ ...form, interviewDetails: event.target.value })}
               placeholder="Adresse, Teams, contact, documents à prévoir..."
             />
-          </div>
+          </label>
         </div>
 
         <DialogFooter>

@@ -4,6 +4,14 @@ import { addDays, isAfter, isBefore } from "date-fns";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
 import {
@@ -98,16 +106,16 @@ export function ApplicationCard({
             <div className="flex flex-wrap items-center gap-2">
               <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
               {isManualApplication(application) ? (
-                <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+                <Badge variant="secondary">
                   Manuelle
                 </Badge>
               ) : (
-                <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                <Badge variant="secondary">
                   Importée
                 </Badge>
               )}
               {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
-                <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+                <Badge variant="secondary">
                   {hasUnreadCoachUpdate ? "Nouveau" : "Retour coach"}
                 </Badge>
               ) : null}
@@ -115,27 +123,31 @@ export function ApplicationCard({
                 {applicationStatusLabel(displayStatus)}
               </Badge>
               <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
-              {hasInterview ? (
-                <Badge className="bg-sky-600 text-white hover:bg-sky-600">
-                  Entretien {formatApplicationDateTime(application.interviewAt ?? undefined)}
-                </Badge>
-              ) : null}
+              {hasInterview ? <Badge variant="secondary">Entretien {formatApplicationDateTime(application.interviewAt ?? undefined)}</Badge> : null}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <select
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+          <div className="flex flex-col gap-2">
+            <Select
               value={displayStatus}
-              onClick={(event) => event.stopPropagation()}
-              onChange={(event) => onApplyStatus(application.job.id, event.target.value as ApplicationStatus)}
+              onValueChange={(value) => onApplyStatus(application.job.id, value as ApplicationStatus)}
             >
-              <option value="in_progress">En cours</option>
-              <option value="follow_up">Relance à faire</option>
-              <option value="interview">Entretien</option>
-              <option value="accepted">Acceptée</option>
-              <option value="rejected">Refusée</option>
-            </select>
+              <SelectTrigger
+                className="w-full"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <SelectValue placeholder="Choisir un statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="follow_up">Relance à faire</SelectItem>
+                  <SelectItem value="interview">Entretien</SelectItem>
+                  <SelectItem value="accepted">Acceptée</SelectItem>
+                  <SelectItem value="rejected">Refusée</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
 
             <ApplicationsOfferButtons application={application} />
 
@@ -187,7 +199,7 @@ export function ApplicationCard({
                 }}
                 disabled={application.status === "accepted"}
               >
-                <Clock3 className="mr-2 h-4 w-4" />
+                <Clock3 data-icon="inline-start" />
                 Relancer
               </Button>
               <Button
@@ -201,7 +213,7 @@ export function ApplicationCard({
                 }}
                 disabled={application.status === "accepted" || application.status === "rejected"}
               >
-                <CalendarDays className="mr-2 h-4 w-4" />
+                <CalendarDays data-icon="inline-start" />
                 Entretien
               </Button>
             </div>

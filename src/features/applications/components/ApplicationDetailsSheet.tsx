@@ -3,8 +3,24 @@
 import { addDays, format } from "date-fns";
 import { useState } from "react";
 import { CalendarDays, FilePenLine, Save, Trash2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -13,6 +29,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
 import {
@@ -163,16 +180,16 @@ function ApplicationDetailsSheetBody({
         <div className="flex flex-wrap gap-2 pt-2">
           <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
           {isManual ? (
-            <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+            <Badge variant="secondary">
               Manuelle
             </Badge>
           ) : (
-            <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <Badge variant="secondary">
               Importée
             </Badge>
           )}
           {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
-            <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+            <Badge variant="secondary">
               {hasUnreadCoachUpdate ? "Nouveau" : "Retour coach"}
             </Badge>
           ) : null}
@@ -201,7 +218,7 @@ function ApplicationDetailsSheetBody({
                 setIsEditingManualDetails(true);
               }}
             >
-              <FilePenLine className="mr-2 h-4 w-4" />
+              <FilePenLine data-icon="inline-start" />
               {isEditingManualDetails ? "Annuler" : "Éditer"}
             </Button>
           ) : null}
@@ -212,21 +229,23 @@ function ApplicationDetailsSheetBody({
             className="text-destructive hover:text-destructive"
             onClick={() => onRequestDelete(application.job.id)}
           >
-            <Trash2 className="mr-2 h-4 w-4" />
+            <Trash2 data-icon="inline-start" />
             Supprimer
           </Button>
         </div>
       </SheetHeader>
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-5 text-sm">
-        <div className="space-y-2">
-          <p className="font-medium">Informations de l&apos;offre</p>
+      <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5 text-sm">
+        <Card className="gap-4 py-0 shadow-none">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base">Informations de l&apos;offre</CardTitle>
+          </CardHeader>
+          <CardContent>
           {isManual && isEditingManualDetails ? (
-            <div className="grid gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:grid-cols-2">
-              <label className="space-y-1">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">Entreprise</span>
-                <input
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                <Input
                   value={manualDetailsForm.company}
                   onChange={(event) =>
                     setManualDetailsForm((current) => ({
@@ -236,10 +255,9 @@ function ApplicationDetailsSheetBody({
                   }
                 />
               </label>
-              <label className="space-y-1">
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">Type</span>
-                <input
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                <Input
                   value={manualDetailsForm.contractType}
                   onChange={(event) =>
                     setManualDetailsForm((current) => ({
@@ -249,10 +267,9 @@ function ApplicationDetailsSheetBody({
                   }
                 />
               </label>
-              <label className="space-y-1 sm:col-span-2">
+              <label className="flex flex-col gap-1 sm:col-span-2">
                 <span className="text-xs text-muted-foreground">Intitulé</span>
-                <input
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                <Input
                   value={manualDetailsForm.title}
                   onChange={(event) =>
                     setManualDetailsForm((current) => ({
@@ -262,10 +279,9 @@ function ApplicationDetailsSheetBody({
                   }
                 />
               </label>
-              <label className="space-y-1">
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">Lieu</span>
-                <input
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                <Input
                   value={manualDetailsForm.location}
                   onChange={(event) =>
                     setManualDetailsForm((current) => ({
@@ -275,10 +291,9 @@ function ApplicationDetailsSheetBody({
                   }
                 />
               </label>
-              <label className="space-y-1">
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">Lien de l&apos;offre</span>
-                <input
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                <Input
                   value={manualDetailsForm.url}
                   onChange={(event) =>
                     setManualDetailsForm((current) => ({
@@ -316,7 +331,7 @@ function ApplicationDetailsSheetBody({
                   }}
                   disabled={!manualDetailsForm.company.trim() || !manualDetailsForm.title.trim()}
                 >
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save data-icon="inline-start" />
                   Enregistrer
                 </Button>
               </div>
@@ -332,35 +347,48 @@ function ApplicationDetailsSheetBody({
               </p>
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <p className="font-medium">Statut</p>
-          <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+        <Card className="gap-4 py-0 shadow-none">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base">Statut</CardTitle>
+          </CardHeader>
+          <CardContent>
+          <Select
             value={displayStatus}
-            onChange={(event) => onApplyStatus(application.job.id, event.target.value as ApplicationStatus)}
+            onValueChange={(value) => onApplyStatus(application.job.id, value as ApplicationStatus)}
           >
-            <option value="in_progress">En cours</option>
-            <option value="follow_up">Relance à faire</option>
-            <option value="interview">Entretien</option>
-            <option value="accepted">Acceptée</option>
-            <option value="rejected">Refusée</option>
-          </select>
-        </div>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choisir un statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="in_progress">En cours</SelectItem>
+                <SelectItem value="follow_up">Relance à faire</SelectItem>
+                <SelectItem value="interview">Entretien</SelectItem>
+                <SelectItem value="accepted">Acceptée</SelectItem>
+                <SelectItem value="rejected">Refusée</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <p className="font-medium">Relance</p>
+        <Card className="gap-4 py-0 shadow-none">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base">Relance</CardTitle>
+          </CardHeader>
+          <CardContent>
           {shouldShowFollowUpDetails(application.status) ? (
-            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-              <p className="text-sm font-medium text-foreground">
+            <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+              <p className="font-medium text-foreground">
                 {followUpForm.enabled ? "Relance active" : "Relance desactivee"}
               </p>
-              <label className="space-y-1">
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">Date de relance</span>
-                <input
+                <Input
                   type="date"
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                   value={followUpForm.dueAt}
                   onChange={(event) => {
                     setFollowUpForm((current) => ({
@@ -371,7 +399,7 @@ function ApplicationDetailsSheetBody({
                   }}
                 />
               </label>
-              <div className="space-y-1 text-muted-foreground">
+              <div className="flex flex-col gap-1 text-muted-foreground">
                 {followUpForm.enabled ? (
                   <p>Prochaine relance: {formatApplicationDate(followUpForm.dueAt)}</p>
                 ) : (
@@ -381,7 +409,10 @@ function ApplicationDetailsSheetBody({
                   <p>Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}</p>
                 ) : null}
                 {followUpSaveState === "error" ? (
-                  <p className="text-xs text-destructive">Impossible d&apos;enregistrer la relance.</p>
+                  <Alert variant="destructive">
+                    <AlertTitle>Relance</AlertTitle>
+                    <AlertDescription>Impossible d&apos;enregistrer la relance.</AlertDescription>
+                  </Alert>
                 ) : null}
               </div>
               <div className="flex flex-wrap justify-end gap-2">
@@ -421,7 +452,7 @@ function ApplicationDetailsSheetBody({
                   }
                   disabled={!followUpForm.dueAt}
                 >
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save data-icon="inline-start" />
                   Mettre a jour la relance
                 </Button>
               </div>
@@ -431,10 +462,14 @@ function ApplicationDetailsSheetBody({
               Aucune relance automatique sur une candidature clôturée.
             </p>
           )}
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <p className="font-medium">Entretien</p>
+        <Card className="gap-4 py-0 shadow-none">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base">Entretien</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
           <p className="text-muted-foreground">
             {application.interviewAt
               ? formatApplicationDateTime(application.interviewAt ?? undefined)
@@ -445,12 +480,16 @@ function ApplicationDetailsSheetBody({
               {application.interviewDetails}
             </p>
           ) : null}
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <p className="font-medium">Notes</p>
-          <textarea
-            className="min-h-40 w-full rounded-md border bg-background px-3 py-2 text-sm"
+        <Card className="gap-4 py-0 shadow-none">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base">Notes</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+          <Textarea
+            className="min-h-40"
             value={notesDraft}
             onChange={(event) => onNotesDraftChange(event.target.value)}
             placeholder="Contexte, contact RH, retour, salaire..."
@@ -462,16 +501,20 @@ function ApplicationDetailsSheetBody({
               onClick={() => void onSaveNotes()}
               disabled={notesDraft === (application.notes ?? "")}
             >
-              <Save className="mr-2 h-4 w-4" />
+              <Save data-icon="inline-start" />
               Enregistrer
             </Button>
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <p className="font-medium">Preuves / références</p>
-          <textarea
-            className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm"
+        <Card className="gap-4 py-0 shadow-none">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-base">Preuves / références</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+          <Textarea
+            className="min-h-32"
             value={proofsDraft}
             onChange={(event) => onProofsDraftChange(event.target.value)}
           />
@@ -482,16 +525,19 @@ function ApplicationDetailsSheetBody({
               onClick={() => void onSaveProofs()}
               disabled={proofsDraft === (application.proofs ?? "")}
             >
-              <Save className="mr-2 h-4 w-4" />
+              <Save data-icon="inline-start" />
               Enregistrer
             </Button>
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
-          <div className="space-y-2">
-            <p className="font-medium">Notes du coach</p>
-            <div className="space-y-3">
+          <Card className="gap-4 py-0 shadow-none">
+            <CardHeader className="pb-0">
+              <CardTitle className="text-base">Notes du coach</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
               {application.sharedCoachNotes.map((note) => (
                 <div
                   key={note.id}
@@ -509,8 +555,8 @@ function ApplicationDetailsSheetBody({
                   <p className="mt-3 whitespace-pre-wrap text-sm">{note.content}</p>
                 </div>
               ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ) : null}
       </div>
 
@@ -534,7 +580,7 @@ function ApplicationDetailsSheetBody({
               onClick={() => onOpenInterview(application)}
               disabled={application.status === "accepted" || application.status === "rejected"}
             >
-              <CalendarDays className="mr-2 h-4 w-4" />
+              <CalendarDays data-icon="inline-start" />
               Entretien
             </Button>
           </div>
