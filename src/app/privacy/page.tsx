@@ -105,12 +105,13 @@ export default function PrivacyPage() {
         </CardHeader>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Cadre général</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Cadre général</CardTitle>
+          <CardDescription>Contexte du projet et responsable du traitement.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             <p>
               FOREM-idable est un projet gratuit et open source, mis à disposition sous licence MIT.
               L&apos;application permet de rechercher des offres d&apos;emploi, de suivre des
@@ -122,14 +123,8 @@ export default function PrivacyPage() {
               général sur la protection des données (RGPD) et des principes rappelés par
               l&apos;Autorité de protection des données belge.
             </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Responsable du traitement</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
+          </div>
+          <div className="flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
             <p className="font-semibold text-foreground">
               {runtimeConfig.privacy.controllerName}
             </p>
@@ -151,9 +146,9 @@ export default function PrivacyPage() {
                 {sourceUrl}
               </a>
             </p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="shadow-sm">
         <CardHeader>
@@ -195,124 +190,119 @@ export default function PrivacyPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Destinataires et accès aux données</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
-            <p>
-              Les données ne sont pas vendues. Elles peuvent être accessibles, dans la limite du
-              nécessaire, au responsable du traitement et aux prestataires techniques indispensables
-              au fonctionnement de l&apos;application, comme l&apos;hébergement, la base de données
-              et les composants d&apos;analyse activés avec consentement.
-            </p>
-            <p>
-              Certaines fonctionnalités donnent aussi accès aux données à d&apos;autres utilisateurs
-              autorisés dans l&apos;application, notamment dans le cadre du suivi de groupes, des
-              candidatures et, le cas échéant, de la synchronisation calendrier des entretiens.
-            </p>
-            <p>
-              Si un transfert hors de l&apos;Espace économique européen devait intervenir via un
-              prestataire technique, il devrait être encadré par les garanties appropriées prévues
-              par le RGPD.
-            </p>
-            <p>
-              Si vous ou une personne autorisée choisissez d&apos;abonner un agenda tiers, comme
-              Google Calendar, Outlook ou Apple Calendar, les données incluses dans le flux
-              calendrier seront également traitées par ce service tiers selon ses propres conditions
-              et sa propre politique de confidentialité.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Choix des statistiques</CardTitle>
-            <CardDescription>
-              Les statistiques restent facultatives et configurables à tout moment.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PrivacyConsentControls />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Durées de conservation</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
-          {RETENTION_POINTS.map((point) => (
-            <p key={point}>{point}</p>
-          ))}
-        </CardContent>
-      </Card>
-
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Vos droits</CardTitle>
+            <CardTitle>Accès, conservation et droits</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
-            {RIGHTS.map((item) => (
-              <p key={item}>{item}</p>
-            ))}
-            <p>
-              Pour exercer vos droits, vous pouvez écrire à{" "}
-              <a className="text-primary hover:underline" href={`mailto:${privacyEmail}`}>
-                {privacyEmail}
-              </a>
-              .
-            </p>
-            <p>
-              Vous avez également le droit d&apos;introduire une plainte auprès de l&apos;Autorité
-              de protection des données belge:{" "}
-              <a
-                className="text-primary hover:underline"
-                href="https://www.autoriteprotectiondonnees.be"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                www.autoriteprotectiondonnees.be
-              </a>
-            </p>
+          <CardContent className="flex flex-col gap-6 text-sm leading-6 text-muted-foreground">
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-foreground">Destinataires et accès aux données</p>
+              <p>
+                Les données ne sont pas vendues. Elles peuvent être accessibles, dans la limite du
+                nécessaire, au responsable du traitement et aux prestataires techniques indispensables
+                au fonctionnement de l&apos;application, comme l&apos;hébergement, la base de données
+                et les composants d&apos;analyse activés avec consentement.
+              </p>
+              <p>
+                Certaines fonctionnalités donnent aussi accès aux données à d&apos;autres utilisateurs
+                autorisés dans l&apos;application, notamment dans le cadre du suivi de groupes, des
+                candidatures et, le cas échéant, de la synchronisation calendrier des entretiens.
+              </p>
+              <p>
+                Si un transfert hors de l&apos;Espace économique européen devait intervenir via un
+                prestataire technique, il devrait être encadré par les garanties appropriées prévues
+                par le RGPD.
+              </p>
+              <p>
+                Si vous ou une personne autorisée choisissez d&apos;abonner un agenda tiers, comme
+                Google Calendar, Outlook ou Apple Calendar, les données incluses dans le flux
+                calendrier seront également traitées par ce service tiers selon ses propres conditions
+                et sa propre politique de confidentialité.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-foreground">Durées de conservation</p>
+              {RETENTION_POINTS.map((point) => (
+                <p key={point}>{point}</p>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-foreground">Vos droits</p>
+              {RIGHTS.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
+              <p>
+                Pour exercer vos droits, vous pouvez écrire à{" "}
+                <a className="text-primary hover:underline" href={`mailto:${privacyEmail}`}>
+                  {privacyEmail}
+                </a>
+                .
+              </p>
+              <p>
+                Vous avez également le droit d&apos;introduire une plainte auprès de l&apos;Autorité
+                de protection des données belge:{" "}
+                <a
+                  className="text-primary hover:underline"
+                  href="https://www.autoriteprotectiondonnees.be"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  www.autoriteprotectiondonnees.be
+                </a>
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        <Alert>
-          <AlertTitle>Transparence technique</AlertTitle>
-          <AlertDescription className="flex flex-col gap-3 text-sm leading-6">
-            <p>
-              FOREM-idable est open source. Si vous préférez garder un contrôle complet sur
-              l&apos;hébergement, le code peut être audité, adapté ou auto-hébergé.
-            </p>
-            <p>
-              Une documentation dédiée à l&apos;API externe est disponible dans{" "}
-              <a
-                className="text-primary hover:underline"
-                href="https://github.com/VoxSake/FOREM-idable/blob/main/DOCAPI.md"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                DOCAPI.md
-              </a>
-              .
-            </p>
-          </AlertDescription>
-        </Alert>
-      </div>
+        <div className="flex flex-col gap-6">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Choix des statistiques</CardTitle>
+              <CardDescription>
+                Les statistiques restent facultatives et configurables à tout moment.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PrivacyConsentControls />
+            </CardContent>
+          </Card>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Mise à jour</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm leading-6 text-muted-foreground">
-          Dernière mise à jour: 16 mars 2026. Cette page peut être adaptée si les fonctionnalités,
-          les traitements ou les obligations légales applicables évoluent.
-        </CardContent>
-      </Card>
+          <Alert>
+            <AlertTitle>Transparence technique</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3 text-sm leading-6">
+              <p>
+                FOREM-idable est open source. Si vous préférez garder un contrôle complet sur
+                l&apos;hébergement, le code peut être audité, adapté ou auto-hébergé.
+              </p>
+              <p>
+                Une documentation dédiée à l&apos;API externe est disponible dans{" "}
+                <a
+                  className="text-primary hover:underline"
+                  href="https://github.com/VoxSake/FOREM-idable/blob/main/DOCAPI.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  DOCAPI.md
+                </a>
+                .
+              </p>
+            </AlertDescription>
+          </Alert>
+
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Mise à jour</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm leading-6 text-muted-foreground">
+              Dernière mise à jour: 16 mars 2026. Cette page peut être adaptée si les fonctionnalités,
+              les traitements ou les obligations légales applicables évoluent.
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

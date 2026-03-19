@@ -155,28 +155,28 @@ export default function AboutPage() {
         </CardHeader>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Objectif du site</CardTitle>
-            <CardDescription>Ce que le produit essaie réellement d&apos;améliorer.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm leading-6 text-muted-foreground">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Objectif du site</CardTitle>
+          <CardDescription>Ce que le produit essaie réellement d&apos;améliorer.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <p className="text-sm leading-6 text-muted-foreground">
             Le site simplifie la recherche d&apos;offres en regroupant les résultats, en améliorant
             le filtrage par localités et en proposant des actions pratiques comme le suivi des
             candidatures, l&apos;ouverture du PDF lorsqu&apos;il est disponible et une vue plus claire
             des prochaines relances.
-          </CardContent>
-        </Card>
-
-        <Alert>
-          <AlertTitle>Limites connues</AlertTitle>
-          <AlertDescription className="text-sm leading-6">
-            Les données d&apos;offres et de localisation dépendent de fournisseurs externes. Certaines
-            offres peuvent être dupliquées, évoluer rapidement, ou ne pas proposer de PDF.
-          </AlertDescription>
-        </Alert>
-      </div>
+          </p>
+          <Alert>
+            <AlertTitle>Limites connues</AlertTitle>
+            <AlertDescription className="text-sm leading-6">
+              Les données d&apos;offres et de localisation dépendent de fournisseurs externes.
+              Certaines offres peuvent être dupliquées, évoluer rapidement, ou ne pas proposer de
+              PDF.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
 
       <Card className="shadow-sm">
         <CardHeader>
@@ -253,8 +253,8 @@ export default function AboutPage() {
 
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Licence</CardTitle>
-          <CardDescription>Cadre légal du projet et lien vers la confidentialité.</CardDescription>
+          <CardTitle>Licence et confidentialité</CardTitle>
+          <CardDescription>Cadre légal du projet et informations de confidentialité.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
           <p>Copyright (c) 2026 Jordi Brisbois</p>
