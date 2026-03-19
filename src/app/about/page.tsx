@@ -1,4 +1,19 @@
 import Link from "next/link";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const RECENT_UPDATES = [
   {
@@ -83,6 +98,38 @@ const RECENT_UPDATES = [
   },
 ];
 
+const APIS = [
+  {
+    title: "Forem Open Data",
+    description:
+      "Source principale des offres via Opendatasoft (ODWB), utilisée pour la recherche centrale.",
+    href: "https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem",
+    hrefLabel:
+      "https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem",
+  },
+  {
+    title: "Nomenclature Forem des localisations",
+    description:
+      "Utilisée pour enrichir le sélecteur de lieux avec régions, provinces, arrondissements, communes et localités.",
+    href: "https://www.leforem.be/recherche-offres/api/Nomenclature/Localisations",
+    hrefLabel: "https://www.leforem.be/recherche-offres/api/Nomenclature/Localisations",
+  },
+  {
+    title: "PDF d'offres Forem",
+    description:
+      "Le site passe par un proxy serveur pour récupérer les documents PDF lorsqu'ils sont disponibles.",
+    href: "https://www.leforem.be/recherche-offres/api/Document/PDF/{offreId}",
+    hrefLabel: "https://www.leforem.be/recherche-offres/api/Document/PDF/{offreId}",
+  },
+  {
+    title: "Adzuna",
+    description:
+      "Source complémentaire multi-offres activable par variables d'environnement et désactivée par défaut.",
+    href: "https://developer.adzuna.com/docs/search",
+    hrefLabel: "https://developer.adzuna.com/docs/search",
+  },
+];
+
 const UPDATES_BY_MONTH = Object.entries(
   RECENT_UPDATES.reduce<Record<string, string[]>>((accumulator, update) => {
     accumulator[update.month] = [...(accumulator[update.month] ?? []), update.text];
@@ -92,146 +139,132 @@ const UPDATES_BY_MONTH = Object.entries(
 
 export default function AboutPage() {
   return (
-    <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-500">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-black tracking-tight text-foreground">À propos</h1>
-        <p className="text-muted-foreground text-lg">
-          FOREM-idable est un agrégateur orienté recherche d&apos;emploi, avec priorité au Forem.
-        </p>
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 animate-in fade-in duration-500">
+      <Card className="overflow-hidden shadow-sm">
+        <CardHeader className="gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">Produit</Badge>
+            <Badge variant="secondary">Priorité Forem</Badge>
+          </div>
+          <CardTitle className="text-3xl font-black tracking-tight">À propos</CardTitle>
+          <CardDescription className="max-w-3xl text-base">
+            FOREM-idable est un agrégateur orienté recherche d&apos;emploi, pensé pour rendre la
+            recherche plus lisible, le filtrage plus utile et le suivi des candidatures plus
+            concret.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Objectif du site</CardTitle>
+            <CardDescription>Ce que le produit essaie réellement d&apos;améliorer.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm leading-6 text-muted-foreground">
+            Le site simplifie la recherche d&apos;offres en regroupant les résultats, en améliorant
+            le filtrage par localités et en proposant des actions pratiques comme le suivi des
+            candidatures, l&apos;ouverture du PDF lorsqu&apos;il est disponible et une vue plus claire
+            des prochaines relances.
+          </CardContent>
+        </Card>
+
+        <Alert>
+          <AlertTitle>Limites connues</AlertTitle>
+          <AlertDescription className="text-sm leading-6">
+            Les données d&apos;offres et de localisation dépendent de fournisseurs externes. Certaines
+            offres peuvent être dupliquées, évoluer rapidement, ou ne pas proposer de PDF.
+          </AlertDescription>
+        </Alert>
       </div>
 
-      <section className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
-        <h2 className="text-xl font-bold">Objectif du site</h2>
-        <p className="text-sm text-muted-foreground leading-6">
-          Le site simplifie la recherche d&apos;offres en regroupant les résultats, en améliorant le filtrage par
-          localités (provinces, arrondissements, communes, localités) et en proposant des actions pratiques
-          comme le suivi des candidatures et l&apos;ouverture du PDF quand il est disponible.
-        </p>
-      </section>
-
-      <section className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
-        <h2 className="text-xl font-bold">APIs utilisées</h2>
-        <div className="space-y-4 text-sm text-muted-foreground">
-          <div className="space-y-1">
-            <p className="font-semibold text-foreground">1. Forem Open Data (source principale)</p>
-            <p>
-              Jeu de données des offres Forem via Opendatasoft (ODWB), utilisé pour la recherche principale.
-            </p>
-            <a
-              href="https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline break-all"
-            >
-              https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem
-            </a>
-          </div>
-
-          <div className="space-y-1">
-            <p className="font-semibold text-foreground">2. Nomenclature Forem des localisations</p>
-            <p>
-              Utilisée pour enrichir le sélecteur de lieux avec une hiérarchie fine (régions, provinces,
-              arrondissements, communes, localités).
-            </p>
-            <a
-              href="https://www.leforem.be/recherche-offres/api/Nomenclature/Localisations"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline break-all"
-            >
-              https://www.leforem.be/recherche-offres/api/Nomenclature/Localisations
-            </a>
-          </div>
-
-          <div className="space-y-1">
-            <p className="font-semibold text-foreground">3. PDF d&apos;offres Forem (proxy interne)</p>
-            <p>
-              Le site utilise un proxy serveur pour récupérer les documents PDF lorsque disponibles.
-            </p>
-            <a
-              href="https://www.leforem.be/recherche-offres/api/Document/PDF/{offreId}"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline break-all"
-            >
-              https://www.leforem.be/recherche-offres/api/Document/PDF/{"{offreId}"}
-            </a>
-          </div>
-
-          <div className="space-y-1">
-            <p className="font-semibold text-foreground">4. Adzuna (optionnel, désactivé par défaut)</p>
-            <p>
-              Source complémentaire multi-offres activable via variables d&apos;environnement.
-            </p>
-            <a
-              href="https://developer.adzuna.com/docs/search"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline break-all"
-            >
-              https://developer.adzuna.com/docs/search
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
-        <h2 className="text-xl font-bold">Limites connues</h2>
-        <p className="text-sm text-muted-foreground leading-6">
-          Les données d&apos;offres et de localisation dépendent des fournisseurs externes. Certaines offres peuvent
-          être dupliquées ou évoluer rapidement. Les PDF ne sont pas garantis pour chaque annonce.
-        </p>
-      </section>
-
-      <section className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
-        <h2 className="text-xl font-bold">Nouveautés récentes</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {UPDATES_BY_MONTH.map(([month, updates]) => (
-            <div key={month} className="rounded-xl border bg-muted/20 p-4">
-              <p className="text-sm font-semibold text-foreground">{month}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {updates.length} mise{updates.length > 1 ? "s" : ""} à jour
-              </p>
-            </div>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>APIs utilisées</CardTitle>
+          <CardDescription>
+            Les sources externes qui alimentent la recherche et l&apos;enrichissement des données.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          {APIS.map((api) => (
+            <Card key={api.title} className="shadow-none">
+              <CardHeader className="gap-2">
+                <CardTitle className="text-base">{api.title}</CardTitle>
+                <CardDescription>{api.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0 text-sm">
+                <a
+                  href={api.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-all text-primary hover:underline"
+                >
+                  {api.hrefLabel}
+                </a>
+              </CardContent>
+            </Card>
           ))}
-        </div>
-        <div className="space-y-3">
-          {UPDATES_BY_MONTH.map(([month, updates]) => (
-            <div key={month} className="rounded-xl border bg-muted/10 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-foreground">{month}</h3>
-                <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                  {updates.length} élément{updates.length > 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                {updates.map((update) => (
-                  <div key={`${month}-${update}`} className="flex gap-3">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
-                    <p>{update}</p>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Nouveautés récentes</CardTitle>
+          <CardDescription>
+            Les évolutions sont regroupées par mois pour éviter une longue page compacte et peu lisible.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {UPDATES_BY_MONTH.map(([month, updates]) => (
+              <Card key={month} className="gap-0 bg-muted/20 py-0 shadow-none">
+                <CardHeader className="p-4">
+                  <CardTitle className="text-sm">{month}</CardTitle>
+                  <CardDescription>
+                    {updates.length} mise{updates.length > 1 ? "s" : ""} à jour
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+
+          <Accordion type="multiple" className="rounded-xl border px-4">
+            {UPDATES_BY_MONTH.map(([month, updates]) => (
+              <AccordionItem key={month} value={month}>
+                <AccordionTrigger>{month}</AccordionTrigger>
+                <AccordionContent>
+                  <div className="flex flex-col gap-3">
+                    {updates.map((update) => (
+                      <div key={`${month}-${update}`} className="flex gap-3 text-sm text-muted-foreground">
+                        <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/70" />
+                        <p>{update}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
 
-      <section className="bg-card rounded-xl border shadow-sm p-6 space-y-2">
-        <h2 className="text-xl font-bold">Licence</h2>
-        <p className="text-sm text-muted-foreground">
-          Copyright (c) 2026 Jordi Brisbois
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Ce projet est distribué sous licence MIT.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          La politique de confidentialité est disponible sur{" "}
-          <Link href="/privacy" className="text-primary hover:underline">
-            la page Confidentialité
-          </Link>.
-        </p>
-      </section>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Licence</CardTitle>
+          <CardDescription>Cadre légal du projet et lien vers la confidentialité.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
+          <p>Copyright (c) 2026 Jordi Brisbois</p>
+          <p>Ce projet est distribué sous licence MIT.</p>
+          <p>
+            La politique de confidentialité est disponible sur{" "}
+            <Link href="/privacy" className="text-primary hover:underline">
+              la page Confidentialité
+            </Link>
+            .
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
