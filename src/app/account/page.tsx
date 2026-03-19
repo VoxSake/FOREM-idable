@@ -31,7 +31,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -72,7 +71,7 @@ export default function AccountPage() {
   }, [user]);
 
   const canManageApiKeys = user?.role === "coach" || user?.role === "admin";
-  const sectionClassName = "gap-0 py-0 shadow-sm";
+  const sectionClassName = "overflow-hidden shadow-sm";
 
   useEffect(() => {
     if (!canManageApiKeys) return;
@@ -265,11 +264,11 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-4 rounded-3xl border bg-card/70 p-6 shadow-sm backdrop-blur sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mx-auto max-w-5xl space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Mon compte</h1>
-          <p className="max-w-2xl text-lg text-muted-foreground">
+          <h1 className="text-3xl font-black tracking-tight">Mon compte</h1>
+          <p className="max-w-2xl text-muted-foreground">
             Gérez votre profil, votre sécurité et vos préférences sans perdre d&apos;espace à l&apos;écran.
           </p>
         </div>
@@ -284,8 +283,8 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-12">
-        <Card className={`${sectionClassName} xl:col-span-7`}>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className={sectionClassName}>
           <CardHeader>
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-primary/10 p-2 text-primary">
@@ -344,7 +343,7 @@ export default function AccountPage() {
           </CardContent>
         </Card>
 
-        <Card className={`${sectionClassName} xl:col-span-5`}>
+        <Card className={sectionClassName}>
           <CardHeader>
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-primary/10 p-2 text-primary">
@@ -410,9 +409,7 @@ export default function AccountPage() {
           </CardContent>
         </Card>
 
-        <Card
-          className={`${sectionClassName} ${canManageApiKeys ? "xl:col-span-4" : "xl:col-span-12"}`}
-        >
+        <Card className={sectionClassName}>
           <CardHeader>
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-primary/10 p-2 text-primary">
@@ -446,23 +443,15 @@ export default function AccountPage() {
                 ET (plus précis)
               </ToggleGroupItem>
             </ToggleGroup>
-            <RadioGroup
-              value={settings.defaultSearchMode}
-              onValueChange={(value: "AND" | "OR") => updateSettings({ defaultSearchMode: value })}
-              className="sr-only"
-            >
-              <div className="sr-only">
-                <RadioGroupItem value="OR" id="account-mode-or" />
-                <Label htmlFor="account-mode-or">OU</Label>
-                <RadioGroupItem value="AND" id="account-mode-and" />
-                <Label htmlFor="account-mode-and">ET</Label>
-              </div>
-            </RadioGroup>
+            <p className="text-sm text-muted-foreground">
+              <strong className="font-medium text-foreground">OU</strong> élargit les résultats,
+              <strong className="ml-1 font-medium text-foreground">ET</strong> les rend plus précis.
+            </p>
           </CardContent>
         </Card>
 
         {canManageApiKeys ? (
-          <Card className={`${sectionClassName} xl:col-span-8`}>
+          <Card className={`${sectionClassName} lg:col-span-2`}>
             <CardHeader>
               <div className="flex flex-col gap-1">
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -526,7 +515,7 @@ export default function AccountPage() {
                 </Alert>
               ) : null}
 
-              <Card className="gap-4 py-0">
+              <Card className="shadow-none">
                 <CardHeader className="pb-0">
                   <CardTitle className="text-base">Endpoints disponibles</CardTitle>
                   <CardDescription>
@@ -535,7 +524,7 @@ export default function AccountPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
-                  <ul className="flex flex-col gap-1 text-xs">
+                  <ul className="grid gap-1 text-xs md:grid-cols-2">
                     <li>`/api/external/me`</li>
                     <li>`/api/external/users?search=&amp;groupId=&amp;role=&amp;format=json|csv`</li>
                     <li>`/api/external/users/:id?format=json|csv`</li>
