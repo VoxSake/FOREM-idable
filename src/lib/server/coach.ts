@@ -19,7 +19,12 @@ import {
 import { buildCoachApplicationSummary } from "@/features/coach/applicationSummary";
 import { CoachNoteAuthor, CoachSharedNote, JobApplication } from "@/types/application";
 import { AuthUser, UserRole } from "@/types/auth";
-import { CoachDashboardData, CoachGroupSummary, CoachUserSummary } from "@/types/coach";
+import {
+  CoachDashboardData,
+  CoachGroupMember,
+  CoachGroupSummary,
+  CoachUserSummary,
+} from "@/types/coach";
 import { Job } from "@/types/job";
 
 type CoachCapableUser = AuthUser & { role: "coach" | "admin" };
