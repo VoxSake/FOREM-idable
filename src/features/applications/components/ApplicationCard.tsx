@@ -24,6 +24,7 @@ import {
   isManualApplication,
   shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
+import { cn } from "@/lib/utils";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
 interface ApplicationCardProps {
@@ -68,19 +69,13 @@ export function ApplicationCard({
 
   return (
     <div
-      className={`rounded-xl border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/20 ${
-        application.status === "accepted"
-          ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20"
-          : application.status === "rejected"
-            ? "border-rose-300 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/20"
-          : hasInterview
-            ? "border-sky-300 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20"
-            : hasUnreadCoachUpdate
-              ? "border-sky-300 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20"
-            : isDue
-              ? "border-amber-400/70"
-              : ""
-      }`}
+      className={cn(
+        "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/20",
+        application.status === "accepted" && "border-emerald-300 bg-emerald-50/60",
+        application.status === "rejected" && "border-rose-300 bg-rose-50/60",
+        (hasInterview || hasUnreadCoachUpdate) && "border-sky-300 bg-sky-50/50",
+        isDue && "border-amber-400/70"
+      )}
       onClick={() => onOpenDetails(application.job.id)}
     >
       <div className="flex items-start gap-3">
@@ -115,7 +110,7 @@ export function ApplicationCard({
                 </Badge>
               )}
               {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
-                <Badge variant="secondary">
+                <Badge variant={hasUnreadCoachUpdate ? "default" : "secondary"}>
                   {hasUnreadCoachUpdate ? "Nouveau" : "Retour coach"}
                 </Badge>
               ) : null}
@@ -123,7 +118,11 @@ export function ApplicationCard({
                 {applicationStatusLabel(displayStatus)}
               </Badge>
               <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
-              {hasInterview ? <Badge variant="secondary">Entretien {formatApplicationDateTime(application.interviewAt ?? undefined)}</Badge> : null}
+              {hasInterview ? (
+                <Badge variant="secondary">
+                  Entretien {formatApplicationDateTime(application.interviewAt ?? undefined)}
+                </Badge>
+              ) : null}
             </div>
           </div>
 

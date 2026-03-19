@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { JobApplication } from "@/types/application";
 
@@ -52,23 +53,25 @@ export function InterviewDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Date et heure</span>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="application-interview-at">Date et heure</Label>
             <Input
+              id="application-interview-at"
               type="datetime-local"
               value={form.interviewAt}
               onChange={(event) => onFormChange({ ...form, interviewAt: event.target.value })}
             />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Informations pratiques</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="application-interview-details">Informations pratiques</Label>
             <Textarea
+              id="application-interview-details"
               className="min-h-28"
               value={form.interviewDetails}
               onChange={(event) => onFormChange({ ...form, interviewDetails: event.target.value })}
               placeholder="Adresse, Teams, contact, documents à prévoir..."
             />
-          </label>
+          </div>
         </div>
 
         <DialogFooter>

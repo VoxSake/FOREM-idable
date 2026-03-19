@@ -19,6 +19,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ApplicationStatus } from "@/types/application";
 import { ApplicationModeFilter } from "@/features/applications/utils";
+import { cn } from "@/lib/utils";
 
 interface ApplicationsInsightsProps {
   totalCount: number;
@@ -59,25 +60,21 @@ export function ApplicationsInsights({
     {
       label: "En suivi",
       value: totalCount,
-      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
       label: "Relances dues",
       value: dueCount,
-      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
       label: "Entretiens à venir",
       value: upcomingInterviewCount,
-      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
       label: "Clôturées",
       value: closedCount,
-      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
@@ -98,9 +95,7 @@ export function ApplicationsInsights({
         {stats.map((stat) => (
           <Card
             key={stat.label}
-            className={`gap-0 py-0 ${
-              stat.fullWidth ? "col-span-2 lg:col-span-5" : ""
-            }`}
+            className={cn("gap-0 py-0", stat.fullWidth && "col-span-2 lg:col-span-5")}
           >
             <CardHeader className="gap-1 p-3 sm:p-4">
               <CardTitle className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:text-xs">
@@ -108,7 +103,7 @@ export function ApplicationsInsights({
               </CardTitle>
             </CardHeader>
             <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4">
-              <p className={`text-2xl font-black ${stat.valueClassName}`}>{stat.value}</p>
+              <p className="text-2xl font-black text-foreground">{stat.value}</p>
               {stat.hint ? (
                 <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{stat.hint}</p>
               ) : null}
