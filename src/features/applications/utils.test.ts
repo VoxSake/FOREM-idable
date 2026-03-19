@@ -3,6 +3,7 @@ import {
   applicationStatusLabel,
   formatApplicationDate,
   formatApplicationDateTime,
+  getDisplayApplicationStatus,
   isApplicationFollowUpDue,
   isFollowUpEnabled,
   isFollowUpPending,
@@ -89,6 +90,7 @@ describe("applications utils", () => {
     expect(isFollowUpEnabled(buildApplication())).toBe(true);
     expect(isFollowUpEnabled(buildApplication({ followUpEnabled: false }))).toBe(false);
     expect(isApplicationFollowUpDue(buildApplication())).toBe(true);
+    expect(getDisplayApplicationStatus(buildApplication())).toBe("follow_up");
     expect(
       isApplicationFollowUpDue(
         buildApplication({
@@ -104,6 +106,13 @@ describe("applications utils", () => {
         })
       )
     ).toBe(false);
+    expect(
+      getDisplayApplicationStatus(
+        buildApplication({
+          followUpEnabled: false,
+        })
+      )
+    ).toBe("in_progress");
   });
 
   it("detects manual applications and formats values safely", () => {

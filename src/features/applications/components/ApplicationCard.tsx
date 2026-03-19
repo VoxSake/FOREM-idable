@@ -10,6 +10,7 @@ import {
   applicationStatusLabel,
   formatApplicationDate,
   formatApplicationDateTime,
+  getDisplayApplicationStatus,
   isFollowUpEnabled,
   isFollowUpPending,
   isManualApplication,
@@ -55,6 +56,7 @@ export function ApplicationCard({
     !Number.isNaN(followUpDue.getTime()) &&
     isAfter(followUpDue, now) &&
     isBefore(followUpDue, addDays(now, 2));
+  const displayStatus = getDisplayApplicationStatus(application);
 
   return (
     <div
@@ -110,7 +112,7 @@ export function ApplicationCard({
                 </Badge>
               ) : null}
               <Badge variant={isDue ? "destructive" : "secondary"}>
-                {applicationStatusLabel(application.status)}
+                {applicationStatusLabel(displayStatus)}
               </Badge>
               <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
               {hasInterview ? (

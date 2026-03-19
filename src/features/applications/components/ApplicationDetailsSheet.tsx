@@ -19,6 +19,7 @@ import {
   applicationStatusLabel,
   formatApplicationDate,
   formatApplicationDateTime,
+  getDisplayApplicationStatus,
   isFollowUpEnabled,
   isManualApplication,
   shouldShowFollowUpDetails,
@@ -119,6 +120,7 @@ function ApplicationDetailsSheetBody({
 }: ApplicationDetailsSheetBodyProps) {
   const isManual = isManualApplication(application);
   const followUpEnabled = isFollowUpEnabled(application);
+  const displayStatus = getDisplayApplicationStatus(application);
   const defaultFollowUpDate = formatDefaultFollowUpDate(application.appliedAt);
   const initialFollowUpForm = {
     enabled: followUpEnabled,
@@ -175,7 +177,9 @@ function ApplicationDetailsSheetBody({
             </Badge>
           ) : null}
           <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
-          <Badge variant="secondary">{applicationStatusLabel(application.status)}</Badge>
+          <Badge variant={displayStatus === "follow_up" ? "destructive" : "secondary"}>
+            {applicationStatusLabel(displayStatus)}
+          </Badge>
           {isManual ? (
             <Button
               type="button"

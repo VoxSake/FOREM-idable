@@ -38,6 +38,12 @@ export function isApplicationFollowUpDue(
   );
 }
 
+export function getDisplayApplicationStatus(
+  application: Pick<JobApplication, "status" | "followUpDueAt" | "followUpEnabled">
+) {
+  return isApplicationFollowUpDue(application) ? "follow_up" : application.status;
+}
+
 export function shouldShowFollowUpDetails(status: ApplicationStatus) {
   return status !== "rejected" && status !== "accepted" && status !== "interview";
 }
