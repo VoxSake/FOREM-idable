@@ -1,207 +1,130 @@
-# FOREM-idable
+# 🚀 FOREM-idable
 
-Agrégateur d'offres d'emploi orienté Forem, avec interface compacte, suivi de candidatures, export CSV, comparaison d'offres et filtres localités multi-sélection.
+> **L'agrégateur d'offres d'emploi conçu pour la performance, le suivi pro et le coaching.**
 
-## Stack
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=flat-square&logo=drizzle)](https://orm.drizzle.team/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-- Next.js 16 (App Router)
-- React 19
-- Tailwind CSS + shadcn/ui
-- PostgreSQL + Drizzle ORM (schéma, migrations, couche data progressive)
-- Redis optionnel pour le rate limiting distribué
-- Vitest + Testing Library
+---
 
-## Fonctionnalités
+### 🌐 [**Découvrir la version Live → https://forem.brisbois.dev**](https://forem.brisbois.dev)
 
-- Recherche par mots-clés avec opérateur booléen (`OU` / `ET`)
-- Filtres localités multi-sélection (régions, provinces, arrondissements, communes, localités)
-- Tableau d'offres compact (pagination 15)
-- Bouton PDF direct par offre quand disponible (proxy serveur)
-- Suivi des candidatures, relances et entretiens
-- Comptes `user` / `coach` / `admin`
-- Attribution de un ou plusieurs coachs par groupe, avec notion de manager par groupe
-- Candidatures et historique liés au compte utilisateur
-- API externe sécurisée pour export `JSON` / `CSV`, alignée sur les scopes coach/admin
-- Synchronisation calendrier des entretiens pour `coach` / `admin` via lien d'abonnement ICS par groupe ou global
-- Import CSV de candidatures côté coach avec auto-détection des colonnes, mapping manuel, gestion des statuts non reconnus et mise à jour des doublons existants
-- Dashboard coach enrichi avec sections `À traiter`, `Activité récente` et édition / suppression de candidatures depuis le sidepanel bénéficiaire
-- Export CSV (colonnes sélectionnables, métadonnées)
-- Comparateur d'offres
-- Provider principal: Forem
-- Provider optionnel: Adzuna (désactivé par défaut)
+---
 
-## Installation
+### [📸 INSÉRER ICI : Capture d'écran principale du Dashboard ou de la recherche d'offres]
+
+## 🌟 Pourquoi FOREM-idable ?
+
+L'interface standard du Forem est riche, mais peut s'avérer lourde pour un suivi intensif. **FOREM-idable** transforme l'expérience de recherche d'emploi en un outil de productivité "power-user" :
+
+- **Vitesse & Efficacité :** Une interface compacte pensée pour scanner des dizaines d'offres en quelques secondes.
+- **Suivi de Bout en Bout :** Ne perdez plus le fil. Gérez vos candidatures, relances et entretiens directement dans l'outil.
+- **Écosystème Coach :** Une plateforme collaborative permettant aux coachs de suivre, importer et gérer les parcours de leurs bénéficiaires.
+
+---
+
+## ✨ Fonctionnalités Clés
+
+### 🔍 Recherche & Analyse
+- **Moteur Booléen :** Recherche avancée par mots-clés (`OU` / `ET`).
+- **Filtres Géo Précis :** Multi-sélection intelligente (communes, arrondissements, provinces, régions).
+- **Comparateur d'offres :** Analysez plusieurs opportunités côte à côte pour faire le bon choix.
+- **[📸 INSÉRER ICI : Screenshot du comparateur d'offres]**
+
+### 💼 Suivi Candidat & Coach
+- **Dashboard Coach Enrichi :** Sections `À traiter`, `Activité récente` et sidepanel de gestion rapide.
+- **Import CSV Intelligent :** Algorithme d'auto-détection de colonnes et mapping manuel pour migrer vos anciens suivis sans douleur.
+- **Synchronisation Calendrier :** Flux ICS dynamiques pour retrouver vos entretiens dans Google Calendar, Outlook ou Apple Calendar.
+- **[📸 INSÉRER ICI : Screenshot du Dashboard Coach]**
+
+### 🛠️ Outils "Power User"
+- **Proxy PDF :** Accès direct aux offres en format PDF, même derrière des restrictions serveurs (CORS).
+- **API Externe Sécurisée :** Exportez vos données en JSON/CSV pour vos propres outils de reporting ou intégrations No-Code.
+
+---
+
+## 🛠️ Stack Technique & Choix d'Architecture
+
+Le projet a été conçu avec une attention particulière à la **scalabilité** et à la **sécurité** :
+
+- **Framework :** [Next.js 15](https://nextjs.org/) (App Router) pour le rendu hybride et les performances UX.
+- **Base de données :** [PostgreSQL](https://www.postgresql.org/) avec [Drizzle ORM](https://orm.drizzle.team/) pour un typage strict de bout en bout.
+- **Cache & Rate Limit :** Support de [Redis](https://redis.io/) pour le rate limiting distribué.
+- **Observabilité :** Logs d'audit structurés, tracking des requêtes SQL lentes et intégration Umami (optionnelle).
+- **Qualité :** Suite de tests avec [Vitest](https://vitest.dev/) et [Testing Library](https://testing-library.com/).
+
+---
+
+## 🚀 Installation & Scripts
 
 ```bash
+# Installation
 npm install
-```
 
-## Configuration
-
-Copier l'exemple d'environnement:
-
-```bash
+# Configuration
 cp env.example .env.local
-```
 
-### Variables utiles
-
-- `ADZUNA_ENABLED=false` par défaut
-- `ADZUNA_APP_ID=...`
-- `ADZUNA_APP_KEY=...`
-- `UMAMI_ENABLED=false` par défaut
-- `NEXT_PUBLIC_UMAMI_WEBSITE_ID=...`
-- `NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js` (optionnel)
-- `PASSWORD_RESET_ENABLED=false` par défaut
-- `NEXT_PUBLIC_PASSWORD_RESET_ENABLED=false` par défaut
-- `APP_BASE_URL=...`
-- `REDIS_URL=...` pour un rate limit partagé entre instances
-- `SERVER_TIMING_LOGS=false` pour activer des logs structurés de timings DB/Redis côté serveur
-- `SERVER_AUDIT_LOGS=true` pour conserver les logs structurés d'auth, sécurité et actions critiques
-- `DB_SLOW_QUERY_MS=200` pour définir le seuil des requêtes SQL considérées lentes
-- `RESEND_API_KEY=...`
-- `RESEND_FROM_EMAIL=...`
-- `RESEND_REPLY_TO=...`
-- `PRIVACY_CONTROLLER_NAME=...`
-- `PRIVACY_CONTACT_EMAIL=...`
-- `PRIVACY_PROJECT_LABEL=...`
-- `PRIVACY_SOURCE_URL=...`
-- `COPYRIGHT_NAME=...`
-
-Pour activer Adzuna:
-
-1. Mettre `ADZUNA_ENABLED=true`
-2. Renseigner `ADZUNA_APP_ID` et `ADZUNA_APP_KEY`
-
-Pour activer Umami:
-
-1. Mettre `UMAMI_ENABLED=true`
-2. Renseigner `NEXT_PUBLIC_UMAMI_WEBSITE_ID`
-3. Laisser `NEXT_PUBLIC_UMAMI_SCRIPT_URL` tel quel (cloud) ou pointer vers votre script self-hosted
-4. Le script Umami n'est charg&eacute; qu'apr&egrave;s consentement explicite via la banni&egrave;re RGPD
-
-Pour activer la réinitialisation de mot de passe par email:
-
-1. Mettre `PASSWORD_RESET_ENABLED=true`
-2. Mettre `NEXT_PUBLIC_PASSWORD_RESET_ENABLED=true`
-3. Définir `APP_BASE_URL`
-4. Renseigner `RESEND_API_KEY`
-5. Définir une adresse d’envoi valide dans `RESEND_FROM_EMAIL`
-
-Pour activer un rate limit partagé entre plusieurs instances:
-
-1. Déployer un service Redis sur le réseau privé de l'application
-2. Définir `REDIS_URL`
-3. Redéployer l'application
-
-Sans `REDIS_URL`, l'application continue de fonctionner avec un fallback mémoire local.
-
-Pour personnaliser la page `Confidentialité`:
-
-1. Définir `PRIVACY_CONTROLLER_NAME`
-2. Définir `PRIVACY_CONTACT_EMAIL`
-3. Ajuster au besoin `PRIVACY_PROJECT_LABEL` et `PRIVACY_SOURCE_URL`
-
-## Lancer le projet
-
-```bash
+# Lancement (dev)
 npm run dev
+
+# Tests
+npm test
 ```
 
-Application disponible sur `http://localhost:3000`.
+<details>
+<summary>⚙️ <b>Variables d'environnement (Détails)</b></summary>
 
-## Scripts
+### Services Tiers
+- `ADZUNA_ENABLED` : Activer le provider secondaire Adzuna.
+- `UMAMI_ENABLED` : Monitoring analytique respectueux de la vie privée (RGPD).
+- `RESEND_API_KEY` : Gestion des emails pour la réinitialisation de mot de passe.
 
-```bash
-npm run dev        # développement
-npm run build      # build production
-npm run start      # lancement production
-npm run lint       # lint
-npm test           # tests unitaires/intégration (vitest run)
-npm run test:watch # tests en watch
-```
+### Optimisation & Debug
+- `SERVER_TIMING_LOGS` : Performance profiling côté serveur.
+- `SERVER_AUDIT_LOGS` : Sécurité et traçabilité des actions critiques.
+- `DB_SLOW_QUERY_MS` : Seuil de détection des requêtes lentes (défaut: 200ms).
 
-## API externe
+### Personnalisation RGPD
+- `PRIVACY_CONTROLLER_NAME`, `PRIVACY_CONTACT_EMAIL`, `PRIVACY_PROJECT_LABEL`, etc.
+</details>
 
-FOREM-idable expose une API externe en lecture seule pour les comptes `coach` et `admin`.
+---
 
-Scopes actuels:
+## 📖 API & Documentation
 
-- `admin`: accès global à toutes les données du suivi coach
-- `coach`: accès limité aux groupes qui lui sont attribués et aux bénéficiaires visibles dans ces groupes
+FOREM-idable expose une API REST robuste (lecture seule) pour les besoins d'intégration des comptes `coach` et `admin`.
 
-Cas d'usage principaux:
+- **Scopes :** Permissions granulaires selon le groupe de bénéficiaires.
+- **Cas d'usage :** Power Query, Excel, reporting JSON/CSV.
+- **Auth :** Clés API via header `Authorization: Bearer ...`.
 
-- export Excel / Power Query
-- intégration no-code
-- reporting JSON / CSV
-- extraction par utilisateur, groupe ou candidatures filtrées
+👉 [Consulter la documentation API complète](./DOCAPI.md)
 
-Authentification:
+---
 
-- génération d'une clé API depuis `Mon compte`
-- utilisation via header `Authorization: Bearer ...`
+## 🌐 Sources API
 
-Le contrat actuel expose aussi les coachs attribués et le manager de chaque groupe, et applique le même périmètre de visibilité que le dashboard coach.
+- **Forem Open Data (ODWB) :** Données brutes des offres.
+- **Nomenclature Localisations :** API officielle Le Forem.
+- **Adzuna (Optionnel) :** Provider secondaire international.
 
-Documentation complète:
+---
 
-- [DOCAPI.md](./DOCAPI.md)
+## 🗺️ Roadmap & Évolutions
 
-## Synchronisation calendrier coach
+- [ ] Support de providers additionnels (LinkedIn, Indeed).
+- [ ] IA : Résumé automatique des offres et extraction de compétences clés.
+- [ ] Application mobile (PWA) pour les notifications push de relances.
+- [ ] Export PDF personnalisé des bilans de recherche pour les institutions.
 
-Les comptes `coach` et `admin` peuvent générer des liens d'abonnement calendrier depuis la page `Suivi coach`.
+---
 
-Cas d'usage:
+## 📄 Licence
 
-- abonnement Google Calendar / Outlook / Apple Calendar
-- synchronisation des entretiens planifiés d'un groupe
-- calendrier global regroupant tous les groupes bénéficiaires
+Distribué sous licence **MIT**.  
+Copyright (c) 2026 **Jordi Brisbois**
 
-Règles actuelles:
-
-- un lien par groupe standard peut être copié depuis `Suivi coach`
-- un lien global "tous les groupes bénéficiaires" est disponible
-- le lien global ne contient que les groupes bénéficiaires réellement visibles par le compte courant
-- la régénération d'un lien invalide les anciens abonnements
-- la régénération est réservée aux comptes `admin`
-
-Important:
-
-- la mise à jour n'est pas instantanée: Google Calendar décide lui-même de la fréquence de rafraîchissement des flux ICS
-- si un entretien est ajouté, modifié ou supprimé, le flux source est immédiatement à jour côté FOREM-idable, mais l'agenda abonné peut mettre un certain temps à refléter le changement
-
-## Import CSV coach
-
-Les comptes `coach` et `admin` peuvent importer un suivi existant directement depuis le sidepanel d'un bénéficiaire.
-
-Fonctionnalités actuelles:
-
-- import `CSV` depuis `Suivi des bénéficiaires`
-- modèle CSV téléchargeable
-- auto-détection des colonnes les plus courantes
-- mapping manuel si les en-têtes diffèrent
-- choix explicite du format de date (`JJ-MM-AAAA` ou `MM-DD-YYYY`, avec `-` ou `/`, année sur 2 ou 4 chiffres)
-- correction manuelle des statuts non reconnus avant import
-- détection des doublons dans le fichier importé
-- mise à jour des candidatures existantes au lieu de créer un doublon si la candidature est déjà présente en base
-
-Les lignes importées sont créées comme candidatures manuelles.
-
-Le projet étant open source sous licence MIT, il peut aussi être self-hosted si un hébergement interne est requis pour des raisons de sécurité ou de conformité.
-
-## Sources API
-
-- Forem Open Data (ODWB):
-  - `https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem`
-- Nomenclature des localisations Forem:
-  - `https://www.leforem.be/recherche-offres/api/Nomenclature/Localisations`
-- PDF offre Forem (proxy interne):
-  - `https://www.leforem.be/recherche-offres/api/Document/PDF/{offreId}`
-- Adzuna (optionnel):
-  - `https://developer.adzuna.com/docs/search`
-
-## Licence
-
-MIT  
-Copyright (c) 2026 Jordi Brisbois
+---
+*Fait avec ❤️ pour simplifier la recherche d'emploi en Belgique.*
