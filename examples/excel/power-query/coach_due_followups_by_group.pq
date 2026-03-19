@@ -20,17 +20,42 @@ let
         ]
     ),
     PromotedHeaders = Table.PromoteHeaders(CsvData, [PromoteAllScalars = true]),
-    Typed = Table.TransformColumnTypes(
+    TypedNumbers = Table.TransformColumnTypes(
         PromotedHeaders,
         {
-            {"User ID", Int64.Type},
-            {"Date envoyee", type datetime},
-            {"Date relance", type datetime},
-            {"Derniere relance", type datetime},
-            {"Date entretien", type datetime},
-            {"Mis a jour le", type datetime}
+            {"User ID", Int64.Type}
         },
         "fr-FR"
+    ),
+    ParsedDates = Table.TransformColumns(
+        TypedNumbers,
+        {
+            {
+                "Date envoyée",
+                each try DateTimeZone.RemoveZone(DateTimeZone.FromText(Text.BeforeDelimiter(_, " ("), [Culture = "en-US"])) otherwise null,
+                type datetime
+            },
+            {
+                "Date relance",
+                each try DateTimeZone.RemoveZone(DateTimeZone.FromText(Text.BeforeDelimiter(_, " ("), [Culture = "en-US"])) otherwise null,
+                type datetime
+            },
+            {
+                "Dernière relance",
+                each try DateTimeZone.RemoveZone(DateTimeZone.FromText(Text.BeforeDelimiter(_, " ("), [Culture = "en-US"])) otherwise null,
+                type datetime
+            },
+            {
+                "Date entretien",
+                each try DateTimeZone.RemoveZone(DateTimeZone.FromText(Text.BeforeDelimiter(_, " ("), [Culture = "en-US"])) otherwise null,
+                type datetime
+            },
+            {
+                "Mis à jour le",
+                each try DateTimeZone.RemoveZone(DateTimeZone.FromText(Text.BeforeDelimiter(_, " ("), [Culture = "en-US"])) otherwise null,
+                type datetime
+            }
+        }
     )
 in
-    Typed
+    ParsedDates

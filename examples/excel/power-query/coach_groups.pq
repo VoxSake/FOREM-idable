@@ -19,17 +19,26 @@ let
         ]
     ),
     PromotedHeaders = Table.PromoteHeaders(CsvData, [PromoteAllScalars = true]),
-    Typed = Table.TransformColumnTypes(
+    TypedNumbers = Table.TransformColumnTypes(
         PromotedHeaders,
         {
             {"ID groupe", Int64.Type},
             {"Nombre de coachs", Int64.Type},
             {"Membres", Int64.Type},
             {"Candidatures", Int64.Type},
-            {"Entretiens", Int64.Type},
-            {"Cree le", type datetime}
+            {"Entretiens", Int64.Type}
         },
         "fr-FR"
+    ),
+    ParsedDates = Table.TransformColumns(
+        TypedNumbers,
+        {
+            {
+                "Créé le",
+                each try DateTimeZone.RemoveZone(DateTimeZone.FromText(Text.BeforeDelimiter(_, " ("), [Culture = "en-US"])) otherwise null,
+                type datetime
+            }
+        }
     )
 in
-    Typed
+    ParsedDates
