@@ -103,6 +103,21 @@ export default function ApplicationsPage() {
   const dueCount = applications.filter(
     (entry) => isApplicationFollowUpDue(entry)
   ).length;
+  const dueSummary = useMemo(() => {
+    const companyNames = applications
+      .filter((entry) => isApplicationFollowUpDue(entry))
+      .map((entry) => entry.job.company?.trim())
+      .filter((company): company is string => Boolean(company));
+
+    const uniqueCompanies = [...new Set(companyNames)];
+    if (uniqueCompanies.length === 0) return "établissement non renseigné";
+
+    const visibleCompanies = uniqueCompanies.slice(0, 3);
+    const remainingCount = uniqueCompanies.length - visibleCompanies.length;
+
+    if (remainingCount <= 0) return visibleCompanies.join(", ");
+    return `${visibleCompanies.join(", ")} + ${remainingCount} autre${remainingCount > 1 ? "s" : ""}`;
+  }, [applications]);
   const upcomingInterviewCount = applications.filter((entry) => {
     if (!entry.interviewAt) return false;
     const interviewDate = new Date(entry.interviewAt);
@@ -344,6 +359,7 @@ export default function ApplicationsPage() {
         displayedCount={filteredApplications.length}
         totalCount={applications.length}
         dueCount={dueCount}
+        dueSummary={dueSummary}
         selectedCount={selectedJobIds.size}
         canExportCalendar={filteredApplications.some((entry) => entry.interviewAt)}
         onCreateManual={() => setIsCreateOpen(true)}

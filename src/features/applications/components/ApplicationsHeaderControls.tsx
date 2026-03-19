@@ -14,6 +14,7 @@ interface ApplicationsHeaderControlsProps {
   displayedCount: number;
   totalCount: number;
   dueCount: number;
+  dueSummary: string;
   selectedCount: number;
   canExportCalendar: boolean;
   onCreateManual: () => void;
@@ -26,6 +27,7 @@ export function ApplicationsHeaderControls({
   displayedCount,
   totalCount,
   dueCount,
+  dueSummary,
   selectedCount,
   canExportCalendar,
   onCreateManual,
@@ -42,7 +44,9 @@ export function ApplicationsHeaderControls({
           {displayedCount !== totalCount ? ` sur ${totalCount}` : ""}
         </p>
         <p className="text-sm font-medium text-foreground">
-          {dueCount > 0 ? `${dueCount} relance${dueCount > 1 ? "s" : ""} à faire` : "Aucune relance urgente"}
+          {dueCount > 0
+            ? `${dueCount} relance${dueCount > 1 ? "s" : ""} à faire : ${dueSummary}`
+            : "Aucune relance urgente"}
         </p>
       </div>
       <div className="flex w-full flex-wrap items-center gap-2 self-start sm:w-auto sm:self-auto">
