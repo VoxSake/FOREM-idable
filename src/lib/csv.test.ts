@@ -13,4 +13,11 @@ describe("csv helpers", () => {
   it("escapes quotes and line breaks for csv", () => {
     expect(escapeCsvCell('bonjour "monde"\nligne')).toBe('"bonjour ""monde"" ligne"');
   });
+
+  it("coerces non-string values safely", () => {
+    expect(escapeCsvCell(null)).toBe('""');
+    expect(escapeCsvCell(undefined)).toBe('""');
+    expect(escapeCsvCell(42)).toBe('"42"');
+    expect(escapeCsvCell(false)).toBe('"false"');
+  });
 });
