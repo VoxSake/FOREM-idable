@@ -126,7 +126,7 @@ export function ApplicationCard({
           <div className="space-y-2">
             <select
               className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-              value={application.status}
+              value={displayStatus}
               onClick={(event) => event.stopPropagation()}
               onChange={(event) => onApplyStatus(application.job.id, event.target.value as ApplicationStatus)}
             >

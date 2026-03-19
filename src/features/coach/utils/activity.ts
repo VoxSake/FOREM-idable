@@ -89,9 +89,12 @@ export function buildCoachRecentActivity(
 export interface CoachPriorityItem {
   id: string;
   userId: number;
+  jobId: string | null;
   userName: string;
   userEmail: string;
   groupLabel: string;
+  badgeLabel: string;
+  badgeTitle?: string;
   summary: string;
   detail: string;
   timestamp: string | null;
@@ -135,22 +138,38 @@ export function buildCoachPrioritySections(
       }
 
       const oldestDue = dueApplications
-        .map((application) => parseTimestamp(application.followUpDueAt))
-        .filter((value): value is number => value !== null)
-        .sort((left, right) => left - right)[0];
+        .map((application) => ({
+          application,
+          time: parseTimestamp(application.followUpDueAt),
+        }))
+        .filter((entry): entry is { application: typeof dueApplications[number]; time: number } => entry.time !== null)
+        .sort((left, right) => left.time - right.time)[0];
+      const oldestDueApplication = oldestDue?.application;
+      const oldestDueTime = oldestDue?.time;
+      const oldestDueCompany = oldestDueApplication?.job.company || "Entreprise non précisée";
+      const dueBadgeLabel =
+        dueApplications.length > 1 ? `${oldestDueCompany} + ${dueApplications.length - 1}` : oldestDueCompany;
 
       return {
         id: `due-${user.id}`,
         userId: user.id,
+        jobId: oldestDueApplication?.job.id ?? null,
         userName: getCoachUserDisplayName(user),
         userEmail: user.email,
         groupLabel: user.groupNames[0] ?? "Aucun groupe",
+        badgeLabel: dueBadgeLabel,
+        badgeTitle:
+          dueApplications.length > 1
+            ? dueApplications
+                .map((application) => application.job.company || "Entreprise non précisée")
+                .join(", ")
+            : oldestDueCompany,
         summary: `${dueApplications.length} relance${dueApplications.length > 1 ? "s" : ""} due${dueApplications.length > 1 ? "s" : ""}`,
         detail:
-          oldestDue !== undefined
-            ? `Plus ancienne le ${formatCoachDate(new Date(oldestDue).toISOString())}`
+          oldestDueTime !== undefined
+            ? `Plus ancienne le ${formatCoachDate(new Date(oldestDueTime).toISOString())}`
             : "Relance due à vérifier",
-        timestamp: oldestDue ? new Date(oldestDue).toISOString() : null,
+        timestamp: oldestDueTime ? new Date(oldestDueTime).toISOString() : null,
       } satisfies CoachPriorityItem;
     })
     .filter((item): item is CoachPriorityItem => item !== null)
@@ -176,22 +195,41 @@ export function buildCoachPrioritySections(
       }
 
       const earliestInterview = upcomingInterviews
-        .map((application) => parseTimestamp(application.interviewAt))
-        .filter((value): value is number => value !== null)
-        .sort((left, right) => left - right)[0];
+        .map((application) => ({
+          application,
+          time: parseTimestamp(application.interviewAt),
+        }))
+        .filter((entry): entry is { application: typeof upcomingInterviews[number]; time: number } => entry.time !== null)
+        .sort((left, right) => left.time - right.time)[0];
+      const earliestInterviewApplication = earliestInterview?.application;
+      const earliestInterviewTime = earliestInterview?.time;
+      const earliestInterviewCompany =
+        earliestInterviewApplication?.job.company || "Entreprise non précisée";
+      const interviewBadgeLabel =
+        upcomingInterviews.length > 1
+          ? `${earliestInterviewCompany} + ${upcomingInterviews.length - 1}`
+          : earliestInterviewCompany;
 
       return {
         id: `interview-${user.id}`,
         userId: user.id,
+        jobId: earliestInterviewApplication?.job.id ?? null,
         userName: getCoachUserDisplayName(user),
         userEmail: user.email,
         groupLabel: user.groupNames[0] ?? "Aucun groupe",
+        badgeLabel: interviewBadgeLabel,
+        badgeTitle:
+          upcomingInterviews.length > 1
+            ? upcomingInterviews
+                .map((application) => application.job.company || "Entreprise non précisée")
+                .join(", ")
+            : earliestInterviewCompany,
         summary: `${upcomingInterviews.length} entretien${upcomingInterviews.length > 1 ? "s" : ""} à venir`,
         detail:
-          earliestInterview !== undefined
-            ? `Prochain le ${formatCoachDate(new Date(earliestInterview).toISOString(), true)}`
+          earliestInterviewTime !== undefined
+            ? `Prochain le ${formatCoachDate(new Date(earliestInterviewTime).toISOString(), true)}`
             : "Entretien programmé à vérifier",
-        timestamp: earliestInterview ? new Date(earliestInterview).toISOString() : null,
+        timestamp: earliestInterviewTime ? new Date(earliestInterviewTime).toISOString() : null,
       } satisfies CoachPriorityItem;
     })
     .filter((item): item is CoachPriorityItem => item !== null)
@@ -208,9 +246,12 @@ export function buildCoachPrioritySections(
       return {
         id: `inactive-${user.id}`,
         userId: user.id,
+        jobId: null,
         userName: getCoachUserDisplayName(user),
         userEmail: user.email,
         groupLabel: user.groupNames[0] ?? "Aucun groupe",
+        badgeLabel: user.groupNames[0] ?? "Aucun groupe",
+        badgeTitle: user.groupNames[0] ?? "Aucun groupe",
         summary: latestActivityTime
           ? `Inactif depuis ${differenceInCalendarDays(now, new Date(latestActivityTime))} jours`
           : "Aucune activité enregistrée",

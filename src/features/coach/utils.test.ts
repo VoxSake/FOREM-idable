@@ -82,8 +82,12 @@ describe("buildCoachPrioritySections", () => {
 
     expect(sections[0].total).toBe(1);
     expect(sections[0].items[0]?.summary).toContain("2 relances");
+    expect(sections[0].items[0]?.jobId).toBe("job-1");
+    expect(sections[0].items[0]?.badgeLabel).toBe("Acme + 1");
     expect(sections[1].total).toBe(1);
     expect(sections[1].items[0]?.detail).toContain("20 mars 2026");
+    expect(sections[1].items[0]?.jobId).toBe("job-1");
+    expect(sections[1].items[0]?.badgeLabel).toBe("Acme");
   });
 
   it("flags inactive beneficiaries with applications after 14 days", () => {

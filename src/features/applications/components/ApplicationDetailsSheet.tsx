@@ -338,7 +338,7 @@ function ApplicationDetailsSheetBody({
           <p className="font-medium">Statut</p>
           <select
             className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-            value={application.status}
+            value={displayStatus}
             onChange={(event) => onApplyStatus(application.job.id, event.target.value as ApplicationStatus)}
           >
             <option value="in_progress">En cours</option>

@@ -94,7 +94,13 @@ export default function CoachPage() {
       ) : (
         <>
           <div id="a-traiter" className="scroll-mt-6">
-            <CoachPriorityBoard sections={prioritySections} onOpenUser={coach.setSelectedUserId} />
+            <CoachPriorityBoard
+              sections={prioritySections}
+              onOpenUser={(userId, jobId) => {
+                setActivityTargetJobId(jobId ?? null);
+                coach.setSelectedUserId(userId);
+              }}
+            />
           </div>
           <CoachRecentActivity
             items={coach.recentActivity}

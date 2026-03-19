@@ -6,7 +6,7 @@ import { CoachPrioritySection } from "@/features/coach/utils";
 
 interface CoachPriorityBoardProps {
   sections: CoachPrioritySection[];
-  onOpenUser: (userId: number) => void;
+  onOpenUser: (userId: number, jobId?: string | null) => void;
 }
 
 const SECTION_META: Record<
@@ -68,7 +68,7 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                       key={item.id}
                       type="button"
                       className="flex w-full items-start justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 text-left transition hover:border-primary/30 hover:bg-muted/40"
-                      onClick={() => onOpenUser(item.userId)}
+                      onClick={() => onOpenUser(item.userId, item.jobId)}
                     >
                       <div className="min-w-0 space-y-1">
                         <p className="truncate font-medium text-foreground">{item.userName}</p>
@@ -76,8 +76,12 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                         <p className="text-xs text-muted-foreground">{item.detail}</p>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
-                        <Badge variant="outline" className="max-w-[9rem] truncate">
-                          {item.groupLabel}
+                        <Badge
+                          variant="outline"
+                          className="max-w-[10rem] truncate"
+                          title={item.badgeTitle ?? item.badgeLabel}
+                        >
+                          {item.badgeLabel}
                         </Badge>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
