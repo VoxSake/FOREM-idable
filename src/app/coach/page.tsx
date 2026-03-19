@@ -153,6 +153,7 @@ export default function CoachPage() {
       </div>
 
       <CoachUserSheet
+        key={`${coach.selectedUser?.id ?? "none"}:${activityTargetJobId ?? "base"}`}
         currentUserId={coach.user.id}
         isAdmin={coach.user.role === "admin"}
         canEditUser={coach.canEditSelectedUser}
