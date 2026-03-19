@@ -30,6 +30,15 @@ interface CoachDashboardFilters {
   search?: string | null;
 }
 
+function toNumericId(value: number | string | null | undefined) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 function canCoach(role: UserRole) {
   return role === "coach" || role === "admin";
 }
@@ -77,7 +86,9 @@ async function getManagedGroupIdsForCoach(userId: number) {
     [userId]
   );
 
-  return result.rows.map((row) => row.group_id);
+  return result.rows
+    .map((row) => toNumericId(row.group_id))
+    .filter((groupId): groupId is number => groupId !== null);
 }
 
 export async function canManageCoachGroup(actor: CoachCapableUser, groupId: number) {
@@ -287,26 +298,33 @@ export async function getCoachDashboard(
 
   const visibleGroupIds =
     viewer.role === "admin"
-      ? new Set(groupsResult.rows.map((row) => row.id))
+      ? new Set(
+          groupsResult.rows
+            .map((row) => toNumericId(row.id))
+            .filter((groupId): groupId is number => groupId !== null)
+        )
       : new Set(managedGroupIds);
 
   const groupsById = new Map<number, CoachGroupSummary>();
   for (const row of groupsResult.rows) {
-    if (!visibleGroupIds.has(row.id)) {
+    const groupId = toNumericId(row.id);
+    const createdById = toNumericId(row.created_by);
+    const managerCoachId = toNumericId(row.manager_coach_user_id);
+    if (groupId === null || createdById === null || !visibleGroupIds.has(groupId)) {
       continue;
     }
 
-    groupsById.set(row.id, {
-      id: row.id,
+    groupsById.set(groupId, {
+      id: groupId,
       name: row.name,
       createdAt: row.created_at,
       createdBy: {
-        id: row.created_by,
+        id: createdById,
         email: row.created_by_email,
         firstName: row.created_by_first_name,
         lastName: row.created_by_last_name,
       },
-      managerCoachId: row.manager_coach_user_id,
+      managerCoachId,
       members: [],
       coaches: [],
     });
@@ -315,12 +333,16 @@ export async function getCoachDashboard(
   const groupIdsByUser = new Map<number, number[]>();
   const groupNamesByUser = new Map<number, string[]>();
   for (const row of coachesResult.rows) {
-    const group = groupsById.get(row.group_id);
+    const groupId = toNumericId(row.group_id);
+    const userId = toNumericId(row.user_id);
+    if (groupId === null || userId === null) continue;
+
+    const group = groupsById.get(groupId);
     if (!group) continue;
 
     group.coaches.push(
       toGroupParticipant({
-        id: row.user_id,
+        id: userId,
         email: row.email,
         first_name: row.first_name,
         last_name: row.last_name,
@@ -331,12 +353,16 @@ export async function getCoachDashboard(
   }
 
   for (const row of membersResult.rows) {
-    const group = groupsById.get(row.group_id);
+    const groupId = toNumericId(row.group_id);
+    const userId = toNumericId(row.user_id);
+    if (groupId === null || userId === null) continue;
+
+    const group = groupsById.get(groupId);
     if (!group) continue;
 
     group.members.push(
       toGroupParticipant({
-        id: row.user_id,
+        id: userId,
         email: row.email,
         first_name: row.first_name,
         last_name: row.last_name,
@@ -344,19 +370,22 @@ export async function getCoachDashboard(
       })
     );
 
-    groupIdsByUser.set(row.user_id, [...(groupIdsByUser.get(row.user_id) ?? []), row.group_id]);
-    groupNamesByUser.set(row.user_id, [...(groupNamesByUser.get(row.user_id) ?? []), group.name]);
+    groupIdsByUser.set(userId, [...(groupIdsByUser.get(userId) ?? []), groupId]);
+    groupNamesByUser.set(userId, [...(groupNamesByUser.get(userId) ?? []), group.name]);
   }
 
   const scopedUserRows = usersResult.rows.filter((row) => {
-    const groupIds = groupIdsByUser.get(row.id) ?? [];
-    const groupNames = groupNamesByUser.get(row.id) ?? [];
+    const userId = toNumericId(row.id);
+    if (userId === null) return false;
+
+    const groupIds = groupIdsByUser.get(userId) ?? [];
+    const groupNames = groupNamesByUser.get(userId) ?? [];
 
     if (viewer.role !== "admin" && groupIds.length === 0) {
       return false;
     }
 
-    if (filters.userId && row.id !== filters.userId) return false;
+    if (filters.userId && userId !== filters.userId) return false;
     if (filters.groupId && !groupIds.includes(filters.groupId)) return false;
     if (filters.role && row.role !== filters.role) return false;
 
@@ -366,7 +395,9 @@ export async function getCoachDashboard(
     );
   });
 
-  const scopedUserIds = scopedUserRows.map((row) => row.id);
+  const scopedUserIds = scopedUserRows
+    .map((row) => toNumericId(row.id))
+    .filter((userId): userId is number => userId !== null);
   const applicationsByUser = new Map<number, JobApplication[]>();
 
   if (scopedUserIds.length > 0) {
@@ -382,30 +413,36 @@ export async function getCoachDashboard(
     );
 
     for (const row of applicationsResult.rows) {
+      const userId = toNumericId(row.user_id);
+      if (userId === null) continue;
       const application = safeParseStoredJobApplication(
         row.application,
-        `coach-dashboard:${row.user_id}`
+        `coach-dashboard:${userId}`
       );
       if (!application) continue;
 
-      applicationsByUser.set(row.user_id, [
-        ...(applicationsByUser.get(row.user_id) ?? []),
+      applicationsByUser.set(userId, [
+        ...(applicationsByUser.get(userId) ?? []),
         normalizeApplicationCoachNotes(application),
       ]);
     }
   }
 
   const users: CoachUserSummary[] = scopedUserRows.map((row) => {
-    const applications = applicationsByUser.get(row.id) ?? [];
+    const userId = toNumericId(row.id);
+    if (userId === null) {
+      throw new Error("Invalid user id in coach dashboard");
+    }
+    const applications = applicationsByUser.get(userId) ?? [];
 
     return {
-      id: row.id,
+      id: userId,
       email: row.email,
       firstName: row.first_name,
       lastName: row.last_name,
       role: row.role,
-      groupIds: groupIdsByUser.get(row.id) ?? [],
-      groupNames: groupNamesByUser.get(row.id) ?? [],
+      groupIds: groupIdsByUser.get(userId) ?? [],
+      groupNames: groupNamesByUser.get(userId) ?? [],
       ...buildCoachApplicationSummary(applications),
       lastSeenAt: row.last_seen_at,
       lastCoachActionAt: row.last_coach_action_at,
@@ -419,15 +456,18 @@ export async function getCoachDashboard(
     groups: Array.from(groupsById.values()),
     availableCoaches: usersResult.rows
       .filter((row) => row.role === "coach")
-      .map((row) =>
-        toGroupParticipant({
-          id: row.id,
+      .map((row) => {
+        const coachId = toNumericId(row.id);
+        if (coachId === null) return null;
+        return toGroupParticipant({
+          id: coachId,
           email: row.email,
           first_name: row.first_name,
           last_name: row.last_name,
           role: row.role,
-        })
-      ),
+        });
+      })
+      .filter((row): row is CoachGroupMember => Boolean(row)),
   };
 }
 

@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildGroupsCsv,
+  getExternalApplications,
   getExternalGroupDetail,
   getExternalGroups,
   getExternalUserDetail,
+  getExternalUsers,
 } from "@/lib/server/externalApi";
 import { getCoachDashboard } from "@/lib/server/coach";
 import { CoachDashboardData } from "@/types/coach";
@@ -205,5 +207,47 @@ describe("externalApi", () => {
     expect(csv).toContain("Nombre de coachs");
     expect(csv).toContain("Jordi Brisbois");
     expect(csv).toContain("Alex Martin");
+  });
+
+  it("filters users and applications by numeric groupId even when ids were serialized as strings upstream", async () => {
+    mockedGetCoachDashboard.mockResolvedValueOnce({
+      ...dashboardFixture,
+      users: [
+        {
+          ...dashboardFixture.users[0],
+          id: 21 as unknown as number,
+          groupIds: ["5"] as unknown as number[],
+        },
+      ],
+      groups: [
+        {
+          ...dashboardFixture.groups[0],
+          id: "5" as unknown as number,
+          createdBy: {
+            id: "1" as unknown as number,
+            email: "admin@example.com",
+          },
+          managerCoachId: "11" as unknown as number,
+          members: [
+            {
+              ...dashboardFixture.groups[0].members[0],
+              id: "21" as unknown as number,
+            },
+          ],
+          coaches: [
+            {
+              ...dashboardFixture.groups[0].coaches[0],
+              id: "11" as unknown as number,
+            },
+          ],
+        },
+      ],
+    });
+
+    const usersResponse = await getExternalUsers(actor, { groupId: 5 });
+    const applicationsResponse = await getExternalApplications(actor, { groupId: 5 });
+
+    expect(usersResponse.users).toHaveLength(1);
+    expect(applicationsResponse.applications).toHaveLength(0);
   });
 });
