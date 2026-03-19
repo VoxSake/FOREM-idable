@@ -1,6 +1,5 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,6 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ApplicationStatus } from "@/types/application";
 
 export interface ManualApplicationFormState {
@@ -52,86 +61,92 @@ export function ManualApplicationDialog({
         </DialogHeader>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Entreprise</label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Entreprise</span>
             <Input
               value={form.company}
               onChange={(event) => onFormChange({ ...form, company: event.target.value })}
               placeholder="Nom de l'entreprise"
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Type</label>
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Type</span>
             <Input
               value={form.contractType}
               onChange={(event) => onFormChange({ ...form, contractType: event.target.value })}
               placeholder="CDI, CDD, intérim..."
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <label className="text-sm font-medium">Intitulé</label>
+          </label>
+          <label className="flex flex-col gap-2 sm:col-span-2">
+            <span className="text-sm font-medium">Intitulé</span>
             <Input
               value={form.title}
               onChange={(event) => onFormChange({ ...form, title: event.target.value })}
               placeholder="Titre du poste"
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Lieu</label>
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Lieu</span>
             <Input
               value={form.location}
               onChange={(event) => onFormChange({ ...form, location: event.target.value })}
               placeholder="Ville ou région"
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Date envoyée</label>
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Date envoyée</span>
             <Input
               type="date"
               value={form.appliedAt}
               onChange={(event) => onFormChange({ ...form, appliedAt: event.target.value })}
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Statut</label>
-            <select
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Statut</span>
+            <Select
               value={form.status}
-              onChange={(event) => onFormChange({ ...form, status: event.target.value as ApplicationStatus })}
+              onValueChange={(value) => onFormChange({ ...form, status: value as ApplicationStatus })}
             >
-              <option value="in_progress">En cours</option>
-              <option value="follow_up">Relance à faire</option>
-              <option value="interview">Entretien</option>
-              <option value="accepted">Acceptée</option>
-              <option value="rejected">Refusée</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Lien de l&apos;offre</label>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choisir un statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="follow_up">Relance à faire</SelectItem>
+                  <SelectItem value="interview">Entretien</SelectItem>
+                  <SelectItem value="accepted">Acceptée</SelectItem>
+                  <SelectItem value="rejected">Refusée</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Lien de l&apos;offre</span>
             <Input
               value={form.url}
               onChange={(event) => onFormChange({ ...form, url: event.target.value })}
               placeholder="https://..."
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <label className="text-sm font-medium">Notes</label>
-            <textarea
-              className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
+          </label>
+          <label className="flex flex-col gap-2 sm:col-span-2">
+            <span className="text-sm font-medium">Notes</span>
+            <Textarea
+              className="min-h-24"
               value={form.notes}
               onChange={(event) => onFormChange({ ...form, notes: event.target.value })}
               placeholder="Contexte, contact RH, retour, salaire..."
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <label className="text-sm font-medium">Pièces / références</label>
-            <textarea
-              className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
+          </label>
+          <label className="flex flex-col gap-2 sm:col-span-2">
+            <span className="text-sm font-medium">Pièces / références</span>
+            <Textarea
+              className="min-h-24"
               value={form.proofs}
               onChange={(event) => onFormChange({ ...form, proofs: event.target.value })}
               placeholder="Lien mail, capture, référence de refus..."
             />
-          </div>
+          </label>
         </div>
 
         <DialogFooter>

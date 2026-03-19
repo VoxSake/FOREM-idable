@@ -18,7 +18,14 @@ import { JobDetailsSheet } from "@/features/jobs/components/JobDetailsSheet";
 import { useApplications } from "@/hooks/useApplications";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthRequiredDialog } from "@/components/auth/AuthRequiredDialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 function DashboardPageContent() {
   const router = useRouter();
@@ -142,18 +149,18 @@ function DashboardPageContent() {
       />
 
       {!user ? (
-        <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/20 dark:text-sky-100">
-          <p className="font-medium">Connectez-vous pour aller plus loin.</p>
-          <p className="mt-1 text-sky-800/90 dark:text-sky-100/80">
-            Le compte permet de suivre les candidatures, conserver l&apos;historique de recherche,
-            retrouver vos données sur tous vos appareils et partager l&apos;avancement avec un coach.
-          </p>
-          <div className="mt-3">
+        <Alert className="bg-card">
+          <AlertTitle>Connectez-vous pour aller plus loin.</AlertTitle>
+          <AlertDescription className="gap-3">
+            <p>
+              Le compte permet de suivre les candidatures, conserver l&apos;historique de recherche,
+              retrouver vos données sur tous vos appareils et partager l&apos;avancement avec un coach.
+            </p>
             <Button type="button" size="sm" onClick={() => setIsAuthRequiredOpen(true)}>
               Connexion / création de compte
             </Button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       {user && isHistoryLoaded && (
@@ -224,9 +231,15 @@ function DashboardPageContent() {
       )}
 
       {!hasSearched && (
-        <div className="h-64 flex flex-col items-center justify-center space-y-4 bg-card/50 rounded-xl border border-dashed border-border mt-8">
-          <p className="text-muted-foreground font-medium">Effectuez une recherche pour commencer.</p>
-        </div>
+        <Empty className="mt-8 min-h-64 bg-card/50">
+          <EmptyHeader>
+            <EmptyTitle>Effectuez une recherche pour commencer.</EmptyTitle>
+            <EmptyDescription>
+              Lance une première recherche pour afficher les offres, l&apos;historique et les actions
+              d&apos;export.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
 
       <ExportDialog

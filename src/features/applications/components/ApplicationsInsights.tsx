@@ -1,8 +1,22 @@
 "use client";
 
 import { Filter, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ApplicationStatus } from "@/types/application";
 import { ApplicationModeFilter } from "@/features/applications/utils";
 
@@ -45,31 +59,31 @@ export function ApplicationsInsights({
     {
       label: "En suivi",
       value: totalCount,
-      valueClassName: "",
+      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
       label: "Relances dues",
       value: dueCount,
-      valueClassName: "text-amber-700 dark:text-amber-300",
+      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
       label: "Entretiens à venir",
       value: upcomingInterviewCount,
-      valueClassName: "text-sky-700 dark:text-sky-300",
+      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
       label: "Clôturées",
       value: closedCount,
-      valueClassName: "text-emerald-700 dark:text-emerald-300",
+      valueClassName: "text-foreground",
       fullWidth: false,
     },
     {
       label: "Retours coach",
       value: coachUpdateCount,
-      valueClassName: "text-sky-700 dark:text-sky-300",
+      valueClassName: "text-foreground",
       fullWidth: coachUpdateCount > 0,
       hint:
         coachUpdateCount > 0
@@ -82,64 +96,83 @@ export function ApplicationsInsights({
     <>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {stats.map((stat) => (
-          <div
+          <Card
             key={stat.label}
-            className={`rounded-xl border bg-card p-3 shadow-sm sm:p-4 ${
+            className={`gap-0 py-0 ${
               stat.fullWidth ? "col-span-2 lg:col-span-5" : ""
             }`}
           >
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground sm:text-xs">
-              {stat.label}
-            </p>
-            <p className={`mt-1 text-2xl font-black sm:mt-2 ${stat.valueClassName}`}>
-              {stat.value}
-            </p>
-            {stat.hint ? (
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{stat.hint}</p>
-            ) : null}
-          </div>
+            <CardHeader className="gap-1 p-3 sm:p-4">
+              <CardTitle className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:text-xs">
+                {stat.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4">
+              <p className={`text-2xl font-black ${stat.valueClassName}`}>{stat.value}</p>
+              {stat.hint ? (
+                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{stat.hint}</p>
+              ) : null}
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <div className="rounded-xl border bg-card p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Rechercher une entreprise, un poste, une note..."
-              className="pl-9"
-            />
+      <Card className="gap-0 py-0">
+        <CardContent className="p-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder="Rechercher une entreprise, un poste, une note..."
+                className="pl-9"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => onStatusFilterChange(value as "all" | ApplicationStatus)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tous les statuts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="follow_up">Relance à faire</SelectItem>
+                  <SelectItem value="interview">Entretien</SelectItem>
+                  <SelectItem value="accepted">Acceptée</SelectItem>
+                  <SelectItem value="rejected">Refusée</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              value={modeFilter}
+              onValueChange={(value) => {
+                if (value) {
+                  onModeFilterChange(value as ApplicationModeFilter);
+                }
+              }}
+              className="flex w-full flex-wrap"
+            >
+              {QUICK_FILTERS.map((filter) => (
+                <ToggleGroupItem
+                  key={filter.value}
+                  value={filter.value}
+                  size="sm"
+                  aria-label={`Filtrer: ${filter.label}`}
+                >
+                  {filter.value === "all" ? <Filter data-icon="inline-start" /> : null}
+                  {filter.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
-          <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-            value={statusFilter}
-            onChange={(event) => onStatusFilterChange(event.target.value as "all" | ApplicationStatus)}
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="in_progress">En cours</option>
-            <option value="follow_up">Relance à faire</option>
-            <option value="interview">Entretien</option>
-            <option value="accepted">Acceptée</option>
-            <option value="rejected">Refusée</option>
-          </select>
-          <div className="flex flex-wrap gap-2">
-            {QUICK_FILTERS.map((filter) => (
-              <Button
-                key={filter.value}
-                type="button"
-                variant={modeFilter === filter.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => onModeFilterChange(filter.value)}
-              >
-                {filter.value === "all" ? <Filter className="mr-2 h-4 w-4" /> : null}
-                {filter.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

@@ -4,6 +4,14 @@ import { useCallback, useMemo, useState } from "react";
 import { format, isBefore } from "date-fns";
 import { BriefcaseBusiness, Clock3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { LocalPagination } from "@/components/ui/local-pagination";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AccountAccessPrompt } from "@/components/auth/AccountAccessPrompt";
@@ -422,23 +430,29 @@ export default function ApplicationsPage() {
           />
         </>
       ) : (
-        <div className="h-96 flex flex-col items-center justify-center space-y-4 bg-card rounded-xl border border-dashed border-border mt-8">
-          <BriefcaseBusiness className="w-12 h-12 text-muted-foreground/30" />
-          <p className="text-muted-foreground font-medium text-lg">
-            {applications.length === 0
-              ? "Aucune candidature suivie pour le moment."
-              : "Aucune candidature ne correspond aux filtres actuels."}
-          </p>
-          <p className="text-sm text-muted-foreground/70 text-center max-w-md">
-            {applications.length === 0
-              ? "Utilisez le bouton de candidature depuis les résultats ou encodez une candidature faite ailleurs."
-              : "Ajustez la recherche ou les filtres pour retrouver vos candidatures."}
-          </p>
+        <Empty className="mt-8 min-h-96 bg-card">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <BriefcaseBusiness />
+            </EmptyMedia>
+            <EmptyTitle>
+              {applications.length === 0
+                ? "Aucune candidature suivie pour le moment."
+                : "Aucune candidature ne correspond aux filtres actuels."}
+            </EmptyTitle>
+            <EmptyDescription>
+              {applications.length === 0
+                ? "Utilisez le bouton de candidature depuis les résultats ou encodez une candidature faite ailleurs."
+                : "Ajustez la recherche ou les filtres pour retrouver vos candidatures."}
+            </EmptyDescription>
+          </EmptyHeader>
           {applications.length === 0 ? (
-            <Button type="button" onClick={() => setIsCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Encoder une candidature externe
-            </Button>
+            <EmptyContent>
+              <Button type="button" onClick={() => setIsCreateOpen(true)}>
+                <Plus data-icon="inline-start" />
+                Encoder une candidature externe
+              </Button>
+            </EmptyContent>
           ) : (
             <Button
               type="button"
@@ -456,7 +470,7 @@ export default function ApplicationsPage() {
             <Clock3 className="h-3.5 w-3.5" />
             Les relances sont mises en avant 7 jours après l&apos;envoi.
           </div>
-        </div>
+        </Empty>
       )}
 
       <ApplicationDetailsSheet

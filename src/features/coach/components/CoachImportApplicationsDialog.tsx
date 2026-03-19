@@ -2,8 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Papa from "papaparse";
-import { Download, LoaderCircle, Upload } from "lucide-react";
+import { AlertCircleIcon, CheckCircle2Icon, Download, LoaderCircle, Upload } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +19,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const IMPORT_FIELDS = [
   { key: "company", label: "Entreprise", required: true },
@@ -316,157 +338,214 @@ export function CoachImportApplicationsDialog({
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
-          <div className="space-y-4">
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-muted/10 px-6 py-8 text-center">
-            <Upload className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm font-medium">Choisir un fichier CSV</span>
-            <span className="text-xs text-muted-foreground">
-              Un export Excel enregistré en CSV fonctionne très bien.
-            </span>
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
-            />
-          </label>
-          <div className="flex justify-start">
-            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
-              <Download className="mr-2 h-4 w-4" />
-              Télécharger un modèle CSV
-            </Button>
-          </div>
-
-          {headers.length > 0 ? (
-            <label className="block max-w-xs space-y-2">
-              <span className="text-sm font-medium">Format de date</span>
-              <select
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                value={dateFormat}
-                onChange={(event) => setDateFormat(event.target.value as ImportDateFormat)}
-              >
-                <option value="dmy">JJ-MM-AAAA / JJ/MM/AA</option>
-                <option value="mdy">MM-DD-YYYY / MM/DD/YY</option>
-              </select>
+          <div className="flex flex-col gap-4">
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-muted/10 px-6 py-8 text-center">
+              <Upload className="size-5 text-muted-foreground" />
+              <span className="text-sm font-medium">Choisir un fichier CSV</span>
+              <span className="text-xs text-muted-foreground">
+                Un export Excel enregistré en CSV fonctionne très bien.
+              </span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
+              />
             </label>
-          ) : null}
+            <div className="flex justify-start">
+              <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+                <Download data-icon="inline-start" />
+                Télécharger un modèle CSV
+              </Button>
+            </div>
 
-          {headers.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {IMPORT_FIELDS.map((field) => (
-                <label key={field.key} className="space-y-1">
-                  <span className="text-sm font-medium">
-                    {field.label}
-                    {field.required ? " *" : ""}
-                  </span>
-                  <select
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    value={mapping[field.key]}
-                    onChange={(event) =>
-                      setMapping((current) => ({
-                        ...current,
-                        [field.key]: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Ne pas importer</option>
-                    {headers.map((header) => (
-                      <option key={header} value={header}>
-                        {header}
-                      </option>
+            {headers.length > 0 ? (
+              <label className="flex max-w-xs flex-col gap-2">
+                <span className="text-sm font-medium">Format de date</span>
+                <Select
+                  value={dateFormat}
+                  onValueChange={(value) => setDateFormat(value as ImportDateFormat)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir le format de date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="dmy">JJ-MM-AAAA / JJ/MM/AA</SelectItem>
+                      <SelectItem value="mdy">MM-DD-YYYY / MM/DD/YY</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </label>
+            ) : null}
+
+            {headers.length > 0 ? (
+              <Card className="gap-4 py-0">
+                <CardHeader className="pb-0">
+                  <CardTitle>Associer les colonnes</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3 md:grid-cols-2">
+                  {IMPORT_FIELDS.map((field) => (
+                    <label key={field.key} className="flex flex-col gap-1">
+                      <span className="text-sm font-medium">
+                        {field.label}
+                        {field.required ? " *" : ""}
+                      </span>
+                      <Select
+                        value={mapping[field.key] || "__none__"}
+                        onValueChange={(value) =>
+                          setMapping((current) => ({
+                            ...current,
+                            [field.key]: value === "__none__" ? "" : value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Ne pas importer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="__none__">Ne pas importer</SelectItem>
+                            {headers.map((header) => (
+                              <SelectItem key={header} value={header}>
+                                {header}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </label>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {unresolvedStatuses.length > 0 ? (
+              <Alert>
+                <AlertCircleIcon />
+                <AlertTitle>Statuts à confirmer</AlertTitle>
+                <AlertDescription className="gap-3">
+                  <p>
+                    Certaines valeurs de statut ne sont pas reconnues automatiquement. Choisis leur
+                    équivalent avant l&apos;import.
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {unresolvedStatuses.map((status) => (
+                      <label key={status} className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-foreground">{status}</span>
+                        <Select
+                          value={statusOverrides[status] || "__unset__"}
+                          onValueChange={(value) =>
+                            setStatusOverrides((current) => ({
+                              ...current,
+                              [status]: value === "__unset__" ? "" : value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Choisir un statut" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem value="__unset__">Choisir un statut</SelectItem>
+                              {STATUS_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </label>
                     ))}
-                  </select>
-                </label>
-              ))}
-            </div>
-          ) : null}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
-          {unresolvedStatuses.length > 0 ? (
-            <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20">
-              <p className="text-sm font-medium">Statuts à confirmer</p>
-              <p className="text-xs text-muted-foreground">
-                Certaines valeurs de statut ne sont pas reconnues automatiquement. Choisis leur équivalent avant l&apos;import.
-              </p>
-              <div className="grid gap-3 md:grid-cols-2">
-                {unresolvedStatuses.map((status) => (
-                  <label key={status} className="space-y-1">
-                    <span className="text-sm font-medium">{status}</span>
-                    <select
-                      className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                      value={statusOverrides[status] ?? ""}
-                      onChange={(event) =>
-                        setStatusOverrides((current) => ({
-                          ...current,
-                          [status]: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Choisir un statut</option>
-                      {STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ) : null}
+            {rows.length > 0 ? (
+              <Alert>
+                <AlertCircleIcon />
+                <AlertTitle>Résumé du fichier</AlertTitle>
+                <AlertDescription>
+                  <p>
+                    {rows.length} ligne{rows.length > 1 ? "s" : ""} détectée
+                    {rows.length > 1 ? "s" : ""}.
+                    {duplicateCount > 0
+                      ? ` ${duplicateCount} doublon${duplicateCount > 1 ? "s" : ""} dans ce fichier CSV sera${duplicateCount > 1 ? "ont" : ""} ignoré${duplicateCount > 1 ? "s" : ""}.`
+                      : " Aucun doublon dans ce fichier CSV."}
+                  </p>
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
-          {rows.length > 0 ? (
-            <div className="rounded-xl border bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
-              <p>
-                {rows.length} ligne{rows.length > 1 ? "s" : ""} détectée{rows.length > 1 ? "s" : ""}.
-                {duplicateCount > 0
-                  ? ` ${duplicateCount} doublon${duplicateCount > 1 ? "s" : ""} dans ce fichier CSV sera${duplicateCount > 1 ? "ont" : ""} ignoré${duplicateCount > 1 ? "s" : ""}.`
-                  : " Aucun doublon dans ce fichier CSV."}
-              </p>
-            </div>
-          ) : null}
-
-          {previewRows.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Aperçu ({rows.length} lignes détectées)</p>
-              <div className="overflow-x-auto rounded-xl border">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-muted/40">
-                    <tr>
-                      {headers.map((header) => (
-                        <th key={header} className="border-b px-3 py-2 text-left font-medium">
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewRows.map((row, index) => (
-                      <tr key={`${index}-${row[headers[0]] ?? "row"}`}>
-                        {headers.map((header) => (
-                          <td key={header} className="border-b px-3 py-2 align-top text-muted-foreground">
-                            {row[header] ?? ""}
-                          </td>
+            {previewRows.length > 0 ? (
+              <Card className="gap-4 py-0">
+                <CardHeader className="pb-0">
+                  <CardTitle>Aperçu ({rows.length} lignes détectées)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto rounded-xl border">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-muted/40">
+                        <tr>
+                          {headers.map((header) => (
+                            <th key={header} className="border-b px-3 py-2 text-left font-medium">
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewRows.map((row, index) => (
+                          <tr key={`${index}-${row[headers[0]] ?? "row"}`}>
+                            {headers.map((header) => (
+                              <td key={header} className="border-b px-3 py-2 align-top text-muted-foreground">
+                                {row[header] ?? ""}
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Empty className="min-h-48 border bg-muted/10">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Upload />
+                  </EmptyMedia>
+                  <EmptyTitle>Aucun CSV chargé</EmptyTitle>
+                  <EmptyDescription>
+                    Ajoute un fichier pour voir l&apos;aperçu, détecter les doublons et préparer le mapping.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
 
-          {summary ? (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm dark:border-emerald-900 dark:bg-emerald-950/20">
-              <p className="font-medium text-foreground">Dernier import terminé</p>
-              <p className="text-muted-foreground">
-                {summary.createdCount} créée{summary.createdCount > 1 ? "s" : ""} • {summary.updatedCount} mise
-                {summary.updatedCount > 1 ? "s" : ""} à jour • {summary.ignoredCount} ignorée
-                {summary.ignoredCount > 1 ? "s" : ""}.
-              </p>
-            </div>
-          ) : null}
+            {summary ? (
+              <Alert>
+                <CheckCircle2Icon />
+                <AlertTitle>Dernier import terminé</AlertTitle>
+                <AlertDescription>
+                  <p>
+                    {summary.createdCount} créée{summary.createdCount > 1 ? "s" : ""} •{" "}
+                    {summary.updatedCount} mise{summary.updatedCount > 1 ? "s" : ""} à jour •{" "}
+                    {summary.ignoredCount} ignorée{summary.ignoredCount > 1 ? "s" : ""}.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
-            {feedback ? <p className="text-sm text-destructive">{feedback}</p> : null}
+            {feedback ? (
+              <Alert variant="destructive">
+                <AlertCircleIcon />
+                <AlertTitle>Import impossible</AlertTitle>
+                <AlertDescription>{feedback}</AlertDescription>
+              </Alert>
+            ) : null}
           </div>
         </div>
 
