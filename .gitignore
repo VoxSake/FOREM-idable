@@ -48,6 +48,8 @@ Thumbs.db
 
 # misc
 *.pem
+skills-lock.json
+.agents/
 
 # TypeScript
 *.tsbuildinfo
