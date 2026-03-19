@@ -136,6 +136,7 @@ const UPDATES_BY_MONTH = Object.entries(
     return accumulator;
   }, {})
 );
+const FEATURED_UPDATES = RECENT_UPDATES.slice(0, 5);
 
 export default function AboutPage() {
   return (
@@ -192,7 +193,7 @@ export default function AboutPage() {
                 <CardTitle className="text-base">{api.title}</CardTitle>
                 <CardDescription>{api.description}</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 text-sm">
+              <CardContent className="pt-0 text-xs">
                 <a
                   href={api.href}
                   target="_blank"
@@ -211,20 +212,19 @@ export default function AboutPage() {
         <CardHeader>
           <CardTitle>Nouveautés récentes</CardTitle>
           <CardDescription>
-            Les évolutions sont regroupées par mois pour éviter une longue page compacte et peu lisible.
+            Les dernières évolutions majeures du projet, avec un lien vers l&apos;historique complet.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {UPDATES_BY_MONTH.map(([month, updates]) => (
-              <Card key={month} className="gap-0 bg-muted/20 py-0 shadow-none">
-                <CardHeader className="p-4">
-                  <CardTitle className="text-sm">{month}</CardTitle>
-                  <CardDescription>
-                    {updates.length} mise{updates.length > 1 ? "s" : ""} à jour
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+          <div className="flex flex-col gap-3">
+            {FEATURED_UPDATES.map((update) => (
+              <div key={`${update.month}-${update.text}`} className="flex gap-3 text-sm text-muted-foreground">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/70" />
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium text-foreground">{update.month}</p>
+                  <p>{update.text}</p>
+                </div>
+              </div>
             ))}
           </div>
 
@@ -248,6 +248,17 @@ export default function AboutPage() {
               </AccordionItem>
             ))}
           </Accordion>
+          <div className="text-sm text-muted-foreground">
+            Historique complet:{" "}
+            <a
+              href="https://github.com/VoxSake/FOREM-idable/blob/main/CHANGELOG.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              CHANGELOG.md
+            </a>
+          </div>
         </CardContent>
       </Card>
 

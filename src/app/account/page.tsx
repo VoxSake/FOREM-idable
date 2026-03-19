@@ -394,158 +394,154 @@ export default function AccountPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
-            <section className="flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-primary/10 p-2 text-primary">
-                  <UserRound className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-xl font-semibold">Profil</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Vos informations publiques de base et l&apos;identité utilisée dans l&apos;application.
-                  </p>
-                </div>
-              </div>
-              <form
-                className="flex flex-col gap-4"
-                onSubmit={profileForm.handleSubmit(async (values) => {
-                  await saveProfile(values);
-                })}
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="account-first-name">Prénom</Label>
-                    <Input
-                      id="account-first-name"
-                      autoComplete="given-name"
-                      placeholder="Prénom"
-                      {...profileForm.register("firstName")}
-                      aria-invalid={profileForm.formState.errors.firstName ? "true" : "false"}
-                    />
-                    {profileForm.formState.errors.firstName ? (
-                      <p className="text-sm text-destructive">
-                        {profileForm.formState.errors.firstName.message}
-                      </p>
-                    ) : null}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <section className="flex flex-col gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                    <UserRound className="h-5 w-5" />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="account-last-name">Nom</Label>
-                    <Input
-                      id="account-last-name"
-                      autoComplete="family-name"
-                      placeholder="Nom"
-                      {...profileForm.register("lastName")}
-                      aria-invalid={profileForm.formState.errors.lastName ? "true" : "false"}
-                    />
-                    {profileForm.formState.errors.lastName ? (
-                      <p className="text-sm text-destructive">
-                        {profileForm.formState.errors.lastName.message}
-                      </p>
-                    ) : null}
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-xl font-semibold">Profil</h2>
+                    <p className="text-sm text-muted-foreground">Nom et prénom affichés dans l&apos;application.</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    type="submit"
-                    disabled={
-                      isSavingProfile ||
-                      !profileForm.formState.isDirty ||
-                      !profileForm.formState.isValid
-                    }
-                  >
-                    Enregistrer le profil
-                  </Button>
-                  {profileFeedback ? (
-                    <Alert
-                      variant={profileFeedback.type === "error" ? "destructive" : "default"}
-                      className="min-w-0 flex-1"
+                <form
+                  className="flex flex-col gap-4"
+                  onSubmit={profileForm.handleSubmit(async (values) => {
+                    await saveProfile(values);
+                  })}
+                >
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="account-first-name">Prénom</Label>
+                      <Input
+                        id="account-first-name"
+                        autoComplete="given-name"
+                        placeholder="Prénom"
+                        {...profileForm.register("firstName")}
+                        aria-invalid={profileForm.formState.errors.firstName ? "true" : "false"}
+                      />
+                      {profileForm.formState.errors.firstName ? (
+                        <p className="text-sm text-destructive">
+                          {profileForm.formState.errors.firstName.message}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="account-last-name">Nom</Label>
+                      <Input
+                        id="account-last-name"
+                        autoComplete="family-name"
+                        placeholder="Nom"
+                        {...profileForm.register("lastName")}
+                        aria-invalid={profileForm.formState.errors.lastName ? "true" : "false"}
+                      />
+                      {profileForm.formState.errors.lastName ? (
+                        <p className="text-sm text-destructive">
+                          {profileForm.formState.errors.lastName.message}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="submit"
+                      disabled={
+                        isSavingProfile ||
+                        !profileForm.formState.isDirty ||
+                        !profileForm.formState.isValid
+                      }
                     >
-                      <AlertTitle>Mise à jour du profil</AlertTitle>
-                      <AlertDescription>{profileFeedback.message}</AlertDescription>
-                    </Alert>
-                  ) : null}
-                </div>
-              </form>
-            </section>
-
-            <Separator />
-
-            <section className="flex flex-col gap-5">
-              <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-primary/10 p-2 text-primary">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-xl font-semibold">Sécurité</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Choisissez un mot de passe de 8 caractères minimum.
-                  </p>
-                </div>
-              </div>
-              <form
-                className="flex flex-col gap-5"
-                onSubmit={passwordForm.handleSubmit(async (values) => {
-                  await savePassword(values);
-                })}
-              >
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="account-password">Nouveau mot de passe</Label>
-                    <Input
-                      id="account-password"
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="8 caractères minimum"
-                      {...passwordForm.register("password")}
-                      aria-invalid={passwordForm.formState.errors.password ? "true" : "false"}
-                    />
-                    {passwordForm.formState.errors.password ? (
-                      <p className="text-sm text-destructive">
-                        {passwordForm.formState.errors.password.message}
-                      </p>
+                      Enregistrer le profil
+                    </Button>
+                    {profileFeedback ? (
+                      <Alert
+                        variant={profileFeedback.type === "error" ? "destructive" : "default"}
+                        className="min-w-0 flex-1"
+                      >
+                        <AlertTitle>Mise à jour du profil</AlertTitle>
+                        <AlertDescription>{profileFeedback.message}</AlertDescription>
+                      </Alert>
                     ) : null}
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
-                    <Input
-                      id="account-password-confirm"
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="Ressaisir le mot de passe"
-                      {...passwordForm.register("confirmPassword")}
-                      aria-invalid={passwordForm.formState.errors.confirmPassword ? "true" : "false"}
-                    />
-                    {passwordForm.formState.errors.confirmPassword ? (
-                      <p className="text-sm text-destructive">
-                        {passwordForm.formState.errors.confirmPassword.message}
-                      </p>
-                    ) : null}
+                </form>
+              </section>
+
+              <section className="flex flex-col gap-5">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-xl font-semibold">Sécurité</h2>
+                    <p className="text-sm text-muted-foreground">Changez le mot de passe de votre compte.</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    disabled={
-                      isSavingPassword ||
-                      !passwordForm.formState.isDirty ||
-                      !passwordForm.formState.isValid
-                    }
-                  >
-                    Changer le mot de passe
-                  </Button>
-                  {passwordFeedback ? (
-                    <Alert
-                      variant={passwordFeedback.type === "error" ? "destructive" : "default"}
-                      className="min-w-0 flex-1"
+                <form
+                  className="flex flex-col gap-5"
+                  onSubmit={passwordForm.handleSubmit(async (values) => {
+                    await savePassword(values);
+                  })}
+                >
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="account-password">Nouveau mot de passe</Label>
+                      <Input
+                        id="account-password"
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder="8 caractères minimum"
+                        {...passwordForm.register("password")}
+                        aria-invalid={passwordForm.formState.errors.password ? "true" : "false"}
+                      />
+                      {passwordForm.formState.errors.password ? (
+                        <p className="text-sm text-destructive">
+                          {passwordForm.formState.errors.password.message}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="account-password-confirm">Confirmer le mot de passe</Label>
+                      <Input
+                        id="account-password-confirm"
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder="Ressaisir le mot de passe"
+                        {...passwordForm.register("confirmPassword")}
+                        aria-invalid={passwordForm.formState.errors.confirmPassword ? "true" : "false"}
+                      />
+                      {passwordForm.formState.errors.confirmPassword ? (
+                        <p className="text-sm text-destructive">
+                          {passwordForm.formState.errors.confirmPassword.message}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      disabled={
+                        isSavingPassword ||
+                        !passwordForm.formState.isDirty ||
+                        !passwordForm.formState.isValid
+                      }
                     >
-                      <AlertTitle>Mot de passe</AlertTitle>
-                      <AlertDescription>{passwordFeedback.message}</AlertDescription>
-                    </Alert>
-                  ) : null}
-                </div>
-              </form>
-            </section>
+                      Changer le mot de passe
+                    </Button>
+                    {passwordFeedback ? (
+                      <Alert
+                        variant={passwordFeedback.type === "error" ? "destructive" : "default"}
+                        className="min-w-0 flex-1"
+                      >
+                        <AlertTitle>Mot de passe</AlertTitle>
+                        <AlertDescription>{passwordFeedback.message}</AlertDescription>
+                      </Alert>
+                    ) : null}
+                  </div>
+                </form>
+              </section>
+            </div>
 
             <Separator />
 
@@ -556,9 +552,7 @@ export default function AccountPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <h2 className="text-xl font-semibold">Recherche</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Définissez le lien initial entre vos mots-clés lors d&apos;une nouvelle recherche.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Mode par défaut pour vos nouvelles recherches.</p>
                 </div>
               </div>
               <ToggleGroup
@@ -570,7 +564,7 @@ export default function AccountPage() {
                     updateSettings({ defaultSearchMode: value });
                   }
                 }}
-                className="flex w-full flex-wrap"
+                className="flex w-full max-w-md flex-wrap"
               >
                 <ToggleGroupItem value="OR" className="flex-1">
                   OU (plus de résultats)

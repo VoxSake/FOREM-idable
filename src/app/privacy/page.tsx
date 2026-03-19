@@ -110,7 +110,7 @@ export default function PrivacyPage() {
           <CardTitle>Cadre général</CardTitle>
           <CardDescription>Contexte du projet et responsable du traitement.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <CardContent className="grid gap-8 lg:grid-cols-2">
           <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             <p>
               FOREM-idable est un projet gratuit et open source, mis à disposition sous licence MIT.
@@ -159,7 +159,7 @@ export default function PrivacyPage() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           {DATA_CATEGORIES.map((category, index) => (
-            <Card key={category.title} className="shadow-none">
+            <Card key={category.title} className="bg-muted/30 shadow-none">
               <CardHeader className="gap-2">
                 <CardTitle className="text-base">
                   {index + 1}. {category.title}
@@ -190,7 +190,7 @@ export default function PrivacyPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
+      <div className="grid gap-8 lg:grid-cols-2">
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Accès, conservation et droits</CardTitle>
