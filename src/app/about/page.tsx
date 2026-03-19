@@ -7,6 +7,13 @@ import {
 } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const RECENT_UPDATES = [
   {
@@ -133,35 +140,34 @@ const UPDATES_BY_MONTH = Object.entries(
 export default function AboutPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 animate-in fade-in duration-500">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">Produit</Badge>
-          <Badge variant="secondary">Emploi & open data</Badge>
-        </div>
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black tracking-tight">À propos</h1>
-          <p className="max-w-3xl text-base text-muted-foreground">
+      <Card className="overflow-hidden shadow-sm">
+        <CardHeader className="gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">Produit</Badge>
+            <Badge variant="secondary">Emploi & open data</Badge>
+          </div>
+          <CardTitle className="text-3xl font-black tracking-tight">À propos</CardTitle>
+          <CardDescription className="max-w-3xl text-base">
             FOREM-idable est un agrégateur orienté recherche d&apos;emploi, pensé pour rendre la
-            recherche plus lisible, le filtrage plus utile et le suivi des candidatures plus concret.
-          </p>
-        </div>
-      </header>
+            recherche plus lisible, le filtrage plus utile et le suivi des candidatures plus
+            concret.
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <section className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-xl font-bold">Objectif du site</h2>
-            <p className="text-sm text-muted-foreground">
-              Ce que le produit essaie réellement d&apos;améliorer.
-            </p>
-          </div>
-          <div className="text-sm leading-6 text-muted-foreground">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Objectif du site</CardTitle>
+            <CardDescription>Ce que le produit essaie réellement d&apos;améliorer.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm leading-6 text-muted-foreground">
             Le site simplifie la recherche d&apos;offres en regroupant les résultats, en améliorant
             le filtrage par localités et en proposant des actions pratiques comme le suivi des
             candidatures, l&apos;ouverture du PDF lorsqu&apos;il est disponible et une vue plus claire
             des prochaines relances.
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
         <Alert>
           <AlertTitle>Limites connues</AlertTitle>
@@ -172,19 +178,21 @@ export default function AboutPage() {
         </Alert>
       </div>
 
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold">APIs utilisées</h2>
-          <p className="text-sm text-muted-foreground">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>APIs utilisées</CardTitle>
+          <CardDescription>
             Les sources externes qui alimentent la recherche et l&apos;enrichissement des données.
-          </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
           {APIS.map((api) => (
-            <div key={api.title} className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm">
-              <h3 className="text-base font-semibold">{api.title}</h3>
-              <p className="text-sm text-muted-foreground">{api.description}</p>
-              <div className="text-sm">
+            <Card key={api.title} className="shadow-none">
+              <CardHeader className="gap-2">
+                <CardTitle className="text-base">{api.title}</CardTitle>
+                <CardDescription>{api.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0 text-sm">
                 <a
                   href={api.href}
                   target="_blank"
@@ -193,27 +201,30 @@ export default function AboutPage() {
                 >
                   {api.hrefLabel}
                 </a>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold">Nouveautés récentes</h2>
-          <p className="text-sm text-muted-foreground">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Nouveautés récentes</CardTitle>
+          <CardDescription>
             Les évolutions sont regroupées par mois pour éviter une longue page compacte et peu lisible.
-          </p>
-        </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
           <div className="grid gap-3 sm:grid-cols-3">
             {UPDATES_BY_MONTH.map(([month, updates]) => (
-              <div key={month} className="rounded-xl border bg-muted/20 p-4">
-                <p className="text-sm font-semibold">{month}</p>
-                <p className="text-xs text-muted-foreground">
-                  {updates.length} mise{updates.length > 1 ? "s" : ""} à jour
-                </p>
-              </div>
+              <Card key={month} className="gap-0 bg-muted/20 py-0 shadow-none">
+                <CardHeader className="p-4">
+                  <CardTitle className="text-sm">{month}</CardTitle>
+                  <CardDescription>
+                    {updates.length} mise{updates.length > 1 ? "s" : ""} à jour
+                  </CardDescription>
+                </CardHeader>
+              </Card>
             ))}
           </div>
 
@@ -224,7 +235,10 @@ export default function AboutPage() {
                 <AccordionContent>
                   <div className="flex flex-col gap-3">
                     {updates.map((update) => (
-                      <div key={`${month}-${update}`} className="flex gap-3 text-sm text-muted-foreground">
+                      <div
+                        key={`${month}-${update}`}
+                        className="flex gap-3 text-sm text-muted-foreground"
+                      >
                         <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/70" />
                         <p>{update}</p>
                       </div>
@@ -234,10 +248,15 @@ export default function AboutPage() {
               </AccordionItem>
             ))}
           </Accordion>
-      </section>
+        </CardContent>
+      </Card>
 
-      <section className="flex flex-col gap-2 border-t pt-6 text-sm text-muted-foreground">
-        <h2 className="text-xl font-bold text-foreground">Licence</h2>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Licence</CardTitle>
+          <CardDescription>Cadre légal du projet et lien vers la confidentialité.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
           <p>Copyright (c) 2026 Jordi Brisbois</p>
           <p>Ce projet est distribué sous licence MIT.</p>
           <p>
@@ -247,7 +266,8 @@ export default function AboutPage() {
             </Link>
             .
           </p>
-      </section>
+        </CardContent>
+      </Card>
     </div>
   );
 }
