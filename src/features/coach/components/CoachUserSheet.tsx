@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ExternalLink,
@@ -168,6 +168,7 @@ function CoachUserSheetBody({
   onDeleteApplication,
 }: CoachUserSheetBodyProps) {
   const sortedApplications = useMemo(() => sortApplicationsByMostRecent(user.applications), [user.applications]);
+  const targetApplicationRef = useRef<HTMLDivElement | null>(null);
   const applicationsPageSize = 10;
   const initialFocusPage = (() => {
     if (!initialJobId) {
@@ -204,6 +205,21 @@ function CoachUserSheetBody({
     const start = (effectivePage - 1) * applicationsPageSize;
     return sortedApplications.slice(start, start + applicationsPageSize);
   }, [effectivePage, sortedApplications]);
+
+  useEffect(() => {
+    if (!initialJobId || !targetApplicationRef.current) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      targetApplicationRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [effectivePage, initialJobId, paginatedApplications]);
 
   const toggleExpanded = (jobId: string, nextOpen: boolean) => {
     setExpandedJobIds((current) =>
@@ -293,6 +309,7 @@ function CoachUserSheetBody({
                 onOpenChange={(nextOpen) => toggleExpanded(application.job.id, nextOpen)}
               >
                 <div
+                  ref={application.job.id === initialJobId ? targetApplicationRef : null}
                   className={`rounded-xl border transition-colors ${
                     application.status === "interview"
                       ? "border-sky-300 bg-sky-50/60 hover:border-sky-400 hover:bg-sky-100/70 dark:border-sky-900 dark:bg-sky-950/20 dark:hover:border-sky-800 dark:hover:bg-sky-950/30"
