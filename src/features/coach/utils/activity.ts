@@ -131,7 +131,7 @@ export function buildCoachPrioritySections(
   const beneficiaryUsers = users.filter((entry) => isTrackedCoachBeneficiary(entry));
 
   const dueItems = beneficiaryUsers
-    .map((user) => {
+    .map<CoachPriorityItem | null>((user) => {
       const dueApplications = user.applications.filter((application) => isApplicationDue(application));
       if (dueApplications.length === 0) {
         return null;
@@ -176,7 +176,7 @@ export function buildCoachPrioritySections(
     .sort(comparePriorityItemsByTimestamp);
 
   const interviewItems = beneficiaryUsers
-    .map((user) => {
+    .map<CoachPriorityItem | null>((user) => {
       const upcomingInterviews = user.applications.filter((application) => {
         if (!application.interviewAt) {
           return false;
@@ -237,7 +237,7 @@ export function buildCoachPrioritySections(
 
   const inactiveItems = beneficiaryUsers
     .filter((user) => user.applicationCount > 0)
-    .map((user) => {
+    .map<CoachPriorityItem | null>((user) => {
       const latestActivityTime = parseTimestamp(user.latestActivityAt);
       if (latestActivityTime !== null && differenceInCalendarDays(now, new Date(latestActivityTime)) < 14) {
         return null;
