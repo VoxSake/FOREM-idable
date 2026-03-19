@@ -153,18 +153,29 @@ export function ApplicationsInsights({
               }}
               className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-0"
             >
-              {QUICK_FILTERS.map((filter) => (
+              {QUICK_FILTERS.map((filter, index) => {
+                const isLastOddItem =
+                  QUICK_FILTERS.length % 2 === 1 && index === QUICK_FILTERS.length - 1;
+
+                return (
                 <ToggleGroupItem
                   key={filter.value}
                   value={filter.value}
                   size="sm"
                   aria-label={`Filtrer: ${filter.label}`}
-                  className="w-full justify-center rounded-md border shadow-none sm:w-auto sm:rounded-none sm:data-[spacing=0]:first:rounded-l-md sm:data-[spacing=0]:last:rounded-r-md"
+                  className={cn(
+                    "w-full justify-center rounded-md border shadow-none data-[spacing=0]:rounded-md data-[spacing=0]:border data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md",
+                    "data-[spacing=0]:data-[variant=outline]:border-l data-[spacing=0]:data-[variant=outline]:first:border-l",
+                    isLastOddItem && "col-span-2",
+                    "sm:w-auto sm:rounded-none sm:data-[spacing=0]:first:rounded-l-md sm:data-[spacing=0]:last:rounded-r-md",
+                    "sm:data-[spacing=0]:rounded-none sm:data-[spacing=0]:data-[variant=outline]:border-l-0 sm:data-[spacing=0]:data-[variant=outline]:first:border-l"
+                  )}
                 >
                   {filter.value === "all" ? <Filter data-icon="inline-start" /> : null}
                   {filter.label}
                 </ToggleGroupItem>
-              ))}
+                );
+              })}
             </ToggleGroup>
           </div>
         </CardContent>
