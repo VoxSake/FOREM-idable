@@ -13,7 +13,7 @@
 
 ---
 
-### [📸 INSÉRER ICI : Capture d'écran principale du Dashboard ou de la recherche d'offres]
+### ![Image](https://github.com/user-attachments/assets/8eb89a79-959b-44bf-b27b-7dceea50f1b4)
 
 ## 🌟 Pourquoi FOREM-idable ?
 
@@ -31,13 +31,13 @@ L'interface standard du Forem est riche, mais peut s'avérer lourde pour un suiv
 - **Moteur Booléen :** Recherche avancée par mots-clés (`OU` / `ET`).
 - **Filtres Géo Précis :** Multi-sélection intelligente (communes, arrondissements, provinces, régions).
 - **Comparateur d'offres :** Analysez plusieurs opportunités côte à côte pour faire le bon choix.
-- **[📸 INSÉRER ICI : Screenshot du comparateur d'offres]**
+ **![Image](https://github.com/user-attachments/assets/5514fa84-ced7-4216-8696-77d5ccdaa324)**
 
 ### 💼 Suivi Candidat & Coach
 - **Dashboard Coach Enrichi :** Sections `À traiter`, `Activité récente` et sidepanel de gestion rapide.
 - **Import CSV Intelligent :** Algorithme d'auto-détection de colonnes et mapping manuel pour migrer vos anciens suivis sans douleur.
 - **Synchronisation Calendrier :** Flux ICS dynamiques pour retrouver vos entretiens dans Google Calendar, Outlook ou Apple Calendar.
-- **[📸 INSÉRER ICI : Screenshot du Dashboard Coach]**
+ **![Image](https://github.com/user-attachments/assets/5970f8cc-9b2d-4d41-b408-e64d244a75c1)**
 
 ### 🛠️ Outils "Power User"
 - **Proxy PDF :** Accès direct aux offres en format PDF, même derrière des restrictions serveurs (CORS).
