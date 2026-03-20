@@ -118,11 +118,7 @@ export function useAccountApiKeys({ enabled }: UseAccountApiKeysOptions) {
         return;
       }
 
-      setApiKeys((current) =>
-        current.map((entry) =>
-          entry.id === keyId ? { ...entry, revokedAt: new Date().toISOString() } : entry
-        )
-      );
+      setApiKeys((current) => current.filter((entry) => entry.id !== keyId));
       setFeedback({
         type: "success",
         message: "Clé API révoquée.",
