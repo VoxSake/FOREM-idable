@@ -44,6 +44,7 @@ describe("ApplicationsInsights", () => {
       />
     );
 
+    expect(screen.getByText("Vue d'ensemble")).toBeInTheDocument();
     expect(
       screen.getByText("2 candidatures avec un nouveau retour coach.")
     ).toBeInTheDocument();
