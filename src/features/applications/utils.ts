@@ -5,6 +5,70 @@ import { ApplicationStatus, JobApplication } from "@/types/application";
 
 export type ApplicationModeFilter = "all" | "due" | "interviews" | "manual" | "coach_updates";
 
+export function getApplicationsDueSummary(applications: JobApplication[]) {
+  const companyNames = applications
+    .filter((entry) => isApplicationFollowUpDue(entry))
+    .map((entry) => entry.job.company?.trim())
+    .filter((company): company is string => Boolean(company));
+
+  const uniqueCompanies = [...new Set(companyNames)];
+  if (uniqueCompanies.length === 0) return "établissement non renseigné";
+
+  const visibleCompanies = uniqueCompanies.slice(0, 3);
+  const remainingCount = uniqueCompanies.length - visibleCompanies.length;
+
+  if (remainingCount <= 0) return visibleCompanies.join(", ");
+  return `${visibleCompanies.join(", ")} + ${remainingCount} autre${remainingCount > 1 ? "s" : ""}`;
+}
+
+export function countUpcomingInterviews(applications: JobApplication[], now: Date) {
+  return applications.filter((entry) => {
+    if (!entry.interviewAt) return false;
+    const interviewDate = new Date(entry.interviewAt);
+    return !Number.isNaN(interviewDate.getTime()) && !isAfter(now, interviewDate);
+  }).length;
+}
+
+export function countClosedApplications(applications: JobApplication[]) {
+  return applications.filter(
+    (entry) => entry.status === "accepted" || entry.status === "rejected"
+  ).length;
+}
+
+export function filterApplications(
+  applications: JobApplication[],
+  options: {
+    search: string;
+    modeFilter: ApplicationModeFilter;
+    hasUnreadCoachUpdate: (application: JobApplication) => boolean;
+  }
+) {
+  const normalizedSearch = options.search.trim().toLowerCase();
+
+  return sortApplicationsByMostRecent(
+    applications.filter((entry) => {
+      if (options.modeFilter === "due" && !isApplicationFollowUpDue(entry)) return false;
+      if (options.modeFilter === "interviews" && !entry.interviewAt) return false;
+      if (options.modeFilter === "manual" && !isManualApplication(entry)) return false;
+      if (options.modeFilter === "coach_updates" && !options.hasUnreadCoachUpdate(entry)) {
+        return false;
+      }
+      if (!normalizedSearch) return true;
+
+      return [
+        entry.job.company || "",
+        entry.job.title,
+        entry.job.location,
+        entry.job.contractType,
+        entry.notes || "",
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+    })
+  );
+}
+
 export function formatApplicationDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "N/A";

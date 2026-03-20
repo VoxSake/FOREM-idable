@@ -9,16 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
 import { ApplicationStatus } from "@/types/application";
 
 export interface ManualApplicationFormState {
@@ -60,94 +59,95 @@ export function ManualApplicationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Entreprise</span>
-            <Input
-              value={form.company}
-              onChange={(event) => onFormChange({ ...form, company: event.target.value })}
-              placeholder="Nom de l'entreprise"
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Type</span>
-            <Input
-              value={form.contractType}
-              onChange={(event) => onFormChange({ ...form, contractType: event.target.value })}
-              placeholder="CDI, CDD, intérim..."
-            />
-          </label>
-          <label className="flex flex-col gap-2 sm:col-span-2">
-            <span className="text-sm font-medium">Intitulé</span>
-            <Input
-              value={form.title}
-              onChange={(event) => onFormChange({ ...form, title: event.target.value })}
-              placeholder="Titre du poste"
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Lieu</span>
-            <Input
-              value={form.location}
-              onChange={(event) => onFormChange({ ...form, location: event.target.value })}
-              placeholder="Ville ou région"
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Date envoyée</span>
-            <Input
-              type="date"
-              value={form.appliedAt}
-              onChange={(event) => onFormChange({ ...form, appliedAt: event.target.value })}
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Statut</span>
-            <Select
-              value={form.status}
-              onValueChange={(value) => onFormChange({ ...form, status: value as ApplicationStatus })}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choisir un statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="in_progress">En cours</SelectItem>
-                  <SelectItem value="follow_up">Relance à faire</SelectItem>
-                  <SelectItem value="interview">Entretien</SelectItem>
-                  <SelectItem value="accepted">Acceptée</SelectItem>
-                  <SelectItem value="rejected">Refusée</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Lien de l&apos;offre</span>
-            <Input
-              value={form.url}
-              onChange={(event) => onFormChange({ ...form, url: event.target.value })}
-              placeholder="https://..."
-            />
-          </label>
-          <label className="flex flex-col gap-2 sm:col-span-2">
-            <span className="text-sm font-medium">Notes</span>
+        <FieldGroup className="gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="manual-application-company">Entreprise</FieldLabel>
+              <Input
+                id="manual-application-company"
+                value={form.company}
+                onChange={(event) => onFormChange({ ...form, company: event.target.value })}
+                placeholder="Nom de l'entreprise"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="manual-application-contract-type">Type</FieldLabel>
+              <Input
+                id="manual-application-contract-type"
+                value={form.contractType}
+                onChange={(event) => onFormChange({ ...form, contractType: event.target.value })}
+                placeholder="CDI, CDD, intérim..."
+              />
+            </Field>
+            <Field className="sm:col-span-2">
+              <FieldLabel htmlFor="manual-application-title">Intitulé</FieldLabel>
+              <Input
+                id="manual-application-title"
+                value={form.title}
+                onChange={(event) => onFormChange({ ...form, title: event.target.value })}
+                placeholder="Titre du poste"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="manual-application-location">Lieu</FieldLabel>
+              <Input
+                id="manual-application-location"
+                value={form.location}
+                onChange={(event) => onFormChange({ ...form, location: event.target.value })}
+                placeholder="Ville ou région"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="manual-application-applied-at">Date envoyée</FieldLabel>
+              <Input
+                id="manual-application-applied-at"
+                type="date"
+                value={form.appliedAt}
+                onChange={(event) => onFormChange({ ...form, appliedAt: event.target.value })}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="manual-application-status">Statut</FieldLabel>
+              <ApplicationStatusSelect
+                triggerId="manual-application-status"
+                value={form.status}
+                onValueChange={(value) => onFormChange({ ...form, status: value })}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="manual-application-url">Lien de l&apos;offre</FieldLabel>
+              <Input
+                id="manual-application-url"
+                value={form.url}
+                onChange={(event) => onFormChange({ ...form, url: event.target.value })}
+                placeholder="https://..."
+              />
+            </Field>
+          </div>
+          <Field>
+            <FieldLabel htmlFor="manual-application-notes">Notes</FieldLabel>
             <Textarea
+              id="manual-application-notes"
               className="min-h-24"
               value={form.notes}
               onChange={(event) => onFormChange({ ...form, notes: event.target.value })}
               placeholder="Contexte, contact RH, retour, salaire..."
             />
-          </label>
-          <label className="flex flex-col gap-2 sm:col-span-2">
-            <span className="text-sm font-medium">Pièces / références</span>
+            <FieldDescription>
+              Gardez ici le contexte utile pour relire rapidement la candidature.
+            </FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="manual-application-proofs">Pièces / références</FieldLabel>
             <Textarea
+              id="manual-application-proofs"
               className="min-h-24"
               value={form.proofs}
               onChange={(event) => onFormChange({ ...form, proofs: event.target.value })}
               placeholder="Lien mail, capture, référence de refus..."
             />
-          </label>
-        </div>
+          </Field>
+        </FieldGroup>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>

@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { JobApplication } from "@/types/application";
 
@@ -52,18 +52,18 @@ export function InterviewDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="application-interview-at">Date et heure</Label>
+        <FieldGroup className="gap-4">
+          <Field>
+            <FieldLabel htmlFor="application-interview-at">Date et heure</FieldLabel>
             <Input
               id="application-interview-at"
               type="datetime-local"
               value={form.interviewAt}
               onChange={(event) => onFormChange({ ...form, interviewAt: event.target.value })}
             />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="application-interview-details">Informations pratiques</Label>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="application-interview-details">Informations pratiques</FieldLabel>
             <Textarea
               id="application-interview-details"
               className="min-h-28"
@@ -71,8 +71,8 @@ export function InterviewDialog({
               onChange={(event) => onFormChange({ ...form, interviewDetails: event.target.value })}
               placeholder="Adresse, Teams, contact, documents à prévoir..."
             />
-          </div>
-        </div>
+          </Field>
+        </FieldGroup>
 
         <DialogFooter>
           <Button

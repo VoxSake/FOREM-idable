@@ -8,14 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -26,6 +18,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
+import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
 import {
   applicationStatusLabel,
   formatApplicationDate,
@@ -342,23 +335,10 @@ function ApplicationDetailsSheetBody({
 
         <section className="flex flex-col gap-3">
           <h3 className="font-medium">Statut</h3>
-          <Select
+          <ApplicationStatusSelect
             value={displayStatus}
-            onValueChange={(value) => onApplyStatus(application.job.id, value as ApplicationStatus)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choisir un statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="in_progress">En cours</SelectItem>
-                <SelectItem value="follow_up">Relance à faire</SelectItem>
-                <SelectItem value="interview">Entretien</SelectItem>
-                <SelectItem value="accepted">Acceptée</SelectItem>
-                <SelectItem value="rejected">Refusée</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            onValueChange={(value) => onApplyStatus(application.job.id, value)}
+          />
         </section>
 
         <section className="flex flex-col gap-3">

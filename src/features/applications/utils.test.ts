@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   applicationStatusLabel,
+  countClosedApplications,
+  countUpcomingInterviews,
+  filterApplications,
   formatApplicationDate,
   formatApplicationDateTime,
+  getApplicationsDueSummary,
   getDisplayApplicationStatus,
   isApplicationFollowUpDue,
   isFollowUpEnabled,
@@ -125,5 +129,95 @@ describe("applications utils", () => {
     expect(applicationStatusLabel("interview")).toBe("Entretien");
     expect(formatApplicationDate("invalid")).toBe("N/A");
     expect(formatApplicationDateTime(undefined)).toBe("N/A");
+  });
+
+  it("summarizes due applications and counts derived states", () => {
+    const apps = [
+      buildApplication({
+        job: { ...buildApplication().job, id: "job-1", company: "Acme" },
+        interviewAt: "2026-03-25T09:00:00.000Z",
+      }),
+      buildApplication({
+        job: { ...buildApplication().job, id: "job-2", company: "Beta" },
+        status: "accepted",
+        interviewAt: "2026-03-18T09:00:00.000Z",
+      }),
+      buildApplication({
+        job: { ...buildApplication().job, id: "job-3", company: "Gamma" },
+        status: "rejected",
+      }),
+      buildApplication({
+        job: { ...buildApplication().job, id: "job-4", company: "Delta" },
+      }),
+    ];
+
+    expect(getApplicationsDueSummary(apps)).toBe("Acme, Delta");
+    expect(countUpcomingInterviews(apps, new Date("2026-03-20T00:00:00.000Z"))).toBe(1);
+    expect(countClosedApplications(apps)).toBe(2);
+  });
+
+  it("filters applications by mode and search", () => {
+    const apps = [
+      buildApplication({
+        job: {
+          ...buildApplication().job,
+          id: "manual-1",
+          company: "Acme",
+          title: "Développeur React",
+          url: "#",
+        },
+      }),
+      buildApplication({
+        job: {
+          ...buildApplication().job,
+          id: "job-2",
+          company: "Beta",
+          title: "Analyste",
+          url: "https://example.com/job-2",
+        },
+        interviewAt: "2026-03-25T09:00:00.000Z",
+      }),
+      buildApplication({
+        job: {
+          ...buildApplication().job,
+          id: "job-3",
+          company: "Gamma",
+          title: "Coach",
+          url: "https://example.com/job-3",
+        },
+      }),
+    ];
+
+    expect(
+      filterApplications(apps, {
+        search: "react",
+        modeFilter: "all",
+        hasUnreadCoachUpdate: () => false,
+      }).map((entry) => entry.job.id)
+    ).toEqual(["manual-1"]);
+
+    expect(
+      filterApplications(apps, {
+        search: "",
+        modeFilter: "manual",
+        hasUnreadCoachUpdate: () => false,
+      }).map((entry) => entry.job.id)
+    ).toEqual(["manual-1"]);
+
+    expect(
+      filterApplications(apps, {
+        search: "",
+        modeFilter: "interviews",
+        hasUnreadCoachUpdate: () => false,
+      }).map((entry) => entry.job.id)
+    ).toEqual(["job-2"]);
+
+    expect(
+      filterApplications(apps, {
+        search: "",
+        modeFilter: "coach_updates",
+        hasUnreadCoachUpdate: (application) => application.job.id === "job-3",
+      }).map((entry) => entry.job.id)
+    ).toEqual(["job-3"]);
   });
 });

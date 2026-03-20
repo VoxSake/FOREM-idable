@@ -8,16 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ApplicationStatus } from "@/types/application";
 import { ApplicationModeFilter } from "@/features/applications/utils";
 import { cn } from "@/lib/utils";
 
@@ -28,10 +19,8 @@ interface ApplicationsInsightsProps {
   closedCount: number;
   coachUpdateCount: number;
   search: string;
-  statusFilter: "all" | ApplicationStatus;
   modeFilter: ApplicationModeFilter;
   onSearchChange: (value: string) => void;
-  onStatusFilterChange: (value: "all" | ApplicationStatus) => void;
   onModeFilterChange: (value: ApplicationModeFilter) => void;
 }
 
@@ -50,10 +39,8 @@ export function ApplicationsInsights({
   closedCount,
   coachUpdateCount,
   search,
-  statusFilter,
   modeFilter,
   onSearchChange,
-  onStatusFilterChange,
   onModeFilterChange,
 }: ApplicationsInsightsProps) {
   const stats = [
@@ -114,7 +101,7 @@ export function ApplicationsInsights({
 
       <Card className="gap-0 py-0">
         <CardContent className="p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
+          <div className="grid gap-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -124,24 +111,6 @@ export function ApplicationsInsights({
                 className="pl-9"
               />
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => onStatusFilterChange(value as "all" | ApplicationStatus)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tous les statuts" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="in_progress">En cours</SelectItem>
-                  <SelectItem value="follow_up">Relance à faire</SelectItem>
-                  <SelectItem value="interview">Entretien</SelectItem>
-                  <SelectItem value="accepted">Acceptée</SelectItem>
-                  <SelectItem value="rejected">Refusée</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
             <ToggleGroup
               type="single"
               variant="outline"

@@ -14,10 +14,8 @@ describe("ApplicationsInsights", () => {
         closedCount={4}
         coachUpdateCount={1}
         search=""
-        statusFilter="all"
         modeFilter="all"
         onSearchChange={onSearchChange}
-        onStatusFilterChange={vi.fn()}
         onModeFilterChange={onModeFilterChange}
       />
     );
@@ -40,10 +38,8 @@ describe("ApplicationsInsights", () => {
         closedCount={4}
         coachUpdateCount={2}
         search=""
-        statusFilter="all"
         modeFilter="all"
         onSearchChange={vi.fn()}
-        onStatusFilterChange={vi.fn()}
         onModeFilterChange={vi.fn()}
       />
     );
