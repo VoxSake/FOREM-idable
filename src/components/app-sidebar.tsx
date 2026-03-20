@@ -162,7 +162,16 @@ export function AppSidebar() {
           <ThemeToggleButton />
         </div>
         <p className="mt-2 px-2 text-[11px] leading-4 text-muted-foreground">
-          {runtimeConfig.brand.copyrightName} · FOREM-idable · 2026
+          {runtimeConfig.brand.copyrightName} ·{" "}
+          <a
+            href={runtimeConfig.privacy.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline-offset-4 hover:text-foreground hover:underline"
+          >
+            FOREM-idable
+          </a>{" "}
+          · 2026
         </p>
       </SidebarFooter>
 
