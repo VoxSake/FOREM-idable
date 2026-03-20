@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { ForemIdableLogo } from "@/components/branding/ForemIdableLogo";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { runtimeConfig } from "@/config/runtime";
 import { AnalyticsConsent } from "@/components/consent/AnalyticsConsent";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -54,14 +55,14 @@ export default function RootLayout({
           <AuthProvider>
             <SidebarProvider>
               <AppSidebar />
-              <main className="flex-1 overflow-x-hidden flex flex-col w-full min-h-screen">
-                <header className="h-14 flex items-center border-b px-4 lg:hidden">
-                  <SidebarTrigger />
-                  <ForemIdableLogo className="ml-4 h-7" />
-                </header>
-                <div className="flex-1 p-4 lg:p-8 bg-muted/10">
-                  {children}
+              <main className="flex min-h-screen w-full flex-1 flex-col overflow-x-hidden">
+                <SiteHeader />
+                <div className="flex-1 bg-muted/10">
+                  <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-4 py-4 lg:px-8 lg:py-8">
+                    {children}
+                  </div>
                 </div>
+                <SiteFooter />
               </main>
             </SidebarProvider>
           </AuthProvider>
