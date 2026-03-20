@@ -60,6 +60,8 @@ const dashboardFixture: CoachDashboardData = {
       createdBy: {
         id: 1,
         email: "admin@example.com",
+        firstName: "Admin",
+        lastName: "User",
       },
       managerCoachId: 11,
       members: [
@@ -69,6 +71,7 @@ const dashboardFixture: CoachDashboardData = {
           firstName: "Alice",
           lastName: "Durand",
           role: "user",
+          lastSeenAt: "2026-03-18T09:00:00.000Z",
         },
       ],
       coaches: [
@@ -78,6 +81,7 @@ const dashboardFixture: CoachDashboardData = {
           firstName: "Jordi",
           lastName: "Brisbois",
           role: "coach",
+          lastSeenAt: "2026-03-18T09:30:00.000Z",
         },
         {
           id: 14,
@@ -85,6 +89,7 @@ const dashboardFixture: CoachDashboardData = {
           firstName: "Alex",
           lastName: "Martin",
           role: "coach",
+          lastSeenAt: "2026-03-17T16:00:00.000Z",
         },
       ],
     },
@@ -226,6 +231,8 @@ describe("externalApi", () => {
           createdBy: {
             id: "1" as unknown as number,
             email: "admin@example.com",
+            firstName: "Admin",
+            lastName: "User",
           },
           managerCoachId: "11" as unknown as number,
           members: [
