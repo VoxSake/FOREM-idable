@@ -15,6 +15,7 @@ import {
 import { AuthSidebarPanel } from "@/components/auth/AuthSidebarPanel";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
+import { runtimeConfig } from "@/config/runtime";
 import {
   Sidebar,
   SidebarContent,
@@ -137,7 +138,7 @@ export function AppSidebar() {
     <Sidebar>
       <AppSidebarBrand />
 
-      <SidebarContent>
+      <SidebarContent className="overflow-x-hidden">
         <SidebarGroup>
           <SidebarGroupLabel>Compte</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -160,6 +161,9 @@ export function AppSidebar() {
           <AppSidebarFooterLinks pathname={pathname} />
           <ThemeToggleButton />
         </div>
+        <p className="mt-2 px-2 text-[11px] leading-4 text-muted-foreground">
+          {runtimeConfig.brand.copyrightName} · FOREM-idable · 2026
+        </p>
       </SidebarFooter>
 
       <SidebarRail />
