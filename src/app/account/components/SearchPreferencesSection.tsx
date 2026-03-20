@@ -31,10 +31,10 @@ function SearchPreferencesSectionComponent({
         className="flex w-full max-w-md flex-wrap"
       >
         <ToggleGroupItem value="OR" className="flex-1">
-          OU (plus de résultats)
+          OU
         </ToggleGroupItem>
         <ToggleGroupItem value="AND" className="flex-1">
-          ET (plus précis)
+          ET
         </ToggleGroupItem>
       </ToggleGroup>
       <p className="text-sm text-muted-foreground">

@@ -162,7 +162,7 @@ describe("AccountPage", () => {
     render(<AccountPage />);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("radio", { name: /ET \(plus précis\)/i }));
+      fireEvent.click(screen.getByRole("radio", { name: "ET" }));
     });
 
     expect(updateSettings).toHaveBeenCalledWith({ defaultSearchMode: "AND" });

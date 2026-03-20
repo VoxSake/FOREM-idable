@@ -59,7 +59,7 @@ export async function listApiKeysForUser(userId: number): Promise<ApiKeySummary[
       revokedAt: apiKeys.revokedAt,
     })
     .from(apiKeys)
-    .where(eq(apiKeys.userId, userId))
+    .where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)))
     .orderBy(desc(apiKeys.createdAt));
 
   return rows.map((row) => toApiKeySummary(row));
