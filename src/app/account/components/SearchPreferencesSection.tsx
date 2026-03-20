@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Search } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { AccountSectionHeader } from "./AccountSectionHeader";
@@ -7,7 +8,7 @@ type SearchPreferencesSectionProps = {
   onChange: (value: "AND" | "OR") => void;
 };
 
-export function SearchPreferencesSection({
+function SearchPreferencesSectionComponent({
   value,
   onChange,
 }: SearchPreferencesSectionProps) {
@@ -43,3 +44,5 @@ export function SearchPreferencesSection({
     </section>
   );
 }
+
+export const SearchPreferencesSection = memo(SearchPreferencesSectionComponent);

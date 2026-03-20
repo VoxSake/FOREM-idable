@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoaderCircle, UserRound } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
@@ -106,7 +106,7 @@ export default function AccountPage() {
     currentApiKeyName.trim().length > 0 &&
     apiKeyForm.formState.isValid;
 
-  const saveProfile = async (values: ProfileFormValues) => {
+  const saveProfile = useCallback(async (values: ProfileFormValues) => {
     setIsSavingProfile(true);
     setProfileFeedback(null);
 
@@ -144,9 +144,9 @@ export default function AccountPage() {
     } finally {
       setIsSavingProfile(false);
     }
-  };
+  }, [profileForm, refresh, setUser]);
 
-  const savePassword = async (values: PasswordFormValues) => {
+  const savePassword = useCallback(async (values: PasswordFormValues) => {
     setIsSavingPassword(true);
     setPasswordFeedback(null);
 
@@ -179,9 +179,9 @@ export default function AccountPage() {
     } finally {
       setIsSavingPassword(false);
     }
-  };
+  }, [passwordForm]);
 
-  const createApiKey = async (values: ApiKeyFormValues) => {
+  const createApiKey = useCallback(async (values: ApiKeyFormValues) => {
     const wasCreated = await apiKeys.createApiKey(values);
     if (!wasCreated) {
       return;
@@ -191,7 +191,14 @@ export default function AccountPage() {
       name: "",
       expiry: "none",
     });
-  };
+  }, [apiKeyForm, apiKeys]);
+
+  const handleSearchModeChange = useCallback(
+    (value: "AND" | "OR") => {
+      updateSettings({ defaultSearchMode: value });
+    },
+    [updateSettings]
+  );
 
   if (isLoading || !isSettingsLoaded) {
     return (
@@ -266,9 +273,7 @@ export default function AccountPage() {
 
             <SearchPreferencesSection
               value={settings.defaultSearchMode}
-              onChange={(value) => {
-                updateSettings({ defaultSearchMode: value });
-              }}
+              onChange={handleSearchModeChange}
             />
           </CardContent>
         </Card>

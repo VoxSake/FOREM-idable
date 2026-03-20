@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Copy, KeyRound, Trash2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -44,7 +45,7 @@ type ApiKeysSectionProps = {
   onRevoke: (keyId: number) => Promise<void>;
 };
 
-export function ApiKeysSection({
+function ApiKeysSectionComponent({
   form,
   apiKeys,
   feedback,
@@ -216,3 +217,5 @@ export function ApiKeysSection({
     </Card>
   );
 }
+
+export const ApiKeysSection = memo(ApiKeysSectionComponent);
