@@ -5,7 +5,6 @@ import { CalendarDays, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
 import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
 import {
@@ -186,7 +185,7 @@ function ApplicationCardBadges({
 }) {
   return (
     <div className="flex min-h-12 flex-wrap content-start items-center gap-2">
-      <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
+      <Badge variant="outline">{application.job.contractType || "Non précisé"}</Badge>
       <Badge variant="secondary">
         {isManualApplication(application) ? "Manuelle" : "Importée"}
       </Badge>

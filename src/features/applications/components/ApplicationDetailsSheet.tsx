@@ -23,7 +23,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
 import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
 import {
@@ -181,7 +180,7 @@ function ApplicationDetailsSheetBody({
           {application.job.company || "Entreprise non précisée"} • {application.job.location}
         </SheetDescription>
         <div className="flex flex-wrap gap-2 pt-2">
-          <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
+          <Badge variant="outline">{application.job.contractType || "Non précisé"}</Badge>
           {isManual ? (
             <Badge variant="secondary">
               Manuelle

@@ -2,10 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { ApplicationCard } from "./ApplicationCard";
 import { JobApplication } from "@/types/application";
 
-vi.mock("@/components/jobs/ContractTypeBadge", () => ({
-  ContractTypeBadge: ({ contractType }: { contractType: string }) => <span>{contractType}</span>,
-}));
-
 vi.mock("@/features/applications/components/ApplicationsOfferButtons", () => ({
   ApplicationsOfferButtons: () => <div>offer-buttons</div>,
 }));
