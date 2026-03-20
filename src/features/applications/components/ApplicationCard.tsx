@@ -4,6 +4,7 @@ import { addDays, isAfter, isBefore } from "date-fns";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
 import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
@@ -61,9 +62,9 @@ export function ApplicationCard({
   const displayStatus = getDisplayApplicationStatus(application);
 
   return (
-    <div
+    <Card
       className={cn(
-        "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/20",
+        "cursor-pointer rounded-xl border bg-card shadow-sm transition-colors hover:bg-muted/20",
         application.status === "accepted" && "border-emerald-300 bg-emerald-50/60",
         application.status === "rejected" && "border-rose-300 bg-rose-50/60",
         (hasInterview || hasUnreadCoachUpdate) && "border-sky-300 bg-sky-50/50",
@@ -81,122 +82,165 @@ export function ApplicationCard({
           aria-label="Sélectionner la candidature"
         />
 
-        <div className="min-w-0 flex-1 space-y-3">
+        <CardContent className="min-w-0 flex-1 p-0">
           <div className="flex flex-col gap-3">
-            <div className="min-w-0 text-left">
-              <p className="truncate font-semibold leading-snug hover:text-primary">
-                {application.job.company || "Entreprise non précisée"}
-              </p>
-              <p className="line-clamp-2 text-sm text-muted-foreground">{application.job.title}</p>
-              <p className="text-xs text-muted-foreground">{application.job.location}</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
-              {isManualApplication(application) ? (
-                <Badge variant="secondary">
-                  Manuelle
-                </Badge>
-              ) : (
-                <Badge variant="secondary">
-                  Importée
-                </Badge>
-              )}
-              {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
-                <Badge variant={hasUnreadCoachUpdate ? "default" : "secondary"}>
-                  {hasUnreadCoachUpdate ? "Nouveau" : "Retour coach"}
-                </Badge>
-              ) : null}
-              <Badge variant={isDue ? "destructive" : "secondary"}>
-                {applicationStatusLabel(displayStatus)}
-              </Badge>
-              <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
-              {hasInterview ? (
-                <Badge variant="secondary">
-                  Entretien {formatApplicationDateTime(application.interviewAt ?? undefined)}
-                </Badge>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <ApplicationStatusSelect
-              value={displayStatus}
-              onValueChange={(value) => onApplyStatus(application.job.id, value)}
-              onTriggerClick={(event) => event.stopPropagation()}
+            <ApplicationCardHeader application={application} />
+            <ApplicationCardBadges
+              application={application}
+              displayStatus={displayStatus}
+              hasInterview={hasInterview}
+              hasUnreadCoachUpdate={hasUnreadCoachUpdate}
+              isDue={isDue}
             />
+            <div className="flex flex-col gap-2">
+              <ApplicationStatusSelect
+                value={displayStatus}
+                onValueChange={(value) => onApplyStatus(application.job.id, value)}
+                onTriggerClick={(event) => event.stopPropagation()}
+              />
 
-            <ApplicationsOfferButtons application={application} />
+              <ApplicationsOfferButtons application={application} />
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 w-full"
-              onClick={(event) => {
-                event.stopPropagation();
-                onOpenDetails(application.job.id);
-              }}
-            >
-              Détails
-            </Button>
-
-            <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-              {shouldShowFollowUpDetails(application.status) ? (
-                <>
-                  {followUpEnabled ? (
-                    <>
-                      <p>Relance: {formatApplicationDate(application.followUpDueAt)}</p>
-                      {isSoon ? <p>Bientôt</p> : null}
-                      {application.lastFollowUpAt ? (
-                        <p>Dernière: {formatApplicationDate(application.lastFollowUpAt)}</p>
-                      ) : null}
-                    </>
-                  ) : (
-                    <p>Relance désactivée.</p>
-                  )}
-                </>
-              ) : (
-                <p>Aucune relance automatique sur une candidature clôturée.</p>
-              )}
-              {hasInterview ? (
-                <p>Entretien: {formatApplicationDateTime(application.interviewAt ?? undefined)}</p>
-              ) : null}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
-                size="sm"
                 variant="outline"
+                size="sm"
                 className="h-8 w-full"
                 onClick={(event) => {
                   event.stopPropagation();
-                  onMarkFollowUpDone(application.job.id);
+                  onOpenDetails(application.job.id);
                 }}
-                disabled={application.status === "accepted"}
               >
-                <Clock3 data-icon="inline-start" />
-                Relancer
+                Détails
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-8 w-full"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onOpenInterview(application);
-                }}
-                disabled={application.status === "accepted" || application.status === "rejected"}
-              >
-                <CalendarDays data-icon="inline-start" />
-                Entretien
-              </Button>
+
+              <ApplicationCardMeta
+                application={application}
+                followUpEnabled={followUpEnabled}
+                hasInterview={hasInterview}
+                isSoon={isSoon}
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-full"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onMarkFollowUpDone(application.job.id);
+                  }}
+                  disabled={application.status === "accepted"}
+                >
+                  <Clock3 data-icon="inline-start" />
+                  Relancer
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-full"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onOpenInterview(application);
+                  }}
+                  disabled={application.status === "accepted" || application.status === "rejected"}
+                >
+                  <CalendarDays data-icon="inline-start" />
+                  Entretien
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </CardContent>
       </div>
+    </Card>
+  );
+}
+
+function ApplicationCardHeader({ application }: { application: JobApplication }) {
+  return (
+    <div className="min-w-0 text-left">
+      <p className="truncate font-semibold leading-snug hover:text-primary">
+        {application.job.company || "Entreprise non précisée"}
+      </p>
+      <p className="line-clamp-2 text-sm text-muted-foreground">{application.job.title}</p>
+      <p className="text-xs text-muted-foreground">{application.job.location}</p>
+    </div>
+  );
+}
+
+function ApplicationCardBadges({
+  application,
+  displayStatus,
+  hasInterview,
+  hasUnreadCoachUpdate,
+  isDue,
+}: {
+  application: JobApplication;
+  displayStatus: ApplicationStatus;
+  hasInterview: boolean;
+  hasUnreadCoachUpdate: boolean;
+  isDue: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
+      <Badge variant="secondary">
+        {isManualApplication(application) ? "Manuelle" : "Importée"}
+      </Badge>
+      {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
+        <Badge variant={hasUnreadCoachUpdate ? "default" : "secondary"}>
+          {hasUnreadCoachUpdate ? "Nouveau" : "Retour coach"}
+        </Badge>
+      ) : null}
+      <Badge variant={isDue ? "destructive" : "secondary"}>
+        {applicationStatusLabel(displayStatus)}
+      </Badge>
+      <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
+      {hasInterview ? (
+        <Badge variant="secondary">
+          Entretien {formatApplicationDateTime(application.interviewAt ?? undefined)}
+        </Badge>
+      ) : null}
+    </div>
+  );
+}
+
+function ApplicationCardMeta({
+  application,
+  followUpEnabled,
+  hasInterview,
+  isSoon,
+}: {
+  application: JobApplication;
+  followUpEnabled: boolean;
+  hasInterview: boolean;
+  isSoon: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+      {shouldShowFollowUpDetails(application.status) ? (
+        <>
+          {followUpEnabled ? (
+            <>
+              <p>Relance: {formatApplicationDate(application.followUpDueAt)}</p>
+              {isSoon ? <p>Bientôt</p> : null}
+              {application.lastFollowUpAt ? (
+                <p>Dernière: {formatApplicationDate(application.lastFollowUpAt)}</p>
+              ) : null}
+            </>
+          ) : (
+            <p>Relance désactivée.</p>
+          )}
+        </>
+      ) : (
+        <p>Aucune relance automatique sur une candidature clôturée.</p>
+      )}
+      {hasInterview ? (
+        <p>Entretien: {formatApplicationDateTime(application.interviewAt ?? undefined)}</p>
+      ) : null}
     </div>
   );
 }
