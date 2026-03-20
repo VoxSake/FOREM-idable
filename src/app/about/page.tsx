@@ -15,86 +15,36 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const RECENT_UPDATES = [
+const PRODUCT_UPDATES = [
   {
     month: "Mars 2026",
-    text: "Passage du rate limiting sur un backend Redis optionnel avec fallback mémoire, et durcissement des seuils sur login, inscription, réinitialisation de mot de passe et API externe.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Renforcement de la couche data avec Drizzle côté services auth/API keys, migrations versionnées et validation runtime Zod des payloads JSONB sensibles.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Alignement de l'API externe et de sa documentation avec les nouveaux scopes coach/admin, les groupes attribués, les coachs de groupe et la notion de manager.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Évolution du module coach: attribution multi-coachs par groupe, manager de groupe, visibilité limitée aux groupes attribués et gestion admin dédiée des coachs.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Ajout de l'import CSV côté coach avec modèle téléchargeable, auto-détection des colonnes, mapping manuel, correction des statuts non reconnus, gestion des doublons et choix explicite du format de date.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Dashboard coach enrichi avec sections À traiter et Activité récente, plus édition et suppression de candidatures directement depuis chaque bloc candidature dans le sidepanel bénéficiaire.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Ajout d'une synchronisation calendrier coach via lien d'abonnement ICS par groupe standard ou au global, avec aide intégrée, respect du périmètre visible par le compte courant et régénération réservée aux admins.",
-  },
-  {
-    month: "Mars 2026",
-    text: "UX affinée sur les actions coach et candidatures: boutons regroupés dans des menus Actions, side panels homogénéisés et toolbar mobile plus compacte.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Ajout d'un flux mot de passe oublié via email avec Resend, feature flag dédié et page de réinitialisation.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Vue coach affinée: side panel plus large, candidatures repliables, note privée coach commune, notes partagées multiples avec auteurs/contributeurs, badges Manuelle/Importée et exports enrichis.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Ajout d'une page Confidentialité, d'un consentement statistiques clarifié et de variables d'environnement dédiées pour personnaliser les informations RGPD.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Mise en place d'une API externe sécurisée pour les comptes coach et admin, avec clés API Bearer et exports JSON / CSV compatibles Excel et Power Query.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Arrivée des rôles user, coach et admin, avec gestion de groupes, suivi des candidatures et exports coach par utilisateur ou par groupe.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Ajout du suivi complet des candidatures: relances, entretiens, export CSV, compte obligatoire pour le suivi et interface dédiée.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Tracking optionnel via Umami, activable par variables d'environnement.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Documentation de configuration enrichie (`README` + `env.example`) pour les variables Umami.",
-  },
-  {
-    month: "Mars 2026",
-    text: "Nettoyage du lint sur la table des offres avec une règle ciblée de compatibilité React Compiler/TanStack.",
+    items: [
+      "Passage du rate limiting sur un backend Redis optionnel avec fallback mémoire, et durcissement des seuils sur login, inscription, réinitialisation de mot de passe et API externe.",
+      "Renforcement de la couche data avec Drizzle côté services auth/API keys, migrations versionnées et validation runtime Zod des payloads JSONB sensibles.",
+      "Alignement de l'API externe et de sa documentation avec les nouveaux scopes coach/admin, les groupes attribués, les coachs de groupe et la notion de manager.",
+      "Évolution du module coach: attribution multi-coachs par groupe, manager de groupe, visibilité limitée aux groupes attribués et gestion admin dédiée des coachs.",
+      "Ajout de l'import CSV côté coach avec modèle téléchargeable, auto-détection des colonnes, mapping manuel, correction des statuts non reconnus, gestion des doublons et choix explicite du format de date.",
+      "Dashboard coach enrichi avec sections À traiter et Activité récente, plus édition et suppression de candidatures directement depuis chaque bloc candidature dans le sidepanel bénéficiaire.",
+      "Ajout d'une synchronisation calendrier coach via lien d'abonnement ICS par groupe standard ou au global, avec aide intégrée, respect du périmètre visible par le compte courant et régénération réservée aux admins.",
+      "UX affinée sur les actions coach et candidatures: boutons regroupés dans des menus Actions, side panels homogénéisés et toolbar mobile plus compacte.",
+      "Ajout d'un flux mot de passe oublié via email avec Resend, feature flag dédié et page de réinitialisation.",
+      "Vue coach affinée: side panel plus large, candidatures repliables, note privée coach commune, notes partagées multiples avec auteurs/contributeurs, badges Manuelle/Importée et exports enrichis.",
+      "Ajout d'une page Confidentialité, d'un consentement statistiques clarifié et de variables d'environnement dédiées pour personnaliser les informations RGPD.",
+      "Mise en place d'une API externe sécurisée pour les comptes coach et admin, avec clés API Bearer et exports JSON / CSV compatibles Excel et Power Query.",
+      "Arrivée des rôles user, coach et admin, avec gestion de groupes, suivi des candidatures et exports coach par utilisateur ou par groupe.",
+      "Ajout du suivi complet des candidatures: relances, entretiens, export CSV, compte obligatoire pour le suivi et interface dédiée.",
+      "Tracking optionnel via Umami, activable par variables d'environnement.",
+      "Documentation de configuration enrichie (`README` + `env.example`) pour les variables Umami.",
+      "Nettoyage du lint sur la table des offres avec une règle ciblée de compatibilité React Compiler/TanStack.",
+    ],
   },
   {
     month: "Février 2026",
-    text: "Recherche élargie avec plus de résultats chargés par défaut.",
-  },
-  {
-    month: "Février 2026",
-    text: "Pagination enrichie avec navigation rapide (première, dernière et plage dynamique de pages).",
-  },
-  {
-    month: "Février 2026",
-    text: "Chargement progressif des résultats supplémentaires via le bouton \"Charger plus\".",
+    items: [
+      "Recherche élargie avec plus de résultats chargés par défaut.",
+      "Pagination enrichie avec navigation rapide (première, dernière et plage dynamique de pages).",
+      "Chargement progressif des résultats supplémentaires via le bouton \"Charger plus\".",
+    ],
   },
 ];
 
@@ -129,14 +79,6 @@ const APIS = [
     hrefLabel: "https://developer.adzuna.com/docs/search",
   },
 ];
-
-const UPDATES_BY_MONTH = Object.entries(
-  RECENT_UPDATES.reduce<Record<string, string[]>>((accumulator, update) => {
-    accumulator[update.month] = [...(accumulator[update.month] ?? []), update.text];
-    return accumulator;
-  }, {})
-);
-const FEATURED_UPDATES = RECENT_UPDATES.slice(0, 5);
 
 export default function AboutPage() {
   return (
@@ -212,35 +154,23 @@ export default function AboutPage() {
         <CardHeader>
           <CardTitle>Nouveautés récentes</CardTitle>
           <CardDescription>
-            Les dernières évolutions majeures du projet, avec un lien vers l&apos;historique complet.
+            Les évolutions récentes du projet, regroupées par période.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-            {FEATURED_UPDATES.map((update) => (
-              <div key={`${update.month}-${update.text}`} className="flex gap-3 text-sm text-muted-foreground">
-                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/70" />
-                <div className="flex flex-col gap-1">
-                  <p className="font-medium text-foreground">{update.month}</p>
-                  <p>{update.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
           <Accordion type="multiple" className="rounded-xl border px-4">
-            {UPDATES_BY_MONTH.map(([month, updates]) => (
-              <AccordionItem key={month} value={month}>
-                <AccordionTrigger>{month}</AccordionTrigger>
+            {PRODUCT_UPDATES.map((group) => (
+              <AccordionItem key={group.month} value={group.month}>
+                <AccordionTrigger>{group.month}</AccordionTrigger>
                 <AccordionContent>
                   <div className="flex flex-col gap-3">
-                    {updates.map((update) => (
+                    {group.items.map((item) => (
                       <div
-                        key={`${month}-${update}`}
+                        key={`${group.month}-${item}`}
                         className="flex gap-3 text-sm text-muted-foreground"
                       >
                         <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/70" />
-                        <p>{update}</p>
+                        <p>{item}</p>
                       </div>
                     ))}
                   </div>
@@ -251,12 +181,12 @@ export default function AboutPage() {
           <div className="text-sm text-muted-foreground">
             Historique complet:{" "}
             <a
-              href="https://github.com/VoxSake/FOREM-idable/blob/main/CHANGELOG.md"
+              href="https://github.com/VoxSake/FOREM-idable/commits/main/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              CHANGELOG.md
+              commits sur GitHub
             </a>
           </div>
         </CardContent>

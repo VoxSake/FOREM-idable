@@ -2,15 +2,14 @@ import { runtimeConfig } from "@/config/runtime";
 import { PrivacyConsentControls } from "@/components/consent/PrivacyConsentControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const DATA_CATEGORIES = [
+type TextItem = {
+  title: string;
+  text: string;
+};
+
+const DATA_CATEGORIES: TextItem[] = [
   {
     title: "Données de compte",
     text: "Si vous créez un compte, l'application peut traiter votre adresse e-mail, votre nom, votre prénom, votre rôle, votre hash de mot de passe, ainsi que les informations de session nécessaires à l'authentification.",
@@ -45,7 +44,7 @@ const DATA_CATEGORIES = [
   },
 ];
 
-const LEGAL_BASIS = [
+const LEGAL_BASIS: TextItem[] = [
   {
     title: "Fournir le service",
     text: "Recherche d'offres, suivi des candidatures, historique de recherche, accès au compte et accès aux fonctions du compte. Base juridique principale: exécution du service demandé et, selon les cas, mesures précontractuelles.",
@@ -72,11 +71,25 @@ const LEGAL_BASIS = [
   },
 ];
 
-const RETENTION_POINTS = [
-  "Les données locales restent dans votre navigateur jusqu'à leur suppression par vos soins, par effacement manuel du navigateur ou via les fonctions prévues dans l'application.",
-  "Les données associées à un compte connecté sont conservées tant que le compte reste actif ou jusqu'à demande de suppression, sous réserve des éléments strictement nécessaires à la sécurité, à la gestion d'un litige ou au respect d'une obligation légale.",
-  "Les sessions expirent automatiquement. Les clés API peuvent être révoquées à tout moment et peuvent aussi expirer automatiquement si une date d'expiration a été définie.",
-  "Les flux calendrier reflètent l'état courant des entretiens enregistrés dans l'application. Lorsqu'un entretien est modifié ou supprimé, la source est mise à jour côté FOREM-idable, mais la disparition effective dans un agenda tiers dépend du délai de resynchronisation appliqué par ce service tiers.",
+const ACCESS_AND_RETENTION = [
+  {
+    title: "Destinataires et accès aux données",
+    paragraphs: [
+      "Les données ne sont pas vendues. Elles peuvent être accessibles, dans la limite du nécessaire, au responsable du traitement et aux prestataires techniques indispensables au fonctionnement de l'application, comme l'hébergement, la base de données et les composants d'analyse activés avec consentement.",
+      "Certaines fonctionnalités donnent aussi accès aux données à d'autres utilisateurs autorisés dans l'application, notamment dans le cadre du suivi de groupes, des candidatures et, le cas échéant, de la synchronisation calendrier des entretiens.",
+      "Si un transfert hors de l'Espace économique européen devait intervenir via un prestataire technique, il devrait être encadré par les garanties appropriées prévues par le RGPD.",
+      "Si vous ou une personne autorisée choisissez d'abonner un agenda tiers, comme Google Calendar, Outlook ou Apple Calendar, les données incluses dans le flux calendrier seront également traitées par ce service tiers selon ses propres conditions et sa propre politique de confidentialité.",
+    ],
+  },
+  {
+    title: "Durées de conservation",
+    paragraphs: [
+      "Les données locales restent dans votre navigateur jusqu'à leur suppression par vos soins, par effacement manuel du navigateur ou via les fonctions prévues dans l'application.",
+      "Les données associées à un compte connecté sont conservées tant que le compte reste actif ou jusqu'à demande de suppression, sous réserve des éléments strictement nécessaires à la sécurité, à la gestion d'un litige ou au respect d'une obligation légale.",
+      "Les sessions expirent automatiquement. Les clés API peuvent être révoquées à tout moment et peuvent aussi expirer automatiquement si une date d'expiration a été définie.",
+      "Les flux calendrier reflètent l'état courant des entretiens enregistrés dans l'application. Lorsqu'un entretien est modifié ou supprimé, la source est mise à jour côté FOREM-idable, mais la disparition effective dans un agenda tiers dépend du délai de resynchronisation appliqué par ce service tiers.",
+    ],
+  },
 ];
 
 const RIGHTS = [
@@ -84,10 +97,46 @@ const RIGHTS = [
   "Lorsque le traitement repose sur votre consentement, vous pouvez le retirer à tout moment pour l'avenir, sans remettre en cause la licéité du traitement réalisé avant ce retrait.",
 ];
 
+function SectionList({
+  items,
+  className = "flex flex-col gap-4",
+}: {
+  items: TextItem[];
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      {items.map((item) => (
+        <div key={item.title} className="flex flex-col gap-1 text-sm leading-6 text-muted-foreground">
+          <p className="font-semibold text-foreground">{item.title}</p>
+          <p>{item.text}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TextCardGrid({ items }: { items: TextItem[] }) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {items.map((item, index) => (
+        <Card key={item.title} className="bg-muted/30 shadow-none">
+          <CardHeader className="gap-2">
+            <CardTitle className="text-base">
+              {index + 1}. {item.title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 text-sm leading-6 text-muted-foreground">
+            {item.text}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function PrivacyPage() {
-  const privacyEmail = runtimeConfig.privacy.contactEmail;
-  const projectLabel = runtimeConfig.privacy.projectLabel;
-  const sourceUrl = runtimeConfig.privacy.sourceUrl;
+  const { controllerName, contactEmail, projectLabel, sourceUrl } = runtimeConfig.privacy;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 animate-in fade-in duration-500">
@@ -125,14 +174,12 @@ export default function PrivacyPage() {
             </p>
           </div>
           <div className="flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
-            <p className="font-semibold text-foreground">
-              {runtimeConfig.privacy.controllerName}
-            </p>
+            <p className="font-semibold text-foreground">{controllerName}</p>
             <p>Projet: {projectLabel}</p>
             <p>
               Contact RGPD:{" "}
-              <a className="text-primary hover:underline" href={`mailto:${privacyEmail}`}>
-                {privacyEmail}
+              <a className="text-primary hover:underline" href={`mailto:${contactEmail}`}>
+                {contactEmail}
               </a>
             </p>
             <p>
@@ -157,19 +204,8 @@ export default function PrivacyPage() {
             Les catégories de données potentiellement concernées par le fonctionnement du service.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          {DATA_CATEGORIES.map((category, index) => (
-            <Card key={category.title} className="bg-muted/30 shadow-none">
-              <CardHeader className="gap-2">
-                <CardTitle className="text-base">
-                  {index + 1}. {category.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-sm leading-6 text-muted-foreground">
-                {category.text}
-              </CardContent>
-            </Card>
-          ))}
+        <CardContent>
+          <TextCardGrid items={DATA_CATEGORIES} />
         </CardContent>
       </Card>
 
@@ -177,16 +213,8 @@ export default function PrivacyPage() {
         <CardHeader>
           <CardTitle>Finalités et bases juridiques</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {LEGAL_BASIS.map((item) => (
-            <div
-              key={item.title}
-              className="flex flex-col gap-1 text-sm leading-6 text-muted-foreground"
-            >
-              <p className="font-semibold text-foreground">{item.title}</p>
-              <p>{item.text}</p>
-            </div>
-          ))}
+        <CardContent>
+          <SectionList items={LEGAL_BASIS} />
         </CardContent>
       </Card>
 
@@ -196,38 +224,14 @@ export default function PrivacyPage() {
             <CardTitle>Accès, conservation et droits</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-6 text-sm leading-6 text-muted-foreground">
-            <div className="flex flex-col gap-3">
-              <p className="font-semibold text-foreground">Destinataires et accès aux données</p>
-              <p>
-                Les données ne sont pas vendues. Elles peuvent être accessibles, dans la limite du
-                nécessaire, au responsable du traitement et aux prestataires techniques indispensables
-                au fonctionnement de l&apos;application, comme l&apos;hébergement, la base de données
-                et les composants d&apos;analyse activés avec consentement.
-              </p>
-              <p>
-                Certaines fonctionnalités donnent aussi accès aux données à d&apos;autres utilisateurs
-                autorisés dans l&apos;application, notamment dans le cadre du suivi de groupes, des
-                candidatures et, le cas échéant, de la synchronisation calendrier des entretiens.
-              </p>
-              <p>
-                Si un transfert hors de l&apos;Espace économique européen devait intervenir via un
-                prestataire technique, il devrait être encadré par les garanties appropriées prévues
-                par le RGPD.
-              </p>
-              <p>
-                Si vous ou une personne autorisée choisissez d&apos;abonner un agenda tiers, comme
-                Google Calendar, Outlook ou Apple Calendar, les données incluses dans le flux
-                calendrier seront également traitées par ce service tiers selon ses propres conditions
-                et sa propre politique de confidentialité.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <p className="font-semibold text-foreground">Durées de conservation</p>
-              {RETENTION_POINTS.map((point) => (
-                <p key={point}>{point}</p>
-              ))}
-            </div>
+            {ACCESS_AND_RETENTION.map((section) => (
+              <div key={section.title} className="flex flex-col gap-3">
+                <p className="font-semibold text-foreground">{section.title}</p>
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            ))}
 
             <div className="flex flex-col gap-3">
               <p className="font-semibold text-foreground">Vos droits</p>
@@ -236,8 +240,8 @@ export default function PrivacyPage() {
               ))}
               <p>
                 Pour exercer vos droits, vous pouvez écrire à{" "}
-                <a className="text-primary hover:underline" href={`mailto:${privacyEmail}`}>
-                  {privacyEmail}
+                <a className="text-primary hover:underline" href={`mailto:${contactEmail}`}>
+                  {contactEmail}
                 </a>
                 .
               </p>
