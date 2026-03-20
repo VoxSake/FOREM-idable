@@ -83,7 +83,7 @@ export function ApplicationCard({
         />
 
         <CardContent className="min-w-0 flex-1 p-0">
-          <div className="flex min-h-full flex-col gap-3">
+          <div className="flex min-h-full flex-col gap-2.5">
             <ApplicationCardHeader application={application} />
             <ApplicationCardBadges
               application={application}
@@ -185,7 +185,7 @@ function ApplicationCardBadges({
   isDue: boolean;
 }) {
   return (
-    <div className="flex min-h-14 flex-wrap content-start items-center gap-2">
+    <div className="flex min-h-12 flex-wrap content-start items-center gap-2">
       <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
       <Badge variant="secondary">
         {isManualApplication(application) ? "Manuelle" : "Importée"}
