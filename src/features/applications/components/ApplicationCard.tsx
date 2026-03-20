@@ -161,7 +161,7 @@ export function ApplicationCard({
 
 function ApplicationCardHeader({ application }: { application: JobApplication }) {
   return (
-    <div className="min-h-16 min-w-0 text-left">
+    <div className="min-h-14 min-w-0 text-left">
       <p className="truncate font-semibold leading-snug hover:text-primary">
         {application.job.company || "Entreprise non précisée"}
       </p>
@@ -220,7 +220,7 @@ function ApplicationCardMeta({
   isSoon: boolean;
 }) {
   return (
-    <div className="min-h-16 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+    <div className="min-h-14 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
       {shouldShowFollowUpDetails(application.status) ? (
         <>
           {followUpEnabled ? (
