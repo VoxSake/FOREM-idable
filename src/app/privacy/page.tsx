@@ -139,7 +139,7 @@ export default function PrivacyPage() {
   const { controllerName, contactEmail, projectLabel, sourceUrl } = runtimeConfig.privacy;
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 animate-in fade-in duration-500">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       <Card className="overflow-hidden shadow-sm">
         <CardHeader className="gap-3">
           <div className="flex flex-wrap items-center gap-2">

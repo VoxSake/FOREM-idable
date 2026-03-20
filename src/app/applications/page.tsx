@@ -30,7 +30,7 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[92rem] flex-col gap-6 animate-in fade-in duration-500">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       <ApplicationsPageIntro />
 
       <ApplicationsHeaderControls
