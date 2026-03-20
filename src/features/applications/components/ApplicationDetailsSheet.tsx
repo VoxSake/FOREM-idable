@@ -6,7 +6,14 @@ import { CalendarDays, FilePenLine, Save, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -140,6 +147,15 @@ function ApplicationDetailsSheetBody({
     location: application.job.location || "",
     url: application.job.url === "#" ? "" : application.job.url,
   });
+  const resetManualDetailsForm = () => {
+    setManualDetailsForm({
+      company: application.job.company || "",
+      title: application.job.title,
+      contractType: application.job.contractType || "",
+      location: application.job.location || "",
+      url: application.job.url === "#" ? "" : application.job.url,
+    });
+  };
 
   const saveFollowUpForm = async (nextForm: typeof initialFollowUpForm) => {
     const normalizedForm = {
@@ -223,286 +239,89 @@ function ApplicationDetailsSheetBody({
       </SheetHeader>
 
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5 text-sm">
-        <section className="flex flex-col gap-3">
-          <h3 className="font-medium">Informations de l&apos;offre</h3>
-          {isManual && isEditingManualDetails ? (
-            <div className="grid gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Entreprise</span>
-                <Input
-                  value={manualDetailsForm.company}
-                  onChange={(event) =>
-                    setManualDetailsForm((current) => ({
-                      ...current,
-                      company: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Type</span>
-                <Input
-                  value={manualDetailsForm.contractType}
-                  onChange={(event) =>
-                    setManualDetailsForm((current) => ({
-                      ...current,
-                      contractType: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="flex flex-col gap-1 sm:col-span-2">
-                <span className="text-xs text-muted-foreground">Intitulé</span>
-                <Input
-                  value={manualDetailsForm.title}
-                  onChange={(event) =>
-                    setManualDetailsForm((current) => ({
-                      ...current,
-                      title: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Lieu</span>
-                <Input
-                  value={manualDetailsForm.location}
-                  onChange={(event) =>
-                    setManualDetailsForm((current) => ({
-                      ...current,
-                      location: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Lien de l&apos;offre</span>
-                <Input
-                  value={manualDetailsForm.url}
-                  onChange={(event) =>
-                    setManualDetailsForm((current) => ({
-                      ...current,
-                      url: event.target.value,
-                    }))
-                  }
-                  placeholder="https://..."
-                />
-              </label>
-              <div className="flex justify-end gap-2 sm:col-span-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditingManualDetails(false);
-                    setManualDetailsForm({
-                      company: application.job.company || "",
-                      title: application.job.title,
-                      contractType: application.job.contractType || "",
-                      location: application.job.location || "",
-                      url: application.job.url === "#" ? "" : application.job.url,
-                    });
-                  }}
-                >
-                  Annuler
-                </Button>
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    const saved = await onSaveManualDetails(manualDetailsForm);
-                    if (saved) {
-                      setIsEditingManualDetails(false);
-                    }
-                  }}
-                  disabled={!manualDetailsForm.company.trim() || !manualDetailsForm.title.trim()}
-                >
-                  <Save data-icon="inline-start" />
-                  Enregistrer
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-muted-foreground">
-              <p>{application.job.company || "Entreprise non précisée"}</p>
-              <p className="font-medium text-foreground">{application.job.title}</p>
-              <p>{application.job.location || "Non précisé"}</p>
-              <p>Type: {application.job.contractType || "Non précisé"}</p>
-              <p className="break-all">
-                Lien: {application.job.url && application.job.url !== "#" ? application.job.url : "Aucun"}
-              </p>
-            </div>
-          )}
-        </section>
+        <DetailsSection title="Informations de l&apos;offre">
+          <OfferDetailsSection
+            application={application}
+            isManual={isManual}
+            isEditingManualDetails={isEditingManualDetails}
+            manualDetailsForm={manualDetailsForm}
+            onManualDetailsFormChange={setManualDetailsForm}
+            onCancelEdit={() => {
+              setIsEditingManualDetails(false);
+              resetManualDetailsForm();
+            }}
+            onSave={async () => {
+              const saved = await onSaveManualDetails(manualDetailsForm);
+              if (saved) {
+                setIsEditingManualDetails(false);
+              }
+            }}
+          />
+        </DetailsSection>
 
-        <section className="flex flex-col gap-3">
-          <h3 className="font-medium">Statut</h3>
+        <Separator />
+
+        <DetailsSection title="Statut">
           <ApplicationStatusSelect
             value={displayStatus}
             onValueChange={(value) => onApplyStatus(application.job.id, value)}
           />
-        </section>
+        </DetailsSection>
 
-        <section className="flex flex-col gap-3">
-          <h3 className="font-medium">Relance</h3>
-          {shouldShowFollowUpDetails(application.status) ? (
-            <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-              <p className="font-medium text-foreground">
-                {followUpForm.enabled ? "Relance active" : "Relance desactivee"}
-              </p>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">Date de relance</span>
-                <Input
-                  type="date"
-                  value={followUpForm.dueAt}
-                  onChange={(event) => {
-                    setFollowUpForm((current) => ({
-                      ...current,
-                      dueAt: event.target.value,
-                    }));
-                    setFollowUpSaveState("idle");
-                  }}
-                />
-              </label>
-              <div className="flex flex-col gap-1 text-muted-foreground">
-                {followUpForm.enabled ? (
-                  <p>Prochaine relance: {formatApplicationDate(followUpForm.dueAt)}</p>
-                ) : (
-                  <p>Relance désactivée pour cette candidature.</p>
-                )}
-                {application.lastFollowUpAt ? (
-                  <p>Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}</p>
-                ) : null}
-                {followUpSaveState === "error" ? (
-                  <Alert variant="destructive">
-                    <AlertTitle>Relance</AlertTitle>
-                    <AlertDescription>Impossible d&apos;enregistrer la relance.</AlertDescription>
-                  </Alert>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setFollowUpForm((current) => ({
-                      ...current,
-                      dueAt: defaultFollowUpDate,
-                    }));
-                    setFollowUpSaveState("idle");
-                  }}
-                  disabled={followUpForm.dueAt === defaultFollowUpDate}
-                >
-                  Remettre a J+7
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    void saveFollowUpForm({
-                      enabled: !followUpForm.enabled,
-                      dueAt: followUpForm.dueAt || defaultFollowUpDate,
-                    })
-                  }
-                >
-                  {followUpForm.enabled ? "Desactiver la relance" : "Activer la relance"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() =>
-                    void saveFollowUpForm({
-                      enabled: true,
-                      dueAt: followUpForm.dueAt || defaultFollowUpDate,
-                    })
-                  }
-                  disabled={!followUpForm.dueAt}
-                >
-                  <Save data-icon="inline-start" />
-                  Mettre a jour la relance
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-muted-foreground">
-              Aucune relance automatique sur une candidature clôturée.
-            </p>
-          )}
-        </section>
+        <Separator />
 
-        <section className="flex flex-col gap-3">
-          <h3 className="font-medium">Entretien</h3>
-          <p className="text-muted-foreground">
-            {application.interviewAt
-              ? formatApplicationDateTime(application.interviewAt ?? undefined)
-              : "Aucun entretien planifié"}
-          </p>
-          {application.interviewDetails ? (
-            <p className="whitespace-pre-wrap rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-muted-foreground">
-              {application.interviewDetails}
-            </p>
-          ) : null}
-        </section>
+        <DetailsSection title="Relance">
+          <FollowUpSection
+            application={application}
+            followUpForm={followUpForm}
+            followUpSaveState={followUpSaveState}
+            defaultFollowUpDate={defaultFollowUpDate}
+            onFollowUpFormChange={(nextForm) => {
+              setFollowUpForm(nextForm);
+              setFollowUpSaveState("idle");
+            }}
+            onSave={saveFollowUpForm}
+          />
+        </DetailsSection>
 
-        <section className="flex flex-col gap-3">
-          <h3 className="font-medium">Notes</h3>
-          <Textarea
-            className="min-h-40"
+        <Separator />
+
+        <DetailsSection title="Entretien">
+          <InterviewDetailsSection application={application} />
+        </DetailsSection>
+
+        <Separator />
+
+        <DetailsSection title="Notes">
+          <EditableTextSection
             value={notesDraft}
-            onChange={(event) => onNotesDraftChange(event.target.value)}
+            initialValue={application.notes ?? ""}
+            minHeightClassName="min-h-40"
             placeholder="Contexte, contact RH, retour, salaire..."
+            onChange={onNotesDraftChange}
+            onSave={onSaveNotes}
           />
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => void onSaveNotes()}
-              disabled={notesDraft === (application.notes ?? "")}
-            >
-              <Save data-icon="inline-start" />
-              Enregistrer
-            </Button>
-          </div>
-        </section>
+        </DetailsSection>
 
-        <section className="flex flex-col gap-3">
-          <h3 className="font-medium">Preuves / références</h3>
-          <Textarea
-            className="min-h-32"
+        <Separator />
+
+        <DetailsSection title="Preuves / références">
+          <EditableTextSection
             value={proofsDraft}
-            onChange={(event) => onProofsDraftChange(event.target.value)}
+            initialValue={application.proofs ?? ""}
+            minHeightClassName="min-h-32"
+            onChange={onProofsDraftChange}
+            onSave={onSaveProofs}
           />
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => void onSaveProofs()}
-              disabled={proofsDraft === (application.proofs ?? "")}
-            >
-              <Save data-icon="inline-start" />
-              Enregistrer
-            </Button>
-          </div>
-        </section>
+        </DetailsSection>
 
         {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
-          <section className="flex flex-col gap-3">
-            <h3 className="font-medium">Notes du coach</h3>
-              {application.sharedCoachNotes.map((note) => (
-                <div
-                  key={note.id}
-                  className="rounded-md border border-border/60 bg-muted/20 px-3 py-3 text-sm text-muted-foreground"
-                >
-                  <div className="space-y-1 text-xs">
-                    <p>
-                      Rédigée par {formatCoachAuthorName(note.createdBy)} •{" "}
-                      {formatApplicationDateTime(note.updatedAt)}
-                    </p>
-                    {note.contributors.length > 1 ? (
-                      <p>Contributions: {summarizeCoachContributors(note.contributors)}</p>
-                    ) : null}
-                  </div>
-                  <p className="mt-3 whitespace-pre-wrap text-sm">{note.content}</p>
-                </div>
-              ))}
-          </section>
+          <>
+            <Separator />
+            <DetailsSection title="Notes du coach">
+              <CoachNotesSection application={application} />
+            </DetailsSection>
+          </>
         ) : null}
       </div>
 
@@ -532,6 +351,336 @@ function ApplicationDetailsSheetBody({
           </div>
         </div>
       </SheetFooter>
+    </>
+  );
+}
+
+function DetailsSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="font-medium">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function OfferDetailsSection({
+  application,
+  isManual,
+  isEditingManualDetails,
+  manualDetailsForm,
+  onManualDetailsFormChange,
+  onCancelEdit,
+  onSave,
+}: {
+  application: JobApplication;
+  isManual: boolean;
+  isEditingManualDetails: boolean;
+  manualDetailsForm: {
+    company: string;
+    title: string;
+    contractType: string;
+    location: string;
+    url: string;
+  };
+  onManualDetailsFormChange: React.Dispatch<
+    React.SetStateAction<{
+      company: string;
+      title: string;
+      contractType: string;
+      location: string;
+      url: string;
+    }>
+  >;
+  onCancelEdit: () => void;
+  onSave: () => Promise<void>;
+}) {
+  if (isManual && isEditingManualDetails) {
+    return (
+      <FieldGroup className="rounded-lg border border-border/60 bg-muted/20 p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="sheet-manual-company">Entreprise</FieldLabel>
+            <Input
+              id="sheet-manual-company"
+              value={manualDetailsForm.company}
+              onChange={(event) =>
+                onManualDetailsFormChange((current) => ({
+                  ...current,
+                  company: event.target.value,
+                }))
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="sheet-manual-contract-type">Type</FieldLabel>
+            <Input
+              id="sheet-manual-contract-type"
+              value={manualDetailsForm.contractType}
+              onChange={(event) =>
+                onManualDetailsFormChange((current) => ({
+                  ...current,
+                  contractType: event.target.value,
+                }))
+              }
+            />
+          </Field>
+          <Field className="sm:col-span-2">
+            <FieldLabel htmlFor="sheet-manual-title">Intitulé</FieldLabel>
+            <Input
+              id="sheet-manual-title"
+              value={manualDetailsForm.title}
+              onChange={(event) =>
+                onManualDetailsFormChange((current) => ({
+                  ...current,
+                  title: event.target.value,
+                }))
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="sheet-manual-location">Lieu</FieldLabel>
+            <Input
+              id="sheet-manual-location"
+              value={manualDetailsForm.location}
+              onChange={(event) =>
+                onManualDetailsFormChange((current) => ({
+                  ...current,
+                  location: event.target.value,
+                }))
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="sheet-manual-url">Lien de l&apos;offre</FieldLabel>
+            <Input
+              id="sheet-manual-url"
+              value={manualDetailsForm.url}
+              onChange={(event) =>
+                onManualDetailsFormChange((current) => ({
+                  ...current,
+                  url: event.target.value,
+                }))
+              }
+              placeholder="https://..."
+            />
+          </Field>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancelEdit}>
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            onClick={() => void onSave()}
+            disabled={!manualDetailsForm.company.trim() || !manualDetailsForm.title.trim()}
+          >
+            <Save data-icon="inline-start" />
+            Enregistrer
+          </Button>
+        </div>
+      </FieldGroup>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-muted-foreground">
+      <p>{application.job.company || "Entreprise non précisée"}</p>
+      <p className="font-medium text-foreground">{application.job.title}</p>
+      <p>{application.job.location || "Non précisé"}</p>
+      <p>Type: {application.job.contractType || "Non précisé"}</p>
+      <p className="break-all">
+        Lien: {application.job.url && application.job.url !== "#" ? application.job.url : "Aucun"}
+      </p>
+    </div>
+  );
+}
+
+function FollowUpSection({
+  application,
+  followUpForm,
+  followUpSaveState,
+  defaultFollowUpDate,
+  onFollowUpFormChange,
+  onSave,
+}: {
+  application: JobApplication;
+  followUpForm: {
+    enabled: boolean;
+    dueAt: string;
+  };
+  followUpSaveState: "idle" | "error";
+  defaultFollowUpDate: string;
+  onFollowUpFormChange: (nextForm: { enabled: boolean; dueAt: string }) => void;
+  onSave: (nextForm: { enabled: boolean; dueAt: string }) => Promise<void>;
+}) {
+  if (!shouldShowFollowUpDetails(application.status)) {
+    return (
+      <p className="text-muted-foreground">
+        Aucune relance automatique sur une candidature clôturée.
+      </p>
+    );
+  }
+
+  return (
+    <FieldGroup className="rounded-lg border border-border/60 bg-muted/20 p-3">
+      <Field>
+        <FieldLabel htmlFor="sheet-follow-up-date">
+          {followUpForm.enabled ? "Relance active" : "Relance désactivée"}
+        </FieldLabel>
+        <Input
+          id="sheet-follow-up-date"
+          type="date"
+          value={followUpForm.dueAt}
+          onChange={(event) =>
+            onFollowUpFormChange({
+              ...followUpForm,
+              dueAt: event.target.value,
+            })
+          }
+        />
+        <FieldDescription>
+          {followUpForm.enabled
+            ? `Prochaine relance: ${formatApplicationDate(followUpForm.dueAt)}`
+            : "Relance désactivée pour cette candidature."}
+        </FieldDescription>
+      </Field>
+      <div className="flex flex-col gap-1 text-muted-foreground">
+        {application.lastFollowUpAt ? (
+          <p>Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}</p>
+        ) : null}
+        {followUpSaveState === "error" ? (
+          <Alert variant="destructive">
+            <AlertTitle>Relance</AlertTitle>
+            <AlertDescription>Impossible d&apos;enregistrer la relance.</AlertDescription>
+          </Alert>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() =>
+            onFollowUpFormChange({
+              ...followUpForm,
+              dueAt: defaultFollowUpDate,
+            })
+          }
+          disabled={followUpForm.dueAt === defaultFollowUpDate}
+        >
+          Remettre à J+7
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() =>
+            void onSave({
+              enabled: !followUpForm.enabled,
+              dueAt: followUpForm.dueAt || defaultFollowUpDate,
+            })
+          }
+        >
+          {followUpForm.enabled ? "Désactiver la relance" : "Activer la relance"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() =>
+            void onSave({
+              enabled: true,
+              dueAt: followUpForm.dueAt || defaultFollowUpDate,
+            })
+          }
+          disabled={!followUpForm.dueAt}
+        >
+          <Save data-icon="inline-start" />
+          Mettre à jour la relance
+        </Button>
+      </div>
+    </FieldGroup>
+  );
+}
+
+function InterviewDetailsSection({ application }: { application: JobApplication }) {
+  return (
+    <>
+      <p className="text-muted-foreground">
+        {application.interviewAt
+          ? formatApplicationDateTime(application.interviewAt ?? undefined)
+          : "Aucun entretien planifié"}
+      </p>
+      {application.interviewDetails ? (
+        <p className="whitespace-pre-wrap rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-muted-foreground">
+          {application.interviewDetails}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+function EditableTextSection({
+  value,
+  initialValue,
+  minHeightClassName,
+  placeholder,
+  onChange,
+  onSave,
+}: {
+  value: string;
+  initialValue: string;
+  minHeightClassName: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+  onSave: () => Promise<void>;
+}) {
+  return (
+    <>
+      <Textarea
+        className={minHeightClassName}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+      />
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => void onSave()}
+          disabled={value === initialValue}
+        >
+          <Save data-icon="inline-start" />
+          Enregistrer
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function CoachNotesSection({ application }: { application: JobApplication }) {
+  return (
+    <>
+      {application.sharedCoachNotes?.map((note) => (
+        <div
+          key={note.id}
+          className="rounded-md border border-border/60 bg-muted/20 px-3 py-3 text-sm text-muted-foreground"
+        >
+          <div className="flex flex-col gap-1 text-xs">
+            <p>
+              Rédigée par {formatCoachAuthorName(note.createdBy)} •{" "}
+              {formatApplicationDateTime(note.updatedAt)}
+            </p>
+            {note.contributors.length > 1 ? (
+              <p>Contributions: {summarizeCoachContributors(note.contributors)}</p>
+            ) : null}
+          </div>
+          <p className="mt-3 whitespace-pre-wrap text-sm">{note.content}</p>
+        </div>
+      ))}
     </>
   );
 }

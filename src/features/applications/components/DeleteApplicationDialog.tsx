@@ -1,14 +1,13 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { JobApplication } from "@/types/application";
 
 interface DeleteApplicationDialogProps {
@@ -27,25 +26,23 @@ export function DeleteApplicationDialog({
   onConfirm,
 }: DeleteApplicationDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Supprimer cette candidature ?</DialogTitle>
-          <DialogDescription>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer cette candidature ?</AlertDialogTitle>
+          <AlertDialogDescription>
             {application
               ? `Cette action retirera ${application.job.title} de votre suivi.`
               : "Cette action retirera la candidature de votre suivi."}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Annuler
-          </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>Annuler</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={onConfirm}>
             Supprimer
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
