@@ -220,7 +220,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 animate-in fade-in duration-500">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-black tracking-tight">Mon compte</h1>
