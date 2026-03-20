@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AccountPage from "./page";
 
 const mockUseAuth = vi.fn();
@@ -51,6 +52,10 @@ describe("AccountPage", () => {
     });
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("submits the profile form with validated values", async () => {
     const fetchMock = vi.spyOn(global, "fetch").mockResolvedValueOnce(
       new Response(
@@ -92,6 +97,26 @@ describe("AccountPage", () => {
     expect(await screen.findByText("Nom et prénom mis à jour.")).toBeInTheDocument();
   });
 
+  it("enables the profile button after removing a single character", async () => {
+    render(<AccountPage />);
+
+    const submitButton = screen.getByRole("button", { name: "Enregistrer le profil" });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Prénom")).toHaveValue("Jordi");
+    });
+
+    expect(submitButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Prénom"), {
+      target: { value: "Jord" },
+    });
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+  });
+
   it("shows a field error when password confirmation does not match", async () => {
     render(<AccountPage />);
 
@@ -106,6 +131,25 @@ describe("AccountPage", () => {
     expect(screen.getByRole("button", { name: "Changer le mot de passe" })).toBeDisabled();
   });
 
+  it("enables the password button when both fields are valid", async () => {
+    render(<AccountPage />);
+
+    const submitButton = screen.getByRole("button", { name: "Changer le mot de passe" });
+
+    expect(submitButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Nouveau mot de passe"), {
+      target: { value: "motdepasse1" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirmer le mot de passe"), {
+      target: { value: "motdepasse1" },
+    });
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+  });
+
   it("updates the default search mode through the toggle group", async () => {
     const updateSettings = vi.fn();
 
@@ -117,7 +161,9 @@ describe("AccountPage", () => {
 
     render(<AccountPage />);
 
-    fireEvent.click(screen.getByRole("radio", { name: /ET \(plus précis\)/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("radio", { name: /ET \(plus précis\)/i }));
+    });
 
     expect(updateSettings).toHaveBeenCalledWith({ defaultSearchMode: "AND" });
   });
