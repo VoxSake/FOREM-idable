@@ -19,6 +19,9 @@ const PRODUCT_UPDATES = [
   {
     month: "Mars 2026",
     items: [
+      "Refactor complet de la page Candidatures: orchestration simplifiée, logique dérivée extraite dans des utilitaires et un hook dédié, composants découpés par responsabilité, duplication réduite et couverture de tests renforcée.",
+      "Homogénéisation de l'UI Candidatures avec des formulaires et confirmations alignés sur les primitives shadcn (Field, AlertDialog), badges unifiés et cartes mieux alignées visuellement.",
+      "Nettoyage du shell global de l'application: header mobile et footer dédiés, sidebar restructurée autour d'une configuration testable, navigation plus lisible et layout racine clarifié.",
       "Passage du rate limiting sur un backend Redis optionnel avec fallback mémoire, et durcissement des seuils sur login, inscription, réinitialisation de mot de passe et API externe.",
       "Renforcement de la couche data avec Drizzle côté services auth/API keys, migrations versionnées et validation runtime Zod des payloads JSONB sensibles.",
       "Alignement de l'API externe et de sa documentation avec les nouveaux scopes coach/admin, les groupes attribués, les coachs de groupe et la notion de manager.",
