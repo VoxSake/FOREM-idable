@@ -64,7 +64,7 @@ export function ApplicationCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer rounded-xl border bg-card shadow-sm transition-colors hover:bg-muted/20",
+        "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/20",
         application.status === "accepted" && "border-emerald-300 bg-emerald-50/60",
         application.status === "rejected" && "border-rose-300 bg-rose-50/60",
         (hasInterview || hasUnreadCoachUpdate) && "border-sky-300 bg-sky-50/50",
@@ -83,7 +83,7 @@ export function ApplicationCard({
         />
 
         <CardContent className="min-w-0 flex-1 p-0">
-          <div className="flex flex-col gap-3">
+          <div className="flex min-h-full flex-col gap-3">
             <ApplicationCardHeader application={application} />
             <ApplicationCardBadges
               application={application}
@@ -92,7 +92,7 @@ export function ApplicationCard({
               hasUnreadCoachUpdate={hasUnreadCoachUpdate}
               isDue={isDue}
             />
-            <div className="flex flex-col gap-2">
+            <div className="mt-auto flex flex-col gap-2">
               <ApplicationStatusSelect
                 value={displayStatus}
                 onValueChange={(value) => onApplyStatus(application.job.id, value)}
@@ -161,7 +161,7 @@ export function ApplicationCard({
 
 function ApplicationCardHeader({ application }: { application: JobApplication }) {
   return (
-    <div className="min-w-0 text-left">
+    <div className="min-h-16 min-w-0 text-left">
       <p className="truncate font-semibold leading-snug hover:text-primary">
         {application.job.company || "Entreprise non précisée"}
       </p>
@@ -185,7 +185,7 @@ function ApplicationCardBadges({
   isDue: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex min-h-14 flex-wrap content-start items-center gap-2">
       <ContractTypeBadge contractType={application.job.contractType || "N/A"} />
       <Badge variant="secondary">
         {isManualApplication(application) ? "Manuelle" : "Importée"}
@@ -220,7 +220,7 @@ function ApplicationCardMeta({
   isSoon: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+    <div className="min-h-16 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
       {shouldShowFollowUpDetails(application.status) ? (
         <>
           {followUpEnabled ? (
