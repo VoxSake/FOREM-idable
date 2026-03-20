@@ -86,8 +86,8 @@ export default function AboutPage() {
       <Card className="overflow-hidden shadow-sm">
         <CardHeader className="gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">Produit</Badge>
-            <Badge variant="secondary">Emploi & open data</Badge>
+            <Badge variant="outline">Open Source</Badge>
+            <Badge variant="secondary">Data-driven</Badge>
           </div>
           <CardTitle className="text-3xl font-black tracking-tight">À propos</CardTitle>
           <CardDescription className="max-w-3xl text-base">
@@ -101,14 +101,14 @@ export default function AboutPage() {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>Objectif du site</CardTitle>
-          <CardDescription>Ce que le produit essaie réellement d&apos;améliorer.</CardDescription>
+          <CardDescription>Le rôle du produit et la valeur qu&apos;il apporte.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-sm leading-6 text-muted-foreground">
-            Le site simplifie la recherche d&apos;offres en regroupant les résultats, en améliorant
-            le filtrage par localités et en proposant des actions pratiques comme le suivi des
-            candidatures, l&apos;ouverture du PDF lorsqu&apos;il est disponible et une vue plus claire
-            des prochaines relances.
+            FOREM-idable centralise la recherche d&apos;offres, fiabilise le filtrage géographique
+            et transforme une navigation brute en parcours de suivi plus exploitable. Le produit
+            réunit dans un même espace la consultation des offres, l&apos;accès aux PDF disponibles,
+            le suivi des candidatures et une lecture plus claire des prochaines relances.
           </p>
           <Alert>
             <AlertTitle>Limites connues</AlertTitle>
