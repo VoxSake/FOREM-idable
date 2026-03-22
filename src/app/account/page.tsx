@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useSettings } from "@/hooks/useSettings";
 import { useAccountApiKeys } from "@/hooks/useAccountApiKeys";
+import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { AuthUser } from "@/types/auth";
 import {
   ApiKeyFormValues,
@@ -87,6 +88,10 @@ export default function AccountPage() {
 
   const canManageApiKeys = user?.role === "coach" || user?.role === "admin";
   const apiKeys = useAccountApiKeys({ enabled: canManageApiKeys });
+
+  useToastFeedback(profileFeedback, { title: "Mise à jour du profil" });
+  useToastFeedback(passwordFeedback, { title: "Mot de passe" });
+  useToastFeedback(apiKeys.feedback, { title: "Clés API" });
 
   const isProfileUnchanged = useMemo(
     () =>
@@ -257,14 +262,12 @@ export default function AccountPage() {
                 form={profileForm}
                 canSubmit={canSubmitProfile}
                 isSubmitting={isSavingProfile}
-                feedback={profileFeedback}
                 onSubmit={saveProfile}
               />
               <PasswordSection
                 form={passwordForm}
                 canSubmit={canSubmitPassword}
                 isSubmitting={isSavingPassword}
-                feedback={passwordFeedback}
                 onSubmit={savePassword}
               />
             </div>
@@ -282,7 +285,6 @@ export default function AccountPage() {
           <ApiKeysSection
             form={apiKeyForm}
             apiKeys={apiKeys.apiKeys}
-            feedback={apiKeys.feedback}
             newApiKey={apiKeys.newApiKey}
             isLoading={apiKeys.isLoading}
             isCreating={apiKeys.isCreating}

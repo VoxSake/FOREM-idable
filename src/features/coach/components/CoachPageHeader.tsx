@@ -14,14 +14,12 @@ import { ArrowRight, FolderKanban, History, Sparkles } from "lucide-react";
 
 interface CoachPageHeaderProps {
   role: "coach" | "admin";
-  feedback: string | null;
   undoLabel: string | null;
   onUndo: () => void;
 }
 
 export function CoachPageHeader({
   role,
-  feedback,
   undoLabel,
   onUndo,
 }: CoachPageHeaderProps) {
@@ -79,10 +77,10 @@ export function CoachPageHeader({
         </div>
       </CardHeader>
 
-      {feedback || undoLabel ? (
+      {undoLabel ? (
         <CardContent className="px-6 py-4">
           <Alert className="flex flex-wrap items-center justify-between gap-3 border-border/60 bg-card">
-            <AlertDescription>{feedback ?? undoLabel}</AlertDescription>
+            <AlertDescription>{undoLabel}</AlertDescription>
             {undoLabel ? (
               <Button type="button" size="sm" variant="outline" onClick={onUndo}>
                 Annuler

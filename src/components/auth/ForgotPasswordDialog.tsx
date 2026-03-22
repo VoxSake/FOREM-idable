@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { runtimeConfig } from "@/config/runtime";
+import { toast } from "sonner";
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -21,7 +22,6 @@ interface ForgotPasswordDialogProps {
 
 export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialogProps) {
   const [email, setEmail] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!runtimeConfig.auth.passwordResetEnabled) {
@@ -29,7 +29,6 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
   }
 
   const submit = async () => {
-    setFeedback(null);
     setIsSubmitting(true);
 
     try {
@@ -41,16 +40,16 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
       const data = (await response.json()) as { error?: string; message?: string };
 
       if (!response.ok) {
-        setFeedback(data.error || "Envoi impossible.");
+        toast.error(data.error || "Envoi impossible.");
         return;
       }
 
-      setFeedback(
+      toast.success(
         data.message ||
           "Si un compte existe pour cette adresse, un email de réinitialisation a été envoyé."
       );
     } catch {
-      setFeedback("Envoi impossible.");
+      toast.error("Envoi impossible.");
     } finally {
       setIsSubmitting(false);
     }
@@ -76,7 +75,6 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
             onChange={(event) => setEmail(event.target.value)}
             placeholder="vous@example.com"
           />
-          {feedback ? <p className="text-sm text-muted-foreground">{feedback}</p> : null}
           <p className="text-xs text-muted-foreground">
             Le lien de réinitialisation expire après 60 minutes.
             {" "}

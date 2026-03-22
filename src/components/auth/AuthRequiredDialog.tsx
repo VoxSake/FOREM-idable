@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { runtimeConfig } from "@/config/runtime";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
+import { toast } from "sonner";
 
 type AuthMode = "login" | "register";
 
@@ -34,7 +35,6 @@ export function AuthRequiredDialog({
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
 
@@ -50,11 +50,10 @@ export function AuthRequiredDialog({
 
   const submit = async () => {
     if (effectiveMode === "register" && password !== confirmPassword) {
-      setFeedback("Les mots de passe ne correspondent pas.");
+      toast.error("Les mots de passe ne correspondent pas.");
       return;
     }
 
-    setFeedback(null);
     setIsSubmitting(true);
 
     try {
@@ -75,13 +74,16 @@ export function AuthRequiredDialog({
       };
 
       if (!response.ok || !data.user) {
-        setFeedback(data.error || "Action impossible.");
+        toast.error(data.error || "Action impossible.");
         return;
       }
 
       setUser(data.user);
       await refresh();
       await onSuccess?.();
+      toast.success(
+        effectiveMode === "login" ? "Connexion réussie." : "Compte créé."
+      );
       onOpenChange(false);
       setEmail("");
       setFirstName("");
@@ -89,7 +91,7 @@ export function AuthRequiredDialog({
       setPassword("");
       setConfirmPassword("");
     } catch {
-      setFeedback("Action impossible.");
+      toast.error("Action impossible.");
     } finally {
       setIsSubmitting(false);
     }
@@ -184,7 +186,6 @@ export function AuthRequiredDialog({
               placeholder="Confirmer le mot de passe"
             />
           ) : null}
-          {feedback ? <p className="text-sm text-muted-foreground">{feedback}</p> : null}
         </div>
 
         <DialogFooter>

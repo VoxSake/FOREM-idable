@@ -8,6 +8,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { runtimeConfig } from "@/config/runtime";
 import { AnalyticsConsent } from "@/components/consent/AnalyticsConsent";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -66,6 +67,7 @@ export default function RootLayout({
               </main>
             </SidebarProvider>
           </AuthProvider>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
         <AnalyticsConsent
           umamiEnabled={umamiEnabled}

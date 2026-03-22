@@ -6,13 +6,13 @@ import { useState } from "react";
 import { runtimeConfig } from "@/config/runtime";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token")?.trim() || "";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,16 +31,15 @@ export function ResetPasswordContent() {
 
   const submit = async () => {
     if (!token) {
-      setFeedback("Lien invalide ou incomplet.");
+      toast.error("Lien invalide ou incomplet.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setFeedback("Les mots de passe ne correspondent pas.");
+      toast.error("Les mots de passe ne correspondent pas.");
       return;
     }
 
-    setFeedback(null);
     setIsSubmitting(true);
 
     try {
@@ -52,15 +51,16 @@ export function ResetPasswordContent() {
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setFeedback(data.error || "Réinitialisation impossible.");
+        toast.error(data.error || "Réinitialisation impossible.");
         return;
       }
 
       setIsSuccess(true);
       setPassword("");
       setConfirmPassword("");
+      toast.success("Mot de passe mis à jour.");
     } catch {
-      setFeedback("Réinitialisation impossible.");
+      toast.error("Réinitialisation impossible.");
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +115,6 @@ export function ResetPasswordContent() {
                 placeholder="Confirmer le mot de passe"
               />
             </div>
-            {feedback ? <p className="text-sm text-muted-foreground">{feedback}</p> : null}
             <Button
               type="button"
               onClick={() => void submit()}

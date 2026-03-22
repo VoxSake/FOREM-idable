@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export function AuthSettingsPanel() {
   const { user, isLoading, refresh, setUser } = useAuth();
@@ -15,17 +16,15 @@ export function AuthSettingsPanel() {
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAuth = async (mode: "login" | "register") => {
     if (mode === "register" && password !== confirmPassword) {
-      setFeedback("Les mots de passe ne correspondent pas.");
+      toast.error("Les mots de passe ne correspondent pas.");
       return;
     }
 
     setIsSubmitting(true);
-    setFeedback(null);
 
     try {
       const response = await fetch(`/api/auth/${mode}`, {
@@ -45,17 +44,21 @@ export function AuthSettingsPanel() {
       };
 
       if (!response.ok || !data.user) {
-        setFeedback(data.error || "Action impossible.");
+        toast.error(data.error || "Action impossible.");
         return;
       }
 
       setUser(data.user);
-      setFeedback(mode === "login" ? "Connecté. Synchronisation en cours." : "Compte créé. Synchronisation en cours.");
+      toast.success(
+        mode === "login"
+          ? "Connecté. Synchronisation en cours."
+          : "Compte créé. Synchronisation en cours."
+      );
 
       await refresh();
       window.location.reload();
     } catch {
-      setFeedback("Action impossible.");
+      toast.error("Action impossible.");
     } finally {
       setIsSubmitting(false);
     }
@@ -63,16 +66,15 @@ export function AuthSettingsPanel() {
 
   const handleLogout = async () => {
     setIsSubmitting(true);
-    setFeedback(null);
 
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
       await refresh();
-      setFeedback("Déconnecté.");
+      toast.success("Déconnecté.");
       window.location.reload();
     } catch {
-      setFeedback("Déconnexion impossible.");
+      toast.error("Déconnexion impossible.");
     } finally {
       setIsSubmitting(false);
     }
@@ -180,8 +182,6 @@ export function AuthSettingsPanel() {
           </div>
         </div>
       )}
-
-      {feedback && <p className="text-sm text-muted-foreground">{feedback}</p>}
     </div>
   );
 }

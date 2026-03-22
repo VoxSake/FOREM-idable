@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { runtimeConfig } from "@/config/runtime";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
+import { toast } from "sonner";
 
 type AuthMode = "login" | "register";
 
@@ -33,13 +34,11 @@ export function AuthSidebarPanel() {
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
 
   const openDialog = (nextMode: AuthMode) => {
     setMode(nextMode);
-    setFeedback(null);
     if (nextMode === "login") {
       setFirstName("");
       setLastName("");
@@ -50,12 +49,11 @@ export function AuthSidebarPanel() {
 
   const handleAuth = async () => {
     if (mode === "register" && password !== confirmPassword) {
-      setFeedback("Les mots de passe ne correspondent pas.");
+      toast.error("Les mots de passe ne correspondent pas.");
       return;
     }
 
     setIsSubmitting(true);
-    setFeedback(null);
 
     try {
       const response = await fetch(`/api/auth/${mode}`, {
@@ -75,12 +73,13 @@ export function AuthSidebarPanel() {
       };
 
       if (!response.ok || !data.user) {
-        setFeedback(data.error || "Action impossible.");
+        toast.error(data.error || "Action impossible.");
         return;
       }
 
       setUser(data.user);
       await refresh();
+      toast.success(mode === "login" ? "Connexion réussie." : "Compte créé.");
       setIsOpen(false);
       setEmail("");
       setFirstName("");
@@ -89,7 +88,7 @@ export function AuthSidebarPanel() {
       setConfirmPassword("");
       window.location.reload();
     } catch {
-      setFeedback("Action impossible.");
+      toast.error("Action impossible.");
     } finally {
       setIsSubmitting(false);
     }
@@ -97,15 +96,15 @@ export function AuthSidebarPanel() {
 
   const handleLogout = async () => {
     setIsSubmitting(true);
-    setFeedback(null);
 
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
       await refresh();
+      toast.success("Déconnecté.");
       window.location.reload();
     } catch {
-      setFeedback("Déconnexion impossible.");
+      toast.error("Déconnexion impossible.");
     } finally {
       setIsSubmitting(false);
     }
@@ -181,8 +180,6 @@ export function AuthSidebarPanel() {
             <div className="h-8 rounded-md bg-muted/40" />
           </div>
         ) : null}
-
-        {feedback && <p className="text-xs text-muted-foreground">{feedback}</p>}
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -256,7 +253,6 @@ export function AuthSidebarPanel() {
                 placeholder="Confirmer le mot de passe"
               />
             ) : null}
-            {feedback && <p className="text-sm text-muted-foreground">{feedback}</p>}
           </div>
 
           <DialogFooter>

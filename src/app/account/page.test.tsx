@@ -4,6 +4,12 @@ import AccountPage from "./page";
 
 const mockUseAuth = vi.fn();
 const mockUseSettings = vi.fn();
+const { mockToastSuccess, mockToastError, mockToastWarning, mockToast } = vi.hoisted(() => ({
+  mockToastSuccess: vi.fn(),
+  mockToastError: vi.fn(),
+  mockToastWarning: vi.fn(),
+  mockToast: vi.fn(),
+}));
 
 vi.mock("@/components/auth/AuthProvider", () => ({
   useAuth: () => mockUseAuth(),
@@ -26,6 +32,14 @@ vi.mock("@/components/auth/AccountAccessPrompt", () => ({
       {description}
     </div>
   ),
+}));
+
+vi.mock("sonner", () => ({
+  toast: Object.assign(mockToast, {
+    success: mockToastSuccess,
+    error: mockToastError,
+    warning: mockToastWarning,
+  }),
 }));
 
 describe("AccountPage", () => {
@@ -94,7 +108,11 @@ describe("AccountPage", () => {
       });
     });
 
-    expect(await screen.findByText("Nom et prénom mis à jour.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockToastSuccess).toHaveBeenCalledWith("Nom et prénom mis à jour.", {
+        description: "Mise à jour du profil",
+      });
+    });
   });
 
   it("enables the profile button after removing a single character", async () => {

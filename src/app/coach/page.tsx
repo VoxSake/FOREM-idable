@@ -10,9 +10,13 @@ import { CoachPageHeader } from "@/features/coach/components/CoachPageHeader";
 import { CoachSummaryCards } from "@/features/coach/components/CoachSummaryCards";
 import { CoachUserSheet } from "@/features/coach/components/CoachUserSheet";
 import { useCoachPageState } from "@/features/coach/useCoachPageState";
+import { useToastFeedback } from "@/hooks/useToastFeedback";
 
 export default function CoachPage() {
   const page = useCoachPageState();
+
+  useToastFeedback(page.feedback, { title: "Espace coach" });
+  useToastFeedback(page.apiKeysFeedback, { title: "Clés API coach" });
 
   if (page.isAuthLoading || page.isLoading) {
     return (
@@ -45,7 +49,6 @@ export default function CoachPage() {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       <CoachPageHeader
         role={page.user.role}
-        feedback={page.feedback}
         undoLabel={page.undoAction?.label ?? null}
         onUndo={() => void page.undoLastAction()}
       />

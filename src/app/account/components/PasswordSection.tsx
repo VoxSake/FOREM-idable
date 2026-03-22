@@ -2,16 +2,14 @@ import { ShieldCheck } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
-import { FeedbackState, PasswordFormValues } from "../account.schemas";
+import { PasswordFormValues } from "../account.schemas";
 import { AccountField } from "./AccountField";
 import { AccountSectionHeader } from "./AccountSectionHeader";
-import { FeedbackAlert } from "./FeedbackAlert";
 
 type PasswordSectionProps = {
   form: UseFormReturn<PasswordFormValues>;
   canSubmit: boolean;
   isSubmitting: boolean;
-  feedback: FeedbackState | null;
   onSubmit: (values: PasswordFormValues) => Promise<void>;
 };
 
@@ -19,7 +17,6 @@ export function PasswordSection({
   form,
   canSubmit,
   isSubmitting,
-  feedback,
   onSubmit,
 }: PasswordSectionProps) {
   return (
@@ -60,7 +57,6 @@ export function PasswordSection({
           <Button type="submit" variant="outline" disabled={!canSubmit || isSubmitting}>
             Changer le mot de passe
           </Button>
-          <FeedbackAlert title="Mot de passe" feedback={feedback} />
         </div>
       </form>
     </section>

@@ -25,16 +25,13 @@ import {
   API_KEY_ENDPOINTS,
   API_KEY_EXPIRY_OPTIONS,
   ApiKeyFormValues,
-  FeedbackState,
 } from "../account.schemas";
 import { formatDateTime, isApiKeyExpiry } from "../account.utils";
 import { AccountField } from "./AccountField";
-import { FeedbackAlert } from "./FeedbackAlert";
 
 type ApiKeysSectionProps = {
   form: UseFormReturn<ApiKeyFormValues>;
   apiKeys: ApiKeySummary[];
-  feedback: FeedbackState | null;
   newApiKey: string | null;
   isLoading: boolean;
   isCreating: boolean;
@@ -49,7 +46,6 @@ type ApiKeysSectionProps = {
 function ApiKeysSectionComponent({
   form,
   apiKeys,
-  feedback,
   newApiKey,
   isLoading,
   isCreating,
@@ -220,8 +216,6 @@ function ApiKeysSectionComponent({
             </Empty>
           ) : null}
         </div>
-
-        <FeedbackAlert title="Clés API" feedback={feedback} />
       </CardContent>
     </Card>
   );

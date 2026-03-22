@@ -2,16 +2,14 @@ import { UserRound } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
-import { FeedbackState, ProfileFormValues } from "../account.schemas";
+import { ProfileFormValues } from "../account.schemas";
 import { AccountField } from "./AccountField";
 import { AccountSectionHeader } from "./AccountSectionHeader";
-import { FeedbackAlert } from "./FeedbackAlert";
 
 type ProfileSectionProps = {
   form: UseFormReturn<ProfileFormValues>;
   canSubmit: boolean;
   isSubmitting: boolean;
-  feedback: FeedbackState | null;
   onSubmit: (values: ProfileFormValues) => Promise<void>;
 };
 
@@ -19,7 +17,6 @@ export function ProfileSection({
   form,
   canSubmit,
   isSubmitting,
-  feedback,
   onSubmit,
 }: ProfileSectionProps) {
   return (
@@ -57,7 +54,6 @@ export function ProfileSection({
           <Button type="submit" variant="outline" disabled={!canSubmit || isSubmitting}>
             Enregistrer le profil
           </Button>
-          <FeedbackAlert title="Mise à jour du profil" feedback={feedback} />
         </div>
       </form>
     </section>
