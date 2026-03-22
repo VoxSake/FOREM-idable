@@ -65,7 +65,7 @@ export function HomeSearchResultsSection({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4">
       <SelectionPanel
         selectedJobs={selectedJobs}
         onReset={onResetSelection}
@@ -84,7 +84,7 @@ export function HomeSearchResultsSection({
       />
 
       {isSearching ? (
-        <div className="flex h-64 flex-col items-center justify-center gap-4 rounded-2xl border border-border/60 bg-card">
+        <div className="flex h-64 flex-col items-center justify-center gap-4 rounded-[24px] border border-border/60 bg-linear-to-br from-card to-muted/20">
           <div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
           <p className="font-medium text-muted-foreground animate-pulse">
             Le FOREM-fouille analyse les offres...
@@ -107,6 +107,6 @@ export function HomeSearchResultsSection({
           onRequireAuth={onRequireAuth}
         />
       )}
-    </div>
+    </section>
   );
 }

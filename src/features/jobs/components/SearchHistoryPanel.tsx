@@ -20,15 +20,15 @@ export function SearchHistoryPanel({
   if (history.length === 0) return null;
 
   return (
-    <Card className="border-border/60">
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+    <Card className="border-border/60 bg-linear-to-br from-card to-muted/15">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle className="flex items-center gap-2 text-base">
             <History data-icon="inline-start" />
             Historique des recherches
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Rejouez rapidement les combinaisons qui ont deja donne de bons resultats.
+            Rejouez rapidement les combinaisons qui ont déjà donné de bons résultats.
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onClear}>
@@ -41,7 +41,7 @@ export function SearchHistoryPanel({
             key={entry.id}
             variant="outline"
             size="sm"
-            className="rounded-full"
+            className="max-w-full rounded-full justify-start"
             onClick={() => onReplay(entry.state)}
             title={new Date(entry.createdAt).toLocaleString("fr-BE")}
           >
