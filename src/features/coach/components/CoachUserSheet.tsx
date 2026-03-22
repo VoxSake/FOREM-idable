@@ -41,6 +41,10 @@ import {
   formatCoachDate,
   isApplicationDue,
   summarizeCoachContributors,
+  toEditableDate,
+  toEditableDateTime,
+  toIsoDate,
+  toIsoDateTime,
 } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
 import { Textarea } from "@/components/ui/textarea";
@@ -795,30 +799,6 @@ function CoachUserSheetBody({
       />
     </>
   );
-}
-
-function toEditableDate(value?: string | null) {
-  if (!value) return "";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
-}
-
-function toEditableDateTime(value?: string | null) {
-  if (!value) return "";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 16);
-}
-
-function toIsoDate(value: string) {
-  if (!value) return undefined;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
-}
-
-function toIsoDateTime(value: string) {
-  if (!value) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
 function getApplicationCardClassName(status: JobApplication["status"], isDue: boolean) {

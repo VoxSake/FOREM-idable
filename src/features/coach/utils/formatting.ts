@@ -82,3 +82,27 @@ export function parseTimestamp(value?: string | null) {
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? null : time;
 }
+
+export function toEditableDate(value?: string | null) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+export function toEditableDateTime(value?: string | null) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 16);
+}
+
+export function toIsoDate(value: string) {
+  if (!value) return undefined;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+export function toIsoDateTime(value: string) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
