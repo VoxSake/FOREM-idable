@@ -377,7 +377,7 @@ export function CoachGroupsSection({
                     key={`${group.id}-${entry.id}`}
                     role="button"
                     tabIndex={0}
-                    className="min-w-0 rounded-xl border bg-background px-4 py-3 text-left transition-colors hover:bg-muted/30"
+                    className="min-w-0 rounded-xl border border-border/60 bg-background px-4 py-3 text-left transition-colors hover:border-primary/30 hover:bg-muted/30"
                     onClick={() => onOpenUser(entry.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
