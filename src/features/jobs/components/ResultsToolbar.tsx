@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, CheckSquare, Download, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ResultsToolbarProps {
   jobsCount: number;
@@ -32,18 +33,23 @@ export function ResultsToolbar({
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div>
-        <h2 className="text-xl font-bold flex items-center gap-2">Résultats de recherche</h2>
-        <span className="text-sm text-muted-foreground">
-          {jobsCount} offre{jobsCount > 1 ? "s" : ""} trouvée{jobsCount > 1 ? "s" : ""}
-        </span>
-      </div>
+    <Card className="border-border/60">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-1">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            Resultats de recherche
+          </CardTitle>
+          <CardDescription>
+            {jobsCount} offre{jobsCount > 1 ? "s" : ""} trouvee{jobsCount > 1 ? "s" : ""}
+            {selectedCount > 0 ? ` • ${selectedCount} selectionnee${selectedCount > 1 ? "s" : ""}` : ""}
+          </CardDescription>
+        </div>
+      </CardHeader>
 
-      {!isSearching && jobsCount > 0 && (
-        <div className="flex items-center gap-2">
+      {!isSearching && jobsCount > 0 ? (
+        <CardContent className="flex flex-wrap gap-2 pt-0">
           <Button variant="outline" size="sm" className="rounded-full shadow-sm" onClick={onExportAll}>
-            <Download className="w-4 h-4 mr-2" />
+            <Download data-icon="inline-start" />
             Exporter en CSV
           </Button>
           <Button
@@ -53,22 +59,22 @@ export function ResultsToolbar({
             onClick={handleCopy}
             disabled={!canCopySearchLink}
           >
-            {copied ? <Check className="w-4 h-4 mr-2" /> : <Link2 className="w-4 h-4 mr-2" />}
-            {copied ? "Lien copié" : "Copier la recherche"}
+            {copied ? <Check data-icon="inline-start" /> : <Link2 data-icon="inline-start" />}
+            {copied ? "Lien copie" : "Copier la recherche"}
           </Button>
-          {selectedCount > 0 && (
+          {selectedCount > 0 ? (
             <Button
               variant="outline"
               size="sm"
               className="rounded-full shadow-sm"
               onClick={onExportSelected}
             >
-              <CheckSquare className="w-4 h-4 mr-2" />
-              Exporter la sélection
+              <CheckSquare data-icon="inline-start" />
+              Exporter la selection
             </Button>
-          )}
-        </div>
-      )}
-    </div>
+          ) : null}
+        </CardContent>
+      ) : null}
+    </Card>
   );
 }

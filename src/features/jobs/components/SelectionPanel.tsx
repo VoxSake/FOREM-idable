@@ -2,8 +2,9 @@
 
 import { CheckSquare, Send, X } from "lucide-react";
 import { Job } from "@/types/job";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 
 interface SelectionPanelProps {
@@ -24,25 +25,30 @@ export function SelectionPanel({
   if (selectedJobs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border bg-card p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold flex items-center gap-2">
-          <CheckSquare className="w-4 h-4" />
-          Sélection ({selectedJobs.length})
-        </h2>
-        <div className="flex items-center gap-2">
+    <Card className="border-border/60">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-1">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CheckSquare data-icon="inline-start" />
+            Selection ({selectedJobs.length})
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Gardez un lot court d&apos;offres a comparer avant envoi dans le suivi.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" onClick={onSendToApplications} disabled={sendDisabled}>
-            <Send className="mr-2 h-4 w-4" />
+            <Send data-icon="inline-start" />
             Envoyer vers Candidatures
           </Button>
           <Button variant="ghost" size="sm" onClick={onReset}>
-            Réinitialiser
+            Reinitialiser
           </Button>
         </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {selectedJobs.map((job) => (
-          <div key={job.id} className="rounded-lg border p-3 space-y-2">
+          <div key={job.id} className="flex flex-col gap-2 rounded-xl border border-border/60 bg-background p-3">
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-sm leading-snug">{job.title}</p>
               <button
@@ -69,7 +75,7 @@ export function SelectionPanel({
             </Button>
           </div>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

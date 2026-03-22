@@ -3,42 +3,10 @@ import DashboardPage from "./page";
 import { SearchQuery } from "@/types/search";
 import { Job } from "@/types/job";
 
-const mockUseSettings = vi.fn();
-const mockUseJobSearch = vi.fn();
-const mockUseSelectionJobs = vi.fn();
-const mockUseExportJobs = vi.fn();
-const mockUseApplications = vi.fn();
-const mockUseAuth = vi.fn();
-const mockReplace = vi.fn();
+const mockUseHomePageState = vi.fn();
 
-vi.mock("@/hooks/useSettings", () => ({
-  useSettings: () => mockUseSettings(),
-}));
-
-vi.mock("@/features/jobs/hooks/useJobSearch", () => ({
-  useJobSearch: () => mockUseJobSearch(),
-}));
-
-vi.mock("@/features/jobs/hooks/useSelectionJobs", () => ({
-  useSelectionJobs: () => mockUseSelectionJobs(),
-}));
-
-vi.mock("@/features/jobs/hooks/useExportJobs", () => ({
-  useExportJobs: () => mockUseExportJobs(),
-}));
-
-vi.mock("@/hooks/useApplications", () => ({
-  useApplications: () => mockUseApplications(),
-}));
-
-vi.mock("@/components/auth/AuthProvider", () => ({
-  useAuth: () => mockUseAuth(),
-}));
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: mockReplace }),
-  usePathname: () => "/",
-  useSearchParams: () => new URLSearchParams(),
+vi.mock("@/features/jobs/hooks/useHomePageState", () => ({
+  useHomePageState: () => mockUseHomePageState(),
 }));
 
 vi.mock("@/components/search/SearchEngine", () => ({
@@ -136,30 +104,32 @@ describe("DashboardPage integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockUseSettings.mockReturnValue({
+    mockUseHomePageState.mockReturnValue({
+      user: {
+        id: 1,
+        email: "user@example.com",
+        firstName: "Test",
+        lastName: "User",
+        role: "user",
+      },
+      isPageReady: true,
       settings: { defaultSearchMode: "OR" },
-      isLoaded: true,
-    });
-
-    mockUseJobSearch.mockReturnValue({
       jobs: [sampleJob],
       isSearching: false,
+      isLoadingMore: false,
+      hasMoreResults: false,
+      searchSessionId: 1,
       hasSearched: true,
       lastSearchQuery: sampleQuery,
       executeSearch: vi.fn(),
+      loadMore: vi.fn(),
       history: [{ id: "h1", state: sampleQuery, createdAt: "2026-02-23T10:00:00.000Z" }],
       clearHistory: vi.fn(),
       isHistoryLoaded: true,
-    });
-
-    mockUseSelectionJobs.mockReturnValue({
       selectedJobs: [sampleJob],
       selectedJobIds: new Set(["1"]),
       toggleSelection: vi.fn(),
       resetSelection: vi.fn(),
-    });
-
-    mockUseExportJobs.mockReturnValue({
       isExportDialogOpen: false,
       setIsExportDialogOpen: vi.fn(),
       exportTarget: "all",
@@ -168,20 +138,23 @@ describe("DashboardPage integration", () => {
       selectAllColumns: vi.fn(),
       toggleColumn: vi.fn(),
       applyExport: vi.fn(),
-    });
-
-    mockUseApplications.mockReturnValue({
       addApplication: vi.fn(),
-    });
-
-    mockUseAuth.mockReturnValue({
-      user: {
-        id: 1,
-        email: "user@example.com",
-        firstName: "Test",
-        lastName: "User",
-        role: "user",
-      },
+      isApplied: vi.fn().mockReturnValue(false),
+      areApplicationsLoaded: true,
+      isApplicationAuth: true,
+      selectedJob: null,
+      isDetailsOpen: false,
+      setIsDetailsOpen: vi.fn(),
+      isAuthRequiredOpen: false,
+      setIsAuthRequiredOpen: vi.fn(),
+      urlQuery: null,
+      handleSearch: vi.fn(),
+      handleCopySearchLink: vi.fn(),
+      requestAuthForApplications: vi.fn(),
+      replayPendingApplications: vi.fn(),
+      updateUrlFromQuery: vi.fn(),
+      trackJobs: vi.fn(),
+      openJobDetails: vi.fn(),
     });
   });
 
@@ -190,15 +163,20 @@ describe("DashboardPage integration", () => {
 
     fireEvent.click(screen.getByText("trigger-search"));
 
-    const { executeSearch } = mockUseJobSearch.mock.results[0].value as {
-      executeSearch: ReturnType<typeof vi.fn>;
+    const { handleSearch } = mockUseHomePageState.mock.results[0].value as {
+      handleSearch: ReturnType<typeof vi.fn>;
     };
-    const { resetSelection } = mockUseSelectionJobs.mock.results[0].value as {
+    const { resetSelection } = mockUseHomePageState.mock.results[0].value as {
       resetSelection: ReturnType<typeof vi.fn>;
     };
 
-    expect(resetSelection).toHaveBeenCalledTimes(1);
-    expect(executeSearch).toHaveBeenCalledWith(sampleQuery);
+    expect(handleSearch).toHaveBeenCalledWith(sampleQuery);
+
+    const { executeSearch } = mockUseHomePageState.mock.results[0].value as {
+      executeSearch: ReturnType<typeof vi.fn>;
+    };
+    expect(executeSearch).not.toHaveBeenCalled();
+    expect(resetSelection).not.toHaveBeenCalled();
   });
 
   it("replays history with persistInHistory=false and resets selection", async () => {
@@ -206,14 +184,18 @@ describe("DashboardPage integration", () => {
 
     fireEvent.click(screen.getByText("replay-history"));
 
-    const { executeSearch } = mockUseJobSearch.mock.results[0].value as {
+    const { executeSearch } = mockUseHomePageState.mock.results[0].value as {
       executeSearch: ReturnType<typeof vi.fn>;
     };
-    const { resetSelection } = mockUseSelectionJobs.mock.results[0].value as {
+    const { resetSelection } = mockUseHomePageState.mock.results[0].value as {
       resetSelection: ReturnType<typeof vi.fn>;
+    };
+    const { updateUrlFromQuery } = mockUseHomePageState.mock.results[0].value as {
+      updateUrlFromQuery: ReturnType<typeof vi.fn>;
     };
 
     expect(resetSelection).toHaveBeenCalledTimes(1);
+    expect(updateUrlFromQuery).toHaveBeenCalledWith(sampleQuery);
     expect(executeSearch).toHaveBeenCalledWith(sampleQuery, {
       persistInHistory: false,
     });
@@ -225,7 +207,7 @@ describe("DashboardPage integration", () => {
     fireEvent.click(screen.getByText("export-all"));
     fireEvent.click(screen.getByText("export-selected"));
 
-    const { openExportDialog } = mockUseExportJobs.mock.results[0].value as {
+    const { openExportDialog } = mockUseHomePageState.mock.results[0].value as {
       openExportDialog: ReturnType<typeof vi.fn>;
     };
 

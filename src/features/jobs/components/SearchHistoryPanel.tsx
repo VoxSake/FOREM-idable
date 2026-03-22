@@ -2,6 +2,7 @@
 
 import { History } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchQuery } from "@/types/search";
 import { SearchHistoryEntry } from "@/features/jobs/types/searchHistory";
 
@@ -19,17 +20,22 @@ export function SearchHistoryPanel({
   if (history.length === 0) return null;
 
   return (
-    <div className="rounded-xl border bg-card p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold flex items-center gap-2">
-          <History className="w-4 h-4" />
-          Historique des recherches
-        </h2>
+    <Card className="border-border/60">
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <History data-icon="inline-start" />
+            Historique des recherches
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Rejouez rapidement les combinaisons qui ont deja donne de bons resultats.
+          </p>
+        </div>
         <Button variant="ghost" size="sm" onClick={onClear}>
           Vider
         </Button>
-      </div>
-      <div className="flex flex-wrap gap-2">
+      </CardHeader>
+      <CardContent className="flex flex-wrap gap-2">
         {history.map((entry) => (
           <Button
             key={entry.id}
@@ -55,7 +61,7 @@ export function SearchHistoryPanel({
             </span>
           </Button>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

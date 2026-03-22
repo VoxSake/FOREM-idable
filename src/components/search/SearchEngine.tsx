@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent, RefObject } from "react";
 import { Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,7 +99,6 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
         setBooleanMode((prev) => (prev === "OR" ? "AND" : "OR"));
     };
 
-    const displayBooleanMode = booleanMode === "OR" ? "OU" : "ET";
     const selectedLocationsLabel = selectedLocations.length > 0 ? `${selectedLocations.length} lieu${selectedLocations.length > 1 ? "x" : ""}` : null;
 
     const triggerSearch = () => {
@@ -121,103 +120,197 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
     };
 
     return (
-        <div className="flex flex-col gap-4 p-4 lg:p-6 bg-card rounded-3xl shadow-sm border border-border/50 transition-all hover:shadow-md">
-            <div className="flex flex-col lg:flex-row gap-3 items-center w-full">
-                {/* Keywords Input Wrapper */}
-                <div className={cn(
-                    "flex-1 flex items-center flex-wrap gap-2 min-h-12 w-full p-2 px-4 border border-border bg-muted/20 focus-within:ring-2 focus-within:ring-primary/20 transition-all cursor-text",
-                    keywords.length > 0 ? "rounded-2xl" : "rounded-full"
-                )}
-                    onClick={() => inputRef.current?.focus()}>
+        <div className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card p-4 shadow-sm transition-all hover:shadow-md lg:p-6">
+            <div className="flex w-full flex-col items-center gap-3 lg:flex-row">
+                <KeywordComposer
+                    keywords={keywords}
+                    inputValue={inputValue}
+                    booleanMode={booleanMode}
+                    inputRef={inputRef}
+                    onInputValueChange={handleInputValueChange}
+                    onInputKeyDown={handleKeyDown}
+                    onInputBlur={() => {
+                        if (inputValue.trim()) {
+                            addKeyword(inputValue);
+                        }
+                    }}
+                    onRemoveKeyword={removeKeyword}
+                    onToggleBooleanMode={toggleBooleanMode}
+                />
 
-                    <Search className="w-5 h-5 text-muted-foreground shrink-0 mr-1" />
-
-                    {keywords.map((kw, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                            <Badge variant="secondary" className="px-3 py-1 flex items-center gap-1 rounded-full text-sm shrink-0 shadow-sm border border-border">
-                                {kw}
-                                <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); removeKeyword(i); }}
-                                    className="rounded-full hover:bg-muted p-0.5"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </Badge>
-                            {i < keywords.length - 1 && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); toggleBooleanMode(); }}
-                                    className={cn(
-                                        "text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors shrink-0 border",
-                                        booleanMode === "OR"
-                                            ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
-                                            : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
-                                    )}
-                                    title="Basculer OU/ET"
-                                >
-                                    {displayBooleanMode}
-                                </button>
-                            )}
-                        </div>
-                    ))}
-
-                    {keywords.length > 0 && <span className="text-muted-foreground/30 mx-1 shrink-0">|</span>}
-
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={inputValue}
-                        onChange={(e) => handleInputValueChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onBlur={() => {
-                            if (inputValue.trim()) {
-                                addKeyword(inputValue);
-                            }
-                        }}
-                        className="flex-1 min-w-[80px] bg-transparent outline-none text-foreground placeholder:text-muted-foreground/70"
-                        placeholder={keywords.length === 0 ? "Ex: Développeur, Comptable..." : "Ajouter un mot-clé..."}
-                    />
-                </div>
-
-                {/* Location Dropdown */}
-                <div className="w-full lg:w-72 shrink-0">
+                <div className="w-full shrink-0 lg:w-72">
                     <LocationAutocomplete
                         values={selectedLocations}
                         onChange={setSelectedLocations}
                     />
                 </div>
 
-                {/* Search Action */}
                 <Button
                     onClick={triggerSearch}
-                    className="w-full lg:w-14 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 shadow-sm flex items-center justify-center gap-2"
+                    className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 lg:w-14"
                 >
-                    <Search className="w-5 h-5 shrink-0" />
+                    <Search className="h-5 w-5 shrink-0" />
                     <span className="lg:hidden">Rechercher</span>
                 </Button>
             </div>
 
-            {/* Boolean hint below the bar */}
-            <div className="flex flex-col gap-3 px-4 text-xs text-muted-foreground">
-                <div className="space-y-2">
-                    <p>
-                        Astuce : cliquez sur <strong className="font-semibold text-foreground">OU / ET</strong> entre les mots-clés pour ajuster la recherche.
-                    </p>
-                    <p>
-                        <strong className="font-semibold text-foreground">OU</strong> = plus large (ex: <span className="font-mono">comptable OU aide-comptable</span>).
-                    </p>
-                    <p>
-                        <strong className="font-semibold text-foreground">ET</strong> = plus précis (ex: <span className="font-mono">comptable ET Bruxelles</span>).
-                    </p>
+            <SearchHints selectedLocationsLabel={selectedLocationsLabel} />
+        </div>
+    );
+}
+
+function KeywordComposer({
+    keywords,
+    inputValue,
+    booleanMode,
+    inputRef,
+    onInputValueChange,
+    onInputKeyDown,
+    onInputBlur,
+    onRemoveKeyword,
+    onToggleBooleanMode,
+}: {
+    keywords: string[];
+    inputValue: string;
+    booleanMode: BooleanMode;
+    inputRef: RefObject<HTMLInputElement | null>;
+    onInputValueChange: (value: string) => void;
+    onInputKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+    onInputBlur: () => void;
+    onRemoveKeyword: (index: number) => void;
+    onToggleBooleanMode: () => void;
+}) {
+    return (
+        <div
+            className={cn(
+                "flex min-h-12 w-full flex-1 cursor-text flex-wrap items-center gap-2 border border-border bg-muted/20 p-2 px-4 transition-all focus-within:ring-2 focus-within:ring-primary/20",
+                keywords.length > 0 ? "rounded-2xl" : "rounded-full"
+            )}
+            onClick={() => inputRef.current?.focus()}
+        >
+            <Search className="mr-1 h-5 w-5 shrink-0 text-muted-foreground" />
+
+            {keywords.map((keyword, index) => (
+                <div key={`${keyword}-${index}`} className="flex items-center gap-2">
+                    <KeywordBadge
+                        keyword={keyword}
+                        onRemove={() => onRemoveKeyword(index)}
+                    />
+                    {index < keywords.length - 1 ? (
+                        <BooleanModePill
+                            booleanMode={booleanMode}
+                            onToggle={onToggleBooleanMode}
+                        />
+                    ) : null}
                 </div>
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                    {selectedLocationsLabel && (
-                        <Badge variant="outline" className="rounded-full border-border/70">
-                            Filtre lieu: {selectedLocationsLabel}
-                        </Badge>
-                    )}
-                </div>
+            ))}
+
+            {keywords.length > 0 ? (
+                <span className="mx-1 shrink-0 text-muted-foreground/30">|</span>
+            ) : null}
+
+            <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={(event) => onInputValueChange(event.target.value)}
+                onKeyDown={onInputKeyDown}
+                onBlur={onInputBlur}
+                className="min-w-[80px] flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70"
+                placeholder={
+                    keywords.length === 0
+                        ? "Ex: Développeur, Comptable..."
+                        : "Ajouter un mot-clé..."
+                }
+            />
+        </div>
+    );
+}
+
+function KeywordBadge({
+    keyword,
+    onRemove,
+}: {
+    keyword: string;
+    onRemove: () => void;
+}) {
+    return (
+        <Badge
+            variant="secondary"
+            className="flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1 text-sm shadow-sm"
+        >
+            {keyword}
+            <button
+                type="button"
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onRemove();
+                }}
+                className="rounded-full p-0.5 hover:bg-muted"
+            >
+                <X className="h-3 w-3" />
+            </button>
+        </Badge>
+    );
+}
+
+function BooleanModePill({
+    booleanMode,
+    onToggle,
+}: {
+    booleanMode: BooleanMode;
+    onToggle: () => void;
+}) {
+    const label = booleanMode === "OR" ? "OU" : "ET";
+
+    return (
+        <button
+            type="button"
+            onClick={(event) => {
+                event.stopPropagation();
+                onToggle();
+            }}
+            className={cn(
+                "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors",
+                booleanMode === "OR"
+                    ? "border-slate-200 bg-slate-100 text-slate-500 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                    : "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+            )}
+            title="Basculer OU/ET"
+        >
+            {label}
+        </button>
+    );
+}
+
+function SearchHints({
+    selectedLocationsLabel,
+}: {
+    selectedLocationsLabel: string | null;
+}) {
+    return (
+        <div className="flex flex-col gap-3 px-4 text-xs text-muted-foreground">
+            <div className="space-y-2">
+                <p>
+                    Astuce : cliquez sur <strong className="font-semibold text-foreground">OU / ET</strong> entre les mots-clés pour ajuster la recherche.
+                </p>
+                <p>
+                    <strong className="font-semibold text-foreground">OU</strong> = plus large
+                    {" "}
+                    (ex: <span className="font-mono">comptable OU aide-comptable</span>).
+                </p>
+                <p>
+                    <strong className="font-semibold text-foreground">ET</strong> = plus précis
+                    {" "}
+                    (ex: <span className="font-mono">comptable ET Bruxelles</span>).
+                </p>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+                {selectedLocationsLabel ? (
+                    <Badge variant="outline" className="rounded-full border-border/70">
+                        Filtre lieu: {selectedLocationsLabel}
+                    </Badge>
+                ) : null}
             </div>
         </div>
     );

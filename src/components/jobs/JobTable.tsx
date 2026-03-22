@@ -78,162 +78,6 @@ export function JobTable({
     onTrackApplication,
     onRequireAuth,
 }: JobTableProps) {
-    const renderActions = (job: Job, layout: "table" | "mobile") => {
-        const applied = isApplied(job.id);
-        const pdfUrl = getJobPdfUrl(job);
-        const isSelected = selectedJobIds?.has(job.id) ?? false;
-
-        if (layout === "mobile") {
-            return (
-                <div className="space-y-3" onClick={(event) => event.stopPropagation()}>
-                    <div className="flex items-center justify-between gap-3">
-                        {onToggleSelection ? (
-                            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                <input
-                                    type="checkbox"
-                                    className="h-4 w-4 accent-primary cursor-pointer"
-                                    checked={isSelected}
-                                    onChange={() => onToggleSelection(job)}
-                                    aria-label="Sélectionner l'offre"
-                                />
-                                Comparer
-                            </label>
-                        ) : <span />}
-                        <div className="flex flex-wrap items-center gap-2">
-                            {job.contractType ? (
-                                <ContractTypeBadge contractType={job.contractType} />
-                            ) : null}
-                            {job.location ? (
-                                <span className="rounded-full border border-border/70 px-2.5 py-1 text-xs text-muted-foreground">
-                                    {job.location}
-                                </span>
-                            ) : null}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button
-                            type="button"
-                            variant={applied ? "secondary" : "default"}
-                            className="col-span-2 h-11 w-full"
-                            onClick={async () => {
-                                if (!isAuthenticated) {
-                                    onRequireAuth?.(job);
-                                    return;
-                                }
-                                await onTrackApplication?.(job);
-                            }}
-                            disabled={!isApplicationsLoaded}
-                        >
-                            <Send className={`mr-2 h-4 w-4 ${applied ? "fill-current" : ""}`} />
-                            {applied ? "Déjà dans le suivi" : "Ajouter au suivi"}
-                        </Button>
-
-                        <Button
-                            type="button"
-                            className="h-10 w-full"
-                            asChild
-                        >
-                            <a href={job.url} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="mr-2 h-4 w-4" />
-                                WEB
-                            </a>
-                        </Button>
-
-                        {pdfUrl ? (
-                            <Button
-                                variant="outline"
-                                type="button"
-                                className="h-10 w-full"
-                                asChild
-                            >
-                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    PDF
-                                </a>
-                            </Button>
-                        ) : (
-                            <Button
-                                type="button"
-                                className="h-10 w-full"
-                                onClick={() => onOpenDetails?.(job)}
-                                variant="outline"
-                            >
-                                Détails
-                            </Button>
-                        )}
-
-                        <Button
-                            type="button"
-                            className={pdfUrl ? "col-span-2 h-10 w-full" : "col-span-2 h-10 w-full"}
-                            onClick={() => onOpenDetails?.(job)}
-                            variant="outline"
-                        >
-                            Détails
-                        </Button>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className="flex items-center gap-1 sm:gap-2 justify-end" onClick={(event) => event.stopPropagation()}>
-                {onToggleSelection && (
-                    <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-primary cursor-pointer"
-                        checked={isSelected}
-                        onChange={() => onToggleSelection(job)}
-                        title={isSelected ? "Retirer de la sélection" : "Ajouter à la sélection"}
-                        aria-label="Sélectionner l'offre"
-                    />
-                )}
-
-                <Button
-                    variant={applied ? "secondary" : "ghost"}
-                    size="icon"
-                    className={applied ? "text-emerald-600 hover:text-emerald-700 bg-emerald-100/60 hover:bg-emerald-100 dark:bg-emerald-950/40" : "text-muted-foreground transition-colors hover:text-emerald-600"}
-                    onClick={async () => {
-                        if (!isAuthenticated) {
-                            onRequireAuth?.(job);
-                            return;
-                        }
-                        await onTrackApplication?.(job);
-                    }}
-                    title={applied ? "Déjà dans le suivi" : "Ajouter au suivi"}
-                    disabled={!isApplicationsLoaded}
-                >
-                    <Send className={`w-4 h-4 ${applied ? "fill-current" : ""}`} />
-                </Button>
-
-                {pdfUrl && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 whitespace-nowrap"
-                    >
-                        <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                            <span className="hidden sm:inline">PDF</span>
-                            <FileText className="w-3 h-3 flex-shrink-0" />
-                        </a>
-                    </Button>
-                )}
-
-                <Button
-                    size="sm"
-                    asChild
-                    className="rounded-full h-8 w-8 p-0 sm:h-8 sm:w-auto sm:px-3 gap-1 whitespace-nowrap"
-                >
-                    <a href={job.url} target="_blank" rel="noopener noreferrer">
-                        <span className="hidden sm:inline">Voir l&apos;offre</span>
-                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    </a>
-                </Button>
-            </div>
-        );
-    };
-
     const columns: ColumnDef<Job>[] = [
         {
             accessorKey: "title",
@@ -291,7 +135,20 @@ export function JobTable({
             header: "Actions",
             cell: ({ row }) => {
                 const job = row.original;
-                return renderActions(job, "table");
+                return (
+                    <JobActions
+                        job={job}
+                        layout="table"
+                        isSelected={selectedJobIds?.has(job.id) ?? false}
+                        isAuthenticated={isAuthenticated}
+                        isApplicationsLoaded={isApplicationsLoaded}
+                        isApplied={isApplied(job.id)}
+                        onToggleSelection={onToggleSelection}
+                        onTrackApplication={onTrackApplication}
+                        onRequireAuth={onRequireAuth}
+                        onOpenDetails={onOpenDetails}
+                    />
+                );
             },
         },
     ];
@@ -329,23 +186,18 @@ export function JobTable({
                     table.getRowModel().rows.map((row) => {
                         const job = row.original;
                         return (
-                        <div
-                            key={job.id}
-                            className={`rounded-xl border bg-card p-4 shadow-sm transition-colors ${onOpenDetails ? "cursor-pointer hover:bg-primary/5" : ""}`}
-                            onClick={onOpenDetails ? () => onOpenDetails(job) : undefined}
-                        >
-                            <div className="space-y-3">
-                                <div className="space-y-1">
-                                    <p className="text-base font-bold leading-snug text-foreground">
-                                        {job.title}
-                                    </p>
-                                    {job.company ? (
-                                        <p className="text-sm text-muted-foreground">{job.company}</p>
-                                    ) : null}
-                                </div>
-                                {renderActions(job, "mobile")}
-                            </div>
-                        </div>
+                            <JobMobileCard
+                                key={job.id}
+                                job={job}
+                                isSelected={selectedJobIds?.has(job.id) ?? false}
+                                isAuthenticated={isAuthenticated}
+                                isApplicationsLoaded={isApplicationsLoaded}
+                                isApplied={isApplied(job.id)}
+                                onToggleSelection={onToggleSelection}
+                                onTrackApplication={onTrackApplication}
+                                onRequireAuth={onRequireAuth}
+                                onOpenDetails={onOpenDetails}
+                            />
                         );
                     })
                 ) : (
@@ -413,83 +265,365 @@ export function JobTable({
 
             {/* Pagination Controls */}
             {pageCount > 1 && (
-                <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm text-muted-foreground">
-                        Page {currentPage} sur {pageCount}
-                        {isLoadingMore && " · Chargement..."}
-                    </div>
+                <JobTablePagination
+                    currentPage={currentPage}
+                    pageCount={pageCount}
+                    isLoadingMore={isLoadingMore}
+                    hasMoreResults={hasMoreResults}
+                    canPreviousPage={table.getCanPreviousPage()}
+                    canNextPage={table.getCanNextPage()}
+                    paginationItems={paginationItems}
+                    onFirstPage={() => table.setPageIndex(0)}
+                    onPreviousPage={() => table.previousPage()}
+                    onSelectPage={(page) => table.setPageIndex(page - 1)}
+                    onNextPage={() => table.nextPage()}
+                    onLastPage={() => table.setPageIndex(pageCount - 1)}
+                    onLoadMore={onLoadMore}
+                />
+            )}
+        </div>
+    );
+}
+
+function JobMobileCard({
+    job,
+    isSelected,
+    isAuthenticated,
+    isApplicationsLoaded,
+    isApplied,
+    onToggleSelection,
+    onTrackApplication,
+    onRequireAuth,
+    onOpenDetails,
+}: {
+    job: Job;
+    isSelected: boolean;
+    isAuthenticated: boolean;
+    isApplicationsLoaded: boolean;
+    isApplied: boolean;
+    onToggleSelection?: (job: Job) => void;
+    onTrackApplication?: (job: Job) => Promise<void> | void;
+    onRequireAuth?: (job: Job) => void;
+    onOpenDetails?: (job: Job) => void;
+}) {
+    return (
+        <div
+            className={`rounded-xl border bg-card p-4 shadow-sm transition-colors ${onOpenDetails ? "cursor-pointer hover:bg-primary/5" : ""}`}
+            onClick={onOpenDetails ? () => onOpenDetails(job) : undefined}
+        >
+            <div className="space-y-3">
+                <div className="space-y-1">
+                    <p className="text-base font-bold leading-snug text-foreground">
+                        {job.title}
+                    </p>
+                    {job.company ? (
+                        <p className="text-sm text-muted-foreground">{job.company}</p>
+                    ) : null}
+                </div>
+                <JobActions
+                    job={job}
+                    layout="mobile"
+                    isSelected={isSelected}
+                    isAuthenticated={isAuthenticated}
+                    isApplicationsLoaded={isApplicationsLoaded}
+                    isApplied={isApplied}
+                    onToggleSelection={onToggleSelection}
+                    onTrackApplication={onTrackApplication}
+                    onRequireAuth={onRequireAuth}
+                    onOpenDetails={onOpenDetails}
+                />
+            </div>
+        </div>
+    );
+}
+
+function JobActions({
+    job,
+    layout,
+    isSelected,
+    isAuthenticated,
+    isApplicationsLoaded,
+    isApplied,
+    onToggleSelection,
+    onTrackApplication,
+    onRequireAuth,
+    onOpenDetails,
+}: {
+    job: Job;
+    layout: "table" | "mobile";
+    isSelected: boolean;
+    isAuthenticated: boolean;
+    isApplicationsLoaded: boolean;
+    isApplied: boolean;
+    onToggleSelection?: (job: Job) => void;
+    onTrackApplication?: (job: Job) => Promise<void> | void;
+    onRequireAuth?: (job: Job) => void;
+    onOpenDetails?: (job: Job) => void;
+}) {
+    const pdfUrl = getJobPdfUrl(job);
+
+    const handleTrackApplication = async () => {
+        if (!isAuthenticated) {
+            onRequireAuth?.(job);
+            return;
+        }
+
+        await onTrackApplication?.(job);
+    };
+
+    if (layout === "mobile") {
+        return (
+            <div className="space-y-3" onClick={(event) => event.stopPropagation()}>
+                <div className="flex items-center justify-between gap-3">
+                    {onToggleSelection ? (
+                        <SelectionCheckbox
+                            checked={isSelected}
+                            label="Comparer"
+                            onChange={() => onToggleSelection(job)}
+                        />
+                    ) : <span />}
                     <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.setPageIndex(0)}
-                            disabled={!table.getCanPreviousPage()}
-                            className="rounded-full"
-                        >
-                            Première
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.previousPage()}
-                            disabled={!table.getCanPreviousPage()}
-                            className="rounded-full"
-                        >
-                            Précédent
-                        </Button>
-                        {paginationItems.map((item, index) => (
-                            item === "ellipsis" ? (
-                                <span
-                                    key={`ellipsis-${index}`}
-                                    className="px-2 text-sm text-muted-foreground"
-                                    aria-hidden="true"
-                                >
-                                    ...
-                                </span>
-                            ) : (
-                                <Button
-                                    key={`page-${item}`}
-                                    variant={item === currentPage ? "default" : "outline"}
-                                    size="sm"
-                                    className="min-w-9 rounded-full"
-                                    onClick={() => table.setPageIndex(item - 1)}
-                                >
-                                    {item}
-                                </Button>
-                            )
-                        ))}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.nextPage()}
-                            disabled={!table.getCanNextPage()}
-                            className="rounded-full"
-                        >
-                            Suivante
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.setPageIndex(pageCount - 1)}
-                            disabled={!table.getCanNextPage()}
-                            className="rounded-full"
-                        >
-                            Dernière
-                        </Button>
-                        {hasMoreResults && currentPage === pageCount && onLoadMore && (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={onLoadMore}
-                                disabled={isLoadingMore}
-                                className="rounded-full"
-                            >
-                                {isLoadingMore ? "Chargement..." : "Charger plus"}
-                            </Button>
-                        )}
+                        {job.contractType ? (
+                            <ContractTypeBadge contractType={job.contractType} />
+                        ) : null}
+                        {job.location ? (
+                            <span className="rounded-full border border-border/70 px-2.5 py-1 text-xs text-muted-foreground">
+                                {job.location}
+                            </span>
+                        ) : null}
                     </div>
                 </div>
-            )}
+
+                <div className="grid grid-cols-2 gap-2">
+                    <Button
+                        type="button"
+                        variant={isApplied ? "secondary" : "default"}
+                        className="col-span-2 h-11 w-full"
+                        onClick={handleTrackApplication}
+                        disabled={!isApplicationsLoaded}
+                    >
+                        <Send className={`mr-2 h-4 w-4 ${isApplied ? "fill-current" : ""}`} />
+                        {isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
+                    </Button>
+
+                    <Button type="button" className="h-10 w-full" asChild>
+                        <a href={job.url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            WEB
+                        </a>
+                    </Button>
+
+                    {pdfUrl ? (
+                        <Button variant="outline" type="button" className="h-10 w-full" asChild>
+                            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                                <FileText className="mr-2 h-4 w-4" />
+                                PDF
+                            </a>
+                        </Button>
+                    ) : (
+                        <Button
+                            type="button"
+                            className="h-10 w-full"
+                            onClick={() => onOpenDetails?.(job)}
+                            variant="outline"
+                        >
+                            Détails
+                        </Button>
+                    )}
+
+                    <Button
+                        type="button"
+                        className="col-span-2 h-10 w-full"
+                        onClick={() => onOpenDetails?.(job)}
+                        variant="outline"
+                    >
+                        Détails
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center justify-end gap-1 sm:gap-2" onClick={(event) => event.stopPropagation()}>
+            {onToggleSelection ? (
+                <SelectionCheckbox
+                    checked={isSelected}
+                    onChange={() => onToggleSelection(job)}
+                    title={isSelected ? "Retirer de la sélection" : "Ajouter à la sélection"}
+                />
+            ) : null}
+
+            <Button
+                variant={isApplied ? "secondary" : "ghost"}
+                size="icon"
+                className={isApplied ? "bg-emerald-100/60 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 dark:bg-emerald-950/40" : "text-muted-foreground transition-colors hover:text-emerald-600"}
+                onClick={handleTrackApplication}
+                title={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
+                disabled={!isApplicationsLoaded}
+            >
+                <Send className={`h-4 w-4 ${isApplied ? "fill-current" : ""}`} />
+            </Button>
+
+            {pdfUrl ? (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="h-8 w-8 rounded-full p-0 whitespace-nowrap sm:h-8 sm:w-auto sm:px-3"
+                >
+                    <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                        <span className="hidden sm:inline">PDF</span>
+                        <FileText className="h-3 w-3 flex-shrink-0" />
+                    </a>
+                </Button>
+            ) : null}
+
+            <Button
+                size="sm"
+                asChild
+                className="h-8 w-8 gap-1 rounded-full p-0 whitespace-nowrap sm:h-8 sm:w-auto sm:px-3"
+            >
+                <a href={job.url} target="_blank" rel="noopener noreferrer">
+                    <span className="hidden sm:inline">Voir l&apos;offre</span>
+                    <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                </a>
+            </Button>
+        </div>
+    );
+}
+
+function SelectionCheckbox({
+    checked,
+    onChange,
+    label,
+    title,
+}: {
+    checked: boolean;
+    onChange: () => void;
+    label?: string;
+    title?: string;
+}) {
+    return (
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <input
+                type="checkbox"
+                className="h-4 w-4 cursor-pointer accent-primary"
+                checked={checked}
+                onChange={onChange}
+                title={title}
+                aria-label="Sélectionner l'offre"
+            />
+            {label ? label : null}
+        </label>
+    );
+}
+
+function JobTablePagination({
+    currentPage,
+    pageCount,
+    isLoadingMore,
+    hasMoreResults,
+    canPreviousPage,
+    canNextPage,
+    paginationItems,
+    onFirstPage,
+    onPreviousPage,
+    onSelectPage,
+    onNextPage,
+    onLastPage,
+    onLoadMore,
+}: {
+    currentPage: number;
+    pageCount: number;
+    isLoadingMore: boolean;
+    hasMoreResults: boolean;
+    canPreviousPage: boolean;
+    canNextPage: boolean;
+    paginationItems: PaginationItem[];
+    onFirstPage: () => void;
+    onPreviousPage: () => void;
+    onSelectPage: (page: number) => void;
+    onNextPage: () => void;
+    onLastPage: () => void;
+    onLoadMore?: () => void;
+}) {
+    return (
+        <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+                Page {currentPage} sur {pageCount}
+                {isLoadingMore ? " · Chargement..." : ""}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onFirstPage}
+                    disabled={!canPreviousPage}
+                    className="rounded-full"
+                >
+                    Première
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onPreviousPage}
+                    disabled={!canPreviousPage}
+                    className="rounded-full"
+                >
+                    Précédent
+                </Button>
+                {paginationItems.map((item, index) => (
+                    item === "ellipsis" ? (
+                        <span
+                            key={`ellipsis-${index}`}
+                            className="px-2 text-sm text-muted-foreground"
+                            aria-hidden="true"
+                        >
+                            ...
+                        </span>
+                    ) : (
+                        <Button
+                            key={`page-${item}`}
+                            variant={item === currentPage ? "default" : "outline"}
+                            size="sm"
+                            className="min-w-9 rounded-full"
+                            onClick={() => onSelectPage(item)}
+                        >
+                            {item}
+                        </Button>
+                    )
+                ))}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onNextPage}
+                    disabled={!canNextPage}
+                    className="rounded-full"
+                >
+                    Suivante
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onLastPage}
+                    disabled={!canNextPage}
+                    className="rounded-full"
+                >
+                    Dernière
+                </Button>
+                {hasMoreResults && currentPage === pageCount && onLoadMore ? (
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={onLoadMore}
+                        disabled={isLoadingMore}
+                        className="rounded-full"
+                    >
+                        {isLoadingMore ? "Chargement..." : "Charger plus"}
+                    </Button>
+                ) : null}
+            </div>
         </div>
     );
 }
