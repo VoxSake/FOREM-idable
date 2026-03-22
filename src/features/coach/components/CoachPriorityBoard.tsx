@@ -2,6 +2,8 @@
 
 import { BellRing, CalendarClock, CircleAlert, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { CoachPrioritySection } from "@/features/coach/utils";
 import { cn } from "@/lib/utils";
 
@@ -47,20 +49,23 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
           const Icon = meta.icon;
 
           return (
-            <div key={section.id} className="rounded-2xl border bg-card p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-primary" />
-                    <h3 className="font-bold">{section.title}</h3>
+            <Card key={section.id} className="gap-0 py-0">
+              <CardHeader className="border-b py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-primary" />
+                      <CardTitle>{section.title}</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{section.description}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{section.description}</p>
+                  <Badge className={getPriorityBadgeClassName(meta.tone)}>{section.total}</Badge>
                 </div>
-                <Badge className={getPriorityBadgeClassName(meta.tone)}>{section.total}</Badge>
-              </div>
+              </CardHeader>
+              <CardContent className="p-4">
 
               {section.items.length > 0 ? (
-                <div className="mt-4 space-y-2">
+                <div className="space-y-2">
                   {section.items.slice(0, 5).map((item) => (
                     <button
                       key={item.id}
@@ -95,11 +100,15 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                   ) : null}
                 </div>
               ) : (
-                <div className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/10 px-4 py-6 text-sm text-muted-foreground">
-                  {section.emptyLabel}
-                </div>
+                <Empty className="min-h-36 bg-muted/10 p-6">
+                  <EmptyHeader>
+                    <EmptyTitle>{section.emptyLabel}</EmptyTitle>
+                    <EmptyDescription>Aucun élément prioritaire dans cette vue pour le moment.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               )}
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

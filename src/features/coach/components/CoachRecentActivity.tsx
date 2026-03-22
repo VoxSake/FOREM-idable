@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { ArrowUpRight, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CoachRecentActivityItem, formatCoachDate } from "@/features/coach/utils";
 
@@ -33,19 +35,21 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
   ];
 
   return (
-    <section id="activite-recente" className="space-y-3 rounded-2xl border bg-card p-5 shadow-sm scroll-mt-6">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <History className="h-4 w-4 text-primary" />
-          <h2 className="text-xl font-bold">Activité récente</h2>
+    <Card id="activite-recente" className="gap-0 py-0 scroll-mt-6">
+      <CardHeader className="border-b py-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" />
+            <CardTitle className="text-xl">Activité récente</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Derniers mouvements utiles dans le suivi: candidatures mises à jour et entretiens planifiés.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Derniers mouvements utiles dans le suivi: candidatures mises à jour et entretiens planifiés.
-        </p>
-      </div>
-
-      {items.length > 0 ? (
-        <>
+      </CardHeader>
+      <CardContent className="space-y-4 p-5">
+        {items.length > 0 ? (
+          <>
           <ToggleGroup
             type="single"
             value={activeTab}
@@ -94,20 +98,23 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
               ))}
             </div>
           ) : (
-            <button
-              type="button"
-              className="w-full rounded-xl border border-dashed border-border/70 bg-muted/10 px-4 py-6 text-left text-sm text-muted-foreground"
-              onClick={() => setActiveTab("all")}
-            >
-              Aucune activité récente dans cet onglet. Revenir à `Tout`.
-            </button>
+            <Empty className="min-h-40 bg-muted/10" onClick={() => setActiveTab("all")}>
+              <EmptyHeader>
+                <EmptyTitle>Aucune activité récente dans cet onglet</EmptyTitle>
+                <EmptyDescription>Revenir à `Tout` pour afficher l&apos;ensemble des événements.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           )}
-        </>
-      ) : (
-        <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-4 py-6 text-sm text-muted-foreground">
-          Aucune activité récente à afficher pour l&apos;instant.
-        </div>
-      )}
-    </section>
+          </>
+        ) : (
+          <Empty className="min-h-40 bg-muted/10">
+            <EmptyHeader>
+              <EmptyTitle>Aucune activité récente</EmptyTitle>
+              <EmptyDescription>Aucune activité récente à afficher pour l&apos;instant.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
+      </CardContent>
+    </Card>
   );
 }

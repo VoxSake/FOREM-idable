@@ -1,15 +1,16 @@
 "use client";
 
 import { LoaderCircle, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getCoachUserDisplayName } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
 
@@ -40,24 +41,23 @@ export function CoachUserSheetDialogs({
 }: CoachUserSheetDialogsProps) {
   return (
     <>
-      <Dialog
+      <AlertDialog
         open={Boolean(deleteApplicationTarget)}
         onOpenChange={(open) => !open && onDeleteApplicationTargetChange(null)}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Supprimer la candidature</DialogTitle>
-            <DialogDescription>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la candidature</AlertDialogTitle>
+            <AlertDialogDescription>
               La candidature <strong>{deleteApplicationTarget?.title}</strong> sera retirée du suivi de{" "}
               {getCoachUserDisplayName(user)}.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onDeleteApplicationTargetChange(null)}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => onDeleteApplicationTargetChange(null)}>
               Annuler
-            </Button>
-            <Button
-              type="button"
+            </AlertDialogCancel>
+            <AlertDialogAction
               variant="destructive"
               onClick={async () => {
                 if (!deleteApplicationTarget) return;
@@ -72,28 +72,27 @@ export function CoachUserSheetDialogs({
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      <Dialog
+      <AlertDialog
         open={Boolean(deleteSharedTarget)}
         onOpenChange={(open) => !open && onDeleteSharedTargetChange(null)}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Supprimer la note partagée</DialogTitle>
-            <DialogDescription>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la note partagée</AlertDialogTitle>
+            <AlertDialogDescription>
               Cette note ne sera plus visible par le bénéficiaire. Cette action est irréversible.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onDeleteSharedTargetChange(null)}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => onDeleteSharedTargetChange(null)}>
               Annuler
-            </Button>
-            <Button
-              type="button"
+            </AlertDialogCancel>
+            <AlertDialogAction
               variant="destructive"
               onClick={async () => {
                 if (!deleteSharedTarget) return;
@@ -117,10 +116,10 @@ export function CoachUserSheetDialogs({
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
               Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

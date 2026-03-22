@@ -28,8 +28,10 @@ export function AccountField({
         aria-invalid={error ? "true" : "false"}
         aria-describedby={describedBy}
       />
-      {description ? <FieldDescription id={descriptionId}>{description}</FieldDescription> : null}
-      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
+      <div className="min-h-5">
+        {description ? <FieldDescription id={descriptionId}>{description}</FieldDescription> : null}
+        {error ? <FieldError id={errorId}>{error}</FieldError> : null}
+      </div>
     </Field>
   );
 }

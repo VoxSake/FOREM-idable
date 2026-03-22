@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { CoachAdminSection } from "@/features/coach/components/CoachAdminSection";
 import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
 import { CoachImportApplicationsDialog } from "@/features/coach/components/CoachImportApplicationsDialog";
@@ -93,12 +96,14 @@ export default function CoachPage() {
 
   if (!coach.user || (coach.user.role !== "coach" && coach.user.role !== "admin")) {
     return (
-      <div className="mx-auto max-w-3xl rounded-2xl border bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-black tracking-tight">Accès réservé</h1>
-        <p className="mt-2 text-muted-foreground">
-          Cette page est réservée aux comptes `coach` et `admin`.
-        </p>
-      </div>
+      <Card className="mx-auto max-w-3xl gap-0 py-0">
+        <CardContent className="p-8">
+          <h1 className="text-2xl font-black tracking-tight">Accès réservé</h1>
+          <p className="mt-2 text-muted-foreground">
+            Cette page est réservée aux comptes `coach` et `admin`.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -115,14 +120,14 @@ export default function CoachPage() {
           Vue d&apos;ensemble sur les personnes suivies, leurs groupes et leurs candidatures.
         </p>
         {coach.feedback || coach.undoAction ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 px-4 py-3 text-sm">
-            <p className="text-muted-foreground">{coach.feedback ?? coach.undoAction?.label}</p>
+          <Alert className="flex flex-wrap items-center justify-between gap-3">
+            <AlertDescription>{coach.feedback ?? coach.undoAction?.label}</AlertDescription>
             {coach.undoAction ? (
               <Button type="button" size="sm" variant="outline" onClick={() => void coach.undoLastAction()}>
                 Annuler
               </Button>
             ) : null}
-          </div>
+          </Alert>
         ) : null}
       </div>
 
@@ -136,18 +141,20 @@ export default function CoachPage() {
       />
 
       {followedUserCount === 0 ? (
-        <section className="rounded-2xl border border-dashed bg-card p-6 shadow-sm">
-          <h2 className="text-xl font-bold">Aucun bénéficiaire suivi pour l&apos;instant</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Commencez par créer un groupe, puis ajoutez un bénéficiaire pour centraliser ses candidatures,
-            ses relances et ses entretiens.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
+        <Empty className="rounded-2xl bg-card p-8">
+          <EmptyHeader>
+            <EmptyTitle>Aucun bénéficiaire suivi pour l&apos;instant</EmptyTitle>
+            <EmptyDescription>
+              Commencez par créer un groupe, puis ajoutez un bénéficiaire pour centraliser ses candidatures,
+              ses relances et ses entretiens.
+            </EmptyDescription>
+          </EmptyHeader>
+          <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={() => coach.setIsCreateGroupOpen(true)}>
               Créer un groupe
             </Button>
           </div>
-        </section>
+        </Empty>
       ) : (
         <>
           <div id="a-traiter" className="scroll-mt-6">

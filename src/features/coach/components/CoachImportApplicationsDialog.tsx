@@ -314,10 +314,10 @@ export function CoachImportApplicationsDialog({
 
             {headers.length > 0 ? (
               <Card className="gap-4 py-0">
-                <CardHeader className="pb-0">
+                <CardHeader className="pt-5 pb-2">
                   <CardTitle>Associer les colonnes</CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-3 md:grid-cols-2">
+                <CardContent className="grid gap-3 pb-5 md:grid-cols-2">
                   {COACH_IMPORT_FIELDS.map((field) => (
                     <label key={field.key} className="flex flex-col gap-1">
                       <span className="text-sm font-medium">
@@ -414,10 +414,10 @@ export function CoachImportApplicationsDialog({
 
             {previewRows.length > 0 ? (
               <Card className="gap-4 py-0">
-                <CardHeader className="pb-0">
+                <CardHeader className="pt-5 pb-2">
                   <CardTitle>Aperçu ({rows.length} lignes détectées)</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-5">
                   <div className="overflow-x-auto rounded-xl border">
                     <table className="min-w-full text-sm">
                       <thead className="bg-muted/40">

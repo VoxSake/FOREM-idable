@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, CircleHelp, Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
+import { CalendarDays, CircleHelp, Download, Filter, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -158,18 +158,57 @@ export function CoachGroupsSection({
 
         <ToggleGroup
           type="single"
+          variant="outline"
           value={userFilter}
           onValueChange={(value) => {
             if (value) {
               onUserFilterChange(value as CoachUserFilter);
             }
           }}
+          className="grid w-full grid-cols-2 gap-2 lg:hidden"
+        >
+          {filterOptions.map((option, index) => {
+            const isLastOddItem =
+              filterOptions.length % 2 === 1 && index === filterOptions.length - 1;
+
+            return (
+              <ToggleGroupItem
+                key={option.value}
+                value={option.value}
+                size="sm"
+                aria-label={`Filtrer: ${option.label}`}
+                className={cn(
+                  "w-full justify-center rounded-md border shadow-none data-[spacing=0]:rounded-md data-[spacing=0]:border data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md",
+                  "data-[spacing=0]:data-[variant=outline]:border-l data-[spacing=0]:data-[variant=outline]:first:border-l",
+                  isLastOddItem && "col-span-2"
+                )}
+              >
+                {option.value === "all" ? <Filter data-icon="inline-start" /> : null}
+                {option.label}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
+        <ToggleGroup
+          type="single"
           variant="outline"
-          className="flex w-full flex-wrap justify-start gap-2"
-          spacing={1}
+          value={userFilter}
+          onValueChange={(value) => {
+            if (value) {
+              onUserFilterChange(value as CoachUserFilter);
+            }
+          }}
+          className="hidden w-full lg:grid lg:grid-cols-7"
         >
           {filterOptions.map((option) => (
-            <ToggleGroupItem key={option.value} value={option.value} className="rounded-md">
+            <ToggleGroupItem
+              key={option.value}
+              value={option.value}
+              size="sm"
+              aria-label={`Filtrer: ${option.label}`}
+              className="w-full justify-center"
+            >
+              {option.value === "all" ? <Filter data-icon="inline-start" /> : null}
               {option.label}
             </ToggleGroupItem>
           ))}
