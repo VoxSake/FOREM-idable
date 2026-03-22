@@ -52,15 +52,21 @@ export function ManualApplicationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Ajouter une candidature manuelle</DialogTitle>
-          <DialogDescription>
-            Ajoutez une candidature faite ailleurs pour l&apos;inclure dans votre suivi.
-          </DialogDescription>
-        </DialogHeader>
+        <form
+          className="flex flex-col gap-6"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Ajouter une candidature manuelle</DialogTitle>
+            <DialogDescription>
+              Ajoutez une candidature faite ailleurs pour l&apos;inclure dans votre suivi.
+            </DialogDescription>
+          </DialogHeader>
 
-        <FieldGroup className="gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <FieldGroup className="grid gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="manual-application-company">Entreprise</FieldLabel>
               <Input
@@ -123,8 +129,9 @@ export function ManualApplicationDialog({
                 placeholder="https://..."
               />
             </Field>
-          </div>
-          <Field>
+          </FieldGroup>
+          <FieldGroup className="gap-4">
+            <Field>
             <FieldLabel htmlFor="manual-application-notes">Notes</FieldLabel>
             <Textarea
               id="manual-application-notes"
@@ -136,31 +143,28 @@ export function ManualApplicationDialog({
             <FieldDescription>
               Gardez ici le contexte utile pour relire rapidement la candidature.
             </FieldDescription>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="manual-application-proofs">Pièces / références</FieldLabel>
-            <Textarea
-              id="manual-application-proofs"
-              className="min-h-24"
-              value={form.proofs}
-              onChange={(event) => onFormChange({ ...form, proofs: event.target.value })}
-              placeholder="Lien mail, capture, référence de refus..."
-            />
-          </Field>
-        </FieldGroup>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="manual-application-proofs">Pièces / références</FieldLabel>
+              <Textarea
+                id="manual-application-proofs"
+                className="min-h-24"
+                value={form.proofs}
+                onChange={(event) => onFormChange({ ...form, proofs: event.target.value })}
+                placeholder="Lien mail, capture, référence de refus..."
+              />
+            </Field>
+          </FieldGroup>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Annuler
-          </Button>
-          <Button
-            type="button"
-            onClick={onSubmit}
-            disabled={!form.company.trim() || !form.title.trim()}
-          >
-            Ajouter la candidature
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={!form.company.trim() || !form.title.trim()}>
+              Ajouter la candidature
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

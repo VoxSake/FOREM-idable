@@ -1,7 +1,10 @@
 import { runtimeConfig } from "@/config/runtime";
+import {
+  ContentPageHeader,
+  ContentSectionCard,
+} from "@/components/content/ContentPageLayout";
 import { PrivacyConsentControls } from "@/components/consent/PrivacyConsentControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type TextItem = {
@@ -140,26 +143,20 @@ export default function PrivacyPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
-      <Card className="overflow-hidden shadow-sm">
-        <CardHeader className="gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">RGPD</Badge>
-            <Badge variant="secondary">Transparence</Badge>
-          </div>
-          <CardTitle className="text-3xl font-black tracking-tight">Confidentialité</CardTitle>
-          <CardDescription className="max-w-3xl text-base">
-            Cette page explique quelles données peuvent être traitées par FOREM-idable, pourquoi,
-            sur quelle base et comment exercer vos droits.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <ContentPageHeader
+        badges={[
+          { label: "RGPD", variant: "outline" },
+          { label: "Transparence", variant: "secondary" },
+        ]}
+        title="Confidentialité"
+        description="Cette page explique quelles données peuvent être traitées par FOREM-idable, pourquoi, sur quelle base et comment exercer vos droits."
+      />
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Cadre général</CardTitle>
-          <CardDescription>Contexte du projet et responsable du traitement.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-8 lg:grid-cols-2">
+      <ContentSectionCard
+        title="Cadre général"
+        description="Contexte du projet et responsable du traitement."
+        contentClassName="grid gap-8 lg:grid-cols-2"
+      >
           <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             <p>
               FOREM-idable est un projet gratuit et open source, mis à disposition sous licence MIT.
@@ -194,29 +191,18 @@ export default function PrivacyPage() {
               </a>
             </p>
           </div>
-        </CardContent>
-      </Card>
+      </ContentSectionCard>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Données traitées</CardTitle>
-          <CardDescription>
-            Les catégories de données potentiellement concernées par le fonctionnement du service.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TextCardGrid items={DATA_CATEGORIES} />
-        </CardContent>
-      </Card>
+      <ContentSectionCard
+        title="Données traitées"
+        description="Les catégories de données potentiellement concernées par le fonctionnement du service."
+      >
+        <TextCardGrid items={DATA_CATEGORIES} />
+      </ContentSectionCard>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Finalités et bases juridiques</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SectionList items={LEGAL_BASIS} />
-        </CardContent>
-      </Card>
+      <ContentSectionCard title="Finalités et bases juridiques">
+        <SectionList items={LEGAL_BASIS} />
+      </ContentSectionCard>
 
       <div className="grid gap-8 lg:grid-cols-2">
         <Card className="shadow-sm">

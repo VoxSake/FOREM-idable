@@ -2,9 +2,11 @@
 
 import { CalendarDays, Download, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -36,58 +38,65 @@ export function ApplicationsHeaderControls({
   onRemoveSelected,
 }: ApplicationsHeaderControlsProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">
-          {displayedCount} candidature{displayedCount > 1 ? "s" : ""} affichée
-          {displayedCount > 1 ? "s" : ""}
-          {displayedCount !== totalCount ? ` sur ${totalCount}` : ""}
-        </p>
-        <p className="text-sm font-medium text-foreground">
-          {dueCount > 0
-            ? `${dueCount} relance${dueCount > 1 ? "s" : ""} à faire : ${dueSummary}`
-            : "Aucune relance urgente"}
-        </p>
-      </div>
-      <div className="flex w-full flex-wrap items-center gap-2 self-start sm:w-auto sm:self-auto">
-        <Button type="button" className="flex-1 sm:flex-none" onClick={onCreateManual}>
-          <Plus className="mr-2 h-4 w-4" />
-          <span className="sm:hidden">Ajouter</span>
-          <span className="hidden sm:inline">Ajouter manuellement</span>
-        </Button>
-        <Button
-          type="button"
-          className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 sm:flex-none"
-          onClick={onExportCsv}
-          disabled={displayedCount === 0}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Exporter en Excel
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline" className="w-full sm:w-auto">
-              <MoreHorizontal className="h-4 w-4" />
-              Actions
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={onExportCalendar} disabled={!canExportCalendar}>
-              <CalendarDays className="h-4 w-4" />
-              Exporter les entretiens
-            </DropdownMenuItem>
-            {selectedCount > 0 ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={onRemoveSelected}>
-                  <Trash2 className="h-4 w-4" />
-                  Supprimer la sélection ({selectedCount})
+    <Card className="py-0">
+      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm text-muted-foreground">
+            {displayedCount} candidature{displayedCount > 1 ? "s" : ""} affichée
+            {displayedCount > 1 ? "s" : ""}
+            {displayedCount !== totalCount ? ` sur ${totalCount}` : ""}
+          </p>
+          <p className="text-sm font-medium text-foreground">
+            {dueCount > 0
+              ? `${dueCount} relance${dueCount > 1 ? "s" : ""} à faire : ${dueSummary}`
+              : "Aucune relance urgente"}
+          </p>
+        </div>
+        <div className="flex w-full flex-wrap items-center gap-2 self-start sm:w-auto sm:self-auto">
+          <Button type="button" className="flex-1 sm:flex-none" onClick={onCreateManual}>
+            <Plus data-icon="inline-start" />
+            <span className="sm:hidden">Ajouter</span>
+            <span className="hidden sm:inline">Ajouter manuellement</span>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="flex-1 sm:flex-none"
+            onClick={onExportCsv}
+            disabled={displayedCount === 0}
+          >
+            <Download data-icon="inline-start" />
+            Exporter en Excel
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" className="w-full sm:w-auto">
+                <MoreHorizontal data-icon="inline-start" />
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={onExportCalendar} disabled={!canExportCalendar}>
+                  <CalendarDays />
+                  Exporter les entretiens
                 </DropdownMenuItem>
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
+              </DropdownMenuGroup>
+              {selectedCount > 0 ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem variant="destructive" onClick={onRemoveSelected}>
+                      <Trash2 />
+                      Supprimer la sélection ({selectedCount})
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

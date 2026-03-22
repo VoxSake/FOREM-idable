@@ -10,6 +10,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -59,19 +60,19 @@ function ApiKeysSectionComponent({
   onCopy,
   onRevoke,
 }: ApiKeysSectionProps) {
+  const expiryError = form.formState.errors.expiry?.message;
+
   return (
     <Card className="overflow-hidden shadow-sm">
       <CardHeader>
-        <div className="flex flex-col gap-1">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <KeyRound className="h-5 w-5 text-primary" />
-            Clés API
-          </CardTitle>
-          <CardDescription>
-            Génère des clés Bearer en lecture seule pour Excel, Power Query ou d&apos;autres
-            intégrations.
-          </CardDescription>
-        </div>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <KeyRound data-icon="inline-start" className="text-primary" />
+          Clés API
+        </CardTitle>
+        <CardDescription>
+          Génère des clés Bearer en lecture seule pour Excel, Power Query ou d&apos;autres
+          intégrations.
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <Separator />
@@ -82,7 +83,7 @@ function ApiKeysSectionComponent({
             await onSubmit(values);
           })}
         >
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+          <FieldGroup className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
             <AccountField
               id="account-api-key-name"
               label="Nom de la clé"
@@ -90,33 +91,41 @@ function ApiKeysSectionComponent({
               error={form.formState.errors.name?.message}
               {...form.register("name")}
             />
-            <Select
-              value={currentExpiry}
-              onValueChange={(value) => {
-                if (!isApiKeyExpiry(value)) {
-                  return;
-                }
+            <Field data-invalid={expiryError ? "true" : undefined}>
+              <FieldLabel htmlFor="account-api-key-expiry">Expiration</FieldLabel>
+              <Select
+                value={currentExpiry}
+                onValueChange={(value) => {
+                  if (!isApiKeyExpiry(value)) {
+                    return;
+                  }
 
-                form.setValue("expiry", value, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Expiration" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {API_KEY_EXPIRY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+                  form.setValue("expiry", value, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              >
+                <SelectTrigger
+                  id="account-api-key-expiry"
+                  className="w-full"
+                  aria-invalid={expiryError ? "true" : "false"}
+                >
+                  <SelectValue placeholder="Expiration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {API_KEY_EXPIRY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              {expiryError ? <FieldError>{expiryError}</FieldError> : null}
+            </Field>
+          </FieldGroup>
           <Button type="submit" disabled={!canSubmit || isCreating}>
             Générer une clé
           </Button>

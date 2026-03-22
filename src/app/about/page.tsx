@@ -1,12 +1,15 @@
 import Link from "next/link";
 import {
+  ContentPageHeader,
+  ContentSectionCard,
+} from "@/components/content/ContentPageLayout";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -86,27 +89,20 @@ const APIS = [
 export default function AboutPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
-      <Card className="overflow-hidden shadow-sm">
-        <CardHeader className="gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">Open Source</Badge>
-            <Badge variant="secondary">Data-driven</Badge>
-          </div>
-          <CardTitle className="text-3xl font-black tracking-tight">À propos</CardTitle>
-          <CardDescription className="max-w-3xl text-base">
-            FOREM-idable est un agrégateur orienté recherche d&apos;emploi, pensé pour rendre la
-            recherche plus lisible, le filtrage plus utile et le suivi des candidatures plus
-            concret.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <ContentPageHeader
+        badges={[
+          { label: "Open Source", variant: "outline" },
+          { label: "Data-driven", variant: "secondary" },
+        ]}
+        title="À propos"
+        description="FOREM-idable est un agrégateur orienté recherche d'emploi, pensé pour rendre la recherche plus lisible, le filtrage plus utile et le suivi des candidatures plus concret."
+      />
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Objectif du site</CardTitle>
-          <CardDescription>Le rôle du produit et la valeur qu&apos;il apporte.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <ContentSectionCard
+        title="Objectif du site"
+        description="Le rôle du produit et la valeur qu'il apporte."
+        contentClassName="flex flex-col gap-4"
+      >
           <p className="text-sm leading-6 text-muted-foreground">
             FOREM-idable centralise la recherche d&apos;offres, fiabilise le filtrage géographique
             et transforme une navigation brute en parcours de suivi plus exploitable. Le produit
@@ -121,17 +117,13 @@ export default function AboutPage() {
               PDF.
             </AlertDescription>
           </Alert>
-        </CardContent>
-      </Card>
+      </ContentSectionCard>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>APIs utilisées</CardTitle>
-          <CardDescription>
-            Les sources externes qui alimentent la recherche et l&apos;enrichissement des données.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+      <ContentSectionCard
+        title="APIs utilisées"
+        description="Les sources externes qui alimentent la recherche et l'enrichissement des données."
+        contentClassName="grid gap-4 md:grid-cols-2"
+      >
           {APIS.map((api) => (
             <Card key={api.title} className="shadow-none">
               <CardHeader className="gap-2">
@@ -150,17 +142,13 @@ export default function AboutPage() {
               </CardContent>
             </Card>
           ))}
-        </CardContent>
-      </Card>
+      </ContentSectionCard>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Nouveautés récentes</CardTitle>
-          <CardDescription>
-            Les évolutions récentes du projet, regroupées par période.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <ContentSectionCard
+        title="Nouveautés récentes"
+        description="Les évolutions récentes du projet, regroupées par période."
+        contentClassName="flex flex-col gap-4"
+      >
           <Accordion type="multiple" className="rounded-xl border px-4">
             {PRODUCT_UPDATES.map((group) => (
               <AccordionItem key={group.month} value={group.month}>
@@ -192,15 +180,13 @@ export default function AboutPage() {
               commits sur GitHub
             </a>
           </div>
-        </CardContent>
-      </Card>
+      </ContentSectionCard>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Licence et confidentialité</CardTitle>
-          <CardDescription>Cadre légal du projet et informations de confidentialité.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
+      <ContentSectionCard
+        title="Licence et confidentialité"
+        description="Cadre légal du projet et informations de confidentialité."
+        contentClassName="flex flex-col gap-2 text-sm text-muted-foreground"
+      >
           <p>Copyright (c) 2026 Jordi Brisbois</p>
           <p>Ce projet est distribué sous licence MIT.</p>
           <p>
@@ -210,8 +196,7 @@ export default function AboutPage() {
             </Link>
             .
           </p>
-        </CardContent>
-      </Card>
+      </ContentSectionCard>
     </div>
   );
 }

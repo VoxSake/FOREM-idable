@@ -64,17 +64,15 @@ export function ApplicationCard({
     <Card
       className={cn(
         "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/20",
-        application.status === "accepted" && "border-emerald-300 bg-emerald-50/60",
-        application.status === "rejected" && "border-rose-300 bg-rose-50/60",
-        (hasInterview || hasUnreadCoachUpdate) && "border-sky-300 bg-sky-50/50",
-        isDue && "border-amber-400/70"
+        (hasInterview || hasUnreadCoachUpdate) && "border-primary/30 bg-primary/5",
+        isDue && "border-destructive/40 bg-destructive/5"
       )}
       onClick={() => onOpenDetails(application.job.id)}
     >
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0 accent-primary cursor-pointer"
+          className="mt-1 size-4 shrink-0 cursor-pointer accent-primary"
           checked={isSelected}
           onChange={() => onToggleSelection(application.job.id)}
           onClick={(event) => event.stopPropagation()}

@@ -1,6 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
 import { FeedbackState, PasswordFormValues } from "../account.schemas";
 import { AccountField } from "./AccountField";
 import { AccountSectionHeader } from "./AccountSectionHeader";
@@ -34,13 +35,14 @@ export function PasswordSection({
           await onSubmit(values);
         })}
       >
-        <div className="flex flex-col gap-5">
+        <FieldGroup className="gap-4">
           <AccountField
             id="account-password"
             label="Nouveau mot de passe"
             type="password"
             autoComplete="new-password"
             placeholder="8 caractères minimum"
+            description="Au moins 8 caractères."
             error={form.formState.errors.password?.message}
             {...form.register("password")}
           />
@@ -53,7 +55,7 @@ export function PasswordSection({
             error={form.formState.errors.confirmPassword?.message}
             {...form.register("confirmPassword")}
           />
-        </div>
+        </FieldGroup>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="outline" disabled={!canSubmit || isSubmitting}>
             Changer le mot de passe

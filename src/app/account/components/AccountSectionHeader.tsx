@@ -14,7 +14,7 @@ export function AccountSectionHeader({
   return (
     <div className="flex items-start gap-3">
       <div className="rounded-xl bg-primary/10 p-2 text-primary">
-        <Icon className="h-5 w-5" />
+        <Icon />
       </div>
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold">{title}</h2>

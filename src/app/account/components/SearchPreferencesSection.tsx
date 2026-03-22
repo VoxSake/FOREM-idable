@@ -38,8 +38,8 @@ function SearchPreferencesSectionComponent({
         </ToggleGroupItem>
       </ToggleGroup>
       <p className="text-sm text-muted-foreground">
-        <strong className="font-medium text-foreground">OU</strong> élargit les résultats,
-        <strong className="ml-1 font-medium text-foreground">ET</strong> les rend plus précis.
+        <span className="font-medium text-foreground">OU</span> élargit les résultats,{" "}
+        <span className="font-medium text-foreground">ET</span> les rend plus précis.
       </p>
     </section>
   );

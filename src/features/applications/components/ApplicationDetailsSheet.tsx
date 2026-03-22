@@ -139,21 +139,9 @@ function ApplicationDetailsSheetBody({
   const [isEditingManualDetails, setIsEditingManualDetails] = useState(false);
   const [followUpForm, setFollowUpForm] = useState(initialFollowUpForm);
   const [followUpSaveState, setFollowUpSaveState] = useState<"idle" | "error">("idle");
-  const [manualDetailsForm, setManualDetailsForm] = useState({
-    company: application.job.company || "",
-    title: application.job.title,
-    contractType: application.job.contractType || "",
-    location: application.job.location || "",
-    url: application.job.url === "#" ? "" : application.job.url,
-  });
+  const [manualDetailsForm, setManualDetailsForm] = useState(createManualDetailsForm(application));
   const resetManualDetailsForm = () => {
-    setManualDetailsForm({
-      company: application.job.company || "",
-      title: application.job.title,
-      contractType: application.job.contractType || "",
-      location: application.job.location || "",
-      url: application.job.url === "#" ? "" : application.job.url,
-    });
+    setManualDetailsForm(createManualDetailsForm(application));
   };
 
   const saveFollowUpForm = async (nextForm: typeof initialFollowUpForm) => {
@@ -207,13 +195,7 @@ function ApplicationDetailsSheetBody({
               onClick={() => {
                 if (isEditingManualDetails) {
                   setIsEditingManualDetails(false);
-                  setManualDetailsForm({
-                    company: application.job.company || "",
-                    title: application.job.title,
-                    contractType: application.job.contractType || "",
-                    location: application.job.location || "",
-                    url: application.job.url === "#" ? "" : application.job.url,
-                  });
+                  resetManualDetailsForm();
                   return;
                 }
 
@@ -402,8 +384,8 @@ function OfferDetailsSection({
 }) {
   if (isManual && isEditingManualDetails) {
     return (
-      <FieldGroup className="rounded-lg border border-border/60 bg-muted/20 p-3">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+        <FieldGroup className="grid gap-3 sm:grid-cols-2">
           <Field>
             <FieldLabel htmlFor="sheet-manual-company">Entreprise</FieldLabel>
             <Input
@@ -470,7 +452,7 @@ function OfferDetailsSection({
               placeholder="https://..."
             />
           </Field>
-        </div>
+        </FieldGroup>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onCancelEdit}>
             Annuler
@@ -484,7 +466,7 @@ function OfferDetailsSection({
             Enregistrer
           </Button>
         </div>
-      </FieldGroup>
+      </div>
     );
   }
 
@@ -702,4 +684,14 @@ function getEditableFollowUpDate(followUpDueAt: string | undefined, fallbackDate
   }
 
   return format(followUpDate, "yyyy-MM-dd");
+}
+
+function createManualDetailsForm(application: JobApplication) {
+  return {
+    company: application.job.company || "",
+    title: application.job.title,
+    contractType: application.job.contractType || "",
+    location: application.job.location || "",
+    url: application.job.url === "#" ? "" : application.job.url,
+  };
 }

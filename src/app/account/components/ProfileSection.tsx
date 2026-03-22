@@ -1,6 +1,7 @@
 import { UserRound } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
 import { FeedbackState, ProfileFormValues } from "../account.schemas";
 import { AccountField } from "./AccountField";
 import { AccountSectionHeader } from "./AccountSectionHeader";
@@ -34,7 +35,7 @@ export function ProfileSection({
           await onSubmit(values);
         })}
       >
-        <div className="flex flex-col gap-5">
+        <FieldGroup className="gap-4">
           <AccountField
             id="account-first-name"
             label="Prénom"
@@ -51,7 +52,7 @@ export function ProfileSection({
             error={form.formState.errors.lastName?.message}
             {...form.register("lastName")}
           />
-        </div>
+        </FieldGroup>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="outline" disabled={!canSubmit || isSubmitting}>
             Enregistrer le profil

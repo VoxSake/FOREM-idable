@@ -2,7 +2,7 @@
 
 export function ApplicationsPageIntro() {
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <h1 className="text-3xl font-black tracking-tight text-foreground">
         Candidatures envoyées
       </h1>
