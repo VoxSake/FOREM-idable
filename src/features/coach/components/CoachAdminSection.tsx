@@ -55,7 +55,7 @@ export function CoachAdminSection({
   }, [demotionTarget, groups]);
 
   return (
-    <Card className="gap-4 border-border/60 bg-gradient-to-br from-background to-muted/20 py-0">
+    <Card className="gap-4 border-border/60 bg-card py-0">
       <CardHeader className="border-b border-border/60 px-5 py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
@@ -77,7 +77,7 @@ export function CoachAdminSection({
             coaches.map((entry) => (
               <div
                 key={entry.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3"
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">

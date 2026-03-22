@@ -32,7 +32,7 @@ export function CoachPageHeader({
   ];
 
   return (
-    <Card className="overflow-hidden border-border/60 bg-gradient-to-br from-background via-background to-muted/40 py-0">
+    <Card className="overflow-hidden border-border/60 bg-card py-0">
       <CardHeader className="gap-4 border-b border-border/60 px-6 py-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-3">
@@ -63,7 +63,7 @@ export function CoachPageHeader({
                   key={link.href}
                   asChild
                   variant="outline"
-                  className="justify-between bg-background/80"
+                  className="justify-between bg-card"
                 >
                   <a href={link.href}>
                     <span className="inline-flex items-center gap-2">
@@ -81,7 +81,7 @@ export function CoachPageHeader({
 
       {feedback || undoLabel ? (
         <CardContent className="px-6 py-4">
-          <Alert className="flex flex-wrap items-center justify-between gap-3 border-border/60 bg-background/80">
+          <Alert className="flex flex-wrap items-center justify-between gap-3 border-border/60 bg-card">
             <AlertDescription>{feedback ?? undoLabel}</AlertDescription>
             {undoLabel ? (
               <Button type="button" size="sm" variant="outline" onClick={onUndo}>

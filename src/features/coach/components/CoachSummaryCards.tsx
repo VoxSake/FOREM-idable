@@ -62,7 +62,7 @@ export function CoachSummaryCards({
       {cards.map((card) => (
         <Card
           key={card.label}
-          className="gap-0 border-border/60 bg-gradient-to-br from-background to-muted/30 py-0"
+          className="gap-0 border-border/60 bg-card py-0"
         >
           <CardHeader className="gap-3 px-4 py-4 md:px-5">
             <div className="flex items-start justify-between gap-2">
@@ -82,7 +82,7 @@ export function CoachSummaryCards({
           </CardContent>
         </Card>
       ))}
-      <Card className="col-span-2 gap-0 border-border/60 bg-gradient-to-br from-background to-muted/30 py-0 md:col-span-1">
+      <Card className="col-span-2 gap-0 border-border/60 bg-card py-0 md:col-span-1">
         <CardHeader className="gap-3 px-4 py-4 md:px-5">
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 flex-col gap-1">

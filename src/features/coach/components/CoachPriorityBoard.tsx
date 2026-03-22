@@ -51,7 +51,7 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
           return (
             <Card
               key={section.id}
-              className="gap-0 border-border/60 bg-gradient-to-br from-background to-muted/20 py-0"
+              className="gap-0 border-border/60 bg-card py-0"
             >
               <CardHeader className="border-b border-border/60 py-4">
                 <div className="flex items-start justify-between gap-3">
@@ -72,7 +72,7 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                       <button
                         key={item.id}
                         type="button"
-                        className="flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/80 p-3 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/40"
+                        className="flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/40"
                         style={{ animationDelay: `${index * 40}ms` }}
                         onClick={() => onOpenUser(item.userId, item.jobId)}
                       >
