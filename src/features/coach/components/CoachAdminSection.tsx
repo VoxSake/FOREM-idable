@@ -55,17 +55,17 @@ export function CoachAdminSection({
   }, [demotionTarget, groups]);
 
   return (
-    <Card className="gap-4 py-0">
-      <CardHeader className="border-b px-5 py-5">
+    <Card className="gap-4 border-border/60 bg-gradient-to-br from-background to-muted/20 py-0">
+      <CardHeader className="border-b border-border/60 px-5 py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
+          <div className="flex flex-col gap-1">
             <CardTitle className="text-xl">Gestion des coachs</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Promotion et rétrogradation globales des comptes coach.
-          </p>
+            <p className="text-sm text-muted-foreground">
+              Promotion et rétrogradation globales des comptes coach.
+            </p>
           </div>
           <Button type="button" onClick={() => onPromoteCoachOpenChange(true)}>
-            <ShieldPlus className="mr-2 h-4 w-4" />
+            <ShieldPlus data-icon="inline-start" />
             Promouvoir un coach
           </Button>
         </div>
@@ -73,45 +73,48 @@ export function CoachAdminSection({
 
       <CardContent className="px-5 pb-5">
         <div className="grid gap-3 lg:grid-cols-2">
-        {coaches.length > 0 ? (
-          coaches.map((entry) => (
-            <div
-              key={entry.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 px-4 py-3"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium">{getCoachUserDisplayName(entry)}</p>
-                  <Badge variant="secondary">coach</Badge>
-                </div>
-                <p className="break-all text-xs text-muted-foreground">{entry.email}</p>
-                <p className="text-xs text-muted-foreground">
-                  {entry.groupNames.length > 0
-                    ? `Groupes: ${entry.groupNames.join(" • ")}`
-                    : "Aucun groupe attribué"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Dernière connexion: {formatCoachDate(entry.lastSeenAt, true)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Dernière action coach: {formatCoachDate(entry.lastCoachActionAt, true)}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDemotionTargetId(entry.id)}
+          {coaches.length > 0 ? (
+            coaches.map((entry) => (
+              <div
+                key={entry.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 px-4 py-3"
               >
-                <ShieldX className="mr-2 h-4 w-4" />
-                Rétrograder
-              </Button>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">{getCoachUserDisplayName(entry)}</p>
+                    <Badge variant="secondary">coach</Badge>
+                  </div>
+                  <p className="break-all text-xs text-muted-foreground">
+                    {entry.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {entry.groupNames.length > 0
+                      ? `Groupes: ${entry.groupNames.join(" • ")}`
+                      : "Aucun groupe attribué"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Dernière connexion: {formatCoachDate(entry.lastSeenAt, true)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Dernière action coach:{" "}
+                    {formatCoachDate(entry.lastCoachActionAt, true)}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDemotionTargetId(entry.id)}
+                >
+                  <ShieldX data-icon="inline-start" />
+                  Rétrograder
+                </Button>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+              Aucun coach pour l&apos;instant.
             </div>
-          ))
-        ) : (
-          <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-            Aucun coach pour l&apos;instant.
-          </div>
-        )}
+          )}
         </div>
       </CardContent>
 

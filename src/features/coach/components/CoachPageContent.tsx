@@ -26,7 +26,7 @@ export function CoachPageContent({
   return (
     <>
       {page.followedUserCount === 0 ? (
-        <Empty className="rounded-2xl bg-card p-8">
+        <Empty className="rounded-2xl border border-dashed bg-card/80 p-8">
           <EmptyHeader>
             <EmptyTitle>Aucun bénéficiaire suivi pour l&apos;instant</EmptyTitle>
             <EmptyDescription>
