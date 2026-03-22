@@ -22,6 +22,11 @@ const PRODUCT_UPDATES = [
   {
     month: "Mars 2026",
     items: [
+      "Durcissement de la résilience UI avec des error boundaries segmentaires (`error.tsx`) sur les pages majeures, complétés par un `global-error.tsx` racine et un `not-found.tsx` dédié.",
+      "Ajout d'un socle E2E Playwright sur le Happy Path principal (recherche d'offre -> ajout au suivi -> visibilité côté coach) pour démontrer la couverture du coeur métier.",
+      "Refactor de la page d'accueil `/`: orchestration sortie dans un hook dédié, composants d'assemblage clarifiés, wrappers homogénéisés et structure plus lisible sans perte des comportements métier.",
+      "Polish visuel de la home pour les démos: hero produit plus net, panneaux résultats/historique/sélection plus cohérents, et présentation plus propre des blocs de recherche.",
+      "Adoption d'un système de feedback global par toasts (`sonner`) pour les retours transitoires de succès/erreur sur les parcours compte, auth, reset-password et coach.",
       "Refactor complet de la page Candidatures: orchestration simplifiée, logique dérivée extraite dans des utilitaires et un hook dédié, composants découpés par responsabilité, duplication réduite et couverture de tests renforcée.",
       "Homogénéisation de l'UI Candidatures avec des formulaires et confirmations alignés sur les primitives shadcn (Field, AlertDialog), badges unifiés et cartes mieux alignées visuellement.",
       "Nettoyage du shell global de l'application: header mobile et footer dédiés, sidebar restructurée autour d'une configuration testable, navigation plus lisible et layout racine clarifié.",
