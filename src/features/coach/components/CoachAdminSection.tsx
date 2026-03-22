@@ -5,6 +5,7 @@ import { ShieldPlus, ShieldX } from "lucide-react";
 import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -54,21 +55,24 @@ export function CoachAdminSection({
   }, [demotionTarget, groups]);
 
   return (
-    <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold">Gestion des coachs</h2>
+    <Card className="gap-4 py-0">
+      <CardHeader className="border-b px-5 py-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle className="text-xl">Gestion des coachs</CardTitle>
           <p className="text-sm text-muted-foreground">
             Promotion et rétrogradation globales des comptes coach.
           </p>
+          </div>
+          <Button type="button" onClick={() => onPromoteCoachOpenChange(true)}>
+            <ShieldPlus className="mr-2 h-4 w-4" />
+            Promouvoir un coach
+          </Button>
         </div>
-        <Button type="button" onClick={() => onPromoteCoachOpenChange(true)}>
-          <ShieldPlus className="mr-2 h-4 w-4" />
-          Promouvoir un coach
-        </Button>
-      </div>
+      </CardHeader>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <CardContent className="px-5 pb-5">
+        <div className="grid gap-3 lg:grid-cols-2">
         {coaches.length > 0 ? (
           coaches.map((entry) => (
             <div
@@ -108,7 +112,8 @@ export function CoachAdminSection({
             Aucun coach pour l&apos;instant.
           </div>
         )}
-      </div>
+        </div>
+      </CardContent>
 
       <UserPickerDialog
         open={isPromoteCoachOpen}
@@ -170,6 +175,6 @@ export function CoachAdminSection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </Card>
   );
 }

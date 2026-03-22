@@ -22,7 +22,11 @@ export async function POST(request: NextRequest) {
 
     await setUserRole(userId, "coach", user.id);
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "User not found") {
+      return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+    }
+
     return NextResponse.json({ error: "Promotion coach impossible." }, { status: 500 });
   }});
 }
@@ -45,7 +49,11 @@ export async function DELETE(request: NextRequest) {
 
     await setUserRole(userId, "user", user.id);
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "User not found") {
+      return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+    }
+
     return NextResponse.json({ error: "Retrait du rôle coach impossible." }, { status: 500 });
   }});
 }

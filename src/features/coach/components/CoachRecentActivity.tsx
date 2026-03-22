@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowUpRight, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CoachRecentActivityItem, formatCoachDate } from "@/features/coach/utils";
 
 interface CoachRecentActivityProps {
@@ -45,22 +46,28 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
 
       {items.length > 0 ? (
         <>
-          <div className="flex flex-wrap gap-2">
+          <ToggleGroup
+            type="single"
+            value={activeTab}
+            onValueChange={(value) => {
+              if (value) {
+                setActiveTab(value as CoachRecentActivityTab);
+              }
+            }}
+            variant="outline"
+            className="flex flex-wrap gap-2"
+            spacing={1}
+          >
             {tabs.map((tab) => (
-              <button
+              <ToggleGroupItem
                 key={tab.id}
-                type="button"
-                className={
-                  activeTab === tab.id
-                    ? "rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
-                    : "rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
-                }
-                onClick={() => setActiveTab(tab.id)}
+                value={tab.id}
+                className="rounded-md"
               >
                 {tab.label}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
 
           {filteredItems.length > 0 ? (
             <div className="grid gap-2 xl:grid-cols-2">

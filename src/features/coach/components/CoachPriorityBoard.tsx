@@ -3,6 +3,7 @@
 import { BellRing, CalendarClock, CircleAlert, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CoachPrioritySection } from "@/features/coach/utils";
+import { cn } from "@/lib/utils";
 
 interface CoachPriorityBoardProps {
   sections: CoachPrioritySection[];
@@ -13,23 +14,20 @@ const SECTION_META: Record<
   CoachPrioritySection["id"],
   {
     icon: typeof CircleAlert;
-    badgeClassName: string;
+    tone: "warning" | "info" | "danger";
   }
 > = {
   due: {
     icon: CircleAlert,
-    badgeClassName:
-      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200",
+    tone: "warning",
   },
   interviews: {
     icon: CalendarClock,
-    badgeClassName:
-      "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200",
+    tone: "info",
   },
   inactive: {
     icon: BellRing,
-    badgeClassName:
-      "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200",
+    tone: "danger",
   },
 };
 
@@ -58,7 +56,7 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                   </div>
                   <p className="text-sm text-muted-foreground">{section.description}</p>
                 </div>
-                <Badge className={meta.badgeClassName}>{section.total}</Badge>
+                <Badge className={getPriorityBadgeClassName(meta.tone)}>{section.total}</Badge>
               </div>
 
               {section.items.length > 0 ? (
@@ -106,5 +104,17 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
         })}
       </div>
     </section>
+  );
+}
+
+function getPriorityBadgeClassName(tone: "warning" | "info" | "danger") {
+  return cn(
+    "border hover:bg-transparent",
+    tone === "warning" &&
+      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200",
+    tone === "info" &&
+      "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200",
+    tone === "danger" &&
+      "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200"
   );
 }

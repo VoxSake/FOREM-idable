@@ -64,7 +64,6 @@ export function CoachUserSheetHeader({
         <Button
           type="button"
           size="sm"
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
           onClick={onExport}
         >
           <Download className="mr-2 h-4 w-4" />

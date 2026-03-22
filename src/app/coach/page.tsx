@@ -22,6 +22,63 @@ export default function CoachPage() {
     coach.dashboard?.users.filter((entry) => entry.role === "user" || entry.groupIds.length > 0)
       .length ?? 0;
   const prioritySections = buildCoachPrioritySections(coach.dashboard?.users ?? []);
+  const closeSelectedUserSheet = (open: boolean) => {
+    if (open) {
+      return;
+    }
+
+    coach.setSelectedUserId(null);
+    setActivityTargetJobId(null);
+  };
+  const openSelectedUserEditor = () => {
+    if (!coach.selectedUser) return;
+    coach.setEditTarget({
+      userId: coach.selectedUser.id,
+      email: coach.selectedUser.email,
+      firstName: coach.selectedUser.firstName,
+      lastName: coach.selectedUser.lastName,
+      role: coach.selectedUser.role,
+    });
+    coach.setEditedFirstName(coach.selectedUser.firstName);
+    coach.setEditedLastName(coach.selectedUser.lastName);
+    coach.setNewPassword("");
+    coach.setConfirmNewPassword("");
+  };
+  const openSelectedUserDeletion = () => {
+    if (!coach.selectedUser) return;
+    coach.setDeleteUserTarget({
+      userId: coach.selectedUser.id,
+      email: coach.selectedUser.email,
+    });
+  };
+  const resetEditDialog = (open: boolean) => {
+    if (open) {
+      return;
+    }
+
+    coach.setEditTarget(null);
+    coach.setEditedFirstName("");
+    coach.setEditedLastName("");
+    coach.setNewPassword("");
+    coach.setConfirmNewPassword("");
+  };
+  const resetApiKeysDialog = (open: boolean) => {
+    if (open) {
+      return;
+    }
+
+    coach.setApiKeysTarget(null);
+    coach.setRevokeApiKeyTarget(null);
+  };
+  const requestRevokeApiKey = (apiKey: (typeof coach.managedApiKeys)[number]) => {
+    if (!coach.apiKeysTarget) return;
+    coach.setRevokeApiKeyTarget({
+      userId: coach.apiKeysTarget.userId,
+      keyId: apiKey.id,
+      keyName: apiKey.name,
+      email: coach.apiKeysTarget.email,
+    });
+  };
 
   if (coach.isAuthLoading || coach.isLoading) {
     return (
@@ -162,36 +219,12 @@ export default function CoachPage() {
         user={coach.selectedUser}
         initialJobId={activityTargetJobId}
         savingCoachNoteKey={coach.savingCoachNoteKey}
-        onOpenChange={(open) => {
-          if (!open) {
-            coach.setSelectedUserId(null);
-            setActivityTargetJobId(null);
-          }
-        }}
+        onOpenChange={closeSelectedUserSheet}
         onExport={coach.exportUserApplications}
         onOpenApiKeys={() => void coach.openManagedUserApiKeys()}
         onOpenImport={() => coach.setImportTargetUserId(coach.selectedUser?.id ?? null)}
-        onEdit={() => {
-          if (!coach.selectedUser) return;
-          coach.setEditTarget({
-            userId: coach.selectedUser.id,
-            email: coach.selectedUser.email,
-            firstName: coach.selectedUser.firstName,
-            lastName: coach.selectedUser.lastName,
-            role: coach.selectedUser.role,
-          });
-          coach.setEditedFirstName(coach.selectedUser.firstName);
-          coach.setEditedLastName(coach.selectedUser.lastName);
-          coach.setNewPassword("");
-          coach.setConfirmNewPassword("");
-        }}
-        onDeleteUser={() => {
-          if (!coach.selectedUser) return;
-          coach.setDeleteUserTarget({
-            userId: coach.selectedUser.id,
-            email: coach.selectedUser.email,
-          });
-        }}
+        onEdit={openSelectedUserEditor}
+        onDeleteUser={openSelectedUserDeletion}
         onSavePrivateCoachNote={(userId, jobId, content) =>
           coach.savePrivateCoachNote(userId, jobId, content)
         }
@@ -258,35 +291,14 @@ export default function CoachPage() {
         onEditedLastNameChange={coach.setEditedLastName}
         onNewPasswordChange={coach.setNewPassword}
         onConfirmNewPasswordChange={coach.setConfirmNewPassword}
-        onEditOpenChange={(open) => {
-          if (!open) {
-            coach.setEditTarget(null);
-            coach.setEditedFirstName("");
-            coach.setEditedLastName("");
-            coach.setNewPassword("");
-            coach.setConfirmNewPassword("");
-          }
-        }}
+        onEditOpenChange={resetEditDialog}
         onConfirmEdit={() => void coach.updateManagedUser()}
         apiKeysTarget={coach.apiKeysTarget}
         apiKeys={coach.managedApiKeys}
         apiKeysFeedback={coach.apiKeysFeedback}
         isApiKeysLoading={coach.isApiKeysLoading}
-        onApiKeysOpenChange={(open) => {
-          if (!open) {
-            coach.setApiKeysTarget(null);
-            coach.setRevokeApiKeyTarget(null);
-          }
-        }}
-        onRequestRevokeApiKey={(apiKey) => {
-          if (!coach.apiKeysTarget) return;
-          coach.setRevokeApiKeyTarget({
-            userId: coach.apiKeysTarget.userId,
-            keyId: apiKey.id,
-            keyName: apiKey.name,
-            email: coach.apiKeysTarget.email,
-          });
-        }}
+        onApiKeysOpenChange={resetApiKeysDialog}
+        onRequestRevokeApiKey={requestRevokeApiKey}
         revokeApiKeyTarget={coach.revokeApiKeyTarget}
         onRevokeApiKeyOpenChange={(open) => {
           if (!open) {

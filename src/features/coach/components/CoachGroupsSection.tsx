@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarDays, CircleHelp, Download, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActivityMeta";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
@@ -29,6 +31,7 @@ import {
   CoachRemoveMembershipTarget,
   CoachUserFilter,
 } from "@/features/coach/types";
+import { cn } from "@/lib/utils";
 import { CoachUserSummary } from "@/types/coach";
 
 interface CoachGroupsSectionProps {
@@ -94,77 +97,85 @@ export function CoachGroupsSection({
     canManageAssignedCoaches(managerCoachId) && !(currentUserRole === "coach" && coachId === currentUserId);
 
   return (
-    <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold">Groupes</h2>
-          <p className="text-sm text-muted-foreground">
+    <Card className="gap-4 py-0">
+      <CardHeader className="border-b px-5 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle className="text-xl">Groupes</CardTitle>
+            <CardDescription>
             Recherche, suivi et gestion des personnes directement par groupe.
-          </p>
-        </div>
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <Button type="button" className="flex-1 sm:flex-none" onClick={onCreateGroup}>
-            <FolderPlus className="mr-2 h-4 w-4" />
-            Créer un groupe
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" className="flex-1 sm:flex-none">
-                <CalendarDays className="mr-2 h-4 w-4" />
-                Calendriers
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuItem onClick={onCopyAllGroupsCalendar}>
-                <CalendarDays className="h-4 w-4" />
-                Copier le lien d&apos;agenda global
-              </DropdownMenuItem>
-              {canRegenerateCalendars ? (
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={onRequestRegenerateAllGroupsCalendar}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Régénérer le lien global
+            </CardDescription>
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <Button type="button" className="flex-1 sm:flex-none" onClick={onCreateGroup}>
+              <FolderPlus className="mr-2 h-4 w-4" />
+              Créer un groupe
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" className="flex-1 sm:flex-none">
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  Calendriers
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem onClick={onCopyAllGroupsCalendar}>
+                  <CalendarDays className="h-4 w-4" />
+                  Copier le lien d&apos;agenda global
                 </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 shrink-0 rounded-full"
-            onClick={() => setIsCalendarHelpOpen(true)}
-            aria-label="Aide agenda"
-            title="Aide agenda"
-          >
-            <CircleHelp className="h-4 w-4" />
-          </Button>
+                {canRegenerateCalendars ? (
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={onRequestRegenerateAllGroupsCalendar}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Régénérer le lien global
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-full"
+              onClick={() => setIsCalendarHelpOpen(true)}
+              aria-label="Aide agenda"
+              title="Aide agenda"
+            >
+              <CircleHelp className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </div>
+      </CardHeader>
 
-      <Input
-        value={search}
-        onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="Rechercher par nom, prénom ou email..."
-      />
+      <CardContent className="space-y-4 px-5 pb-5">
+        <Input
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Rechercher par nom, prénom ou email..."
+        />
 
-      <div className="flex flex-wrap gap-2">
-        {filterOptions.map((option) => (
-          <Button
-            key={option.value}
-            type="button"
-            size="sm"
-            variant={userFilter === option.value ? "default" : "outline"}
-            onClick={() => onUserFilterChange(option.value)}
-          >
-            {option.label}
-          </Button>
-        ))}
-      </div>
+        <ToggleGroup
+          type="single"
+          value={userFilter}
+          onValueChange={(value) => {
+            if (value) {
+              onUserFilterChange(value as CoachUserFilter);
+            }
+          }}
+          variant="outline"
+          className="flex w-full flex-wrap justify-start gap-2"
+          spacing={1}
+        >
+          {filterOptions.map((option) => (
+            <ToggleGroupItem key={option.value} value={option.value} className="rounded-md">
+              {option.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
-      <div className="space-y-4">
+        <div className="space-y-4">
         {groupedUsers.length > 0 ? (
           groupedUsers.map((group) => (
           <div key={`${group.kind}-${group.id}`} className="rounded-xl border bg-muted/20 p-4">
@@ -175,8 +186,16 @@ export function CoachGroupsSection({
                   <Badge variant="outline">{group.totalApplications} candidatures</Badge>
                   <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
                   {group.totalDue > 0 && <Badge variant="destructive">{group.totalDue} relance(s)</Badge>}
-                  {group.totalAccepted > 0 && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">{group.totalAccepted} acceptée(s)</Badge>}
-                  {group.totalRejected > 0 && <Badge className="bg-rose-600 text-white hover:bg-rose-600">{group.totalRejected} refusée(s)</Badge>}
+                  {group.totalAccepted > 0 && (
+                    <Badge className={getSummaryBadgeClassName("accepted")}>
+                      {group.totalAccepted} acceptée(s)
+                    </Badge>
+                  )}
+                  {group.totalRejected > 0 && (
+                    <Badge className={getSummaryBadgeClassName("rejected")}>
+                      {group.totalRejected} refusée(s)
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {group.members.length} membre{group.members.length > 1 ? "s" : ""}
@@ -237,7 +256,7 @@ export function CoachGroupsSection({
                 <Button
                   type="button"
                   size="sm"
-                  className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 sm:flex-none"
+                  className="flex-1 sm:flex-none"
                   onClick={() => onExportGroup(group.name, group.members)}
                 >
                   <Download className="mr-2 h-4 w-4" />
@@ -395,7 +414,7 @@ export function CoachGroupsSection({
                             <Badge variant="outline">Aucune candidature</Badge>
                           )}
                           {entry.interviewCount > 0 && (
-                            <Badge className="bg-sky-600 text-white hover:bg-sky-600">
+                            <Badge className={getSummaryBadgeClassName("interview")}>
                               {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
                             </Badge>
                           )}
@@ -403,12 +422,12 @@ export function CoachGroupsSection({
                             <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>
                           )}
                           {entry.acceptedCount > 0 && (
-                            <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
+                            <Badge className={getSummaryBadgeClassName("accepted")}>
                               {entry.acceptedCount} acceptée{entry.acceptedCount > 1 ? "s" : ""}
                             </Badge>
                           )}
                           {entry.rejectedCount > 0 && (
-                            <Badge className="bg-rose-600 text-white hover:bg-rose-600">
+                            <Badge className={getSummaryBadgeClassName("rejected")}>
                               {entry.rejectedCount} refusée{entry.rejectedCount > 1 ? "s" : ""}
                             </Badge>
                           )}
@@ -437,7 +456,8 @@ export function CoachGroupsSection({
             </p>
           </div>
         )}
-      </div>
+        </div>
+      </CardContent>
 
       <Dialog open={isCalendarHelpOpen} onOpenChange={setIsCalendarHelpOpen}>
         <DialogContent className="sm:max-w-lg">
@@ -476,6 +496,18 @@ export function CoachGroupsSection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </Card>
+  );
+}
+
+function getSummaryBadgeClassName(tone: "accepted" | "rejected" | "interview") {
+  return cn(
+    "border hover:bg-transparent",
+    tone === "accepted" &&
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200",
+    tone === "rejected" &&
+      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200",
+    tone === "interview" &&
+      "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200"
   );
 }

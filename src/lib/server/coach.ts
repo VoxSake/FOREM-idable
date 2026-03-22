@@ -25,6 +25,7 @@ import {
   CoachGroupSummary,
   CoachUserSummary,
 } from "@/types/coach";
+import { normalizeCoachImportedStatus } from "@/features/coach/importUtils";
 import { Job } from "@/types/job";
 
 type CoachCapableUser = AuthUser & { role: "coach" | "admin" };
@@ -612,6 +613,9 @@ export async function setUserRole(userId: number, role: UserRole, actorId?: numb
     [userId]
   );
   const previousRole = previousResult.rows[0]?.role ?? null;
+  if (!previousRole) {
+    throw new Error("User not found");
+  }
 
   await db.query(
     `UPDATE users
@@ -909,43 +913,6 @@ export interface CoachImportedApplicationInput {
 
 export type CoachImportDateFormat = "dmy" | "mdy";
 
-function normalizeImportedStatus(value?: string) {
-  const normalized = value?.trim().toLowerCase();
-
-  switch (normalized) {
-    case "in_progress":
-    case "en cours":
-    case "encours":
-    case "in progress":
-      return "in_progress" as const;
-    case "follow_up":
-    case "relance":
-    case "a relancer":
-    case "à relancer":
-    case "suivi":
-      return "follow_up" as const;
-    case "interview":
-    case "entretien":
-      return "interview" as const;
-    case "rejected":
-    case "refuse":
-    case "refusé":
-    case "refusee":
-    case "refusée":
-    case "rejetee":
-    case "rejetée":
-      return "rejected" as const;
-    case "accepted":
-    case "accepte":
-    case "accepté":
-    case "acceptee":
-    case "acceptée":
-      return "accepted" as const;
-    default:
-      return "in_progress" as const;
-  }
-}
-
 function normalizeImportedDate(value?: string, dateFormat: CoachImportDateFormat = "dmy") {
   const trimmed = value?.trim();
   if (!trimmed) {
@@ -1034,7 +1001,7 @@ export async function importCoachApplicationsForUser(input: {
       userId: input.userId,
       job,
       appliedAt: normalizeImportedDate(row.appliedAt, dateFormat),
-      status: normalizeImportedStatus(row.status),
+      status: normalizeCoachImportedStatus(row.status) ?? "in_progress",
       notes: row.notes?.trim(),
     });
 

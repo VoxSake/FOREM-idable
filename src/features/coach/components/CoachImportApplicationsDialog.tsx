@@ -34,16 +34,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const IMPORT_FIELDS = [
-  { key: "company", label: "Entreprise", required: true },
-  { key: "contractType", label: "Type de contrat", required: false },
-  { key: "title", label: "Intitulé de poste", required: true },
-  { key: "location", label: "Lieu", required: false },
-  { key: "appliedAt", label: "Date d'envoi", required: false },
-  { key: "status", label: "Statut", required: false },
-  { key: "notes", label: "Note", required: false },
-] as const;
+import {
+  COACH_IMPORT_FIELDS,
+  CoachImportFieldKey,
+  detectCoachImportFieldMapping,
+  normalizeCoachImportedStatus,
+} from "@/features/coach/importUtils";
 
 const STATUS_OPTIONS = [
   { value: "in_progress", label: "En cours" },
@@ -52,8 +48,6 @@ const STATUS_OPTIONS = [
   { value: "accepted", label: "Acceptée" },
   { value: "rejected", label: "Refusée" },
 ] as const;
-
-type ImportFieldKey = (typeof IMPORT_FIELDS)[number]["key"];
 type ImportDateFormat = "dmy" | "mdy";
 
 type CsvRecord = Record<string, string>;
@@ -64,7 +58,7 @@ interface CoachImportApplicationsDialogProps {
   isImporting: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (
-    rows: Array<Record<ImportFieldKey, string>>,
+    rows: Array<Record<CoachImportFieldKey, string>>,
     dateFormat: ImportDateFormat
   ) => Promise<{
     importedCount: number;
@@ -72,69 +66,6 @@ interface CoachImportApplicationsDialogProps {
     updatedCount: number;
     ignoredCount: number;
   } | null>;
-}
-
-function normalizeHeader(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function detectFieldMapping(headers: string[]) {
-  const normalizedHeaders = headers.map((header) => ({
-    original: header,
-    normalized: normalizeHeader(header),
-  }));
-
-  const headerFor = (patterns: string[]) =>
-    normalizedHeaders.find((header) => patterns.some((pattern) => header.normalized.includes(pattern)))
-      ?.original ?? "";
-
-  return {
-    company: headerFor(["entreprise", "societe", "societe"]),
-    contractType: headerFor(["contrat", "type de contrat", "type contrat"]),
-    title: headerFor(["intitule poste", "intituler poste", "poste", "fonction", "intitule"]),
-    location: headerFor(["lieu", "ville", "localisation"]),
-    appliedAt: headerFor(["date envoi", "date envois", "date candidature", "date"]),
-    status: headerFor(["statut", "status"]),
-    notes: headerFor(["note", "remarque", "commentaire"]),
-  } satisfies Record<ImportFieldKey, string>;
-}
-
-function normalizeStatusValue(value?: string) {
-  const normalized = value?.trim().toLowerCase();
-
-  switch (normalized) {
-    case "en cours":
-    case "encours":
-    case "in progress":
-      return "in_progress";
-    case "relance":
-    case "a relancer":
-    case "à relancer":
-    case "suivi":
-      return "follow_up";
-    case "entretien":
-    case "interview":
-      return "interview";
-    case "refuse":
-    case "refusé":
-    case "refusee":
-    case "refusée":
-    case "rejetee":
-    case "rejetée":
-      return "rejected";
-    case "accepte":
-    case "accepté":
-    case "acceptee":
-    case "acceptée":
-      return "accepted";
-    default:
-      return "";
-  }
 }
 
 export function CoachImportApplicationsDialog({
@@ -147,7 +78,7 @@ export function CoachImportApplicationsDialog({
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<CsvRecord[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [mapping, setMapping] = useState<Record<ImportFieldKey, string>>({
+  const [mapping, setMapping] = useState<Record<CoachImportFieldKey, string>>({
     company: "",
     contractType: "",
     title: "",
@@ -198,7 +129,7 @@ export function CoachImportApplicationsDialog({
       .map((row) => (row[mapping.status] ?? "").trim())
       .filter((status) => {
         if (!status) return false;
-        if (normalizeStatusValue(status)) return false;
+        if (normalizeCoachImportedStatus(status)) return false;
         if (seen.has(status)) return false;
         seen.add(status);
         return true;
@@ -278,7 +209,7 @@ export function CoachImportApplicationsDialog({
 
     setHeaders(nextHeaders);
     setRows(cleanedRows);
-    setMapping(detectFieldMapping(nextHeaders));
+    setMapping(detectCoachImportFieldMapping(nextHeaders));
   };
 
   const handleImport = async () => {
@@ -300,7 +231,9 @@ export function CoachImportApplicationsDialog({
         location: mapping.location ? row[mapping.location] ?? "" : "",
         appliedAt: mapping.appliedAt ? row[mapping.appliedAt] ?? "" : "",
         status: mapping.status
-          ? normalizeStatusValue(row[mapping.status] ?? "") || statusOverrides[(row[mapping.status] ?? "").trim()] || ""
+          ? normalizeCoachImportedStatus(row[mapping.status] ?? "") ||
+            statusOverrides[(row[mapping.status] ?? "").trim()] ||
+            ""
           : "",
         notes: mapping.notes ? row[mapping.notes] ?? "" : "",
       }))
@@ -385,7 +318,7 @@ export function CoachImportApplicationsDialog({
                   <CardTitle>Associer les colonnes</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-3 md:grid-cols-2">
-                  {IMPORT_FIELDS.map((field) => (
+                  {COACH_IMPORT_FIELDS.map((field) => (
                     <label key={field.key} className="flex flex-col gap-1">
                       <span className="text-sm font-medium">
                         {field.label}
