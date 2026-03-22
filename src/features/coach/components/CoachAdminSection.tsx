@@ -77,7 +77,7 @@ export function CoachAdminSection({
             coaches.map((entry) => (
               <div
                 key={entry.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 transition-colors hover:bg-muted/30"
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">

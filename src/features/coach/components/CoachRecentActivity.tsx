@@ -83,7 +83,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
                   <button
                     key={item.id}
                     type="button"
-                    className="flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/40"
+                    className="flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/30"
                     style={{ animationDelay: `${index * 35}ms` }}
                     onClick={() => onOpenItem(item.userId, item.jobId)}
                   >
