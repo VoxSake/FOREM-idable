@@ -64,8 +64,11 @@ export function ApplicationCard({
     <Card
       className={cn(
         "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/20",
-        (hasInterview || hasUnreadCoachUpdate) && "border-primary/30 bg-primary/5",
-        isDue && "border-destructive/40 bg-destructive/5"
+        getApplicationCardClassName(application.status, {
+          hasInterview,
+          hasUnreadCoachUpdate,
+          isDue,
+        })
       )}
       onClick={() => onOpenDetails(application.job.id)}
     >
@@ -154,6 +157,37 @@ export function ApplicationCard({
       </div>
     </Card>
   );
+}
+
+function getApplicationCardClassName(
+  status: ApplicationStatus,
+  options: {
+    hasInterview: boolean;
+    hasUnreadCoachUpdate: boolean;
+    isDue: boolean;
+  }
+) {
+  if (options.isDue) {
+    return "border-destructive/40 bg-destructive/5";
+  }
+
+  if (status === "accepted") {
+    return "border-emerald-300 bg-emerald-50/60";
+  }
+
+  if (status === "rejected") {
+    return "border-rose-300 bg-rose-50/60";
+  }
+
+  if (status === "interview" || options.hasInterview) {
+    return "border-sky-300 bg-sky-50/50";
+  }
+
+  if (options.hasUnreadCoachUpdate) {
+    return "border-primary/30 bg-primary/5";
+  }
+
+  return null;
 }
 
 function ApplicationCardHeader({ application }: { application: JobApplication }) {
