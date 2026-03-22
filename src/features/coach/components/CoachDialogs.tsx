@@ -1,273 +1,190 @@
 "use client";
 
-import { ApiKeySummary } from "@/types/externalApi";
 import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import { CoachApiKeysDialog } from "@/features/coach/components/dialogs/CoachApiKeysDialog";
 import { CoachConfirmationDialog } from "@/features/coach/components/dialogs/CoachConfirmationDialog";
 import { CoachCreateGroupDialog } from "@/features/coach/components/dialogs/CoachCreateGroupDialog";
 import { CoachEditUserDialog } from "@/features/coach/components/dialogs/CoachEditUserDialog";
-import {
-  CoachApiKeysTarget,
-  CoachCalendarRegenerationTarget,
-  CoachDeleteUserTarget,
-  CoachEditTarget,
-  CoachManagerPickerGroup,
-  CoachMemberPickerGroup,
-  CoachRevokeApiKeyTarget,
-  CoachRemoveGroupTarget,
-  CoachRemoveCoachTarget,
-  CoachRemoveMembershipTarget,
-} from "@/features/coach/types";
-import { CoachUserSummary } from "@/types/coach";
+import { CoachPageState } from "@/features/coach/useCoachPageState";
 
 interface CoachDialogsProps {
-  groupName: string;
-  onGroupNameChange: (value: string) => void;
-  isCreateGroupOpen: boolean;
-  onCreateGroupOpenChange: (open: boolean) => void;
-  onCreateGroup: () => void;
-  memberPickerGroup: CoachMemberPickerGroup | null;
-  assignableUsers: CoachUserSummary[];
-  onMemberPickerOpenChange: (open: boolean) => void;
-  onMemberSelect: (userId: number) => void;
-  coachPickerGroup: CoachMemberPickerGroup | null;
-  assignableCoaches: CoachMemberPickerGroup["coaches"];
-  onCoachPickerOpenChange: (open: boolean) => void;
-  onCoachSelect: (userId: number) => void;
-  managerPickerGroup: CoachManagerPickerGroup | null;
-  assignableManagers: CoachManagerPickerGroup["coaches"];
-  onManagerPickerOpenChange: (open: boolean) => void;
-  onManagerSelect: (userId: number) => void;
-  removeMembership: CoachRemoveMembershipTarget | null;
-  onRemoveMembershipOpenChange: (open: boolean) => void;
-  onConfirmRemoveMembership: () => void;
-  removeCoach: CoachRemoveCoachTarget | null;
-  onRemoveCoachOpenChange: (open: boolean) => void;
-  onConfirmRemoveCoach: () => void;
-  removeGroup: CoachRemoveGroupTarget | null;
-  onRemoveGroupOpenChange: (open: boolean) => void;
-  onConfirmRemoveGroup: () => void;
-  editTarget: CoachEditTarget | null;
-  editedFirstName: string;
-  editedLastName: string;
-  newPassword: string;
-  confirmNewPassword: string;
-  onEditedFirstNameChange: (value: string) => void;
-  onEditedLastNameChange: (value: string) => void;
-  onNewPasswordChange: (value: string) => void;
-  onConfirmNewPasswordChange: (value: string) => void;
-  onEditOpenChange: (open: boolean) => void;
-  onConfirmEdit: () => void;
-  apiKeysTarget: CoachApiKeysTarget | null;
-  apiKeys: ApiKeySummary[];
-  apiKeysFeedback: string | null;
-  isApiKeysLoading: boolean;
-  onApiKeysOpenChange: (open: boolean) => void;
-  onRequestRevokeApiKey: (key: ApiKeySummary) => void;
-  revokeApiKeyTarget: CoachRevokeApiKeyTarget | null;
-  onRevokeApiKeyOpenChange: (open: boolean) => void;
-  onConfirmRevokeApiKey: () => void;
-  deleteUserTarget: CoachDeleteUserTarget | null;
-  isDeletingUser: boolean;
-  onDeleteUserOpenChange: (open: boolean) => void;
-  onConfirmDeleteUser: () => void;
-  calendarRegenerationTarget: CoachCalendarRegenerationTarget | null;
-  onCalendarRegenerationOpenChange: (open: boolean) => void;
-  onConfirmCalendarRegeneration: () => void;
+  page: CoachPageState;
 }
 
-export function CoachDialogs({
-  groupName,
-  onGroupNameChange,
-  isCreateGroupOpen,
-  onCreateGroupOpenChange,
-  onCreateGroup,
-  memberPickerGroup,
-  assignableUsers,
-  onMemberPickerOpenChange,
-  onMemberSelect,
-  coachPickerGroup,
-  assignableCoaches,
-  onCoachPickerOpenChange,
-  onCoachSelect,
-  managerPickerGroup,
-  assignableManagers,
-  onManagerPickerOpenChange,
-  onManagerSelect,
-  removeMembership,
-  onRemoveMembershipOpenChange,
-  onConfirmRemoveMembership,
-  removeCoach,
-  onRemoveCoachOpenChange,
-  onConfirmRemoveCoach,
-  removeGroup,
-  onRemoveGroupOpenChange,
-  onConfirmRemoveGroup,
-  editTarget,
-  editedFirstName,
-  editedLastName,
-  newPassword,
-  confirmNewPassword,
-  onEditedFirstNameChange,
-  onEditedLastNameChange,
-  onNewPasswordChange,
-  onConfirmNewPasswordChange,
-  onEditOpenChange,
-  onConfirmEdit,
-  apiKeysTarget,
-  apiKeys,
-  apiKeysFeedback,
-  isApiKeysLoading,
-  onApiKeysOpenChange,
-  onRequestRevokeApiKey,
-  revokeApiKeyTarget,
-  onRevokeApiKeyOpenChange,
-  onConfirmRevokeApiKey,
-  deleteUserTarget,
-  isDeletingUser,
-  onDeleteUserOpenChange,
-  onConfirmDeleteUser,
-  calendarRegenerationTarget,
-  onCalendarRegenerationOpenChange,
-  onConfirmCalendarRegeneration,
-}: CoachDialogsProps) {
+export function CoachDialogs({ page }: CoachDialogsProps) {
   return (
     <>
       <CoachCreateGroupDialog
-        open={isCreateGroupOpen}
-        groupName={groupName}
-        onOpenChange={onCreateGroupOpenChange}
-        onGroupNameChange={onGroupNameChange}
-        onCreateGroup={onCreateGroup}
+        open={page.isCreateGroupOpen}
+        groupName={page.groupName}
+        onOpenChange={page.setIsCreateGroupOpen}
+        onGroupNameChange={page.setGroupName}
+        onCreateGroup={() => void page.createGroup()}
       />
 
       <UserPickerDialog
-        open={Boolean(memberPickerGroup)}
-        onOpenChange={onMemberPickerOpenChange}
-        title={memberPickerGroup ? `Ajouter une personne à ${memberPickerGroup.name}` : "Ajouter une personne"}
+        open={Boolean(page.memberPickerGroup)}
+        onOpenChange={(open) => !open && page.setMemberPickerGroupId(null)}
+        title={
+          page.memberPickerGroup
+            ? `Ajouter une personne à ${page.memberPickerGroup.name}`
+            : "Ajouter une personne"
+        }
         description="Recherche dynamique parmi toutes les personnes disponibles."
-        users={assignableUsers}
-        onSelect={(entry) => onMemberSelect(entry.id)}
+        users={page.assignableUsers}
+        onSelect={(entry) =>
+          void page.addMember(page.memberPickerGroup?.id ?? 0, entry.id)
+        }
       />
 
       <UserPickerDialog
-        open={Boolean(coachPickerGroup)}
-        onOpenChange={onCoachPickerOpenChange}
-        title={coachPickerGroup ? `Attribuer un coach à ${coachPickerGroup.name}` : "Attribuer un coach"}
+        open={Boolean(page.coachPickerGroup)}
+        onOpenChange={(open) => !open && page.setCoachPickerGroupId(null)}
+        title={
+          page.coachPickerGroup
+            ? `Attribuer un coach à ${page.coachPickerGroup.name}`
+            : "Attribuer un coach"
+        }
         description="Recherche parmi les comptes coach disponibles."
-        users={assignableCoaches}
-        onSelect={(entry) => onCoachSelect(entry.id)}
+        users={page.assignableCoaches}
+        onSelect={(entry) =>
+          void page.addCoach(page.coachPickerGroup?.id ?? 0, entry.id)
+        }
       />
 
       <UserPickerDialog
-        open={Boolean(managerPickerGroup)}
-        onOpenChange={onManagerPickerOpenChange}
-        title={managerPickerGroup ? `Définir le manager de ${managerPickerGroup.name}` : "Définir le manager"}
+        open={Boolean(page.managerPickerGroup)}
+        onOpenChange={(open) => !open && page.setManagerPickerGroupId(null)}
+        title={
+          page.managerPickerGroup
+            ? `Définir le manager de ${page.managerPickerGroup.name}`
+            : "Définir le manager"
+        }
         description="Le manager doit être un coach déjà attribué à ce groupe."
-        users={assignableManagers}
-        onSelect={(entry) => onManagerSelect(entry.id)}
+        users={page.assignableManagers}
+        onSelect={(entry) =>
+          void page.setGroupManager(page.managerPickerGroup?.id ?? 0, entry.id)
+        }
       />
 
       <CoachConfirmationDialog
-        open={Boolean(removeMembership)}
+        open={Boolean(page.removeMembership)}
         title="Retirer du groupe ?"
         description={
-          removeMembership
-            ? `${removeMembership.userEmail} sera retiré de ${removeMembership.groupName}.`
+          page.removeMembership
+            ? `${page.removeMembership.userEmail} sera retiré de ${page.removeMembership.groupName}.`
             : "Cet utilisateur sera retiré du groupe."
         }
         confirmLabel="Retirer"
-        onOpenChange={onRemoveMembershipOpenChange}
-        onConfirm={onConfirmRemoveMembership}
+        onOpenChange={(open) => !open && page.setRemoveMembership(null)}
+        onConfirm={() => {
+          if (!page.removeMembership) return;
+          void page.removeMember(
+            page.removeMembership.groupId,
+            page.removeMembership.userId
+          );
+          page.setRemoveMembership(null);
+        }}
       />
 
       <CoachConfirmationDialog
-        open={Boolean(removeCoach)}
+        open={Boolean(page.removeCoach)}
         title="Retirer ce coach du groupe ?"
         description={
-          removeCoach
-            ? `${removeCoach.userEmail} ne sera plus attribué à ${removeCoach.groupName}.`
+          page.removeCoach
+            ? `${page.removeCoach.userEmail} ne sera plus attribué à ${page.removeCoach.groupName}.`
             : "Ce coach ne sera plus attribué au groupe."
         }
         confirmLabel="Retirer"
-        onOpenChange={onRemoveCoachOpenChange}
-        onConfirm={onConfirmRemoveCoach}
+        onOpenChange={(open) => !open && page.setRemoveCoach(null)}
+        onConfirm={() => {
+          if (!page.removeCoach) return;
+          void page.removeAssignedCoach(
+            page.removeCoach.groupId,
+            page.removeCoach.userId
+          );
+          page.setRemoveCoach(null);
+        }}
       />
 
       <CoachConfirmationDialog
-        open={Boolean(removeGroup)}
+        open={Boolean(page.removeGroup)}
         title="Supprimer ce groupe ?"
         description={
-          removeGroup
-            ? `Le groupe ${removeGroup.groupName} sera supprimé avec ses affectations.`
+          page.removeGroup
+            ? `Le groupe ${page.removeGroup.groupName} sera supprimé avec ses affectations.`
             : "Le groupe sera supprimé."
         }
         confirmLabel="Supprimer"
-        onOpenChange={onRemoveGroupOpenChange}
-        onConfirm={onConfirmRemoveGroup}
+        onOpenChange={(open) => !open && page.setRemoveGroup(null)}
+        onConfirm={() => {
+          if (!page.removeGroup) return;
+          void page.deleteGroup(page.removeGroup.groupId);
+          page.setRemoveGroup(null);
+        }}
       />
 
       <CoachEditUserDialog
-        editTarget={editTarget}
-        editedFirstName={editedFirstName}
-        editedLastName={editedLastName}
-        newPassword={newPassword}
-        confirmNewPassword={confirmNewPassword}
-        onEditedFirstNameChange={onEditedFirstNameChange}
-        onEditedLastNameChange={onEditedLastNameChange}
-        onNewPasswordChange={onNewPasswordChange}
-        onConfirmNewPasswordChange={onConfirmNewPasswordChange}
-        onOpenChange={onEditOpenChange}
-        onConfirm={onConfirmEdit}
+        editTarget={page.editTarget}
+        editedFirstName={page.editedFirstName}
+        editedLastName={page.editedLastName}
+        newPassword={page.newPassword}
+        confirmNewPassword={page.confirmNewPassword}
+        onEditedFirstNameChange={page.setEditedFirstName}
+        onEditedLastNameChange={page.setEditedLastName}
+        onNewPasswordChange={page.setNewPassword}
+        onConfirmNewPasswordChange={page.setConfirmNewPassword}
+        onOpenChange={page.resetEditDialog}
+        onConfirm={() => void page.updateManagedUser()}
       />
 
       <CoachApiKeysDialog
-        apiKeysTarget={apiKeysTarget}
-        apiKeys={apiKeys}
-        apiKeysFeedback={apiKeysFeedback}
-        isApiKeysLoading={isApiKeysLoading}
-        onOpenChange={onApiKeysOpenChange}
-        onRequestRevokeApiKey={onRequestRevokeApiKey}
+        apiKeysTarget={page.apiKeysTarget}
+        apiKeys={page.managedApiKeys}
+        apiKeysFeedback={page.apiKeysFeedback}
+        isApiKeysLoading={page.isApiKeysLoading}
+        onOpenChange={page.resetApiKeysDialog}
+        onRequestRevokeApiKey={page.requestRevokeApiKey}
       />
 
       <CoachConfirmationDialog
-        open={Boolean(revokeApiKeyTarget)}
+        open={Boolean(page.revokeApiKeyTarget)}
         title="Révoquer cette clé API ?"
         description={
-          revokeApiKeyTarget
-            ? `La clé ${revokeApiKeyTarget.keyName} de ${revokeApiKeyTarget.email} sera révoquée.`
+          page.revokeApiKeyTarget
+            ? `La clé ${page.revokeApiKeyTarget.keyName} de ${page.revokeApiKeyTarget.email} sera révoquée.`
             : "La clé API sera révoquée."
         }
         confirmLabel="Révoquer"
-        onOpenChange={onRevokeApiKeyOpenChange}
-        onConfirm={onConfirmRevokeApiKey}
+        onOpenChange={(open) => !open && page.setRevokeApiKeyTarget(null)}
+        onConfirm={() => void page.revokeManagedApiKey()}
       />
 
       <CoachConfirmationDialog
-        open={Boolean(deleteUserTarget)}
+        open={Boolean(page.deleteUserTarget)}
         title="Supprimer ce compte ?"
         description={
-          deleteUserTarget
-            ? `Le compte ${deleteUserTarget.email} et ses données seront supprimés.`
+          page.deleteUserTarget
+            ? `Le compte ${page.deleteUserTarget.email} et ses données seront supprimés.`
             : "Le compte et ses données seront supprimés."
         }
         confirmLabel="Supprimer"
-        onOpenChange={onDeleteUserOpenChange}
-        onConfirm={onConfirmDeleteUser}
-        isPending={isDeletingUser}
+        onOpenChange={(open) => !open && page.setDeleteUserTarget(null)}
+        onConfirm={() => void page.deleteUser()}
+        isPending={page.isDeletingUser}
       />
 
       <CoachConfirmationDialog
-        open={Boolean(calendarRegenerationTarget)}
+        open={Boolean(page.calendarRegenerationTarget)}
         title="Régénérer ce lien calendrier ?"
         description={
-          calendarRegenerationTarget
-            ? `L'ancien lien sera invalidé pour ${calendarRegenerationTarget.label}. Les abonnements Google Calendar existants devront être recréés avec la nouvelle URL.`
+          page.calendarRegenerationTarget
+            ? `L'ancien lien sera invalidé pour ${page.calendarRegenerationTarget.label}. Les abonnements Google Calendar existants devront être recréés avec la nouvelle URL.`
             : "Le lien calendrier actuel sera invalidé et remplacé."
         }
         confirmLabel="Régénérer"
-        onOpenChange={onCalendarRegenerationOpenChange}
-        onConfirm={onConfirmCalendarRegeneration}
+        onOpenChange={(open) => !open && page.setCalendarRegenerationTarget(null)}
+        onConfirm={() => void page.regenerateCalendarUrl()}
       />
     </>
   );
