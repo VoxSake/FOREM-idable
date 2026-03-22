@@ -47,13 +47,17 @@ L'interface standard du Forem est riche, mais peut s'avérer lourde pour un suiv
 
 ## 🛠️ Stack Technique & Choix d'Architecture
 
-Le projet a été conçu avec une attention particulière à la **scalabilité** et à la **sécurité** :
+Le projet adopte une approche **SaaS de haut niveau**, privilégiant la résilience, la maintenabilité et une expérience utilisateur fluide :
 
-- **Framework :** [Next.js 15](https://nextjs.org/) (App Router) pour le rendu hybride et les performances UX.
-- **Base de données :** [PostgreSQL](https://www.postgresql.org/) avec [Drizzle ORM](https://orm.drizzle.team/) pour un typage strict de bout en bout.
-- **Cache & Rate Limit :** Support de [Redis](https://redis.io/) pour le rate limiting distribué.
-- **Observabilité :** Logs d'audit structurés, tracking des requêtes SQL lentes et intégration Umami (optionnelle).
-- **Qualité :** Suite de tests avec [Vitest](https://vitest.dev/) et [Testing Library](https://testing-library.com/).
+- **Architecture "Feature-First" :** Découpage modulaire par domaine métier (`src/features/`) pour isoler la logique, les composants et les hooks. Cette structure facilite le scaling et l'onboarding de nouveaux développeurs.
+- **Framework & Rendu :** [Next.js 16](https://nextjs.org/) (App Router) avec rendu hybride pour des performances SEO et UX optimales.
+- **Gestion d'État "Page-Level" :** Utilisation de hooks personnalisés (`usePageState`) pour orchestrer la complexité des pages (dialogues, filtrage, pagination) tout en maintenant le code des composants pur et lisible.
+- **Base de données & Type Safety :** [PostgreSQL](https://www.postgresql.org/) avec [Drizzle ORM](https://orm.drizzle.team/) pour un typage strict de bout en bout, de la base de données jusqu'au client.
+- **Résilience & Error Handling :** Implémentation de **Segment Error Boundaries** (`error.tsx`) sur chaque route majeure pour garantir que l'application reste utilisable même en cas d'échec d'un segment spécifique.
+- **Validation & Tests :** 
+  - **E2E (Playwright) :** Validation des flux critiques (Happy Path) via des tests end-to-end automatisés.
+  - **Unitaires (Vitest) :** Tests rigoureux de la logique métier et des utilitaires complexes.
+- **UX Polished :** Intégration de [Sonner](https://sonner.emilkowal.ski/) pour un système de toasts réactif et de [Tailwind CSS](https://tailwindcss.com/) pour une interface moderne, compacte et accessible.
 
 ---
 
@@ -69,9 +73,14 @@ cp env.example .env.local
 # Lancement (dev)
 npm run dev
 
-# Tests
+# Tests Unitaires
 npm test
+
+# Tests E2E (Playwright)
+npm run test:e2e
 ```
+
+> Note Playwright : selon l'environnement Linux, Chromium peut nécessiter des bibliothèques système supplémentaires avant exécution des tests E2E.
 
 <details>
 <summary>⚙️ <b>Variables d'environnement (Détails)</b></summary>
@@ -109,15 +118,6 @@ FOREM-idable expose une API REST robuste (lecture seule) pour les besoins d'int�
 - **Forem Open Data (ODWB) :** Données brutes des offres.
 - **Nomenclature Localisations :** API officielle Le Forem.
 - **Adzuna (Optionnel) :** Provider secondaire international.
-
----
-
-## 🗺️ Roadmap & Évolutions
-
-- [ ] Support de providers additionnels (LinkedIn, Indeed).
-- [ ] IA : Résumé automatique des offres et extraction de compétences clés.
-- [ ] Application mobile (PWA) pour les notifications push de relances.
-- [ ] Export PDF personnalisé des bilans de recherche pour les institutions.
 
 ---
 
