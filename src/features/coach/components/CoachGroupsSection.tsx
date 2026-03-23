@@ -407,7 +407,7 @@ export function CoachGroupsSection({
                               {entry.applicationCount}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/60 bg-[#EEF6FC] px-2.5 py-2 text-center sm:px-3">
+                          <div className="rounded-lg border border-border/60 bg-[#EEF6FC] px-2.5 py-2 text-center dark:border-[#2A5573] dark:bg-[#10202B] sm:px-3">
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                               Entretiens
                             </p>
@@ -415,7 +415,7 @@ export function CoachGroupsSection({
                               {entry.interviewCount}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/60 bg-[#FFF5E8] px-2.5 py-2 text-center sm:px-3">
+                          <div className="rounded-lg border border-border/60 bg-[#FFF5E8] px-2.5 py-2 text-center dark:border-[#6D4B1E] dark:bg-[#2A1D0F] sm:px-3">
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                               Relances
                             </p>
