@@ -31,7 +31,7 @@ export function CoachSummaryCards({
     {
       label: "Bénéficiaires suivis",
       value: String(userCount),
-      detail: "Portefeuille actif actuellement piloté dans cette vue coach.",
+      detail: "Bénéficiaires actuellement suivis dans cette vue coach.",
       badge: "Portefeuille",
       badgeVariant: "secondary" as const,
       icon: BriefcaseBusiness,
@@ -39,15 +39,15 @@ export function CoachSummaryCards({
     {
       label: "Relances à faire",
       value: String(totalDue),
-      detail: "Points de suivi à reprendre rapidement pour éviter les dossiers froids.",
+      detail: "Suivis à reprendre rapidement pour éviter les dossiers qui refroidissent.",
       badge: totalDue > 0 ? "Priorité" : "Sous contrôle",
-      badgeVariant: totalDue > 0 ? ("destructive" as const) : ("secondary" as const),
+      badgeVariant: totalDue > 0 ? ("warning" as const) : ("secondary" as const),
       icon: CircleAlert,
     },
     {
       label: "Entretiens à venir",
       value: String(totalInterviews),
-      detail: "Échéances planifiées à surveiller dans les prochains jours.",
+      detail: "Entretiens déjà planifiés à préparer et à suivre dans les prochains jours.",
       badge: "Agenda",
       badgeVariant: "outline" as const,
       icon: CalendarClock,
@@ -57,7 +57,7 @@ export function CoachSummaryCards({
     {
       label: "Candidatures consolidées",
       value: String(totalApplications),
-      detail: "Volume total actuellement visible sur l’ensemble des groupes.",
+      detail: "Volume total de candidatures visible sur l’ensemble des groupes.",
       badge: "Pipeline",
       badgeVariant: "outline" as const,
       icon: FolderKanban,
@@ -65,7 +65,7 @@ export function CoachSummaryCards({
     {
       label: "Acceptées / refusées",
       value: `${totalAccepted} / ${totalRejected}`,
-      detail: "Lecture rapide du ratio de sorties positives et négatives.",
+      detail: "Lecture rapide des issues positives et négatives du portefeuille suivi.",
       badge: "Résultats",
       badgeVariant: "outline" as const,
       icon: Scale,

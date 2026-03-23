@@ -22,6 +22,7 @@ const PRODUCT_UPDATES = [
   {
     month: "Mars 2026",
     items: [
+      "Refonte de la vue coach/admin pour les démos: hiérarchie de page clarifiée, KPI rééquilibrés, sections Priorités / Activité / Groupes mieux structurées, module d'administration coach repositionné et système de badges métier harmonisé (relances, entretiens, acceptées, refusées).",
       "Durcissement de la résilience UI avec des error boundaries segmentaires (`error.tsx`) sur les pages majeures, complétés par un `global-error.tsx` racine et un `not-found.tsx` dédié.",
       "Ajout d'un socle E2E Playwright sur le Happy Path principal (recherche d'offre -> ajout au suivi -> visibilité côté coach) pour démontrer la couverture du coeur métier.",
       "Refactor de la page d'accueil `/`: orchestration sortie dans un hook dédié, composants d'assemblage clarifiés, wrappers homogénéisés et structure plus lisible sans perte des comportements métier.",

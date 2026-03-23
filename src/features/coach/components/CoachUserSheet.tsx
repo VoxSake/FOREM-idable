@@ -358,7 +358,7 @@ function CoachUserSheetBody({
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant={isDue ? "destructive" : "secondary"}>
+                          <Badge variant={getApplicationStatusBadgeVariant(application.status, isDue)}>
                             {coachStatusLabel(application.status)}
                           </Badge>
                     <Badge variant="outline">
@@ -829,4 +829,27 @@ function getApplicationCardClassName(status: JobApplication["status"], isDue: bo
   }
 
   return cn(baseClassName, "bg-card hover:border-primary/50 hover:bg-primary/5");
+}
+
+function getApplicationStatusBadgeVariant(
+  status: JobApplication["status"],
+  isDue: boolean
+) {
+  if (status === "accepted") {
+    return "success";
+  }
+
+  if (status === "rejected") {
+    return "destructive";
+  }
+
+  if (status === "interview") {
+    return "info";
+  }
+
+  if (isDue) {
+    return "warning";
+  }
+
+  return "secondary";
 }

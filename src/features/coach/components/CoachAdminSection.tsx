@@ -59,10 +59,7 @@ export function CoachAdminSection({
       <CardHeader className="border-b border-border/60 px-5 py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <CardTitle className="text-xl">Administration des coachs</CardTitle>
-              <Badge variant="outline">Bas de page</Badge>
-            </div>
+            <CardTitle className="text-xl">Administration des coachs</CardTitle>
             <CardDescription>
               Gestion des accès coach, des promotions globales et des rétrogradations.
             </CardDescription>
@@ -77,43 +74,64 @@ export function CoachAdminSection({
       <CardContent className="px-5 pb-5">
         <div className="grid gap-3 lg:grid-cols-2">
           {coaches.length > 0 ? (
-            coaches.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-muted/30"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium">{getCoachUserDisplayName(entry)}</p>
-                    <Badge variant="secondary">coach</Badge>
-                  </div>
-                  <p className="break-all text-xs text-muted-foreground">
-                    {entry.email}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <Badge variant="outline">
-                      {entry.groupNames.length > 0
-                        ? `${entry.groupNames.length} groupe${entry.groupNames.length > 1 ? "s" : ""}`
-                        : "Aucun groupe"}
-                    </Badge>
-                    <Badge variant="outline">
-                      Connexion: {formatCoachDate(entry.lastSeenAt, true)}
-                    </Badge>
-                    <Badge variant="outline">
-                      Action: {formatCoachDate(entry.lastCoachActionAt, true)}
-                    </Badge>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDemotionTargetId(entry.id)}
+            coaches.map((entry) => {
+              const coachedGroups = groups
+                .filter((group) => group.coaches.some((coach) => coach.id === entry.id))
+                .map((group) => group.name);
+              const managedGroups = groups
+                .filter((group) => group.managerCoachId === entry.id)
+                .map((group) => group.name);
+
+              return (
+                <div
+                  key={entry.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-muted/30"
                 >
-                  <ShieldX data-icon="inline-start" />
-                  Rétrograder
-                </Button>
-              </div>
-            ))
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{getCoachUserDisplayName(entry)}</p>
+                      <Badge variant="secondary">coach</Badge>
+                    </div>
+                    <p className="break-all text-xs text-muted-foreground">
+                      {entry.email}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge variant="outline">
+                        {coachedGroups.length > 0
+                          ? `${coachedGroups.length} groupe${coachedGroups.length > 1 ? "s" : ""} coaché${coachedGroups.length > 1 ? "s" : ""}`
+                          : "Aucun groupe coaché"}
+                      </Badge>
+                      {managedGroups.length > 0 ? (
+                        <Badge variant="outline">
+                          {managedGroups.length} groupe{managedGroups.length > 1 ? "s" : ""} managé{managedGroups.length > 1 ? "s" : ""}
+                        </Badge>
+                      ) : null}
+                      <Badge variant="outline">
+                        Connexion: {formatCoachDate(entry.lastSeenAt, true)}
+                      </Badge>
+                      <Badge variant="outline">
+                        Action: {formatCoachDate(entry.lastCoachActionAt, true)}
+                      </Badge>
+                    </div>
+                    {(coachedGroups.length > 0 || managedGroups.length > 0) ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {coachedGroups.length > 0 ? `Coaché: ${coachedGroups.join(" • ")}` : null}
+                        {coachedGroups.length > 0 && managedGroups.length > 0 ? " • " : null}
+                        {managedGroups.length > 0 ? `Manager: ${managedGroups.join(" • ")}` : null}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDemotionTargetId(entry.id)}
+                  >
+                    <ShieldX data-icon="inline-start" />
+                    Rétrograder
+                  </Button>
+                </div>
+              );
+            })
           ) : (
             <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
               Aucun coach pour l&apos;instant.

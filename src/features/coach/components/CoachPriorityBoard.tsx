@@ -150,7 +150,7 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
 }
 
 function getPriorityBadgeVariant(tone: "warning" | "info" | "danger") {
-  if (tone === "warning") return "secondary";
+  if (tone === "warning") return "warning";
   if (tone === "danger") return "destructive";
-  return "outline";
+  return "info";
 }

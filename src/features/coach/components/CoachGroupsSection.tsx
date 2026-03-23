@@ -507,8 +507,8 @@ function getSummaryBadgeVariant(tone: "accepted" | "rejected" | "interview") {
   }
 
   if (tone === "accepted") {
-    return "secondary";
+    return "success";
   }
 
-  return "outline";
+  return "info";
 }

@@ -123,7 +123,7 @@ export function CoachUserSheetHeader({
         <Badge variant="outline" className="justify-center">
           {user.interviewCount} entretien(s)
         </Badge>
-        <Badge variant={user.dueCount > 0 ? "destructive" : "outline"} className="justify-center">
+        <Badge variant={user.dueCount > 0 ? "warning" : "outline"} className="justify-center">
           {user.dueCount} relance(s) dues
         </Badge>
       </div>

@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowRight, FolderKanban, History, Shield, Sparkles } from "lucide-react";
+import { ArrowRight, FolderKanban, History, Sparkles } from "lucide-react";
 
 interface CoachPageHeaderProps {
   role: "coach" | "admin";
@@ -38,13 +38,9 @@ export function CoachPageHeader({
               <Badge variant="secondary" className="capitalize">
                 {role}
               </Badge>
-              <Badge variant="outline">Pilotage quotidien</Badge>
-              {role === "admin" ? (
-                <Badge variant="outline">
-                  <Shield data-icon="inline-start" />
-                  Administration en bas de page
-                </Badge>
-              ) : null}
+              <Badge variant="outline">
+                {role === "admin" ? "Pilotage + administration" : "Pilotage quotidien"}
+              </Badge>
             </div>
             <div className="flex flex-col gap-1.5">
               <CardTitle className="text-2xl font-black tracking-tight sm:text-3xl">
