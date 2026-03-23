@@ -64,4 +64,5 @@ export interface DirectMessageTarget {
   email: string;
   role: UserRole;
   sharedGroupCount: number;
+  relationLabel: string;
 }

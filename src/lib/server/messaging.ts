@@ -798,6 +798,7 @@ export async function listDirectMessageTargets(actor: AuthUser): Promise<DirectM
       email: row.email,
       role: row.role,
       sharedGroupCount: 0,
+      relationLabel: "Accès global",
     }));
   }
 
@@ -886,6 +887,7 @@ export async function listDirectMessageTargets(actor: AuthUser): Promise<DirectM
     email: row.email,
     role: row.role,
     sharedGroupCount: row.shared_group_count,
+    relationLabel: `${row.shared_group_count} groupe${row.shared_group_count > 1 ? "s" : ""} commun${row.shared_group_count > 1 ? "s" : ""}`,
   }));
 }
 

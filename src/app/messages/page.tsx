@@ -1612,9 +1612,7 @@ export default function MessagesPage() {
                       </div>
 
                       <Badge variant="secondary" className="max-w-full self-start break-words sm:self-center">
-                        {contact.sharedGroupCount > 0
-                          ? `${contact.sharedGroupCount} groupe${contact.sharedGroupCount > 1 ? "s" : ""} commun${contact.sharedGroupCount > 1 ? "s" : ""}`
-                          : "Admin"}
+                        {contact.relationLabel}
                       </Badge>
                     </button>
                   ))}
