@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, CircleHelp, Download, Filter, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, X } from "lucide-react";
+import { CalendarDays, CircleHelp, Download, Filter, FolderPlus, MoreHorizontal, Trash2, UserRoundPlus, Users, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,7 +94,7 @@ export function CoachGroupsSection({
           <div className="space-y-1">
             <CardTitle className="text-xl">Groupes</CardTitle>
             <CardDescription>
-            Recherche, suivi et gestion des personnes directement par groupe.
+              Recherche, suivi et gestion détaillée des personnes directement par groupe.
             </CardDescription>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -156,14 +156,31 @@ export function CoachGroupsSection({
           }
         />
 
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <Badge variant="outline">Nom du groupe</Badge>
+          <span>puis</span>
+          <Badge variant="outline">membres visibles</Badge>
+          <span>et enfin</span>
+          <Badge variant="outline">actions</Badge>
+        </div>
+
         <div className="space-y-4">
         {groupedUsers.length > 0 ? (
           groupedUsers.map((group) => (
-          <div key={`${group.kind}-${group.id}`} className="rounded-xl border bg-muted/20 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <div key={`${group.kind}-${group.id}`} className="rounded-xl border border-border/60 bg-muted/20 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold">{group.name}</p>
+                  <p className="text-base font-semibold">{group.name}</p>
+                  <Badge variant={group.kind === "ungrouped" ? "secondary" : "outline"}>
+                    {group.kind === "ungrouped" ? "Groupe système" : "Groupe actif"}
+                  </Badge>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">
+                    <Users data-icon="inline-start" />
+                    {group.members.length} membre{group.members.length > 1 ? "s" : ""}
+                  </Badge>
                   <Badge variant="outline">{group.totalApplications} candidatures</Badge>
                   <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
                   {group.totalDue > 0 && <Badge variant="destructive">{group.totalDue} relance(s)</Badge>}
@@ -178,11 +195,10 @@ export function CoachGroupsSection({
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {group.members.length} membre{group.members.length > 1 ? "s" : ""}
+                <p className="mt-2 text-xs text-muted-foreground">
                   {group.kind === "standard"
-                    ? ` • ${group.coaches.length} coach${group.coaches.length > 1 ? "s" : ""}`
-                    : ""}
+                    ? `${group.coaches.length} coach${group.coaches.length > 1 ? "s" : ""}`
+                    : "Aucun coach attribué"}
                   {group.createdByLabel ? ` • créé par ${group.createdByLabel}` : ""}
                 </p>
                 {group.kind === "standard" ? (
@@ -347,8 +363,8 @@ export function CoachGroupsSection({
                                 <Button
                                   type="button"
                                   variant="ghost"
-                                  size="icon"
-                                  className="mt-[-2px] h-8 w-8 shrink-0"
+                                  size="icon-sm"
+                                  className="mt-[-2px] shrink-0"
                                   onClick={(event) => event.stopPropagation()}
                                 >
                                   <MoreHorizontal className="h-4 w-4" />
@@ -387,13 +403,17 @@ export function CoachGroupsSection({
                           firstItemClassName="mt-1 text-xs text-muted-foreground"
                         />
                       </div>
-                      <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-                        <>
-                          {entry.applicationCount > 0 ? (
-                            <Badge variant="outline">{entry.applicationCount} candidatures</Badge>
-                          ) : (
-                            <Badge variant="outline">Aucune candidature</Badge>
-                          )}
+                      <div className="grid min-w-0 gap-2 sm:min-w-[210px]">
+                        {entry.applicationCount > 0 ? (
+                          <Badge variant="outline" className="justify-center">
+                            {entry.applicationCount} candidatures
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="justify-center">
+                            Aucune candidature
+                          </Badge>
+                        )}
+                        <div className="flex flex-wrap justify-end gap-2">
                           {entry.interviewCount > 0 && (
                             <Badge variant={getSummaryBadgeVariant("interview")}>
                               {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
@@ -412,7 +432,7 @@ export function CoachGroupsSection({
                               {entry.rejectedCount} refusée{entry.rejectedCount > 1 ? "s" : ""}
                             </Badge>
                           )}
-                        </>
+                        </div>
                       </div>
                     </div>
                   </div>

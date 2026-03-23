@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowRight, FolderKanban, History, Sparkles } from "lucide-react";
+import { ArrowRight, FolderKanban, History, Shield, Sparkles } from "lucide-react";
 
 interface CoachPageHeaderProps {
   role: "coach" | "admin";
@@ -31,28 +31,33 @@ export function CoachPageHeader({
 
   return (
     <Card className="overflow-hidden border-border/60 bg-card py-0">
-      <CardHeader className="gap-4 border-b border-border/60 px-6 py-6">
+      <CardHeader className="gap-5 border-b border-border/60 px-6 py-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="capitalize">
                 {role}
               </Badge>
-              <Badge variant="outline">Vue coach</Badge>
+              <Badge variant="outline">Pilotage quotidien</Badge>
+              {role === "admin" ? (
+                <Badge variant="outline">
+                  <Shield data-icon="inline-start" />
+                  Administration en bas de page
+                </Badge>
+              ) : null}
             </div>
-            <div className="flex flex-col gap-2">
-              <CardTitle className="text-3xl font-black tracking-tight">
+            <div className="flex flex-col gap-1.5">
+              <CardTitle className="text-2xl font-black tracking-tight sm:text-3xl">
                 Suivi des bénéficiaires
               </CardTitle>
-              <CardDescription className="max-w-3xl text-base text-muted-foreground">
-                Vue d&apos;ensemble sur les personnes suivies, leurs groupes et
-                leurs candidatures avec des raccourcis d&apos;action pour la
-                démo et le pilotage quotidien.
+              <CardDescription className="max-w-3xl text-sm text-muted-foreground sm:text-base">
+                Tour de contrôle pour repérer les urgences, ouvrir une fiche
+                rapidement et gérer les groupes sans quitter la même vue.
               </CardDescription>
             </div>
           </div>
 
-          <div className="grid min-w-[220px] gap-2 sm:grid-cols-3 sm:gap-2 lg:min-w-[360px]">
+          <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[420px]">
             {quickLinks.map((link) => {
               const Icon = link.icon;
 
@@ -61,7 +66,7 @@ export function CoachPageHeader({
                   key={link.href}
                   asChild
                   variant="outline"
-                  className="justify-between bg-card"
+                  className="justify-between bg-card/80"
                 >
                   <a href={link.href}>
                     <span className="inline-flex items-center gap-2">
@@ -81,11 +86,9 @@ export function CoachPageHeader({
         <CardContent className="px-6 py-4">
           <Alert className="flex flex-wrap items-center justify-between gap-3 border-border/60 bg-card">
             <AlertDescription>{undoLabel}</AlertDescription>
-            {undoLabel ? (
-              <Button type="button" size="sm" variant="outline" onClick={onUndo}>
-                Annuler
-              </Button>
-            ) : null}
+            <Button type="button" size="sm" variant="outline" onClick={onUndo}>
+              Annuler
+            </Button>
           </Alert>
         </CardContent>
       ) : null}

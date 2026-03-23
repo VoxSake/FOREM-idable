@@ -5,7 +5,7 @@ import { ShieldPlus, ShieldX } from "lucide-react";
 import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -59,10 +59,13 @@ export function CoachAdminSection({
       <CardHeader className="border-b border-border/60 px-5 py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <CardTitle className="text-xl">Gestion des coachs</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Promotion et rétrogradation globales des comptes coach.
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-xl">Administration des coachs</CardTitle>
+              <Badge variant="outline">Bas de page</Badge>
+            </div>
+            <CardDescription>
+              Gestion des accès coach, des promotions globales et des rétrogradations.
+            </CardDescription>
           </div>
           <Button type="button" onClick={() => onPromoteCoachOpenChange(true)}>
             <ShieldPlus data-icon="inline-start" />
@@ -79,7 +82,7 @@ export function CoachAdminSection({
                 key={entry.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-muted/30"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{getCoachUserDisplayName(entry)}</p>
                     <Badge variant="secondary">coach</Badge>
@@ -87,18 +90,19 @@ export function CoachAdminSection({
                   <p className="break-all text-xs text-muted-foreground">
                     {entry.email}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {entry.groupNames.length > 0
-                      ? `Groupes: ${entry.groupNames.join(" • ")}`
-                      : "Aucun groupe attribué"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Dernière connexion: {formatCoachDate(entry.lastSeenAt, true)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Dernière action coach:{" "}
-                    {formatCoachDate(entry.lastCoachActionAt, true)}
-                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Badge variant="outline">
+                      {entry.groupNames.length > 0
+                        ? `${entry.groupNames.length} groupe${entry.groupNames.length > 1 ? "s" : ""}`
+                        : "Aucun groupe"}
+                    </Badge>
+                    <Badge variant="outline">
+                      Connexion: {formatCoachDate(entry.lastSeenAt, true)}
+                    </Badge>
+                    <Badge variant="outline">
+                      Action: {formatCoachDate(entry.lastCoachActionAt, true)}
+                    </Badge>
+                  </div>
                 </div>
                 <Button
                   type="button"
@@ -141,7 +145,7 @@ export function CoachAdminSection({
             </DialogDescription>
           </DialogHeader>
           {demotionSummary ? (
-            <div className="space-y-3 text-sm text-muted-foreground">
+            <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
               <div>
                 <p className="font-medium text-foreground">Groupes attribués</p>
                 <p>

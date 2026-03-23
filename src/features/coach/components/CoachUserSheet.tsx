@@ -49,6 +49,7 @@ import {
 import { CoachUserSummary } from "@/types/coach";
 import { Textarea } from "@/components/ui/textarea";
 import { JobApplication } from "@/types/application";
+import { cn } from "@/lib/utils";
 
 interface CoachUserSheetProps {
   currentUserId: number | undefined;
@@ -360,15 +361,9 @@ function CoachUserSheetBody({
                           <Badge variant={isDue ? "destructive" : "secondary"}>
                             {coachStatusLabel(application.status)}
                           </Badge>
-                    {isManual ? (
-                      <Badge className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
-                        Manuelle
-                      </Badge>
-                    ) : (
-                      <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
-                        Importée
-                      </Badge>
-                    )}
+                    <Badge variant="outline">
+                      {isManual ? "Manuelle" : "Importée"}
+                    </Badge>
                         </div>
 
                         <div className="space-y-1 text-sm text-muted-foreground">
@@ -802,21 +797,36 @@ function CoachUserSheetBody({
 }
 
 function getApplicationCardClassName(status: JobApplication["status"], isDue: boolean) {
+  const baseClassName =
+    "rounded-xl border transition-colors";
+
   if (status === "interview") {
-    return "rounded-xl border border-sky-300 bg-sky-50/60 transition-colors hover:border-sky-400 hover:bg-sky-100/70 dark:border-sky-900 dark:bg-sky-950/20 dark:hover:border-sky-800 dark:hover:bg-sky-950/30";
+    return cn(
+      baseClassName,
+      "border-border/60 bg-secondary/35 hover:border-primary/40 hover:bg-secondary/50"
+    );
   }
 
   if (status === "accepted") {
-    return "rounded-xl border border-emerald-300 bg-emerald-50/60 transition-colors hover:border-emerald-400 hover:bg-emerald-100/70 dark:border-emerald-900 dark:bg-emerald-950/20 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30";
+    return cn(
+      baseClassName,
+      "border-border/60 bg-secondary/30 hover:border-primary/40 hover:bg-secondary/45"
+    );
   }
 
   if (status === "rejected") {
-    return "rounded-xl border border-rose-300 bg-rose-50/60 transition-colors hover:border-rose-400 hover:bg-rose-100/70 dark:border-rose-900 dark:bg-rose-950/20 dark:hover:border-rose-800 dark:hover:bg-rose-950/30";
+    return cn(
+      baseClassName,
+      "border-border/60 bg-destructive/8 hover:border-destructive/40 hover:bg-destructive/12"
+    );
   }
 
   if (isDue) {
-    return "rounded-xl border border-amber-400/70 bg-amber-50/50 transition-colors hover:border-amber-500 hover:bg-amber-100/60 dark:bg-amber-950/20 dark:hover:border-amber-700 dark:hover:bg-amber-950/30";
+    return cn(
+      baseClassName,
+      "border-border/60 bg-destructive/6 hover:border-destructive/40 hover:bg-destructive/10"
+    );
   }
 
-  return "rounded-xl border bg-card transition-colors hover:border-primary/50 hover:bg-primary/5";
+  return cn(baseClassName, "bg-card hover:border-primary/50 hover:bg-primary/5");
 }

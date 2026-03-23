@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CalendarClock, CircleAlert, ChevronRight } from "lucide-react";
+import { BellRing, CalendarClock, ChevronRight, CircleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -42,12 +42,15 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
   return (
     <Card id="a-traiter" className="scroll-mt-6 gap-0 border-border/60 bg-card py-0">
       <CardHeader className="border-b border-border/60 py-5">
-        <div className="flex flex-col gap-1">
-          <CardTitle className="text-xl">A traiter</CardTitle>
-          <CardDescription>
-            Raccourcis coach pour les relances urgentes, les entretiens proches
-            et les suivis à reprendre.
-          </CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-xl">Priorités du jour</CardTitle>
+            <CardDescription>
+              Raccourcis coach pour les relances urgentes, les entretiens proches
+              et les suivis à reprendre.
+            </CardDescription>
+          </div>
+          <Badge variant="outline">Vue d&apos;action</Badge>
         </div>
       </CardHeader>
       <CardContent className="p-5">
@@ -62,19 +65,22 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                 className="gap-0 border-border/60 bg-card py-0"
               >
                 <CardHeader className="border-b border-border/60 py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex flex-col gap-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 flex-col gap-2">
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4 text-primary" />
                         <CardTitle>{section.title}</CardTitle>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="min-h-10 text-sm text-muted-foreground">
                         {section.description}
                       </p>
                     </div>
-                    <Badge variant={getPriorityBadgeVariant(meta.tone)}>
-                      {section.total}
-                    </Badge>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <Badge variant={getPriorityBadgeVariant(meta.tone)}>
+                        {section.total}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">à ouvrir</span>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -89,9 +95,14 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                           onClick={() => onOpenUser(item.userId, item.jobId)}
                         >
                           <div className="flex min-w-0 flex-col gap-1">
-                            <p className="truncate font-medium text-foreground">
-                              {item.userName}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate font-medium text-foreground">
+                                {item.userName}
+                              </p>
+                              <Badge variant="outline" className="max-w-[10rem] truncate" title={item.badgeTitle ?? item.badgeLabel}>
+                                {item.badgeLabel}
+                              </Badge>
+                            </div>
                             <p className="text-sm text-muted-foreground">
                               {item.summary}
                             </p>
@@ -100,13 +111,9 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                             </p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-2">
-                            <Badge
-                              variant="outline"
-                              className="max-w-[10rem] truncate"
-                              title={item.badgeTitle ?? item.badgeLabel}
-                            >
-                              {item.badgeLabel}
-                            </Badge>
+                            <span className="rounded-md border border-border/60 bg-background px-2 py-1 text-xs font-medium text-muted-foreground">
+                              Voir
+                            </span>
                             <ChevronRight className="h-4 w-4 text-muted-foreground" />
                           </div>
                         </button>

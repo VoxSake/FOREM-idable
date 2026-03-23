@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowUpRight, History } from "lucide-react";
+import { ArrowUpRight, CalendarClock, History, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { CoachFilterToggleGroup } from "@/features/coach/components/CoachFilterToggleGroup";
 import {
@@ -37,15 +37,18 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
       className="scroll-mt-6 gap-0 border-border/60 bg-card py-0"
     >
       <CardHeader className="border-b border-border/60 py-5">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-primary" />
-            <CardTitle className="text-xl">Activité récente</CardTitle>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xl">Activité récente</CardTitle>
+            </div>
+            <CardDescription>
+              Derniers mouvements utiles dans le suivi: candidatures mises à jour
+              et entretiens planifiés.
+            </CardDescription>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Derniers mouvements utiles dans le suivi: candidatures mises à jour
-            et entretiens planifiés.
-          </p>
+          <Badge variant="outline">6 derniers événements</Badge>
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 p-5">
@@ -74,6 +77,14 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
                           {item.userName}
                         </p>
                         <Badge variant="outline">{item.groupLabel}</Badge>
+                        <Badge variant={item.kind === "interview" ? "secondary" : "outline"}>
+                          {item.kind === "interview" ? (
+                            <CalendarClock data-icon="inline-start" />
+                          ) : (
+                            <RefreshCw data-icon="inline-start" />
+                          )}
+                          {item.kind === "interview" ? "Entretien" : "Mise à jour"}
+                        </Badge>
                       </div>
                       <p className="text-sm text-foreground">{item.title}</p>
                       <p className="text-xs text-muted-foreground">
@@ -94,7 +105,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
                 <EmptyHeader>
                   <EmptyTitle>Aucune activité récente dans cet onglet</EmptyTitle>
                   <EmptyDescription>
-                    Revenir à `Tout` pour afficher l&apos;ensemble des événements.
+                    Revenir à <span className="font-medium text-foreground">Tout</span> pour afficher l&apos;ensemble des événements.
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
