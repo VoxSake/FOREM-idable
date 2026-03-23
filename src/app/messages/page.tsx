@@ -169,7 +169,24 @@ export default function MessagesPage() {
   function openConversation(conversationId: number) {
     setSelectedConversationId(conversationId);
     setIsMobileConversationOpen(true);
-    void loadConversationDetail(conversationId, { markAsRead: true });
+    setConversations((current) =>
+      current.map((entry) =>
+        entry.id === conversationId
+          ? {
+              ...entry,
+              unreadCount: 0,
+            }
+          : entry
+      )
+    );
+    scrollThreadToBottom("auto");
+    void (async () => {
+      await loadConversationDetail(conversationId, { markAsRead: true });
+      await loadConversations(conversationId, { silent: true });
+      window.requestAnimationFrame(() => {
+        scrollThreadToBottom("auto");
+      });
+    })();
   }
 
   async function loadConversations(
@@ -522,6 +539,10 @@ export default function MessagesPage() {
         ]);
         if (!cancelled && nextConversationId) {
           await loadConversationDetail(nextConversationId, { markAsRead: true });
+          await loadConversations(nextConversationId, { silent: true });
+          window.requestAnimationFrame(() => {
+            scrollThreadToBottom("auto");
+          });
         }
       } catch (loadError) {
         if (!cancelled) {
