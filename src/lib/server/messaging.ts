@@ -12,7 +12,7 @@ import {
 type Queryable = NonNullable<typeof db>;
 
 type ParticipantRow = {
-  user_id: number;
+  user_id: number | string;
   first_name: string;
   last_name: string;
   email: string;
@@ -22,15 +22,15 @@ type ParticipantRow = {
 };
 
 type MessageRow = {
-  id: number;
-  conversation_id: number;
+  id: number | string;
+  conversation_id: number | string;
   type: ConversationMessage["type"];
   content: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
-  author_user_id: number | null;
+  author_user_id: number | string | null;
   author_first_name: string | null;
   author_last_name: string | null;
   author_email: string | null;
@@ -38,7 +38,7 @@ type MessageRow = {
 };
 
 type ConversationSummaryRow = {
-  id: number;
+  id: number | string;
   type: ConversationPreview["type"];
   group_id: number | null;
   group_name: string | null;
@@ -66,8 +66,10 @@ function getDisplayName(input: { firstName: string; lastName: string; email: str
 }
 
 function normalizeConversationPreview(row: ConversationSummaryRow): ConversationPreview {
+  const conversationId = toNumericId(row.id) ?? 0;
+
   return {
-    id: row.id,
+    id: conversationId,
     type: row.type,
     groupId: toNumericId(row.group_id),
     title:
@@ -89,12 +91,13 @@ function normalizeConversationPreview(row: ConversationSummaryRow): Conversation
 }
 
 function toConversationMessageAuthor(row: MessageRow): ConversationMessageAuthor | null {
-  if (row.author_user_id === null) {
+  const authorUserId = toNumericId(row.author_user_id);
+  if (authorUserId === null) {
     return null;
   }
 
   return {
-    userId: row.author_user_id,
+    userId: authorUserId,
     firstName: row.author_first_name || "",
     lastName: row.author_last_name || "",
     email: row.author_email || "",
@@ -103,9 +106,13 @@ function toConversationMessageAuthor(row: MessageRow): ConversationMessageAuthor
 }
 
 function toConversationMessage(row: MessageRow, actorId: number): ConversationMessage {
+  const messageId = toNumericId(row.id) ?? 0;
+  const conversationId = toNumericId(row.conversation_id) ?? 0;
+  const authorUserId = toNumericId(row.author_user_id);
+
   return {
-    id: row.id,
-    conversationId: row.conversation_id,
+    id: messageId,
+    conversationId,
     type: row.type,
     content: row.content,
     metadata: row.metadata ?? {},
@@ -113,7 +120,7 @@ function toConversationMessage(row: MessageRow, actorId: number): ConversationMe
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     author: toConversationMessageAuthor(row),
-    isOwnMessage: row.author_user_id === actorId,
+    isOwnMessage: authorUserId === actorId,
   };
 }
 
@@ -327,7 +334,9 @@ async function getAccessibleConversationMap(queryable: Queryable, actor: AuthUse
   await ensureGroupConversations(queryable, actor, groupIds);
   const summaries = await loadConversationSummaries(queryable, actor, groupIds);
 
-  return new Map(summaries.rows.map((row) => [row.id, normalizeConversationPreview(row)]));
+  return new Map(
+    summaries.rows.map((row) => [toNumericId(row.id) ?? 0, normalizeConversationPreview(row)])
+  );
 }
 
 async function assertCanAccessConversation(queryable: Queryable, actor: AuthUser, conversationId: number) {
@@ -360,7 +369,7 @@ async function loadConversationParticipants(queryable: Queryable, conversationId
 
   return result.rows.map(
     (row): ConversationParticipantSummary => ({
-      userId: row.user_id,
+      userId: toNumericId(row.user_id) ?? 0,
       firstName: row.first_name,
       lastName: row.last_name,
       email: row.email,
@@ -615,7 +624,7 @@ export async function listDirectMessageTargets(actor: AuthUser): Promise<DirectM
     );
 
     return result.rows.map((row) => ({
-      userId: row.id,
+      userId: toNumericId(row.id) ?? 0,
       firstName: row.first_name,
       lastName: row.last_name,
       email: row.email,
@@ -703,7 +712,7 @@ export async function listDirectMessageTargets(actor: AuthUser): Promise<DirectM
   );
 
   return result.rows.map((row) => ({
-    userId: row.user_id,
+    userId: toNumericId(row.user_id) ?? 0,
     firstName: row.first_name,
     lastName: row.last_name,
     email: row.email,
@@ -767,7 +776,7 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
       role: actor.role,
     },
     {
-      userId: targetUser.id,
+      userId: toNumericId(targetUser.id) ?? targetUserId,
       role: targetUser.role,
     },
   ];
