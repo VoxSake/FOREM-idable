@@ -592,7 +592,7 @@ export default function MessagesPage() {
           </CardHeader>
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
           <Card className="border-border/60 py-0 xl:sticky xl:top-6 xl:self-start">
             <CardHeader className="border-b border-border/60 px-4 py-4">
               <CardTitle className="text-lg">Conversations</CardTitle>
@@ -806,7 +806,7 @@ export default function MessagesPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-5 sm:px-6">
+                <CardContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 px-3 py-4 sm:px-6 sm:py-5">
                   {error ? (
                     <Empty className="min-h-72 rounded-xl border border-dashed border-border/60">
                       <EmptyHeader>
@@ -825,10 +825,10 @@ export default function MessagesPage() {
                     </div>
                   ) : selectedConversation ? (
                     <>
-                      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border/60 bg-muted/10">
+                      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-2xl border border-border/60 bg-muted/10">
                         <div
                           ref={threadViewportRef}
-                          className="min-h-[220px] flex-1 overflow-y-auto px-4 py-4"
+                          className="min-h-[220px] flex-1 overflow-x-hidden overflow-y-auto px-2 py-3 sm:px-4 sm:py-4"
                         >
                           {selectedConversation.messages.length === 0 ? (
                             <Empty className="min-h-[220px] rounded-xl border border-dashed border-border/60 bg-background/70">
@@ -850,7 +850,7 @@ export default function MessagesPage() {
                                   <div
                                     key={message.id}
                                     className={cn(
-                                      "w-full min-w-0 max-w-full rounded-2xl border px-4 py-3 sm:max-w-[92%] lg:max-w-[78%]",
+                                      "w-full min-w-0 max-w-full overflow-hidden rounded-2xl border px-3 py-3 sm:max-w-[92%] sm:px-4 lg:max-w-[78%]",
                                       message.isOwnMessage
                                         ? "ml-auto border-primary/30 bg-primary/10"
                                         : "border-border/60 bg-background"
@@ -863,7 +863,7 @@ export default function MessagesPage() {
                                             message.author.email
                                           : "Système"}
                                       </p>
-                                      <span className="text-xs text-muted-foreground">
+                                      <span className="max-w-full break-words text-xs text-muted-foreground">
                                         {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm", {
                                           locale: fr,
                                         })}
@@ -904,7 +904,7 @@ export default function MessagesPage() {
                                       </p>
                                     ) : null}
                                     {sharedJob ? (
-                                      <div className="mt-3 rounded-2xl border border-border/70 bg-background/90 p-4 shadow-sm">
+                                      <div className="mt-3 min-w-0 rounded-2xl border border-border/70 bg-background/90 p-3 shadow-sm sm:p-4">
                                         <div className="flex flex-col gap-3">
                                           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
                                             <div className="min-w-0 flex-1">
@@ -915,19 +915,19 @@ export default function MessagesPage() {
                                               <p className="mt-2 break-words text-base font-semibold leading-snug">
                                                 {sharedJob.title}
                                               </p>
-                                              <p className="mt-1 text-sm text-muted-foreground">
+                                              <p className="mt-1 break-words text-sm text-muted-foreground">
                                                 {sharedJob.company || "Entreprise non précisée"} •{" "}
                                                 {sharedJob.location}
                                               </p>
                                             </div>
-                                            <div className="self-start">
+                                            <div className="max-w-full self-start">
                                               <ContractTypeBadge contractType={sharedJob.contractType} />
                                             </div>
                                           </div>
 
-                                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                          <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                             <Badge variant="outline">FOREM</Badge>
-                                            <span>
+                                            <span className="break-words">
                                               Publiée le{" "}
                                               {format(new Date(sharedJob.publicationDate), "dd/MM/yyyy", {
                                                 locale: fr,
@@ -973,7 +973,7 @@ export default function MessagesPage() {
                           )}
                         </div>
 
-                        <div className="border-t border-border/60 bg-background/80 px-3 py-4 backdrop-blur sm:px-4">
+                        <div className="border-t border-border/60 bg-background/80 px-2 py-3 backdrop-blur sm:px-4 sm:py-4">
                           <FieldGroup>
                             <Field>
                               <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
@@ -1142,7 +1142,7 @@ export default function MessagesPage() {
                         <span className="truncate text-sm text-muted-foreground">{contact.email}</span>
                       </div>
 
-                      <Badge variant="secondary" className="self-start sm:self-center">
+                      <Badge variant="secondary" className="max-w-full self-start break-words sm:self-center">
                         {contact.sharedGroupCount > 0
                           ? `${contact.sharedGroupCount} groupe${contact.sharedGroupCount > 1 ? "s" : ""} commun${contact.sharedGroupCount > 1 ? "s" : ""}`
                           : "Admin"}
