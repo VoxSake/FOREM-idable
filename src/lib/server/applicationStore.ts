@@ -400,6 +400,7 @@ async function loadApplicationRecordsByClause(
             applications.interview_details,
             applications.beneficiary_notes,
             applications.proofs,
+            applications.source_type,
             applications.updated_at,
             application_jobs.title,
             application_jobs.company,
