@@ -5,6 +5,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   BriefcaseBusiness,
+  ChevronLeft,
   EllipsisVertical,
   ExternalLink,
   FileText,
@@ -113,6 +114,7 @@ export default function MessagesPage() {
   const [isContactsLoading, setIsContactsLoading] = useState(false);
   const [isDirectDialogOpen, setIsDirectDialogOpen] = useState(false);
   const [isClosingDirectConversation, setIsClosingDirectConversation] = useState(false);
+  const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false);
   const [messagePendingDeletion, setMessagePendingDeletion] = useState<
     ConversationDetail["messages"][number] | null
   >(null);
@@ -159,6 +161,12 @@ export default function MessagesPage() {
     }
 
     return message.metadata.sharedJob;
+  }
+
+  function openConversation(conversationId: number) {
+    setSelectedConversationId(conversationId);
+    setIsMobileConversationOpen(true);
+    void loadConversationDetail(conversationId, { markAsRead: true });
   }
 
   async function loadConversations(
@@ -543,6 +551,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!selectedConversationId) {
+      setIsMobileConversationOpen(false);
       return;
     }
 
@@ -624,7 +633,447 @@ export default function MessagesPage() {
           </CardHeader>
         </Card>
 
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="md:hidden">
+          {isMobileConversationOpen && selectedPreview ? (
+            <Card className="overflow-hidden border-border/60 py-0">
+              <CardHeader className="border-b border-border/60 px-3 py-4">
+                <div className="flex items-start gap-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="mt-0.5 shrink-0"
+                    onClick={() => setIsMobileConversationOpen(false)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="flex min-w-0 items-start gap-2 text-lg">
+                      {selectedPreview.type === "group" ? (
+                        <Users className="mt-0.5 shrink-0 text-primary" />
+                      ) : (
+                        <UserRound className="mt-0.5 shrink-0 text-primary" />
+                      )}
+                      <span className="min-w-0 break-words">{selectedPreview.title}</span>
+                    </CardTitle>
+                    {selectedConversation?.subtitle ? (
+                      <CardDescription className="mt-1">{selectedConversation.subtitle}</CardDescription>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {selectedConversation ? (
+                    <Badge variant="outline">
+                      {selectedConversation.participantCount} participant
+                      {selectedConversation.participantCount > 1 ? "s" : ""}
+                    </Badge>
+                  ) : null}
+                  {selectedPreview.type === "direct" ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={isClosingDirectConversation}
+                      onClick={async () => {
+                        if (!selectedConversationId) return;
+                        setIsClosingDirectConversation(true);
+                        setError(null);
+
+                        try {
+                          const response = await fetch(
+                            `/api/messages/conversations/${selectedConversationId}/close`,
+                            {
+                              method: "POST",
+                            }
+                          );
+                          const data = (await response.json().catch(() => ({}))) as {
+                            error?: string;
+                          };
+
+                          if (!response.ok) {
+                            throw new Error(data.error || "Fermeture du DM impossible.");
+                          }
+
+                          const remaining = conversations.filter(
+                            (entry) => entry.id !== selectedConversationId
+                          );
+                          setConversations(remaining);
+                          const nextConversationId = remaining[0]?.id ?? null;
+                          setSelectedConversationId(nextConversationId);
+                          setSelectedConversation(null);
+                          setIsMobileConversationOpen(false);
+                        } catch (closeError) {
+                          setError(
+                            closeError instanceof Error
+                              ? closeError.message
+                              : "Fermeture du DM impossible."
+                          );
+                        } finally {
+                          setIsClosingDirectConversation(false);
+                        }
+                      }}
+                    >
+                      <X data-icon="inline-start" />
+                      Fermer le DM
+                    </Button>
+                  ) : null}
+                </div>
+              </CardHeader>
+
+              <CardContent className="flex min-h-0 flex-col gap-4 px-3 py-4">
+                {error ? (
+                  <Empty className="min-h-72 rounded-xl border border-dashed border-border/60">
+                    <EmptyHeader>
+                      <EmptyTitle>Conversation indisponible.</EmptyTitle>
+                      <EmptyDescription>{error}</EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                ) : isConversationLoading ? (
+                  <div className="flex flex-col gap-3">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton
+                        key={index}
+                        className={cn("h-20 rounded-2xl", index % 2 === 0 ? "w-3/4" : "ml-auto w-2/3")}
+                      />
+                    ))}
+                  </div>
+                ) : selectedConversation ? (
+                  <div className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-muted/10">
+                    <div
+                      ref={threadViewportRef}
+                      className="min-h-[55dvh] max-h-[55dvh] overflow-x-hidden overflow-y-auto px-2 py-3"
+                    >
+                      {selectedConversation.messages.length === 0 ? (
+                        <Empty className="min-h-[220px] rounded-xl border border-dashed border-border/60 bg-background/70">
+                          <EmptyHeader>
+                            <EmptyTitle>Aucun message pour l&apos;instant.</EmptyTitle>
+                            <EmptyDescription>
+                              Lance la conversation avec un premier message.
+                            </EmptyDescription>
+                          </EmptyHeader>
+                        </Empty>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          {selectedConversation.messages.map((message) => {
+                            const sharedJob = getSharedJob(message);
+                            const pdfUrl = sharedJob ? getJobPdfUrl(sharedJob) : null;
+                            const isTracked = sharedJob ? trackedJobIds.includes(sharedJob.id) : false;
+
+                            return (
+                              <div
+                                key={message.id}
+                                className={cn(
+                                  "w-full min-w-0 max-w-full overflow-hidden rounded-2xl border px-3 py-3",
+                                  message.isOwnMessage
+                                    ? "ml-auto border-primary/30 bg-primary/10"
+                                    : "border-border/60 bg-background"
+                                )}
+                              >
+                                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                  <p className="min-w-0 break-words text-sm font-medium">
+                                    {message.author
+                                      ? `${message.author.firstName} ${message.author.lastName}`.trim() ||
+                                        message.author.email
+                                      : "Système"}
+                                  </p>
+                                  <span className="max-w-full break-words text-xs text-muted-foreground">
+                                    {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm", {
+                                      locale: fr,
+                                    })}
+                                  </span>
+                                  {(message.isOwnMessage || selectedConversation.canModerateMessages) &&
+                                  !message.deletedAt ? (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="ml-auto h-7 w-7"
+                                        >
+                                          <EllipsisVertical className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          variant="destructive"
+                                          onClick={() => setMessagePendingDeletion(message)}
+                                        >
+                                          {message.isOwnMessage && !selectedConversation.canModerateMessages
+                                            ? "Supprimer pour moi"
+                                            : "Supprimer le message"}
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  ) : null}
+                                </div>
+                                {message.deletedAt ? (
+                                  <p className="mt-2 text-sm italic text-muted-foreground">
+                                    Message supprimé par l&apos;équipe d&apos;encadrement.
+                                  </p>
+                                ) : message.content ? (
+                                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+                                    {message.content}
+                                  </p>
+                                ) : null}
+                                {sharedJob ? (
+                                  <div className="mt-3 min-w-0 rounded-2xl border border-border/70 bg-background/90 p-3 shadow-sm">
+                                    <div className="flex flex-col gap-3">
+                                      <div className="flex flex-col gap-3">
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                            <BriefcaseBusiness className="h-3.5 w-3.5" />
+                                            Offre Forem
+                                          </div>
+                                          <p className="mt-2 break-words text-base font-semibold leading-snug">
+                                            {sharedJob.title}
+                                          </p>
+                                          <p className="mt-1 break-words text-sm text-muted-foreground">
+                                            {sharedJob.company || "Entreprise non précisée"} • {sharedJob.location}
+                                          </p>
+                                        </div>
+                                        <div className="max-w-full self-start">
+                                          <ContractTypeBadge contractType={sharedJob.contractType} />
+                                        </div>
+                                      </div>
+
+                                      <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                        <Badge variant="outline">FOREM</Badge>
+                                        <span className="break-words">
+                                          Publiée le{" "}
+                                          {format(new Date(sharedJob.publicationDate), "dd/MM/yyyy", {
+                                            locale: fr,
+                                          })}
+                                        </span>
+                                      </div>
+
+                                      <div className="grid gap-2">
+                                        <Button size="sm" className="w-full" asChild>
+                                          <a href={sharedJob.url} target="_blank" rel="noopener noreferrer">
+                                            <ExternalLink data-icon="inline-start" />
+                                            Ouvrir l&apos;offre
+                                          </a>
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          className="w-full"
+                                          variant={isTracked ? "secondary" : "outline"}
+                                          disabled={isTracked}
+                                          onClick={() => {
+                                            void addSharedJobToApplications(sharedJob);
+                                          }}
+                                        >
+                                          <Send data-icon="inline-start" />
+                                          {isTracked ? "Déjà dans le suivi" : "Ajouter au suivi"}
+                                        </Button>
+                                        {pdfUrl ? (
+                                          <Button size="sm" variant="outline" className="w-full" asChild>
+                                            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                                              <FileText data-icon="inline-start" />
+                                              PDF
+                                            </a>
+                                          </Button>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-border/60 bg-background/80 px-2 py-3 backdrop-blur">
+                      <FieldGroup>
+                        <Field>
+                          <div className="mb-2 flex flex-col gap-1">
+                            <FieldLabel htmlFor="message-compose-mobile" className="mb-0">
+                              Nouveau message
+                            </FieldLabel>
+                            <p className="text-[11px] text-muted-foreground">
+                              Entrée envoie, Shift + Entrée ajoute une ligne
+                            </p>
+                          </div>
+                          <Textarea
+                            id="message-compose-mobile"
+                            value={draft}
+                            onChange={(event) => setDraft(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" && !event.shiftKey) {
+                                event.preventDefault();
+                                void sendCurrentMessage();
+                              }
+                            }}
+                            placeholder="Écris un message utile, clair et actionnable..."
+                            className="min-h-16 resize-none"
+                          />
+                          {selectedConversation.canModerateMessages &&
+                          selectedConversation.type === "group" ? (
+                            <p className="mt-2 text-[11px] text-muted-foreground">
+                              `/clean` efface tout l&apos;historique de ce groupe.
+                            </p>
+                          ) : null}
+                        </Field>
+                      </FieldGroup>
+
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          type="button"
+                          disabled={isSending || !draft.trim()}
+                          onClick={() => {
+                            void sendCurrentMessage();
+                          }}
+                          size="sm"
+                        >
+                          {isSending ? (
+                            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+                          ) : (
+                            <Send data-icon="inline-start" />
+                          )}
+                          Envoyer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-border/60 py-0">
+              <CardHeader className="border-b border-border/60 px-4 py-4">
+                <CardTitle className="text-lg">Conversations</CardTitle>
+                <CardDescription>
+                  Groupes en premier, puis messages privés.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-3 py-3">
+                {conversations.length === 0 ? (
+                  <Empty className="min-h-64 rounded-xl border border-dashed border-border/60">
+                    <EmptyHeader>
+                      <EmptyTitle>Aucune conversation.</EmptyTitle>
+                      <EmptyDescription>
+                        Rejoins un groupe ou démarre un DM autorisé.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <p className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Groupes
+                      </p>
+                      {groupedConversations.group.map((conversation) => (
+                        <button
+                          key={conversation.id}
+                          type="button"
+                          className={cn(
+                            "flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition-colors",
+                            selectedConversationId === conversation.id
+                              ? "border-primary/40 bg-primary/5 shadow-sm"
+                              : "border-border/60 hover:border-primary/20 hover:bg-muted/30"
+                          )}
+                          onClick={() => openConversation(conversation.id)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <Users className="text-primary" />
+                              <span className="truncate font-medium">{conversation.title}</span>
+                            </div>
+                            {conversation.unreadCount > 0 ? (
+                              <Badge variant="secondary">{conversation.unreadCount}</Badge>
+                            ) : null}
+                          </div>
+                          {conversation.subtitle ? (
+                            <p className="truncate text-sm text-muted-foreground">
+                              {conversation.subtitle}
+                            </p>
+                          ) : null}
+                          {conversation.lastMessagePreview ? (
+                            <p className="line-clamp-2 text-sm text-foreground/80">
+                              {conversation.lastMessagePreview}
+                            </p>
+                          ) : null}
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                              addSuffix: true,
+                              locale: fr,
+                            })}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex flex-col gap-2">
+                      <p className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Messages privés
+                      </p>
+                      <Input
+                        value={conversationQuery}
+                        onChange={(event) => setConversationQuery(event.target.value)}
+                        placeholder="Rechercher un DM..."
+                      />
+                      {groupedConversations.direct.length === 0 ? (
+                        <p className="px-1 text-sm text-muted-foreground">
+                          Aucun DM ouvert pour l&apos;instant.
+                        </p>
+                      ) : filteredDirectConversations.length === 0 ? (
+                        <p className="px-1 text-sm text-muted-foreground">
+                          Aucun DM ne correspond à cette recherche.
+                        </p>
+                      ) : (
+                        filteredDirectConversations.map((conversation) => (
+                          <button
+                            key={conversation.id}
+                            type="button"
+                            className={cn(
+                              "flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition-colors",
+                              selectedConversationId === conversation.id
+                                ? "border-primary/40 bg-primary/5 shadow-sm"
+                                : "border-border/60 hover:border-primary/20 hover:bg-muted/30"
+                            )}
+                            onClick={() => openConversation(conversation.id)}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <UserRound className="text-primary" />
+                                <span className="truncate font-medium">{conversation.title}</span>
+                              </div>
+                              {conversation.unreadCount > 0 ? (
+                                <Badge variant="secondary">{conversation.unreadCount}</Badge>
+                              ) : null}
+                            </div>
+                            {conversation.subtitle ? (
+                              <p className="truncate text-sm text-muted-foreground">
+                                {conversation.subtitle}
+                              </p>
+                            ) : null}
+                            {conversation.lastMessagePreview ? (
+                              <p className="line-clamp-2 text-sm text-foreground/80">
+                                {conversation.lastMessagePreview}
+                              </p>
+                            ) : null}
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                                addSuffix: true,
+                                locale: fr,
+                              })}
+                            </p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <div className="hidden min-w-0 gap-6 md:grid xl:grid-cols-[360px_minmax(0,1fr)]">
           <Card className="border-border/60 py-0 xl:sticky xl:top-6 xl:self-start">
             <CardHeader className="border-b border-border/60 px-4 py-4">
               <CardTitle className="text-lg">Conversations</CardTitle>
@@ -656,8 +1105,7 @@ export default function MessagesPage() {
                             : "border-border/60 hover:border-primary/20 hover:bg-muted/30"
                         )}
                         onClick={() => {
-                          setSelectedConversationId(conversation.id);
-                          void loadConversationDetail(conversation.id, { markAsRead: true });
+                          openConversation(conversation.id);
                         }}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -720,8 +1168,7 @@ export default function MessagesPage() {
                               : "border-border/60 hover:border-primary/20 hover:bg-muted/30"
                           )}
                           onClick={() => {
-                            setSelectedConversationId(conversation.id);
-                            void loadConversationDetail(conversation.id, { markAsRead: true });
+                            openConversation(conversation.id);
                           }}
                         >
                           <div className="flex items-start justify-between gap-3">
