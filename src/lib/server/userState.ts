@@ -108,19 +108,6 @@ function buildValues(input: {
   return values;
 }
 
-async function getLegacyPayload(userId: number) {
-  if (!db) throw new Error("Database unavailable");
-
-  const result = await db.query<{ payload: Record<string, string>; updated_at: string }>(
-    `SELECT payload, updated_at
-     FROM user_state
-     WHERE user_id = $1`,
-    [userId]
-  );
-
-  return result.rows[0] ?? null;
-}
-
 async function persistNormalizedState(userId: number, values: Record<string, string>) {
   if (!db) throw new Error("Database unavailable");
 
@@ -174,14 +161,6 @@ async function persistNormalizedState(userId: number, values: Record<string, str
       [userId, JSON.stringify(settings), theme, analyticsConsent, JSON.stringify(locationsCache)]
     );
 
-    await client.query(
-      `INSERT INTO user_state (user_id, payload, updated_at)
-       VALUES ($1, $2::jsonb, NOW())
-       ON CONFLICT (user_id)
-       DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
-      [userId, JSON.stringify(values)]
-    );
-
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -230,18 +209,7 @@ export async function getUserState(userId: number): Promise<PersistedUserState |
     searchHistoryResult.rows.length > 0 ||
     settingsResult.rows.length > 0;
 
-  if (!hasNormalizedData) {
-    const legacy = await getLegacyPayload(userId);
-    if (!legacy) return null;
-
-    const legacyValues = sanitizeValues(legacy.payload);
-    await persistNormalizedState(userId, legacyValues);
-
-    return {
-      values: legacyValues,
-      updatedAt: legacy.updated_at,
-    };
-  }
+  if (!hasNormalizedData) return null;
 
   const settingsRow = settingsResult.rows[0];
   const values = buildValues({

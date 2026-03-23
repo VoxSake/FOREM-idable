@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { inferApplicationSourceType } from "@/lib/applications/sourceType";
 import {
   listApplicationsFromRelationalStoreByUsers,
   loadApplicationFromRelationalStore,
@@ -865,10 +866,7 @@ export async function updateCoachApplicationNotes(input: {
       userId: input.userId,
       position,
       application: nextApplication,
-      sourceType:
-        nextApplication.job.url === "#" || nextApplication.job.id.startsWith("manual-")
-          ? "manual"
-          : "tracked",
+      sourceType: inferApplicationSourceType(nextApplication),
     });
     await client.query("COMMIT");
   } catch (error) {

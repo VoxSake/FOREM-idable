@@ -1,4 +1,5 @@
 import { addDays } from "date-fns";
+import { inferApplicationSourceType, isManualJob } from "@/lib/applications/sourceType";
 import { parseStoredJobApplication } from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
 import {
@@ -45,10 +46,6 @@ function sanitizeJob(input: Job): Job {
     contractType: sanitizeText(input.contractType, "Non précisé"),
     url: sanitizeUrl(input.url, "#"),
   };
-}
-
-function isManualJob(job: Job) {
-  return job.url === "#" || job.id.startsWith("manual-");
 }
 
 function sortApplicationsByAppliedAt(applications: JobApplication[]) {
@@ -142,6 +139,7 @@ export async function createTrackedApplicationForUser(input: {
     ? {
         ...existing,
         job: sanitizedJob,
+        sourceType: inferApplicationSourceType({ sourceType: existing.sourceType, job: sanitizedJob }),
         appliedAt: input.appliedAt ?? existing.appliedAt,
         status: input.status ?? existing.status,
         notes: input.notes?.trim() ?? existing.notes,
@@ -153,6 +151,7 @@ export async function createTrackedApplicationForUser(input: {
       }
     : {
         ...buildApplication(sanitizedJob),
+        sourceType: inferApplicationSourceType({ job: sanitizedJob }),
         appliedAt: normalizedAppliedAt.toISOString(),
         followUpDueAt: addDays(normalizedAppliedAt, 7).toISOString(),
         followUpEnabled: true,
@@ -177,7 +176,7 @@ export async function createTrackedApplicationForUser(input: {
       userId: input.userId,
       position,
       application: next,
-      sourceType: isManualJob(next.job) ? "manual" : "tracked",
+      sourceType: inferApplicationSourceType(next),
     });
     await client.query("COMMIT");
   } catch (error) {
@@ -252,6 +251,10 @@ export async function updateApplicationForUser(input: {
 
   const next = preserveApplicationCoachFields(existing, {
     ...existing,
+    sourceType: inferApplicationSourceType({
+      sourceType: existing.sourceType,
+      job: nextPatch.job ?? existing.job,
+    }),
     followUpEnabled: existing.followUpEnabled !== false,
     ...nextPatch,
     updatedAt: new Date().toISOString(),
@@ -267,7 +270,7 @@ export async function updateApplicationForUser(input: {
       userId: input.userId,
       position,
       application: next,
-      sourceType: isManualJob(next.job) ? "manual" : "tracked",
+      sourceType: inferApplicationSourceType(next),
     });
     await client.query("COMMIT");
   } catch (error) {

@@ -17,6 +17,7 @@ const manualApplication: JobApplication = {
     url: "#",
     source: "forem",
   },
+  sourceType: "manual",
   appliedAt: "2026-03-11T10:00:00.000Z",
   followUpDueAt: "2026-03-18T10:00:00.000Z",
   status: "in_progress",

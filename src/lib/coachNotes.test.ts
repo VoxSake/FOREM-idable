@@ -8,11 +8,6 @@ import {
 } from "@/lib/coachNotes";
 import { JobApplication } from "@/types/application";
 
-type LegacyCoachNoteTestShape = JobApplication & {
-  coachNote?: string;
-  shareCoachNoteWithBeneficiary?: boolean;
-};
-
 function buildApplication(overrides: Partial<JobApplication> = {}): JobApplication {
   return {
     job: {
@@ -34,25 +29,49 @@ function buildApplication(overrides: Partial<JobApplication> = {}): JobApplicati
 }
 
 describe("coach notes helpers", () => {
-  it("migrates legacy shared/private note fields", () => {
-    const legacyShared = normalizeApplicationCoachNotes({
+  it("normalizes note content, contributors, and source type", () => {
+    const normalized = normalizeApplicationCoachNotes({
       ...buildApplication(),
-      coachNote: "  Note partagée  ",
-      shareCoachNoteWithBeneficiary: true,
-    } as LegacyCoachNoteTestShape);
+      sourceType: undefined,
+      privateCoachNote: {
+        content: "  Note privée  ",
+        createdAt: "2026-03-10T09:00:00.000Z",
+        updatedAt: "2026-03-10T09:00:00.000Z",
+        createdBy: { id: 1, firstName: "Jordi", lastName: "Brisbois", email: "j@x.dev", role: "coach" },
+        contributors: [
+          { id: 1, firstName: "Jordi", lastName: "Brisbois", email: "j@x.dev", role: "coach" },
+          { id: 1, firstName: "Jordi", lastName: "Brisbois", email: "j@x.dev", role: "coach" },
+        ],
+      },
+      sharedCoachNotes: [
+        {
+          id: "n1",
+          content: "  Note partagée  ",
+          createdAt: "2026-03-10T09:00:00.000Z",
+          updatedAt: "2026-03-10T09:00:00.000Z",
+          createdBy: { id: 1, firstName: "Jordi", lastName: "Brisbois", email: "j@x.dev", role: "coach" },
+          contributors: [
+            { id: 1, firstName: "Jordi", lastName: "Brisbois", email: "j@x.dev", role: "coach" },
+            { id: 1, firstName: "Jordi", lastName: "Brisbois", email: "j@x.dev", role: "coach" },
+          ],
+        },
+        {
+          id: "n2",
+          content: "   ",
+          createdAt: "2026-03-10T09:00:00.000Z",
+          updatedAt: "2026-03-10T09:00:00.000Z",
+          createdBy: { id: 1, firstName: "Jordi", lastName: "Brisbois", email: "j@x.dev", role: "coach" },
+          contributors: [],
+        },
+      ],
+    });
 
-    expect(legacyShared.sharedCoachNotes).toHaveLength(1);
-    expect(legacyShared.sharedCoachNotes?.[0].content).toBe("Note partagée");
-    expect(legacyShared.privateCoachNote).toBeUndefined();
-
-    const legacyPrivate = normalizeApplicationCoachNotes({
-      ...buildApplication(),
-      coachNote: "  Note privée  ",
-      shareCoachNoteWithBeneficiary: false,
-    } as LegacyCoachNoteTestShape);
-
-    expect(legacyPrivate.privateCoachNote?.content).toBe("Note privée");
-    expect(legacyPrivate.sharedCoachNotes).toEqual([]);
+    expect(normalized.sourceType).toBe("tracked");
+    expect(normalized.privateCoachNote?.content).toBe("Note privée");
+    expect(normalized.privateCoachNote?.contributors).toHaveLength(1);
+    expect(normalized.sharedCoachNotes).toHaveLength(1);
+    expect(normalized.sharedCoachNotes?.[0].content).toBe("Note partagée");
+    expect(normalized.sharedCoachNotes?.[0].contributors).toHaveLength(1);
   });
 
   it("hides private coach notes from beneficiaries and preserves server-side coach data", () => {

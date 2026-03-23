@@ -1,4 +1,6 @@
 import { PoolClient } from "pg";
+import { inferApplicationSourceType } from "@/lib/applications/sourceType";
+import type { ApplicationSourceType } from "@/lib/applications/sourceType";
 import { formatCoachAuthorName } from "@/lib/coachNotes";
 import { db } from "@/lib/server/db";
 import { JobApplication, CoachNoteAuthor, CoachPrivateNote, CoachSharedNote } from "@/types/application";
@@ -20,6 +22,7 @@ type ApplicationRow = {
   interview_details: string | null;
   beneficiary_notes: string | null;
   proofs: string | null;
+  source_type: string;
   updated_at: string;
   title: string | null;
   company: string | null;
@@ -186,6 +189,16 @@ function buildApplicationAggregate(input: {
     followUpEnabled: input.row.follow_up_enabled,
     lastFollowUpAt: toIsoOrNull(input.row.last_follow_up_at),
     status: input.row.status,
+    sourceType: inferApplicationSourceType({
+      sourceType:
+        input.row.source_type === "manual" || input.row.source_type === "tracked"
+          ? input.row.source_type
+          : undefined,
+      job: {
+        id: input.row.job_id,
+        url: input.row.url ?? "",
+      },
+    }),
     notes: input.row.beneficiary_notes,
     proofs: input.row.proofs,
     privateCoachNote: input.privateNote,
@@ -215,6 +228,7 @@ async function loadApplicationsByClause(
             applications.interview_details,
             applications.beneficiary_notes,
             applications.proofs,
+            applications.source_type,
             applications.updated_at,
             application_jobs.title,
             application_jobs.company,
@@ -583,7 +597,7 @@ async function upsertApplicationShell(
     userId: number;
     position: number;
     application: JobApplication;
-    sourceType: string;
+    sourceType: ApplicationSourceType;
   }
 ) {
   const result = await queryable.query<{ id: number }>(
@@ -796,7 +810,6 @@ async function replaceSharedNotes(
     }
 
     const creator = toAuthorSnapshot(note.createdBy);
-    const noteId = note.id === "legacy-shared-note" ? `legacy-shared-note-${applicationId}` : note.id;
     await queryable.query(
       `INSERT INTO application_shared_notes (
          id,
@@ -812,7 +825,7 @@ async function replaceSharedNotes(
        )
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
-        noteId,
+        note.id,
         applicationId,
         note.content.trim(),
         creator.userId,
@@ -858,7 +871,7 @@ export async function saveApplicationToRelationalStore(
     userId: number;
     position: number;
     application: JobApplication;
-    sourceType?: string;
+    sourceType?: ApplicationSourceType;
   }
 ) {
   const applicationId = await upsertApplicationShell(queryable, {
@@ -885,9 +898,7 @@ export async function replaceApplicationsInRelationalStore(
       userId,
       position,
       application,
-      sourceType: application.job.url === "#" || application.job.id.startsWith("manual-")
-        ? "manual"
-        : "tracked",
+      sourceType: inferApplicationSourceType(application),
     });
   }
 }

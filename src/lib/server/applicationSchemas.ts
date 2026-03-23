@@ -79,6 +79,7 @@ const jobSchema = z
 export const jobApplicationSchema = z
   .object({
     job: jobSchema,
+    sourceType: z.enum(["manual", "tracked"]).optional(),
     appliedAt: z.string(),
     followUpDueAt: z.string(),
     followUpEnabled: z.boolean().optional(),

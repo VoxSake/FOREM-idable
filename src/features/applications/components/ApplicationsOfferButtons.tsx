@@ -3,6 +3,7 @@
 import { ExternalLink, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { isManualApplication } from "@/lib/applications/sourceType";
 import { JobApplication } from "@/types/application";
 
 interface ApplicationsOfferButtonsProps {
@@ -16,13 +17,14 @@ export function ApplicationsOfferButtons({
 }: ApplicationsOfferButtonsProps) {
   const pdfUrl = getJobPdfUrl(application.job);
   const isSheet = layout === "sheet";
+  const hasWebLink = Boolean(application.job.url) && !isManualApplication(application);
 
   return (
     <div
       className={isSheet ? "flex flex-wrap gap-2" : "grid grid-cols-2 gap-2"}
       onClick={(event) => event.stopPropagation()}
     >
-      {application.job.url !== "#" ? (
+      {hasWebLink ? (
         <Button
           size="sm"
           asChild

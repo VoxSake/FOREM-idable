@@ -1,5 +1,6 @@
 import { Job } from "@/types/job";
 import { UserRole } from "@/types/auth";
+import type { ApplicationSourceType } from "@/lib/applications/sourceType";
 
 export type ApplicationStatus =
   | "in_progress"
@@ -37,6 +38,7 @@ export interface CoachPrivateNote {
 
 export interface JobApplication {
   job: Job;
+  sourceType?: ApplicationSourceType;
   appliedAt: string;
   followUpDueAt: string;
   followUpEnabled?: boolean;

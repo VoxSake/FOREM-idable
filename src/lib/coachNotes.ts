@@ -1,22 +1,8 @@
 import {
   CoachNoteAuthor,
-  CoachPrivateNote,
-  CoachSharedNote,
   JobApplication,
 } from "@/types/application";
-
-type LegacyCoachNoteShape = JobApplication & {
-  coachNote?: string;
-  shareCoachNoteWithBeneficiary?: boolean;
-};
-
-const SYSTEM_AUTHOR: CoachNoteAuthor = {
-  id: 0,
-  firstName: "Historique",
-  lastName: "",
-  email: "",
-  role: "system",
-};
+import { inferApplicationSourceType } from "@/lib/applications/sourceType";
 
 export function toCoachNoteAuthor(input: {
   id: number;
@@ -43,32 +29,7 @@ function dedupeContributors(contributors: CoachNoteAuthor[]) {
   });
 }
 
-function createLegacySharedNote(content: string, updatedAt: string): CoachSharedNote {
-  return {
-    id: "legacy-shared-note",
-    content,
-    createdAt: updatedAt,
-    updatedAt,
-    createdBy: SYSTEM_AUTHOR,
-    contributors: [SYSTEM_AUTHOR],
-  };
-}
-
-function createLegacyPrivateNote(content: string, updatedAt: string): CoachPrivateNote {
-  return {
-    content,
-    createdAt: updatedAt,
-    updatedAt,
-    createdBy: SYSTEM_AUTHOR,
-    contributors: [SYSTEM_AUTHOR],
-  };
-}
-
 export function normalizeApplicationCoachNotes(application: JobApplication): JobApplication {
-  const legacy = application as LegacyCoachNoteShape;
-  const updatedAt = application.updatedAt || new Date().toISOString();
-  const trimmedLegacyNote = legacy.coachNote?.trim();
-
   const privateCoachNote =
     application.privateCoachNote?.content.trim()
       ? {
@@ -76,31 +37,20 @@ export function normalizeApplicationCoachNotes(application: JobApplication): Job
           content: application.privateCoachNote.content.trim(),
           contributors: dedupeContributors(application.privateCoachNote.contributors ?? []),
         }
-      : trimmedLegacyNote && !legacy.shareCoachNoteWithBeneficiary
-        ? createLegacyPrivateNote(trimmedLegacyNote, updatedAt)
-        : undefined;
+      : undefined;
 
-  const sharedCoachNotes = (
-    application.sharedCoachNotes?.filter((entry) => entry.content.trim()) ??
-    (trimmedLegacyNote && legacy.shareCoachNoteWithBeneficiary
-      ? [createLegacySharedNote(trimmedLegacyNote, updatedAt)]
-      : [])
-  ).map((entry) => ({
-    ...entry,
-    content: entry.content.trim(),
-    contributors: dedupeContributors(entry.contributors ?? []),
-  }));
-
-  const next: LegacyCoachNoteShape = {
+  return {
     ...application,
+    sourceType: inferApplicationSourceType(application),
     privateCoachNote,
-    sharedCoachNotes,
+    sharedCoachNotes: (application.sharedCoachNotes ?? [])
+      .filter((entry) => entry.content.trim())
+      .map((entry) => ({
+        ...entry,
+        content: entry.content.trim(),
+        contributors: dedupeContributors(entry.contributors ?? []),
+      })),
   };
-
-  delete next.coachNote;
-  delete next.shareCoachNoteWithBeneficiary;
-
-  return next;
 }
 
 export function sanitizeApplicationForBeneficiary(application: JobApplication): JobApplication {
@@ -120,6 +70,7 @@ export function preserveApplicationCoachFields(existing: JobApplication | null, 
   const normalizedExisting = normalizeApplicationCoachNotes(existing);
   return {
     ...normalizedNext,
+    sourceType: normalizedNext.sourceType ?? normalizedExisting.sourceType,
     privateCoachNote: normalizedNext.privateCoachNote ?? normalizedExisting.privateCoachNote,
     sharedCoachNotes:
       normalizedNext.sharedCoachNotes && normalizedNext.sharedCoachNotes.length > 0

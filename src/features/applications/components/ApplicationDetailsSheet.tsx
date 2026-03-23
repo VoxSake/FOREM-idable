@@ -692,6 +692,6 @@ function createManualDetailsForm(application: JobApplication) {
     title: application.job.title,
     contractType: application.job.contractType || "",
     location: application.job.location || "",
-    url: application.job.url === "#" ? "" : application.job.url,
+    url: isManualApplication(application) ? "" : application.job.url,
   };
 }

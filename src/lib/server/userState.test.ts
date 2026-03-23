@@ -62,20 +62,61 @@ describe("userState helpers", () => {
     );
   });
 
-  it("migrates legacy coach notes and hides private notes from the beneficiary payload", () => {
+  it("hides private notes from the beneficiary payload and keeps shared notes", () => {
     const sanitized = sanitizeApplicationsForBeneficiary([
       {
         ...baseApplication,
-        coachNote: "Ne pas exposer",
-        shareCoachNoteWithBeneficiary: false,
+        privateCoachNote: {
+          content: "Ne pas exposer",
+          createdAt: "2026-03-13T10:00:00.000Z",
+          updatedAt: "2026-03-13T10:00:00.000Z",
+          createdBy: {
+            id: 10,
+            firstName: "Coach",
+            lastName: "One",
+            email: "coach@example.com",
+            role: "coach",
+          },
+          contributors: [
+            {
+              id: 10,
+              firstName: "Coach",
+              lastName: "One",
+              email: "coach@example.com",
+              role: "coach",
+            },
+          ],
+        },
       },
       {
         ...baseApplication,
         job: { ...baseApplication.job, id: "job-2" },
-        coachNote: "Visible",
-        shareCoachNoteWithBeneficiary: true,
+        sharedCoachNotes: [
+          {
+            id: "shared-1",
+            content: "Visible",
+            createdAt: "2026-03-13T10:00:00.000Z",
+            updatedAt: "2026-03-13T10:00:00.000Z",
+            createdBy: {
+              id: 10,
+              firstName: "Coach",
+              lastName: "One",
+              email: "coach@example.com",
+              role: "coach",
+            },
+            contributors: [
+              {
+                id: 10,
+                firstName: "Coach",
+                lastName: "One",
+                email: "coach@example.com",
+                role: "coach",
+              },
+            ],
+          },
+        ],
       },
-    ] as unknown as JobApplication[]);
+    ]);
 
     expect(sanitized[0]?.privateCoachNote).toBeUndefined();
     expect(sanitized[0]?.sharedCoachNotes).toEqual([]);

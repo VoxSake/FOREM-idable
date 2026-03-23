@@ -1,3 +1,4 @@
+import { isManualApplication } from "@/lib/applications/sourceType";
 import { CalendarFeedApplicationRow } from "@/types/calendar";
 
 function escapeIcsText(value: string) {
@@ -25,7 +26,7 @@ function buildEventDescription(row: CalendarFeedApplicationRow) {
     `Poste: ${application.job.title}`,
     application.job.location ? `Lieu: ${application.job.location}` : "",
     application.interviewDetails ? `Details: ${application.interviewDetails}` : "",
-    application.job.url && application.job.url !== "#" ? `Offre: ${application.job.url}` : "",
+    application.job.url && !isManualApplication(application) ? `Offre: ${application.job.url}` : "",
   ]
     .filter(Boolean)
     .join("\n");

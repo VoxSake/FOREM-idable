@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { isManualApplication } from "@/lib/applications/sourceType";
 import { JobApplication } from "@/types/application";
 
 function escapeIcsText(value: string) {
@@ -30,8 +31,9 @@ export function exportInterviewsToICS(applications: JobApplication[]) {
       const title = escapeIcsText(
         `Entretien - ${entry.job.company || "Entreprise"} - ${entry.job.title}`
       );
+      const offerUrl = entry.job.url && !isManualApplication(entry) ? entry.job.url : "";
       const description = escapeIcsText(
-        [entry.job.location, entry.interviewDetails || "", entry.job.url !== "#" ? entry.job.url : ""]
+        [entry.job.location, entry.interviewDetails || "", offerUrl]
           .filter(Boolean)
           .join("\n")
       );

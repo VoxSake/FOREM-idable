@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { isAfter } from "date-fns";
+import { inferApplicationSourceType } from "@/lib/applications/sourceType";
 import {
   formatCoachAuthorName,
   summarizeCoachContributors,
@@ -315,10 +316,7 @@ async function persistApplicationRecord(record: RelationalApplicationRecord, app
       userId: record.userId,
       position: record.position,
       application,
-      sourceType:
-        application.job.url === "#" || application.job.id.startsWith("manual-")
-          ? "manual"
-          : "tracked",
+      sourceType: inferApplicationSourceType(application),
     });
     await client.query("COMMIT");
   } catch (error) {

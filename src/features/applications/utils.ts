@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
+import { isManualApplication as hasManualSourceType } from "@/lib/applications/sourceType";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
 export type ApplicationModeFilter = "all" | "due" | "interviews" | "manual" | "coach_updates";
@@ -113,7 +114,7 @@ export function shouldShowFollowUpDetails(status: ApplicationStatus) {
 }
 
 export function isManualApplication(entry: JobApplication) {
-  return entry.job.url === "#" || entry.job.id.startsWith("manual-");
+  return hasManualSourceType(entry);
 }
 
 export function applicationStatusLabel(status: ApplicationStatus) {

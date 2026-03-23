@@ -29,6 +29,7 @@ function buildApplication(overrides: Partial<JobApplication> = {}): JobApplicati
       url: "https://example.com/job-1",
       source: "forem",
     },
+    sourceType: "tracked",
     appliedAt: "2026-03-10T09:00:00.000Z",
     followUpDueAt: "2026-03-17T09:00:00.000Z",
     status: "in_progress",
@@ -120,10 +121,15 @@ describe("applications utils", () => {
   });
 
   it("detects manual applications and formats values safely", () => {
-    expect(isManualApplication(buildApplication({ job: { ...buildApplication().job, id: "manual-123" } }))).toBe(
-      true
-    );
-    expect(isManualApplication(buildApplication({ job: { ...buildApplication().job, url: "#" } }))).toBe(true);
+    expect(isManualApplication(buildApplication({ sourceType: "manual" }))).toBe(true);
+    expect(
+      isManualApplication(
+        buildApplication({
+          sourceType: undefined,
+          job: { ...buildApplication().job, id: "manual-123" },
+        })
+      )
+    ).toBe(true);
     expect(isManualApplication(buildApplication())).toBe(false);
 
     expect(applicationStatusLabel("interview")).toBe("Entretien");
@@ -166,6 +172,7 @@ describe("applications utils", () => {
           title: "Développeur React",
           url: "#",
         },
+        sourceType: "manual",
       }),
       buildApplication({
         job: {
