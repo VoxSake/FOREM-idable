@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 
 const valueProps = [
-  "Recherche booléenne",
-  "Villes et arrondissements",
-  "Suivi candidat",
-  "Vue coach",
+  "Recherche avancée",
+  "Filtres géographiques",
+  "Suivi des candidatures",
+  "Relances et entretiens",
 ];
 
 export function HomePageHero() {
