@@ -5,7 +5,11 @@ import { ArrowUpRight, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CoachFilterToggleGroup } from "@/features/coach/components/CoachFilterToggleGroup";
+import {
+  CoachRecentActivityFilter,
+  coachRecentActivityFilterOptions,
+} from "@/features/coach/filters";
 import { CoachRecentActivityItem, formatCoachDate } from "@/features/coach/utils";
 
 interface CoachRecentActivityProps {
@@ -13,26 +17,19 @@ interface CoachRecentActivityProps {
   onOpenItem: (userId: number, jobId: string | null) => void;
 }
 
-type CoachRecentActivityTab = "all" | "interviews";
-
 export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityProps) {
-  const [activeTab, setActiveTab] = useState<CoachRecentActivityTab>("all");
+  const [activeFilter, setActiveFilter] = useState<CoachRecentActivityFilter>("all");
   const filteredItems = useMemo(() => {
     const matchingItems = items.filter((item) => {
-      if (activeTab === "interviews") {
-        return item.detail.includes("entretien planifié");
+      if (activeFilter === "interviews") {
+        return item.kind === "interview";
       }
 
       return true;
     });
 
     return matchingItems.slice(0, 6);
-  }, [activeTab, items]);
-
-  const tabs: Array<{ id: CoachRecentActivityTab; label: string }> = [
-    { id: "all", label: "Tout" },
-    { id: "interviews", label: "Entretiens" },
-  ];
+  }, [activeFilter, items]);
 
   return (
     <Card
@@ -54,28 +51,12 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
       <CardContent className="flex flex-col gap-4 p-5">
         {items.length > 0 ? (
           <>
-            <ToggleGroup
-              type="single"
-              value={activeTab}
-              onValueChange={(value) => {
-                if (value) {
-                  setActiveTab(value as CoachRecentActivityTab);
-                }
-              }}
-              variant="outline"
-              className="flex flex-wrap gap-2"
-              spacing={1}
-            >
-              {tabs.map((tab) => (
-                <ToggleGroupItem
-                  key={tab.id}
-                  value={tab.id}
-                  className="rounded-md"
-                >
-                  {tab.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+            <CoachFilterToggleGroup
+              compact
+              options={coachRecentActivityFilterOptions}
+              value={activeFilter}
+              onValueChange={setActiveFilter}
+            />
 
             {filteredItems.length > 0 ? (
               <div className="grid gap-2 xl:grid-cols-2">
@@ -109,7 +90,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
                 ))}
               </div>
             ) : (
-              <Empty className="min-h-40 bg-muted/10" onClick={() => setActiveTab("all")}>
+              <Empty className="min-h-40 bg-muted/10" onClick={() => setActiveFilter("all")}>
                 <EmptyHeader>
                   <EmptyTitle>Aucune activité récente dans cet onglet</EmptyTitle>
                   <EmptyDescription>

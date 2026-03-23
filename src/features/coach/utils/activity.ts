@@ -18,6 +18,7 @@ export interface CoachRecentActivityItem {
   id: string;
   userId: number;
   jobId: string | null;
+  kind: "application" | "interview";
   userName: string;
   groupLabel: string;
   title: string;
@@ -45,6 +46,7 @@ export function buildCoachRecentActivity(
           id: `application-${user.id}-${application.job.id}`,
           userId: user.id,
           jobId: application.job.id,
+          kind: "application",
           userName,
           groupLabel,
           title: application.job.title,
@@ -63,6 +65,7 @@ export function buildCoachRecentActivity(
           id: `interview-${user.id}-${application.job.id}`,
           userId: user.id,
           jobId: application.job.id,
+          kind: "interview",
           userName,
           groupLabel,
           title: application.job.title,

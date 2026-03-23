@@ -21,8 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CoachFilterToggleGroup } from "@/features/coach/components/CoachFilterToggleGroup";
+import { coachUserFilterOptions } from "@/features/coach/filters";
 import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActivityMeta";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
 import {
@@ -31,7 +32,6 @@ import {
   CoachRemoveMembershipTarget,
   CoachUserFilter,
 } from "@/features/coach/types";
-import { cn } from "@/lib/utils";
 import { CoachUserSummary } from "@/types/coach";
 
 interface CoachGroupsSectionProps {
@@ -82,15 +82,6 @@ export function CoachGroupsSection({
   onRemoveCoach,
 }: CoachGroupsSectionProps) {
   const [isCalendarHelpOpen, setIsCalendarHelpOpen] = useState(false);
-  const filterOptions: Array<{ value: CoachUserFilter; label: string }> = [
-    { value: "all", label: "Tous" },
-    { value: "urgent", label: "Urgents" },
-    { value: "due", label: "A relancer" },
-    { value: "interviews", label: "Entretiens" },
-    { value: "inactive", label: "Inactifs" },
-    { value: "accepted", label: "Acceptées" },
-    { value: "rejected", label: "Refusées" },
-  ];
   const canManageAssignedCoaches = (managerCoachId: number | null) =>
     currentUserRole === "admin" || managerCoachId === currentUserId;
   const canRemoveAssignedCoach = (managerCoachId: number | null, coachId: number) =>
@@ -156,63 +147,14 @@ export function CoachGroupsSection({
           placeholder="Rechercher par nom, prénom ou email..."
         />
 
-        <ToggleGroup
-          type="single"
-          variant="outline"
+        <CoachFilterToggleGroup
+          options={coachUserFilterOptions}
           value={userFilter}
-          onValueChange={(value) => {
-            if (value) {
-              onUserFilterChange(value as CoachUserFilter);
-            }
-          }}
-          className="grid w-full grid-cols-2 gap-2 lg:hidden"
-        >
-          {filterOptions.map((option, index) => {
-            const isLastOddItem =
-              filterOptions.length % 2 === 1 && index === filterOptions.length - 1;
-
-            return (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                size="sm"
-                aria-label={`Filtrer: ${option.label}`}
-                className={cn(
-                  "w-full justify-center rounded-md border shadow-none data-[spacing=0]:rounded-md data-[spacing=0]:border data-[spacing=0]:first:rounded-md data-[spacing=0]:last:rounded-md",
-                  "data-[spacing=0]:data-[variant=outline]:border-l data-[spacing=0]:data-[variant=outline]:first:border-l",
-                  isLastOddItem && "col-span-2"
-                )}
-              >
-                {option.value === "all" ? <Filter data-icon="inline-start" /> : null}
-                {option.label}
-              </ToggleGroupItem>
-            );
-          })}
-        </ToggleGroup>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          value={userFilter}
-          onValueChange={(value) => {
-            if (value) {
-              onUserFilterChange(value as CoachUserFilter);
-            }
-          }}
-          className="hidden w-full lg:grid lg:grid-cols-7"
-        >
-          {filterOptions.map((option) => (
-            <ToggleGroupItem
-              key={option.value}
-              value={option.value}
-              size="sm"
-              aria-label={`Filtrer: ${option.label}`}
-              className="w-full justify-center"
-            >
-              {option.value === "all" ? <Filter data-icon="inline-start" /> : null}
-              {option.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+          onValueChange={onUserFilterChange}
+          renderIcon={(option) =>
+            option.value === "all" ? <Filter data-icon="inline-start" /> : null
+          }
+        />
 
         <div className="space-y-4">
         {groupedUsers.length > 0 ? (
@@ -226,12 +168,12 @@ export function CoachGroupsSection({
                   <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
                   {group.totalDue > 0 && <Badge variant="destructive">{group.totalDue} relance(s)</Badge>}
                   {group.totalAccepted > 0 && (
-                    <Badge className={getSummaryBadgeClassName("accepted")}>
+                    <Badge variant={getSummaryBadgeVariant("accepted")}>
                       {group.totalAccepted} acceptée(s)
                     </Badge>
                   )}
                   {group.totalRejected > 0 && (
-                    <Badge className={getSummaryBadgeClassName("rejected")}>
+                    <Badge variant={getSummaryBadgeVariant("rejected")}>
                       {group.totalRejected} refusée(s)
                     </Badge>
                   )}
@@ -255,9 +197,9 @@ export function CoachGroupsSection({
                                 {getCoachUserDisplayName(coach)}
                               </span>
                               {group.managerCoachId === coach.id ? (
-                                <span className="rounded-full bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground">
+                                <Badge variant="outline" className="px-1.5 text-[10px] uppercase tracking-wide">
                                   Manager
-                                </span>
+                                </Badge>
                               ) : null}
                               {canRemoveAssignedCoach(group.managerCoachId, coach.id) ? (
                                 <button
@@ -453,7 +395,7 @@ export function CoachGroupsSection({
                             <Badge variant="outline">Aucune candidature</Badge>
                           )}
                           {entry.interviewCount > 0 && (
-                            <Badge className={getSummaryBadgeClassName("interview")}>
+                            <Badge variant={getSummaryBadgeVariant("interview")}>
                               {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
                             </Badge>
                           )}
@@ -461,12 +403,12 @@ export function CoachGroupsSection({
                             <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>
                           )}
                           {entry.acceptedCount > 0 && (
-                            <Badge className={getSummaryBadgeClassName("accepted")}>
+                            <Badge variant={getSummaryBadgeVariant("accepted")}>
                               {entry.acceptedCount} acceptée{entry.acceptedCount > 1 ? "s" : ""}
                             </Badge>
                           )}
                           {entry.rejectedCount > 0 && (
-                            <Badge className={getSummaryBadgeClassName("rejected")}>
+                            <Badge variant={getSummaryBadgeVariant("rejected")}>
                               {entry.rejectedCount} refusée{entry.rejectedCount > 1 ? "s" : ""}
                             </Badge>
                           )}
@@ -539,14 +481,14 @@ export function CoachGroupsSection({
   );
 }
 
-function getSummaryBadgeClassName(tone: "accepted" | "rejected" | "interview") {
-  return cn(
-    "border hover:bg-transparent",
-    tone === "accepted" &&
-      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200",
-    tone === "rejected" &&
-      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200",
-    tone === "interview" &&
-      "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200"
-  );
+function getSummaryBadgeVariant(tone: "accepted" | "rejected" | "interview") {
+  if (tone === "rejected") {
+    return "destructive";
+  }
+
+  if (tone === "accepted") {
+    return "secondary";
+  }
+
+  return "outline";
 }
