@@ -25,7 +25,7 @@ import {
 } from "@/features/coach/components/CoachApplicationEditor";
 import { CoachUserPrivateNoteSection } from "@/features/coach/components/CoachUserPrivateNoteSection";
 import { CoachUserSharedNotesSection } from "@/features/coach/components/CoachUserSharedNotesSection";
-import { isManualApplication } from "@/features/applications/utils";
+import { getDisplayApplicationStatus, isManualApplication } from "@/features/applications/utils";
 import {
   coachStatusLabel,
   formatCoachDate,
@@ -98,6 +98,7 @@ export function CoachUserApplicationCard({
   const isDue = isApplicationDue(application);
   const isManual = isManualApplication(application);
   const privateCoachNote = application.privateCoachNote;
+  const displayStatus = getDisplayApplicationStatus(application);
 
   return (
     <Collapsible open={isOpen} onOpenChange={onToggleOpen}>
@@ -120,7 +121,7 @@ export function CoachUserApplicationCard({
 
                 <div className="flex flex-wrap gap-2">
                   <Badge variant={getApplicationStatusBadgeVariant(application.status, isDue)}>
-                    {coachStatusLabel(application.status)}
+                    {coachStatusLabel(displayStatus)}
                   </Badge>
                   <Badge variant="outline">{isManual ? "Manuelle" : "Importée"}</Badge>
                 </div>
@@ -204,7 +205,7 @@ export function CoachUserApplicationCard({
             ) : (
               <div className="grid gap-3 lg:grid-cols-2">
                 <div className="rounded-lg border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
-                  <p>Statut: {coachStatusLabel(application.status)}</p>
+                  <p>Statut: {coachStatusLabel(displayStatus)}</p>
                   <p>Type: {application.job.contractType || "Non précisé"}</p>
                   {application.lastFollowUpAt ? (
                     <p>Dernière relance: {formatCoachDate(application.lastFollowUpAt)}</p>
