@@ -351,6 +351,106 @@ export const coachGroupCoaches = pgTable(
   })
 );
 
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    type: text("type").notNull().default("group"),
+    groupId: bigint("group_id", { mode: "number" }).references(() => coachGroups.id, {
+      onDelete: "cascade",
+    }),
+    directUserAId: bigint("direct_user_a_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    directUserBId: bigint("direct_user_b_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    createdByUserId: bigint("created_by_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    typeLastMessageIdx: index("conversations_type_last_message_idx").on(
+      table.type,
+      table.lastMessageAt
+    ),
+    groupUnique: uniqueIndex("conversations_group_unique").on(table.groupId),
+    directPairUnique: uniqueIndex("conversations_direct_pair_unique").on(
+      table.type,
+      table.directUserAId,
+      table.directUserBId
+    ),
+  })
+);
+
+export const conversationParticipants = pgTable(
+  "conversation_participants",
+  {
+    conversationId: bigint("conversation_id", { mode: "number" })
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    roleSnapshot: text("role_snapshot").notNull().default("user"),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+    leftAt: timestamp("left_at", { withTimezone: true }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.conversationId, table.userId] }),
+    userIdx: index("conversation_participants_user_idx").on(table.userId, table.leftAt),
+  })
+);
+
+export const conversationMessages = pgTable(
+  "conversation_messages",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    conversationId: bigint("conversation_id", { mode: "number" })
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    authorUserId: bigint("author_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    type: text("type").notNull().default("text"),
+    content: text("content"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (table) => ({
+    conversationCreatedIdx: index("conversation_messages_conversation_created_idx").on(
+      table.conversationId,
+      table.createdAt
+    ),
+    authorIdx: index("conversation_messages_author_idx").on(table.authorUserId),
+  })
+);
+
+export const conversationReads = pgTable(
+  "conversation_reads",
+  {
+    conversationId: bigint("conversation_id", { mode: "number" })
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    lastReadMessageId: bigint("last_read_message_id", { mode: "number" }).references(
+      () => conversationMessages.id,
+      { onDelete: "set null" }
+    ),
+    lastReadAt: timestamp("last_read_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.conversationId, table.userId] }),
+    userIdx: index("conversation_reads_user_idx").on(table.userId, table.lastReadAt),
+  })
+);
+
 export const apiKeys = pgTable(
   "api_keys",
   {
