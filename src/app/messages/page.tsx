@@ -798,7 +798,14 @@ export default function MessagesPage() {
                         <div className="border-t border-border/60 bg-background/80 px-4 py-4 backdrop-blur">
                           <FieldGroup>
                             <Field>
-                              <FieldLabel htmlFor="message-compose">Nouveau message</FieldLabel>
+                              <div className="mb-2 flex items-center justify-between gap-3">
+                                <FieldLabel htmlFor="message-compose" className="mb-0">
+                                  Nouveau message
+                                </FieldLabel>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Entrée envoie, Shift + Entrée ajoute une ligne
+                                </p>
+                              </div>
                               <Textarea
                                 id="message-compose"
                                 value={draft}
@@ -810,21 +817,19 @@ export default function MessagesPage() {
                                   }
                                 }}
                                 placeholder="Écris un message utile, clair et actionnable..."
-                                className="min-h-20"
+                                className="min-h-16 resize-none"
                               />
-                              <p className="text-xs text-muted-foreground">
-                                `Entrée` envoie le message, `Shift + Entrée` ajoute une ligne.
-                              </p>
                             </Field>
                           </FieldGroup>
 
-                          <div className="mt-3 flex justify-end">
+                          <div className="mt-2 flex justify-end">
                             <Button
                               type="button"
                               disabled={isSending || !draft.trim()}
                               onClick={() => {
                                 void sendCurrentMessage();
                               }}
+                              size="sm"
                             >
                               {isSending ? (
                                 <LoaderCircle data-icon="inline-start" className="animate-spin" />
