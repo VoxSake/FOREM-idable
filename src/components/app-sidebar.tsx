@@ -1,6 +1,7 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { MessagesSquare, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,12 +26,14 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { ConversationPreview } from "@/types/messaging";
 
 function AppSidebarBrand() {
   return (
@@ -48,9 +51,11 @@ function AppSidebarBrand() {
 function AppSidebarNavigation({
   pathname,
   items,
+  unreadMessagesCount,
 }: {
   pathname: string;
   items: AppSidebarNavItem[];
+  unreadMessagesCount: number;
 }) {
   return (
     <SidebarMenu>
@@ -69,6 +74,9 @@ function AppSidebarNavigation({
               <span>{item.title}</span>
             </Link>
           </SidebarMenuButton>
+          {item.url === "/messages" && unreadMessagesCount > 0 ? (
+            <SidebarMenuBadge>{unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}</SidebarMenuBadge>
+          ) : null}
 
           {isSidebarSubItemVisible(pathname, item) ? (
             <div className="ml-6 mt-2 flex flex-col gap-1 border-l border-border/70 pl-3">
@@ -131,8 +139,92 @@ function ThemeToggleButton() {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const navItems = getSidebarNavItems(user?.role);
+  const { user, isLoading } = useAuth();
+  const [messagingConversations, setMessagingConversations] = useState<ConversationPreview[] | null>(null);
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadMessagingMeta() {
+      try {
+        const response = await fetch("/api/messages/conversations", { cache: "no-store" });
+        const data = (await response.json().catch(() => ({}))) as {
+          conversations?: ConversationPreview[];
+        };
+
+        if (!response.ok || !data.conversations) {
+          if (!cancelled) {
+            setMessagingConversations([]);
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          setMessagingConversations(data.conversations);
+        }
+      } catch {
+        if (!cancelled) {
+          setMessagingConversations([]);
+        }
+      }
+    }
+
+    void loadMessagingMeta();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, user]);
+
+  const messagingNav = useMemo(() => {
+    const conversations = messagingConversations ?? [];
+    if (!user) {
+      return {
+        hasGroupMessagingAccess: false,
+        unreadCount: 0,
+      };
+    }
+
+    const hasGroupMessagingAccess = conversations.some((conversation) => conversation.type === "group");
+    const unreadCount = conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
+
+    return {
+      hasGroupMessagingAccess,
+      unreadCount,
+    };
+  }, [messagingConversations, user]);
+
+  const navItems = useMemo(() => {
+    const baseItems = getSidebarNavItems(user?.role);
+    if (!messagingNav.hasGroupMessagingAccess) {
+      return baseItems;
+    }
+
+    const messagesItem: AppSidebarNavItem = {
+      title: "Messages",
+      url: "/messages",
+      icon: MessagesSquare,
+    };
+
+    const insertionIndex = baseItems.findIndex((item) => item.url === "/account");
+    if (insertionIndex === -1) {
+      return [...baseItems, messagesItem];
+    }
+
+    return [
+      ...baseItems.slice(0, insertionIndex),
+      messagesItem,
+      ...baseItems.slice(insertionIndex),
+    ];
+  }, [messagingNav.hasGroupMessagingAccess, user?.role]);
 
   return (
     <Sidebar>
@@ -151,7 +243,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
-            <AppSidebarNavigation pathname={pathname} items={navItems} />
+            <AppSidebarNavigation
+              pathname={pathname}
+              items={navItems}
+              unreadMessagesCount={messagingNav.unreadCount}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
