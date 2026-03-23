@@ -11,8 +11,12 @@ export function HomePageHero() {
   return (
     <section className="flex flex-col gap-4 rounded-[28px] border border-border/60 bg-linear-to-br from-card via-card to-muted/20 p-6 shadow-sm sm:p-8">
       <div className="flex flex-wrap gap-2">
-        {valueProps.map((item) => (
-          <Badge key={item} variant="outline" className="rounded-full bg-background/70 px-3 py-1">
+        {valueProps.map((item, index) => (
+          <Badge
+            key={item}
+            variant="outline"
+            className={`rounded-full bg-background/70 px-3 py-1 ${index > 1 ? "hidden sm:inline-flex" : ""}`}
+          >
             {item}
           </Badge>
         ))}
