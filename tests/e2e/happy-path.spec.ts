@@ -24,6 +24,45 @@ type Application = {
   interviewAt: null;
   interviewDetails: null;
   updatedAt: string;
+  privateCoachNote?: {
+    content: string;
+    createdAt: string;
+    updatedAt: string;
+    createdBy: {
+      id: number;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: "coach" | "admin" | "system";
+    };
+    contributors: Array<{
+      id: number;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: "coach" | "admin" | "system";
+    }>;
+  };
+  sharedCoachNotes?: Array<{
+    id: string;
+    content: string;
+    createdAt: string;
+    updatedAt: string;
+    createdBy: {
+      id: number;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: "coach" | "admin" | "system";
+    };
+    contributors: Array<{
+      id: number;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: "coach" | "admin" | "system";
+    }>;
+  }>;
 };
 
 const locationEntries = [
@@ -136,6 +175,109 @@ function buildCoachDashboard(applications: Application[]) {
   };
 }
 
+async function mockCoachSession(
+  page: Parameters<typeof test>[0]["page"],
+  options: {
+    actor?: Actor;
+    applications: Application[];
+    onCoachNotesPatch?: (payload: {
+      userId: number;
+      jobId: string;
+      action: "save-private" | "create-shared" | "update-shared" | "delete-shared";
+      content?: string;
+      noteId?: string;
+    }) => Application;
+    onApplicationPatch?: (payload: {
+      userId: number;
+      jobId: string;
+      patch: Partial<Application>;
+    }) => Application;
+  }
+) {
+  let actor: Actor = options.actor ?? "coach";
+
+  await page.route("**/api/auth/me", async (route) => {
+    const user =
+      actor === "user"
+        ? {
+            id: 1,
+            email: "user@example.com",
+            firstName: "Jordi",
+            lastName: "User",
+            role: "user",
+          }
+        : {
+            id: 2,
+            email: "coach@example.com",
+            firstName: "Camille",
+            lastName: "Coach",
+            role: "coach",
+          };
+
+    await route.fulfill({ json: { user } });
+  });
+
+  await page.route("**/api/coach/dashboard", async (route) => {
+    await route.fulfill({
+      json: {
+        dashboard: buildCoachDashboard(options.applications),
+      },
+    });
+  });
+
+  await page.route("**/api/coach/users/1/applications", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as {
+      jobId: string;
+      action: "save-private" | "create-shared" | "update-shared" | "delete-shared";
+      content?: string;
+      noteId?: string;
+    };
+
+    if (request.method() !== "PATCH" || !options.onCoachNotesPatch) {
+      await route.fallback();
+      return;
+    }
+
+    const updated = options.onCoachNotesPatch({
+      userId: 1,
+      jobId: body.jobId,
+      action: body.action,
+      content: body.content,
+      noteId: body.noteId,
+    });
+
+    await route.fulfill({ json: { application: updated } });
+  });
+
+  await page.route("**/api/coach/users/1/applications/*", async (route) => {
+    const request = route.request();
+    const jobId = request.url().split("/").pop() ?? "";
+
+    if (request.method() !== "PATCH" || !options.onApplicationPatch) {
+      await route.fallback();
+      return;
+    }
+
+    const body = request.postDataJSON() as {
+      patch: Partial<Application>;
+    };
+    const updated = options.onApplicationPatch({
+      userId: 1,
+      jobId,
+      patch: body.patch,
+    });
+
+    await route.fulfill({ json: { application: updated } });
+  });
+
+  return {
+    setActor(nextActor: Actor) {
+      actor = nextActor;
+    },
+  };
+}
+
 test("user can add a job to tracking and the coach can see it", async ({ page }) => {
   let actor: Actor = "user";
   let applications: Application[] = [];
@@ -233,4 +375,148 @@ test("user can add a job to tracking and the coach can see it", async ({ page })
   await expect(page.getByRole("heading", { name: "Jordi User" })).toBeVisible();
   await expect(page.getByText("Développeur Frontend React")).toBeVisible();
   await expect(page.getByText("1 candidatures")).toBeVisible();
+});
+
+test("coach can manage private and shared notes from the user sheet", async ({ page }) => {
+  const noteAuthor = {
+    id: 2,
+    email: "coach@example.com",
+    firstName: "Camille",
+    lastName: "Coach",
+    role: "coach" as const,
+  };
+
+  const applications: Application[] = [
+    {
+      ...createApplication(searchJob),
+      notes: "CV envoyé",
+      privateCoachNote: {
+        content: "Point initial",
+        createdAt: "2026-03-21T10:00:00.000Z",
+        updatedAt: "2026-03-21T10:00:00.000Z",
+        createdBy: noteAuthor,
+        contributors: [noteAuthor],
+      },
+      sharedCoachNotes: [],
+    },
+  ];
+
+  await mockCoachSession(page, {
+    applications,
+    onCoachNotesPatch: ({ jobId, action, content, noteId }) => {
+      const application = applications.find((entry) => entry.job.id === jobId);
+      if (!application) {
+        throw new Error(`Application ${jobId} not found`);
+      }
+
+      if (action === "save-private") {
+        application.privateCoachNote = {
+          content: content ?? "",
+          createdAt: application.privateCoachNote?.createdAt ?? "2026-03-23T16:00:00.000Z",
+          updatedAt: "2026-03-23T16:01:00.000Z",
+          createdBy: noteAuthor,
+          contributors: [noteAuthor],
+        };
+      }
+
+      if (action === "create-shared") {
+        application.sharedCoachNotes = [
+          ...(application.sharedCoachNotes ?? []),
+          {
+            id: "shared-1",
+            content: content ?? "",
+            createdAt: "2026-03-23T16:02:00.000Z",
+            updatedAt: "2026-03-23T16:02:00.000Z",
+            createdBy: noteAuthor,
+            contributors: [noteAuthor],
+          },
+        ];
+      }
+
+      if (action === "update-shared") {
+        application.sharedCoachNotes =
+          application.sharedCoachNotes?.map((entry) =>
+            entry.id === noteId
+              ? {
+                  ...entry,
+                  content: content ?? entry.content,
+                  updatedAt: "2026-03-23T16:03:00.000Z",
+                }
+              : entry
+          ) ?? [];
+      }
+
+      if (action === "delete-shared") {
+        application.sharedCoachNotes =
+          application.sharedCoachNotes?.filter((entry) => entry.id !== noteId) ?? [];
+      }
+
+      application.updatedAt = "2026-03-23T16:03:00.000Z";
+      return structuredClone(application);
+    },
+  });
+
+  await page.goto("/coach");
+  await page.getByText("Jordi User").first().click();
+
+  const privateNoteArea = page.getByPlaceholder("Note privée commune pour l'équipe coach...");
+  await privateNoteArea.fill("Note privée mise à jour");
+  await page.getByRole("button", { name: "Enregistrer" }).first().click();
+  await expect(page.getByText("Note privée enregistrée.")).toBeVisible();
+  await expect(privateNoteArea).toHaveValue("Note privée mise à jour");
+
+  await page.getByRole("button", { name: "Ajouter une note partagée" }).first().click();
+  const sharedCreateArea = page.getByPlaceholder("Message ou consigne visible par le bénéficiaire...");
+  await sharedCreateArea.fill("Nouvelle note visible");
+  await page.getByRole("button", { name: "Ajouter" }).click();
+  await expect(page.getByText("Note partagée enregistrée.")).toBeVisible();
+  await expect(page.getByDisplayValue("Nouvelle note visible")).toBeVisible();
+
+  const sharedNoteArea = page.getByDisplayValue("Nouvelle note visible");
+  await sharedNoteArea.fill("Nouvelle note visible modifiée");
+  await page.getByRole("button", { name: "Enregistrer" }).last().click();
+  await expect(page.getByText("Note partagée mise à jour.")).toBeVisible();
+  await expect(page.getByDisplayValue("Nouvelle note visible modifiée")).toBeVisible();
+
+  await page.getByRole("button", { name: "Supprimer" }).last().click();
+  await page.getByRole("button", { name: "Supprimer" }).last().click();
+  await expect(page.getByText("Note partagée supprimée.")).toBeVisible();
+  await expect(page.getByText("Aucune note partagée pour l’instant.")).toBeVisible();
+});
+
+test("coach can edit a tracked application from the user sheet", async ({ page }) => {
+  const applications: Application[] = [
+    {
+      ...createApplication(searchJob),
+      notes: null,
+    },
+  ];
+
+  await mockCoachSession(page, {
+    applications,
+    onApplicationPatch: ({ jobId, patch }) => {
+      const application = applications.find((entry) => entry.job.id === jobId);
+      if (!application) {
+        throw new Error(`Application ${jobId} not found`);
+      }
+
+      Object.assign(application, patch, {
+        updatedAt: "2026-03-23T16:10:00.000Z",
+      });
+
+      return structuredClone(application);
+    },
+  });
+
+  await page.goto("/coach");
+  await page.getByText("Jordi User").first().click();
+
+  await page.getByRole("button", { name: "Actions candidature" }).click();
+  await page.getByRole("menuitem", { name: "Éditer la candidature" }).click();
+  await page.getByLabel("Notes bénéficiaire").fill("Relance prévue lundi");
+  await page.getByRole("button", { name: "Enregistrer les changements" }).click();
+
+  await expect(page.getByText("Candidature mise à jour.")).toBeVisible();
+  await expect(page.getByText("Notes bénéficiaire")).toBeVisible();
+  await expect(page.getByText("Relance prévue lundi")).toBeVisible();
 });
