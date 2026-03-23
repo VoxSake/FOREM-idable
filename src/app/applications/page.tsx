@@ -52,6 +52,7 @@ export default function ApplicationsPage() {
         upcomingInterviewCount={page.upcomingInterviewCount}
         closedCount={page.closedCount}
         coachUpdateCount={page.unreadCoachUpdateCount}
+        hasCoachContext={page.hasCoachContext}
         search={page.search}
         modeFilter={page.modeFilter}
         onSearchChange={page.handleSearchChange}

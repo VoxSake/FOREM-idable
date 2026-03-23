@@ -106,6 +106,10 @@ export function useApplicationsPageState() {
     () => applications.filter((entry) => hasUnreadCoachUpdate(entry)).length,
     [applications, hasUnreadCoachUpdate]
   );
+  const hasCoachContext = useMemo(
+    () => applications.some((entry) => (entry.sharedCoachNotes?.length ?? 0) > 0),
+    [applications]
+  );
   const filteredApplications = useMemo(() => {
     return filterApplications(applications, {
       search,
@@ -327,6 +331,7 @@ export function useApplicationsPageState() {
     upcomingInterviewCount,
     closedCount,
     unreadCoachUpdateCount,
+    hasCoachContext,
     pageSize: APPLICATIONS_PAGE_SIZE,
     applicationsPageCount,
     effectiveApplicationsPage,

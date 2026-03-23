@@ -19,19 +19,12 @@ interface ApplicationsInsightsProps {
   upcomingInterviewCount: number;
   closedCount: number;
   coachUpdateCount: number;
+  hasCoachContext: boolean;
   search: string;
   modeFilter: ApplicationModeFilter;
   onSearchChange: (value: string) => void;
   onModeFilterChange: (value: ApplicationModeFilter) => void;
 }
-
-const QUICK_FILTERS: Array<{ value: ApplicationModeFilter; label: string }> = [
-  { value: "all", label: "Tout" },
-  { value: "due", label: "Relances" },
-  { value: "interviews", label: "Entretiens" },
-  { value: "coach_updates", label: "Nouveaux retours" },
-  { value: "manual", label: "Manuel" },
-];
 
 export function ApplicationsInsights({
   totalCount,
@@ -39,12 +32,13 @@ export function ApplicationsInsights({
   upcomingInterviewCount,
   closedCount,
   coachUpdateCount,
+  hasCoachContext,
   search,
   modeFilter,
   onSearchChange,
   onModeFilterChange,
 }: ApplicationsInsightsProps) {
-  const stats = [
+  const stats: Array<{ label: string; value: number; hint?: string | null }> = [
     {
       label: "En suivi",
       value: totalCount,
@@ -61,14 +55,26 @@ export function ApplicationsInsights({
       label: "Clôturées",
       value: closedCount,
     },
-    {
-      label: "Retours coach",
-      value: coachUpdateCount,
-      hint:
-        coachUpdateCount > 0
-          ? `${coachUpdateCount} candidature${coachUpdateCount > 1 ? "s" : ""} avec un nouveau retour coach.`
-          : null,
-    },
+  ];
+  const visibleStats = hasCoachContext
+    ? [
+        ...stats,
+        {
+          label: "Retours coach",
+          value: coachUpdateCount,
+          hint:
+            coachUpdateCount > 0
+              ? `${coachUpdateCount} candidature${coachUpdateCount > 1 ? "s" : ""} avec un nouveau retour coach.`
+              : null,
+        },
+      ]
+    : stats;
+  const quickFilters: Array<{ value: ApplicationModeFilter; label: string }> = [
+    { value: "all", label: "Tout" },
+    { value: "due", label: "Relances" },
+    { value: "interviews", label: "Entretiens" },
+    ...(hasCoachContext ? [{ value: "coach_updates" as const, label: "Nouveaux retours" }] : []),
+    { value: "manual", label: "Manuel" },
   ];
 
   return (
@@ -81,8 +87,8 @@ export function ApplicationsInsights({
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            {stats.map((stat) => (
+          <div className={`grid gap-3 sm:grid-cols-2 ${visibleStats.length === 5 ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>
+            {visibleStats.map((stat) => (
               <div
                 key={stat.label}
                 className="rounded-lg border border-border/60 bg-muted/20 px-3 py-3"
@@ -123,9 +129,9 @@ export function ApplicationsInsights({
               }}
               className="grid w-full grid-cols-2 gap-2 lg:hidden"
             >
-              {QUICK_FILTERS.map((filter, index) => {
+              {quickFilters.map((filter, index) => {
                 const isLastOddItem =
-                  QUICK_FILTERS.length % 2 === 1 && index === QUICK_FILTERS.length - 1;
+                  quickFilters.length % 2 === 1 && index === quickFilters.length - 1;
 
                 return (
                   <ToggleGroupItem
@@ -154,9 +160,9 @@ export function ApplicationsInsights({
                   onModeFilterChange(value as ApplicationModeFilter);
                 }
               }}
-              className="hidden w-full lg:grid lg:grid-cols-5"
+              className={`hidden w-full lg:grid ${quickFilters.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}
             >
-              {QUICK_FILTERS.map((filter) => (
+              {quickFilters.map((filter) => (
                 <ToggleGroupItem
                   key={filter.value}
                   value={filter.value}
