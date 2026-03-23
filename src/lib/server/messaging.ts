@@ -559,6 +559,15 @@ export async function sendTextMessage(
 
   await assertCanAccessConversation(db, actor, conversationId);
 
+  const conversationResult = await db.query<{ type: ConversationPreview["type"] }>(
+    `SELECT type
+     FROM conversations
+     WHERE id = $1
+     LIMIT 1`,
+    [conversationId]
+  );
+  const conversationType = conversationResult.rows[0]?.type ?? "group";
+
   const result = await db.query<MessageRow>(
     `INSERT INTO conversation_messages (
        conversation_id,
@@ -589,6 +598,15 @@ export async function sendTextMessage(
      WHERE id = $1`,
     [conversationId]
   );
+
+  if (conversationType === "direct") {
+    await db.query(
+      `UPDATE conversation_participants
+       SET left_at = NULL
+       WHERE conversation_id = $1`,
+      [conversationId]
+    );
+  }
 
   await markConversationAsReadInternal(db, actor, conversationId);
 

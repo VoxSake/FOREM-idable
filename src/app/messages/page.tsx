@@ -15,14 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -36,13 +28,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ConversationDetail, ConversationPreview, DirectMessageTarget } from "@/types/messaging";
 
-const THREAD_VIEWPORT_HEIGHT = "h-[min(68vh,720px)]";
+const THREAD_VIEWPORT_HEIGHT = "h-[min(56vh,560px)]";
 
 function MessagesPageSkeleton() {
   return (
@@ -87,6 +80,7 @@ export default function MessagesPage() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [contactsError, setContactsError] = useState<string | null>(null);
+  const [contactQuery, setContactQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isConversationLoading, setIsConversationLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -106,6 +100,16 @@ export default function MessagesPage() {
     }),
     [conversations]
   );
+  const filteredContacts = useMemo(() => {
+    const normalizedQuery = contactQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return contacts;
+    }
+
+    return contacts.filter((contact) =>
+      `${contact.firstName} ${contact.lastName} ${contact.email}`.toLowerCase().includes(normalizedQuery)
+    );
+  }, [contactQuery, contacts]);
 
   async function loadConversations(
     preferredConversationId?: number | null,
@@ -338,6 +342,7 @@ export default function MessagesPage() {
     }
 
     setContactsError(null);
+    setContactQuery("");
     void loadContacts({ silent: false });
   }, [isContactsLoading, isDirectDialogOpen]);
 
@@ -622,7 +627,7 @@ export default function MessagesPage() {
                           ref={threadViewportRef}
                           className={cn(
                             THREAD_VIEWPORT_HEIGHT,
-                            "min-h-[420px] overflow-y-auto px-4 py-4 lg:min-h-[520px]"
+                            "min-h-[360px] overflow-y-auto px-4 py-4 lg:min-h-[420px]"
                           )}
                         >
                           {selectedConversation.messages.length === 0 ? (
@@ -683,7 +688,7 @@ export default function MessagesPage() {
                                   }
                                 }}
                                 placeholder="Écris un message utile, clair et actionnable..."
-                                className="min-h-24"
+                                className="min-h-20"
                               />
                               <p className="text-xs text-muted-foreground">
                                 `Entrée` envoie le message, `Shift + Entrée` ajoute une ligne.
@@ -761,16 +766,29 @@ export default function MessagesPage() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <Command className="rounded-xl border border-border/60">
-              <CommandInput placeholder="Rechercher un contact autorisé..." />
-              <CommandList className="max-h-[420px]">
-                <CommandEmpty>Aucun contact autorisé trouvé.</CommandEmpty>
-                <CommandGroup heading="Contacts disponibles">
-                  {contacts.map((contact) => (
-                    <CommandItem
+            <div className="flex flex-col gap-3">
+              <Input
+                value={contactQuery}
+                onChange={(event) => setContactQuery(event.target.value)}
+                placeholder="Rechercher un contact autorisé..."
+              />
+              {filteredContacts.length === 0 ? (
+                <Empty className="min-h-48 rounded-xl border border-dashed border-border/60">
+                  <EmptyHeader>
+                    <EmptyTitle>Aucun contact autorisé trouvé.</EmptyTitle>
+                    <EmptyDescription>
+                      Ajuste la recherche ou vérifie ton périmètre de groupe.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <div className="flex max-h-[420px] flex-col gap-2 overflow-y-auto">
+                  {filteredContacts.map((contact) => (
+                    <button
                       key={contact.userId}
-                      value={`${contact.firstName} ${contact.lastName} ${contact.email}`}
-                      onSelect={async () => {
+                      type="button"
+                      className="flex items-center justify-between gap-4 rounded-xl border border-border/60 px-4 py-3 text-left transition-colors hover:border-primary/20 hover:bg-muted/30"
+                      onClick={async () => {
                         setContactsError(null);
 
                         try {
@@ -801,32 +819,28 @@ export default function MessagesPage() {
                         }
                       }}
                     >
-                      <UserRound className="text-muted-foreground" />
-                      <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-                        <div className="flex min-w-0 flex-col gap-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">
-                              {`${contact.firstName} ${contact.lastName}`.trim() || contact.email}
-                            </span>
-                            <Badge variant="outline" className="capitalize">
-                              {contact.role}
-                            </Badge>
-                          </div>
-                          <span className="truncate text-sm text-muted-foreground">
-                            {contact.email}
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">
+                            {`${contact.firstName} ${contact.lastName}`.trim() || contact.email}
                           </span>
+                          <Badge variant="outline" className="capitalize">
+                            {contact.role}
+                          </Badge>
                         </div>
-                        <Badge variant="secondary">
-                          {contact.sharedGroupCount > 0
-                            ? `${contact.sharedGroupCount} groupe${contact.sharedGroupCount > 1 ? "s" : ""} commun${contact.sharedGroupCount > 1 ? "s" : ""}`
-                            : "Admin"}
-                        </Badge>
+                        <span className="truncate text-sm text-muted-foreground">{contact.email}</span>
                       </div>
-                    </CommandItem>
+
+                      <Badge variant="secondary">
+                        {contact.sharedGroupCount > 0
+                          ? `${contact.sharedGroupCount} groupe${contact.sharedGroupCount > 1 ? "s" : ""} commun${contact.sharedGroupCount > 1 ? "s" : ""}`
+                          : "Admin"}
+                      </Badge>
+                    </button>
                   ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+                </div>
+              )}
+            </div>
           )}
         </DialogContent>
       </Dialog>
