@@ -18,14 +18,14 @@ export interface ForemSearchParams {
 
 const foremRecordSchema = z
     .object({
-        numerooffreforem: z.union([z.string(), z.number()]).optional(),
-        titreoffre: z.string().optional(),
-        nomemployeur: z.string().optional(),
-        lieuxtravaillocalite: z.array(z.string()).optional(),
-        typecontrat: z.string().optional(),
-        datedebutdiffusion: z.string().optional(),
-        url: z.string().optional(),
-        metier: z.string().optional(),
+        numerooffreforem: z.union([z.string(), z.number()]).nullish(),
+        titreoffre: z.string().nullish(),
+        nomemployeur: z.string().nullish(),
+        lieuxtravaillocalite: z.array(z.string()).nullish(),
+        typecontrat: z.string().nullish(),
+        datedebutdiffusion: z.string().nullish(),
+        url: z.string().nullish(),
+        metier: z.string().nullish(),
     })
     .passthrough();
 
