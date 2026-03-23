@@ -85,6 +85,7 @@ function normalizeConversationPreview(row: ConversationSummaryRow): Conversation
         ? `${row.participant_count} participant${row.participant_count > 1 ? "s" : ""}`
         : row.other_user_email,
     lastMessageAt: row.last_message_at,
+    lastMessagePreview: row.last_message_preview,
     unreadCount: row.unread_count,
     participantCount: row.participant_count,
   };
@@ -324,7 +325,9 @@ async function loadConversationSummaries(
               other_user.first_name,
               other_user.last_name,
               other_user.email
-     ORDER BY conversations.last_message_at DESC, conversations.id DESC`,
+     ORDER BY CASE WHEN conversations.type = 'group' THEN 0 ELSE 1 END,
+              conversations.last_message_at DESC,
+              conversations.id DESC`,
     [actor.id, groupIds.length > 0 ? groupIds : [0]]
   );
 }
@@ -725,16 +728,6 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  const canMessage = await canDirectMessage(actor, targetUserId);
-  if (!canMessage) {
-    throw new Error("Forbidden");
-  }
-
-  const targetUser = await getUserSummary(db, targetUserId);
-  if (!targetUser) {
-    throw new Error("NotFound");
-  }
-
   const [userAId, userBId] =
     actor.id < targetUserId ? [actor.id, targetUserId] : [targetUserId, actor.id];
 
@@ -747,6 +740,18 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
      LIMIT 1`,
     [userAId, userBId]
   );
+
+  const targetUser = await getUserSummary(db, targetUserId);
+  if (!targetUser) {
+    throw new Error("NotFound");
+  }
+
+  if (!existing.rows[0]?.id) {
+    const canMessage = await canDirectMessage(actor, targetUserId);
+    if (!canMessage) {
+      throw new Error("Forbidden");
+    }
+  }
 
   const conversationId =
     existing.rows[0]?.id ??
@@ -800,4 +805,25 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
   }
 
   return getConversationDetail(actor, conversationId);
+}
+
+export async function closeDirectConversation(actor: AuthUser, conversationId: number) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const preview = await assertCanAccessConversation(db, actor, conversationId);
+  if (preview.type !== "direct") {
+    throw new Error("InvalidConversationType");
+  }
+
+  await db.query(
+    `UPDATE conversation_participants
+     SET left_at = NOW()
+     WHERE conversation_id = $1
+       AND user_id = $2
+       AND left_at IS NULL`,
+    [conversationId, actor.id]
+  );
+
+  return true;
 }

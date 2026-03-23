@@ -20,6 +20,7 @@ export interface ConversationPreview {
   title: string;
   subtitle: string | null;
   lastMessageAt: string;
+  lastMessagePreview: string | null;
   unreadCount: number;
   participantCount: number;
 }
