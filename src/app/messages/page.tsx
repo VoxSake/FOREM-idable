@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 import {
   BriefcaseBusiness,
   ChevronLeft,
@@ -97,6 +98,7 @@ function MessagesPageSkeleton() {
 }
 
 export default function MessagesPage() {
+  const router = useRouter();
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
   const [hasMessagingAccess, setHasMessagingAccess] = useState<boolean | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
@@ -565,38 +567,21 @@ export default function MessagesPage() {
     };
   }, [selectedConversationId]);
 
+  useEffect(() => {
+    if (isLoading || hasMessagingAccess !== false) {
+      return;
+    }
+
+    toast.error("La messagerie est réservée aux personnes rattachées à un groupe.");
+    router.replace("/");
+  }, [hasMessagingAccess, isLoading, router]);
+
   if (isLoading) {
     return <MessagesPageSkeleton />;
   }
 
   if (hasMessagingAccess === false) {
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-3 sm:px-4">
-        <Card className="border-border/60 py-0">
-          <CardHeader className="border-b border-border/60 px-5 py-5">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <MessagesSquare className="text-primary" />
-              Messages indisponibles
-            </CardTitle>
-            <CardDescription>
-              L&apos;accès à la messagerie est réservé aux personnes actuellement rattachées à un
-              groupe.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-5 py-6">
-            <Empty className="min-h-56 rounded-xl border border-dashed border-border/60 bg-muted/10">
-              <EmptyHeader>
-                <EmptyTitle>Aucun groupe actif</EmptyTitle>
-                <EmptyDescription>
-                  Dès qu&apos;un groupe t&apos;est attribué, la conversation de groupe et l&apos;entrée
-                  `Messages` apparaîtront automatiquement dans la navigation.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <MessagesPageSkeleton />;
   }
 
   return (
