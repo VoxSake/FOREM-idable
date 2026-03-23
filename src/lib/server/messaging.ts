@@ -1,5 +1,8 @@
 import { db, ensureDatabase } from "@/lib/server/db";
+import { isValidForemOfferId } from "@/lib/forem";
+import { fetchForemJobByOfferId } from "@/services/api/foremClient";
 import { AuthUser, UserRole } from "@/types/auth";
+import { Job } from "@/types/job";
 import {
   ConversationDetail,
   ConversationMessage,
@@ -123,6 +126,67 @@ function toConversationMessage(row: MessageRow, actorId: number): ConversationMe
     author: toConversationMessageAuthor(row),
     isOwnMessage: authorUserId === actorId,
   };
+}
+
+function extractForemOfferIdFromText(content: string): { offerId: string; url: string } | null {
+  const match = content.match(
+    /https?:\/\/(?:www\.)?leforem\.be\/recherche-offres\/offre-detail\/(\d+)(?:[/?#][^\s]*)?/i
+  );
+  if (!match) {
+    return null;
+  }
+
+  const offerId = match[1]?.trim() ?? "";
+  if (!isValidForemOfferId(offerId)) {
+    return null;
+  }
+
+  return {
+    offerId,
+    url: match[0],
+  };
+}
+
+async function resolveSharedJobMetadata(content: string): Promise<{
+  type: ConversationMessage["type"];
+  metadata: Record<string, unknown> & {
+    sharedJob?: Job;
+    sharedOfferId?: string;
+    sharedUrl?: string;
+  };
+}> {
+  const extracted = extractForemOfferIdFromText(content);
+  if (!extracted) {
+    return {
+      type: "text",
+      metadata: {},
+    };
+  }
+
+  try {
+    const sharedJob = await fetchForemJobByOfferId(extracted.offerId);
+    if (!sharedJob) {
+      return {
+        type: "text",
+        metadata: {},
+      };
+    }
+
+    return {
+      type: "job_share",
+      metadata: {
+        sharedJob,
+        sharedOfferId: extracted.offerId,
+        sharedUrl: extracted.url,
+      },
+    };
+  } catch (error) {
+    console.error("Unable to resolve Forem offer preview for messaging", error);
+    return {
+      type: "text",
+      metadata: {},
+    };
+  }
 }
 
 async function listAccessibleGroupIds(queryable: Queryable, actor: AuthUser) {
@@ -567,15 +631,18 @@ export async function sendTextMessage(
     [conversationId]
   );
   const conversationType = conversationResult.rows[0]?.type ?? "group";
+  const normalizedContent = content.trim();
+  const messagePayload = await resolveSharedJobMetadata(normalizedContent);
 
   const result = await db.query<MessageRow>(
     `INSERT INTO conversation_messages (
        conversation_id,
        author_user_id,
        type,
-       content
+       content,
+       metadata
      )
-     VALUES ($1, $2, 'text', $3)
+     VALUES ($1, $2, $3, $4, $5::jsonb)
      RETURNING id,
                conversation_id,
                type,
@@ -589,7 +656,13 @@ export async function sendTextMessage(
                NULL::text AS author_last_name,
                NULL::text AS author_email,
                NULL::text AS author_role`,
-    [conversationId, actor.id, content.trim()]
+    [
+      conversationId,
+      actor.id,
+      messagePayload.type,
+      normalizedContent,
+      JSON.stringify(messagePayload.metadata),
+    ]
   );
 
   await db.query(

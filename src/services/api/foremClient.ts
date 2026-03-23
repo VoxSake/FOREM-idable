@@ -101,6 +101,19 @@ export async function fetchForemJobs(params: ForemSearchParams): Promise<{ jobs:
     }
 }
 
+export async function fetchForemJobByOfferId(offerId: string): Promise<Job | null> {
+    const normalizedOfferId = offerId.trim();
+    if (!normalizedOfferId) return null;
+
+    const page = await fetchForemPage({
+        where: `numerooffreforem = "${escapeOdsString(normalizedOfferId)}"`,
+        limit: 1,
+        offset: 0,
+    });
+
+    return page?.jobs[0] ?? null;
+}
+
 function clampRequestedLimit(limit?: number): number {
     if (typeof limit !== "number" || limit <= 0) return FOREM_DEFAULT_FETCH_LIMIT;
     return Math.min(limit, FOREM_MAX_FETCH_LIMIT);

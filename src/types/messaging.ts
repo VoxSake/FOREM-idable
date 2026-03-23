@@ -1,4 +1,5 @@
 import { UserRole } from "@/types/auth";
+import { Job } from "@/types/job";
 
 export type ConversationType = "group" | "direct";
 export type ConversationMessageType = "text" | "job_share";
@@ -38,7 +39,11 @@ export interface ConversationMessage {
   conversationId: number;
   type: ConversationMessageType;
   content: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> & {
+    sharedJob?: Job;
+    sharedOfferId?: string;
+    sharedUrl?: string;
+  };
   createdAt: string;
   editedAt: string | null;
   deletedAt: string | null;

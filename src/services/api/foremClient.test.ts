@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchForemJobs } from "@/services/api/foremClient";
+import { fetchForemJobByOfferId, fetchForemJobs } from "@/services/api/foremClient";
 
 describe("foremClient", () => {
   afterEach(() => {
@@ -40,6 +40,37 @@ describe("foremClient", () => {
       id: "1833207",
       title: "IT Support Officer (H/F/X)",
       location: "Wallonie",
+      source: "forem",
+    });
+  });
+
+  it("fetches a single Forem offer by offer id", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        total_count: 1,
+        results: [
+          {
+            numerooffreforem: "1836265",
+            titreoffre: "Développeur full stack",
+            nomemployeur: "Forem Test",
+            lieuxtravaillocalite: ["Namur"],
+            typecontrat: "CDI",
+            datedebutdiffusion: "2026-03-21T10:00:00.000Z",
+            url: "https://www.leforem.be/recherche-offres/offre-detail/1836265",
+            metier: "Développement applicatif",
+          },
+        ],
+      }),
+    } as Response);
+
+    const job = await fetchForemJobByOfferId("1836265");
+
+    expect(job).toMatchObject({
+      id: "1836265",
+      title: "Développeur full stack",
+      company: "Forem Test",
+      location: "Namur",
       source: "forem",
     });
   });

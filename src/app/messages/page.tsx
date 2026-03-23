@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  BriefcaseBusiness,
+  ExternalLink,
+  FileText,
   LoaderCircle,
   MessagesSquare,
   Send,
@@ -32,7 +35,12 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
+import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { cn } from "@/lib/utils";
+import { JobApplication } from "@/types/application";
+import { Job } from "@/types/job";
 import { ConversationDetail, ConversationPreview, DirectMessageTarget } from "@/types/messaging";
 
 function MessagesPageSkeleton() {
@@ -75,6 +83,7 @@ export default function MessagesPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<ConversationDetail | null>(null);
   const [contacts, setContacts] = useState<DirectMessageTarget[]>([]);
+  const [trackedJobIds, setTrackedJobIds] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [contactsError, setContactsError] = useState<string | null>(null);
@@ -108,6 +117,14 @@ export default function MessagesPage() {
       `${contact.firstName} ${contact.lastName} ${contact.email}`.toLowerCase().includes(normalizedQuery)
     );
   }, [contactQuery, contacts]);
+
+  function getSharedJob(message: ConversationDetail["messages"][number]): Job | null {
+    if (message.type !== "job_share" || !message.metadata.sharedJob) {
+      return null;
+    }
+
+    return message.metadata.sharedJob;
+  }
 
   async function loadConversations(
     preferredConversationId?: number | null,
@@ -223,6 +240,23 @@ export default function MessagesPage() {
     }
   }
 
+  async function loadTrackedApplications() {
+    try {
+      const response = await fetch("/api/applications", { cache: "no-store" });
+      const data = (await response.json().catch(() => ({}))) as {
+        applications?: JobApplication[];
+      };
+
+      if (!response.ok || !data.applications) {
+        return;
+      }
+
+      setTrackedJobIds(data.applications.map((application) => application.job.id));
+    } catch {
+      // Best effort only: messaging should still work if applications are unavailable.
+    }
+  }
+
   function syncConversationListPreview(message: {
     conversationId: number;
     createdAt: string;
@@ -302,13 +336,38 @@ export default function MessagesPage() {
     }
   }
 
+  async function addSharedJobToApplications(job: Job) {
+    try {
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || "Impossible d'ajouter la candidature.");
+      }
+
+      setTrackedJobIds((current) => (current.includes(job.id) ? current : [...current, job.id]));
+      toast.success("Offre ajoutée au suivi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible d'ajouter la candidature.");
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
     async function boot() {
       setIsLoading(true);
       try {
-        const nextConversationId = await loadConversations();
+        const [nextConversationId] = await Promise.all([
+          loadConversations(),
+          loadTrackedApplications(),
+        ]);
         if (!cancelled && nextConversationId) {
           await loadConversationDetail(nextConversationId, { markAsRead: true });
         }
@@ -636,34 +695,102 @@ export default function MessagesPage() {
                             </Empty>
                           ) : (
                             <div className="flex flex-col gap-3">
-                              {selectedConversation.messages.map((message) => (
-                                <div
-                                  key={message.id}
-                                  className={cn(
-                                    "max-w-[92%] rounded-2xl border px-4 py-3 lg:max-w-[78%]",
-                                    message.isOwnMessage
-                                      ? "ml-auto border-primary/30 bg-primary/10"
-                                      : "border-border/60 bg-background"
-                                  )}
-                                >
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <p className="text-sm font-medium">
-                                      {message.author
-                                        ? `${message.author.firstName} ${message.author.lastName}`.trim() ||
-                                          message.author.email
-                                        : "Système"}
-                                    </p>
-                                    <span className="text-xs text-muted-foreground">
-                                      {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm", {
-                                        locale: fr,
-                                      })}
-                                    </span>
+                              {selectedConversation.messages.map((message) => {
+                                const sharedJob = getSharedJob(message);
+                                const pdfUrl = sharedJob ? getJobPdfUrl(sharedJob) : null;
+                                const isTracked = sharedJob ? trackedJobIds.includes(sharedJob.id) : false;
+
+                                return (
+                                  <div
+                                    key={message.id}
+                                    className={cn(
+                                      "max-w-[92%] rounded-2xl border px-4 py-3 lg:max-w-[78%]",
+                                      message.isOwnMessage
+                                        ? "ml-auto border-primary/30 bg-primary/10"
+                                        : "border-border/60 bg-background"
+                                    )}
+                                  >
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="text-sm font-medium">
+                                        {message.author
+                                          ? `${message.author.firstName} ${message.author.lastName}`.trim() ||
+                                            message.author.email
+                                          : "Système"}
+                                      </p>
+                                      <span className="text-xs text-muted-foreground">
+                                        {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm", {
+                                          locale: fr,
+                                        })}
+                                      </span>
+                                    </div>
+                                    {message.content ? (
+                                      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+                                        {message.content}
+                                      </p>
+                                    ) : null}
+                                    {sharedJob ? (
+                                      <div className="mt-3 rounded-2xl border border-border/70 bg-background/90 p-4 shadow-sm">
+                                        <div className="flex flex-col gap-3">
+                                          <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                                <BriefcaseBusiness className="h-3.5 w-3.5" />
+                                                Offre Forem
+                                              </div>
+                                              <p className="mt-2 text-base font-semibold leading-snug">
+                                                {sharedJob.title}
+                                              </p>
+                                              <p className="mt-1 text-sm text-muted-foreground">
+                                                {sharedJob.company || "Entreprise non précisée"} •{" "}
+                                                {sharedJob.location}
+                                              </p>
+                                            </div>
+                                            <ContractTypeBadge contractType={sharedJob.contractType} />
+                                          </div>
+
+                                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                            <Badge variant="outline">FOREM</Badge>
+                                            <span>
+                                              Publiée le{" "}
+                                              {format(new Date(sharedJob.publicationDate), "dd/MM/yyyy", {
+                                                locale: fr,
+                                              })}
+                                            </span>
+                                          </div>
+
+                                          <div className="flex flex-wrap gap-2">
+                                            <Button size="sm" asChild>
+                                              <a href={sharedJob.url} target="_blank" rel="noopener noreferrer">
+                                                <ExternalLink data-icon="inline-start" />
+                                                Ouvrir l&apos;offre
+                                              </a>
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant={isTracked ? "secondary" : "outline"}
+                                              disabled={isTracked}
+                                              onClick={() => {
+                                                void addSharedJobToApplications(sharedJob);
+                                              }}
+                                            >
+                                              <Send data-icon="inline-start" />
+                                              {isTracked ? "Déjà dans le suivi" : "Ajouter au suivi"}
+                                            </Button>
+                                            {pdfUrl ? (
+                                              <Button size="sm" variant="outline" asChild>
+                                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                                                  <FileText data-icon="inline-start" />
+                                                  PDF
+                                                </a>
+                                              </Button>
+                                            ) : null}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : null}
                                   </div>
-                                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
-                                    {message.content || ""}
-                                  </p>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>
