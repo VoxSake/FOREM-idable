@@ -15,6 +15,7 @@ type Job = {
 
 type Application = {
   job: Job;
+  sourceType?: "manual" | "tracked";
   appliedAt: string;
   followUpDueAt: string;
   followUpEnabled: boolean;
@@ -519,4 +520,56 @@ test("coach can edit a tracked application from the user sheet", async ({ page }
   await expect(page.getByText("Candidature mise à jour.")).toBeVisible();
   await expect(page.getByText("Notes bénéficiaire")).toBeVisible();
   await expect(page.getByText("Relance prévue lundi")).toBeVisible();
+});
+
+test("coach can edit a manual application from the user sheet", async ({ page }) => {
+  const manualApplication: Application = {
+    ...createApplication({
+      id: "manual-1",
+      title: "Candidature spontanée",
+      company: "ACME",
+      location: "Namur",
+      contractType: "CDD",
+      publicationDate: "2026-03-20T09:00:00.000Z",
+      url: "#",
+      source: "forem",
+    }),
+    sourceType: "manual" as const,
+    notes: "Premier contact établi",
+  };
+
+  const applications: Application[] = [manualApplication];
+
+  await mockCoachSession(page, {
+    applications,
+    onApplicationPatch: ({ jobId, patch }) => {
+      const application = applications.find((entry) => entry.job.id === jobId);
+      if (!application) {
+        throw new Error(`Application ${jobId} not found`);
+      }
+
+      Object.assign(application, patch, {
+        job: patch.job ? { ...application.job, ...patch.job } : application.job,
+        updatedAt: "2026-03-23T16:20:00.000Z",
+      });
+
+      return structuredClone(application);
+    },
+  });
+
+  await page.goto("/coach");
+  await page.getByText("Jordi User").first().click();
+
+  await page.getByRole("button", { name: "Actions candidature" }).click();
+  await page.getByRole("menuitem", { name: "Éditer la candidature" }).click();
+  await page.getByLabel("Intitulé").fill("Candidature spontanée senior");
+  await page.getByLabel("Lien de l'offre").fill("https://example.test/manual-1");
+  await page.getByRole("button", { name: "Enregistrer les changements" }).click();
+
+  await expect(page.getByText("Candidature mise à jour.")).toBeVisible();
+  await expect(page.getByText("Candidature spontanée senior")).toBeVisible();
+  await expect(page.getByRole("link", { name: "WEB" })).toHaveAttribute(
+    "href",
+    "https://example.test/manual-1"
+  );
 });
