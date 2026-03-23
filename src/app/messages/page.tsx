@@ -35,8 +35,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ConversationDetail, ConversationPreview, DirectMessageTarget } from "@/types/messaging";
 
-const THREAD_VIEWPORT_HEIGHT = "h-[min(56vh,560px)]";
-
 function MessagesPageSkeleton() {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 lg:px-6">
@@ -403,7 +401,7 @@ export default function MessagesPage() {
             <CardHeader className="border-b border-border/60 px-4 py-4">
               <CardTitle className="text-lg">Conversations</CardTitle>
             </CardHeader>
-            <CardContent className="px-3 py-3">
+            <CardContent className="max-h-[calc(100dvh-19rem)] overflow-y-auto px-3 py-3 xl:max-h-[calc(100dvh-15rem)]">
               {conversations.length === 0 ? (
                 <Empty className="min-h-64 rounded-xl border border-dashed border-border/60">
                   <EmptyHeader>
@@ -523,7 +521,7 @@ export default function MessagesPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 py-0">
+          <Card className="border-border/60 py-0 lg:flex lg:h-[calc(100dvh-15rem)] lg:max-h-[calc(100dvh-15rem)] lg:flex-col lg:overflow-hidden">
             {selectedPreview ? (
               <>
                 <CardHeader className="border-b border-border/60 px-6 py-5">
@@ -603,7 +601,7 @@ export default function MessagesPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex min-h-0 flex-col gap-4 px-6 py-5">
+                <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-6 py-5">
                   {error ? (
                     <Empty className="min-h-72 rounded-xl border border-dashed border-border/60">
                       <EmptyHeader>
@@ -622,16 +620,13 @@ export default function MessagesPage() {
                     </div>
                   ) : selectedConversation ? (
                     <>
-                      <div className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-muted/10">
+                      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border/60 bg-muted/10">
                         <div
                           ref={threadViewportRef}
-                          className={cn(
-                            THREAD_VIEWPORT_HEIGHT,
-                            "min-h-[360px] overflow-y-auto px-4 py-4 lg:min-h-[420px]"
-                          )}
+                          className="min-h-[220px] flex-1 overflow-y-auto px-4 py-4"
                         >
                           {selectedConversation.messages.length === 0 ? (
-                            <Empty className="min-h-[300px] rounded-xl border border-dashed border-border/60 bg-background/70">
+                            <Empty className="min-h-[220px] rounded-xl border border-dashed border-border/60 bg-background/70">
                               <EmptyHeader>
                                 <EmptyTitle>Aucun message pour l&apos;instant.</EmptyTitle>
                                 <EmptyDescription>
