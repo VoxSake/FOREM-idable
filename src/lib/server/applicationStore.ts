@@ -209,52 +209,57 @@ function buildApplicationAggregate(input: {
   };
 }
 
-async function loadApplicationsByClause(
+const applicationSelect = `SELECT applications.id,
+        applications.user_id,
+        applications.job_id,
+        applications.position,
+        applications.status,
+        applications.applied_at,
+        applications.follow_up_due_at,
+        applications.follow_up_enabled,
+        applications.last_follow_up_at,
+        applications.interview_at,
+        applications.interview_details,
+        applications.beneficiary_notes,
+        applications.proofs,
+        applications.source_type,
+        applications.updated_at,
+        application_jobs.title,
+        application_jobs.company,
+        application_jobs.location,
+        application_jobs.contract_type,
+        application_jobs.url,
+        application_jobs.publication_date,
+        application_jobs.provider,
+        application_jobs.external_job_id,
+        application_jobs.pdf_url,
+        application_jobs.description,
+        application_jobs.raw_payload
+ FROM applications
+ LEFT JOIN application_jobs ON application_jobs.application_id = applications.id`;
+
+type ApplicationNotesAggregate = {
+  privateNotesByApplication: Map<number, CoachPrivateNote>;
+  sharedNotesByApplication: Map<number, CoachSharedNote[]>;
+};
+
+async function loadApplicationRowsByClause(
   queryable: Queryable,
   clause: string,
   params: unknown[]
 ) {
-  const applicationsResult = await queryable.query<ApplicationRow>(
-    `SELECT applications.id,
-            applications.user_id,
-            applications.job_id,
-            applications.position,
-            applications.status,
-            applications.applied_at,
-            applications.follow_up_due_at,
-            applications.follow_up_enabled,
-            applications.last_follow_up_at,
-            applications.interview_at,
-            applications.interview_details,
-            applications.beneficiary_notes,
-            applications.proofs,
-            applications.source_type,
-            applications.updated_at,
-            application_jobs.title,
-            application_jobs.company,
-            application_jobs.location,
-            application_jobs.contract_type,
-            application_jobs.url,
-            application_jobs.publication_date,
-            application_jobs.provider,
-            application_jobs.external_job_id,
-            application_jobs.pdf_url,
-            application_jobs.description,
-            application_jobs.raw_payload
-     FROM applications
-     LEFT JOIN application_jobs ON application_jobs.application_id = applications.id
+  return queryable.query<ApplicationRow>(
+    `${applicationSelect}
      ${clause}
-     ORDER BY applications.user_id ASC, applications.position ASC, applications.created_at ASC`
-    ,
+     ORDER BY applications.user_id ASC, applications.position ASC, applications.created_at ASC`,
     params
   );
+}
 
-  if (applicationsResult.rows.length === 0) {
-    return new Map<number, JobApplication[]>();
-  }
-
-  const applicationIds = applicationsResult.rows.map((row) => row.id);
-
+async function loadApplicationNotesAggregate(
+  queryable: Queryable,
+  applicationIds: number[]
+): Promise<ApplicationNotesAggregate> {
   const [privateNotesResult, privateContributorsResult, sharedNotesResult, sharedContributorsResult] =
     await Promise.all([
       queryable.query<PrivateNoteRow>(
@@ -364,17 +369,52 @@ async function loadApplicationsByClause(
     ]);
   }
 
+  return {
+    privateNotesByApplication,
+    sharedNotesByApplication,
+  };
+}
+
+function buildRelationalApplicationRecord(
+  row: ApplicationRow,
+  notesAggregate: ApplicationNotesAggregate
+): RelationalApplicationRecord {
+  return {
+    applicationId: toNumericId(row.id) ?? 0,
+    userId: toNumericId(row.user_id) ?? 0,
+    jobId: row.job_id,
+    position: row.position,
+    application: buildApplicationAggregate({
+      row,
+      privateNote: notesAggregate.privateNotesByApplication.get(row.id),
+      sharedNotes: notesAggregate.sharedNotesByApplication.get(row.id) ?? [],
+    }),
+  };
+}
+
+async function loadApplicationsByClause(
+  queryable: Queryable,
+  clause: string,
+  params: unknown[]
+) {
+  const applicationsResult = await loadApplicationRowsByClause(queryable, clause, params);
+
+  if (applicationsResult.rows.length === 0) {
+    return new Map<number, JobApplication[]>();
+  }
+
+  const notesAggregate = await loadApplicationNotesAggregate(
+    queryable,
+    applicationsResult.rows.map((row) => row.id)
+  );
+
   const applicationsByUser = new Map<number, JobApplication[]>();
   for (const row of applicationsResult.rows) {
-    const userId = toNumericId(row.user_id);
-    if (userId === null) continue;
+    const record = buildRelationalApplicationRecord(row, notesAggregate);
+    const userId = record.userId;
     applicationsByUser.set(userId, [
       ...(applicationsByUser.get(userId) ?? []),
-      buildApplicationAggregate({
-        row,
-        privateNote: privateNotesByApplication.get(row.id),
-        sharedNotes: sharedNotesByApplication.get(row.id) ?? [],
-      }),
+      record.application,
     ]);
   }
 
@@ -386,165 +426,20 @@ async function loadApplicationRecordsByClause(
   clause: string,
   params: unknown[]
 ): Promise<RelationalApplicationRecord[]> {
-  const applicationsResult = await queryable.query<ApplicationRow>(
-    `SELECT applications.id,
-            applications.user_id,
-            applications.job_id,
-            applications.position,
-            applications.status,
-            applications.applied_at,
-            applications.follow_up_due_at,
-            applications.follow_up_enabled,
-            applications.last_follow_up_at,
-            applications.interview_at,
-            applications.interview_details,
-            applications.beneficiary_notes,
-            applications.proofs,
-            applications.source_type,
-            applications.updated_at,
-            application_jobs.title,
-            application_jobs.company,
-            application_jobs.location,
-            application_jobs.contract_type,
-            application_jobs.url,
-            application_jobs.publication_date,
-            application_jobs.provider,
-            application_jobs.external_job_id,
-            application_jobs.pdf_url,
-            application_jobs.description,
-            application_jobs.raw_payload
-     FROM applications
-     LEFT JOIN application_jobs ON application_jobs.application_id = applications.id
-     ${clause}
-     ORDER BY applications.user_id ASC, applications.position ASC, applications.created_at ASC`,
-    params
-  );
+  const applicationsResult = await loadApplicationRowsByClause(queryable, clause, params);
 
   if (applicationsResult.rows.length === 0) {
     return [];
   }
 
-  const applicationIds = applicationsResult.rows.map((row) => row.id);
-  const [privateNotesResult, privateContributorsResult, sharedNotesResult, sharedContributorsResult] =
-    await Promise.all([
-      queryable.query<PrivateNoteRow>(
-        `SELECT id,
-                application_id,
-                content,
-                created_by_user_id,
-                created_by_first_name,
-                created_by_last_name,
-                created_by_email,
-                created_by_role,
-                created_at,
-                updated_at
-         FROM application_private_notes
-         WHERE application_id = ANY($1::bigint[])`,
-        [applicationIds]
-      ),
-      queryable.query<ContributorRow & { private_note_id: number }>(
-        `SELECT private_note_id,
-                user_id,
-                first_name,
-                last_name,
-                display_name,
-                email,
-                role
-         FROM application_private_note_contributors
-         WHERE private_note_id IN (
-           SELECT id
-           FROM application_private_notes
-           WHERE application_id = ANY($1::bigint[])
-         )`,
-        [applicationIds]
-      ),
-      queryable.query<SharedNoteRow>(
-        `SELECT id,
-                application_id,
-                content,
-                created_by_user_id,
-                created_by_first_name,
-                created_by_last_name,
-                created_by_email,
-                created_by_role,
-                created_at,
-                updated_at
-         FROM application_shared_notes
-         WHERE application_id = ANY($1::bigint[])
-         ORDER BY created_at ASC, id ASC`,
-        [applicationIds]
-      ),
-      queryable.query<ContributorRow & { shared_note_id: string }>(
-        `SELECT shared_note_id,
-                user_id,
-                first_name,
-                last_name,
-                display_name,
-                email,
-                role
-         FROM application_shared_note_contributors
-         WHERE shared_note_id IN (
-           SELECT id
-           FROM application_shared_notes
-           WHERE application_id = ANY($1::bigint[])
-         )`,
-        [applicationIds]
-      ),
-    ]);
+  const notesAggregate = await loadApplicationNotesAggregate(
+    queryable,
+    applicationsResult.rows.map((row) => row.id)
+  );
 
-  const privateContributorsByNote = new Map<number, CoachNoteAuthor[]>();
-  for (const row of privateContributorsResult.rows) {
-    privateContributorsByNote.set(row.private_note_id, [
-      ...(privateContributorsByNote.get(row.private_note_id) ?? []),
-      toContributorAuthor(row),
-    ]);
-  }
-
-  const privateNotesByApplication = new Map<number, CoachPrivateNote>();
-  for (const row of privateNotesResult.rows) {
-    privateNotesByApplication.set(row.application_id, {
-      content: row.content,
-      createdAt: toIsoOrNow(row.created_at),
-      updatedAt: toIsoOrNow(row.updated_at),
-      createdBy: buildAuthorFromNoteRow(row),
-      contributors: privateContributorsByNote.get(row.id) ?? [buildAuthorFromNoteRow(row)],
-    });
-  }
-
-  const sharedContributorsByNote = new Map<string, CoachNoteAuthor[]>();
-  for (const row of sharedContributorsResult.rows) {
-    sharedContributorsByNote.set(row.shared_note_id, [
-      ...(sharedContributorsByNote.get(row.shared_note_id) ?? []),
-      toContributorAuthor(row),
-    ]);
-  }
-
-  const sharedNotesByApplication = new Map<number, CoachSharedNote[]>();
-  for (const row of sharedNotesResult.rows) {
-    sharedNotesByApplication.set(row.application_id, [
-      ...(sharedNotesByApplication.get(row.application_id) ?? []),
-      {
-        id: row.id,
-        content: row.content,
-        createdAt: toIsoOrNow(row.created_at),
-        updatedAt: toIsoOrNow(row.updated_at),
-        createdBy: buildAuthorFromNoteRow(row),
-        contributors: sharedContributorsByNote.get(row.id) ?? [buildAuthorFromNoteRow(row)],
-      },
-    ]);
-  }
-
-  return applicationsResult.rows.map((row) => ({
-    applicationId: toNumericId(row.id) ?? 0,
-    userId: toNumericId(row.user_id) ?? 0,
-    jobId: row.job_id,
-    position: row.position,
-    application: buildApplicationAggregate({
-      row,
-      privateNote: privateNotesByApplication.get(row.id),
-      sharedNotes: sharedNotesByApplication.get(row.id) ?? [],
-    }),
-  }));
+  return applicationsResult.rows.map((row) =>
+    buildRelationalApplicationRecord(row, notesAggregate)
+  );
 }
 
 export async function listApplicationsFromRelationalStore(userId: number) {
