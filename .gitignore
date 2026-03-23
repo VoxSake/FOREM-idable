@@ -16,6 +16,7 @@ out/
 build/
 dist/
 coverage/
+test-results/
 
 # caches
 .turbo/
