@@ -558,8 +558,13 @@ export default function MessagesPage() {
     }
 
     const intervalId = window.setInterval(() => {
-      void loadConversations(selectedConversationId, { silent: true });
-      void loadConversationDetail(selectedConversationId, { silent: true });
+      void (async () => {
+        await loadConversationDetail(selectedConversationId, {
+          markAsRead: true,
+          silent: true,
+        });
+        await loadConversations(selectedConversationId, { silent: true });
+      })();
     }, 5000);
 
     return () => {
