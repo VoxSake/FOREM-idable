@@ -256,14 +256,17 @@ export default function MessagesPage() {
     }
   }
 
-  async function loadContacts(options?: { silent?: boolean }) {
+  async function loadContacts(options?: { silent?: boolean; signal?: AbortSignal }) {
     setIsContactsLoading(true);
     if (!options?.silent) {
       setContactsError(null);
     }
 
     try {
-      const response = await fetch("/api/messages/contacts", { cache: "no-store" });
+      const response = await fetch("/api/messages/contacts", {
+        cache: "no-store",
+        signal: options?.signal,
+      });
       const data = (await response.json().catch(() => ({}))) as {
         error?: string;
         contacts?: DirectMessageTarget[];
@@ -275,6 +278,10 @@ export default function MessagesPage() {
 
       setContacts(data.contacts);
     } catch (contactsLoadError) {
+      if (contactsLoadError instanceof Error && contactsLoadError.name === "AbortError") {
+        return;
+      }
+
       if (!options?.silent) {
         setContactsError(
           contactsLoadError instanceof Error
@@ -543,9 +550,15 @@ export default function MessagesPage() {
       return;
     }
 
+    const controller = new AbortController();
+
     setContactsError(null);
     setContactQuery("");
-    void loadContacts({ silent: false });
+    void loadContacts({ silent: false, signal: controller.signal });
+
+    return () => {
+      controller.abort();
+    };
   }, [isDirectDialogOpen]);
 
   useEffect(() => {
@@ -1570,6 +1583,7 @@ export default function MessagesPage() {
                       className="flex flex-col gap-3 rounded-xl border border-border/60 px-4 py-3 text-left transition-colors hover:border-primary/20 hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                       onClick={async () => {
                         setContactsError(null);
+                        setIsDirectDialogOpen(false);
 
                         try {
                           const response = await fetch("/api/messages/conversations/direct", {
@@ -1591,6 +1605,7 @@ export default function MessagesPage() {
                           setSelectedConversationId(data.conversation.id);
                           await loadConversations(data.conversation.id, { silent: true });
                         } catch (directError) {
+                          setIsDirectDialogOpen(true);
                           setContactsError(
                             directError instanceof Error
                               ? directError.message
