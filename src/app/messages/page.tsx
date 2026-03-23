@@ -330,6 +330,19 @@ export default function MessagesPage() {
   async function sendCurrentMessage() {
     if (!selectedConversation || !draft.trim()) return;
 
+    const normalizedDraft = draft.trim();
+    if (normalizedDraft === "/clean") {
+      if (selectedConversation.type !== "group") {
+        toast.error("`/clean` est réservé aux conversations de groupe.");
+        return;
+      }
+
+      if (!selectedConversation.canModerateMessages) {
+        toast.error("Tu n'as pas les droits pour nettoyer cette conversation.");
+        return;
+      }
+    }
+
     setIsSending(true);
     setError(null);
 
@@ -337,7 +350,7 @@ export default function MessagesPage() {
       const response = await fetch(`/api/messages/conversations/${selectedConversation.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: draft }),
+        body: JSON.stringify({ content: normalizedDraft }),
       });
       const data = (await response.json().catch(() => ({}))) as {
         command?: "clean";
@@ -393,7 +406,12 @@ export default function MessagesPage() {
       });
       scrollThreadToBottom();
     } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : "Envoi du message impossible.");
+      const message = sendError instanceof Error ? sendError.message : "Envoi du message impossible.";
+      if (normalizedDraft === "/clean") {
+        toast.error(message);
+      } else {
+        setError(message);
+      }
     } finally {
       setIsSending(false);
     }
