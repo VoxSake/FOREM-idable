@@ -3,6 +3,10 @@ import {
   parseStoredJobApplication,
   safeParseStoredJobApplication,
 } from "@/lib/server/applicationSchemas";
+import {
+  listApplicationsFromRelationalStore,
+  replaceApplicationsInRelationalStore,
+} from "@/lib/server/applicationStore";
 import { db, ensureDatabase } from "@/lib/server/db";
 import {
   normalizeApplicationCoachNotes,
@@ -131,30 +135,39 @@ async function persistNormalizedState(userId: number, values: Record<string, str
   const theme = values[STORAGE_KEYS.theme] ?? null;
   const analyticsConsent = values[STORAGE_KEYS.analyticsConsent] ?? null;
   const locationsCache = safeJsonParse<unknown>(values[STORAGE_KEYS.locationsCache], null);
-  const existingApplicationsResult = await db.query<{ application: JobApplication }>(
-    `SELECT application
-     FROM user_applications
-     WHERE user_id = $1`,
-    [userId]
-  );
+  const existingRelationalApplications = await listApplicationsFromRelationalStore(userId);
+  const existingApplicationsResult =
+    existingRelationalApplications.length > 0
+      ? null
+      : await db.query<{ application: JobApplication }>(
+          `SELECT application
+           FROM user_applications
+           WHERE user_id = $1`,
+          [userId]
+        );
   const applications = mergeApplicationsWithServerFields({
     incoming: incomingApplications,
-    existing: existingApplicationsResult.rows
-      .map((row, index) =>
-        safeParseStoredJobApplication(row.application, `user-state:${userId}:existing:${index}`)
-      )
-      .filter((entry): entry is JobApplication => Boolean(entry)),
+    existing:
+      existingRelationalApplications.length > 0
+        ? existingRelationalApplications
+        : (existingApplicationsResult?.rows ?? [])
+            .map((row, index) =>
+              safeParseStoredJobApplication(row.application, `user-state:${userId}:existing:${index}`)
+            )
+            .filter((entry): entry is JobApplication => Boolean(entry)),
   });
 
-  await db.query("BEGIN");
+  const client = await db.connect();
 
   try {
-    await db.query("DELETE FROM user_favorites WHERE user_id = $1", [userId]);
-    await db.query("DELETE FROM user_applications WHERE user_id = $1", [userId]);
-    await db.query("DELETE FROM user_search_history WHERE user_id = $1", [userId]);
+    await client.query("BEGIN");
+    await client.query("DELETE FROM user_favorites WHERE user_id = $1", [userId]);
+    await client.query("DELETE FROM user_applications WHERE user_id = $1", [userId]);
+    await client.query("DELETE FROM user_search_history WHERE user_id = $1", [userId]);
+    await replaceApplicationsInRelationalStore(client, userId, applications);
 
     for (const [position, job] of favorites.entries()) {
-      await db.query(
+      await client.query(
         `INSERT INTO user_favorites (user_id, job_id, position, job)
          VALUES ($1, $2, $3, $4::jsonb)`,
         [userId, job.id, position, JSON.stringify(job)]
@@ -163,7 +176,7 @@ async function persistNormalizedState(userId: number, values: Record<string, str
 
     for (const [position, application] of applications.entries()) {
       parseStoredJobApplication(application, `user-state:${userId}:write:${position}`);
-      await db.query(
+      await client.query(
         `INSERT INTO user_applications (user_id, job_id, position, application)
          VALUES ($1, $2, $3, $4::jsonb)`,
         [userId, application.job.id, position, JSON.stringify(application)]
@@ -171,14 +184,14 @@ async function persistNormalizedState(userId: number, values: Record<string, str
     }
 
     for (const [position, entry] of searchHistory.entries()) {
-      await db.query(
+      await client.query(
         `INSERT INTO user_search_history (user_id, entry_id, position, entry)
          VALUES ($1, $2, $3, $4::jsonb)`,
         [userId, entry.id, position, JSON.stringify(entry)]
       );
     }
 
-    await db.query(
+    await client.query(
       `INSERT INTO user_settings (user_id, settings, theme, analytics_consent, locations_cache, updated_at)
        VALUES ($1, $2::jsonb, $3, $4, $5::jsonb, NOW())
        ON CONFLICT (user_id)
@@ -191,7 +204,7 @@ async function persistNormalizedState(userId: number, values: Record<string, str
       [userId, JSON.stringify(settings), theme, analyticsConsent, JSON.stringify(locationsCache)]
     );
 
-    await db.query(
+    await client.query(
       `INSERT INTO user_state (user_id, payload, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (user_id)
@@ -199,10 +212,12 @@ async function persistNormalizedState(userId: number, values: Record<string, str
       [userId, JSON.stringify(values)]
     );
 
-    await db.query("COMMIT");
+    await client.query("COMMIT");
   } catch (error) {
-    await db.query("ROLLBACK");
+    await client.query("ROLLBACK");
     throw error;
+  } finally {
+    client.release();
   }
 }
 

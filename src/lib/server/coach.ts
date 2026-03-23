@@ -4,6 +4,11 @@ import {
   safeParseStoredJobApplication,
 } from "@/lib/server/applicationSchemas";
 import {
+  listApplicationsFromRelationalStoreByUsers,
+  loadApplicationFromRelationalStore,
+  saveApplicationToRelationalStore,
+} from "@/lib/server/applicationStore";
+import {
   normalizeApplicationCoachNotes,
   toCoachNoteAuthor,
 } from "@/lib/coachNotes";
@@ -404,33 +409,37 @@ export async function getCoachDashboard(
   const scopedUserIds = scopedUserRows
     .map((row) => toNumericId(row.id))
     .filter((userId): userId is number => userId !== null);
-  const applicationsByUser = new Map<number, JobApplication[]>();
+  const applicationsByUser = await listApplicationsFromRelationalStoreByUsers(scopedUserIds);
 
   if (scopedUserIds.length > 0) {
-    const applicationsResult = await db.query<{
-      user_id: number;
-      application: JobApplication;
-    }>(
-      `SELECT user_id, application
-       FROM user_applications
-       WHERE user_id = ANY($1::bigint[])
-       ORDER BY user_id ASC, position ASC`,
-      [scopedUserIds]
-    );
+    const missingUserIds = scopedUserIds.filter((userId) => !applicationsByUser.has(userId));
 
-    for (const row of applicationsResult.rows) {
-      const userId = toNumericId(row.user_id);
-      if (userId === null) continue;
-      const application = safeParseStoredJobApplication(
-        row.application,
-        `coach-dashboard:${userId}`
+    if (missingUserIds.length > 0) {
+      const applicationsResult = await db.query<{
+        user_id: number;
+        application: JobApplication;
+      }>(
+        `SELECT user_id, application
+         FROM user_applications
+         WHERE user_id = ANY($1::bigint[])
+         ORDER BY user_id ASC, position ASC`,
+        [missingUserIds]
       );
-      if (!application) continue;
 
-      applicationsByUser.set(userId, [
-        ...(applicationsByUser.get(userId) ?? []),
-        normalizeApplicationCoachNotes(application),
-      ]);
+      for (const row of applicationsResult.rows) {
+        const userId = toNumericId(row.user_id);
+        if (userId === null) continue;
+        const application = safeParseStoredJobApplication(
+          row.application,
+          `coach-dashboard:${userId}`
+        );
+        if (!application) continue;
+
+        applicationsByUser.set(userId, [
+          ...(applicationsByUser.get(userId) ?? []),
+          normalizeApplicationCoachNotes(application),
+        ]);
+      }
     }
   }
 
@@ -803,21 +812,24 @@ export async function updateCoachApplicationNotes(input: {
   if (!db) throw new Error("Database unavailable");
   await assertCanAccessCoachUser(input.actor, input.userId);
   const actor = toCoachNoteAuthor(input.actor);
-
-  const existingResult = await db.query<{ application: JobApplication }>(
-    `SELECT application
-     FROM user_applications
-     WHERE user_id = $1 AND job_id = $2
-     LIMIT 1`,
-    [input.userId, input.jobId]
-  );
-
-  const existing = existingResult.rows[0]?.application
-    ? parseStoredJobApplication(
-        existingResult.rows[0].application,
-        `coach-update:${input.userId}:${input.jobId}`
-      )
-    : null;
+  const relational = await loadApplicationFromRelationalStore(input.userId, input.jobId);
+  const existingResult = relational
+    ? null
+    : await db.query<{ application: JobApplication; position: number }>(
+        `SELECT application, position
+         FROM user_applications
+         WHERE user_id = $1 AND job_id = $2
+         LIMIT 1`,
+        [input.userId, input.jobId]
+      );
+  const existing = relational
+    ? relational
+    : existingResult?.rows[0]?.application
+      ? parseStoredJobApplication(
+          existingResult.rows[0].application,
+          `coach-update:${input.userId}:${input.jobId}`
+        )
+      : null;
   if (!existing) {
     throw new Error("Application not found");
   }
@@ -888,13 +900,43 @@ export async function updateCoachApplicationNotes(input: {
       (note) => note.id !== input.sharedNoteId
     );
   }
-
-  await db.query(
-    `UPDATE user_applications
-     SET application = $3::jsonb
-     WHERE user_id = $1 AND job_id = $2`,
-    [input.userId, input.jobId, JSON.stringify(nextApplication)]
+  const positionResult = await db.query<{ position: number }>(
+    `SELECT position
+     FROM applications
+     WHERE user_id = $1 AND job_id = $2
+     LIMIT 1`,
+    [input.userId, input.jobId]
   );
+  const position = positionResult.rows[0]?.position ?? existingResult?.rows[0]?.position ?? 0;
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+    await saveApplicationToRelationalStore(client, {
+      userId: input.userId,
+      position,
+      application: nextApplication,
+      sourceType:
+        nextApplication.job.url === "#" || nextApplication.job.id.startsWith("manual-")
+          ? "manual"
+          : "tracked",
+    });
+    await client.query(
+      `INSERT INTO user_applications (user_id, job_id, position, application)
+       VALUES ($1, $2, $3, $4::jsonb)
+       ON CONFLICT (user_id, job_id)
+       DO UPDATE SET
+         position = EXCLUDED.position,
+         application = EXCLUDED.application`,
+      [input.userId, input.jobId, position, JSON.stringify(nextApplication)]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 
   await markCoachAction(input.actor.id);
 

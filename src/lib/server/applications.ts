@@ -5,6 +5,12 @@ import {
 } from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
 import {
+  deleteApplicationFromRelationalStore,
+  listApplicationsFromRelationalStore,
+  loadApplicationFromRelationalStore,
+  saveApplicationToRelationalStore,
+} from "@/lib/server/applicationStore";
+import {
   preserveApplicationCoachFields,
   sanitizeApplicationForBeneficiary,
 } from "@/lib/coachNotes";
@@ -73,6 +79,11 @@ function buildApplication(job: Job): JobApplication {
 async function getStoredApplication(userId: number, jobId: string) {
   if (!db) throw new Error("Database unavailable");
 
+  const relational = await loadApplicationFromRelationalStore(userId, jobId);
+  if (relational) {
+    return relational;
+  }
+
   const result = await db.query<{ application: JobApplication }>(
     `SELECT application
      FROM user_applications
@@ -90,17 +101,80 @@ async function getNextPosition(userId: number) {
 
   const result = await db.query<{ next_position: number }>(
     `SELECT COALESCE(MAX(position), -1) + 1 AS next_position
+     FROM applications
+     WHERE user_id = $1`,
+    [userId]
+  );
+
+  if (typeof result.rows[0]?.next_position === "number") {
+    return result.rows[0].next_position;
+  }
+
+  const legacyResult = await db.query<{ next_position: number }>(
+    `SELECT COALESCE(MAX(position), -1) + 1 AS next_position
      FROM user_applications
      WHERE user_id = $1`,
     [userId]
   );
 
-  return result.rows[0]?.next_position ?? 0;
+  return legacyResult.rows[0]?.next_position ?? 0;
+}
+
+async function upsertLegacyApplication(
+  client: { query: typeof db.query },
+  input: {
+    userId: number;
+    position: number;
+    application: JobApplication;
+  }
+) {
+  await client.query(
+    `INSERT INTO user_applications (user_id, job_id, position, application)
+     VALUES ($1, $2, $3, $4::jsonb)
+     ON CONFLICT (user_id, job_id)
+     DO UPDATE SET
+       position = EXCLUDED.position,
+       application = EXCLUDED.application`,
+    [input.userId, input.application.job.id, input.position, JSON.stringify(input.application)]
+  );
+}
+
+async function getApplicationPosition(userId: number, jobId: string) {
+  if (!db) throw new Error("Database unavailable");
+
+  const result = await db.query<{ position: number }>(
+    `SELECT position
+     FROM applications
+     WHERE user_id = $1 AND job_id = $2
+     LIMIT 1`,
+    [userId, jobId]
+  );
+
+  if (typeof result.rows[0]?.position === "number") {
+    return result.rows[0].position;
+  }
+
+  const legacyResult = await db.query<{ position: number }>(
+    `SELECT position
+     FROM user_applications
+     WHERE user_id = $1 AND job_id = $2
+     LIMIT 1`,
+    [userId, jobId]
+  );
+
+  return legacyResult.rows[0]?.position ?? null;
 }
 
 export async function listApplicationsForUser(userId: number) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+
+  const relationalApplications = await listApplicationsFromRelationalStore(userId);
+  if (relationalApplications.length > 0) {
+    return sortApplicationsByAppliedAt(
+      relationalApplications.map((application) => sanitizeApplicationForBeneficiary(application))
+    );
+  }
 
   const result = await db.query<{ application: JobApplication }>(
     `SELECT application
@@ -166,21 +240,30 @@ export async function createTrackedApplicationForUser(input: {
 
   const next = preserveApplicationCoachFields(existing, nextBase);
   parseStoredJobApplication(next, `write:user:${input.userId}:job:${input.job.id}`);
+  const position = existing
+    ? ((await getApplicationPosition(input.userId, input.job.id)) ?? 0)
+    : await getNextPosition(input.userId);
+  const client = await db.connect();
 
-  if (existing) {
-    await db.query(
-      `UPDATE user_applications
-       SET application = $3::jsonb
-       WHERE user_id = $1 AND job_id = $2`,
-      [input.userId, input.job.id, JSON.stringify(next)]
-    );
-  } else {
-    const position = await getNextPosition(input.userId);
-    await db.query(
-      `INSERT INTO user_applications (user_id, job_id, position, application)
-       VALUES ($1, $2, $3, $4::jsonb)`,
-      [input.userId, input.job.id, position, JSON.stringify(next)]
-    );
+  try {
+    await client.query("BEGIN");
+    await saveApplicationToRelationalStore(client, {
+      userId: input.userId,
+      position,
+      application: next,
+      sourceType: isManualJob(next.job) ? "manual" : "tracked",
+    });
+    await upsertLegacyApplication(client, {
+      userId: input.userId,
+      position,
+      application: next,
+    });
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 
   return sanitizeApplicationForBeneficiary(next);
@@ -253,13 +336,30 @@ export async function updateApplicationForUser(input: {
     updatedAt: new Date().toISOString(),
   });
   parseStoredJobApplication(next, `write:user:${input.userId}:job:${input.jobId}`);
+  const position = (await getApplicationPosition(input.userId, input.jobId)) ?? 0;
 
-  await db.query(
-    `UPDATE user_applications
-     SET application = $3::jsonb
-     WHERE user_id = $1 AND job_id = $2`,
-    [input.userId, input.jobId, JSON.stringify(next)]
-  );
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+    await saveApplicationToRelationalStore(client, {
+      userId: input.userId,
+      position,
+      application: next,
+      sourceType: isManualJob(next.job) ? "manual" : "tracked",
+    });
+    await upsertLegacyApplication(client, {
+      userId: input.userId,
+      position,
+      application: next,
+    });
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 
   return sanitizeApplicationForBeneficiary(next);
 }
@@ -267,10 +367,21 @@ export async function updateApplicationForUser(input: {
 export async function deleteApplicationForUser(userId: number, jobId: string) {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
+  const client = await db.connect();
 
-  await db.query(
-    `DELETE FROM user_applications
-     WHERE user_id = $1 AND job_id = $2`,
-    [userId, jobId]
-  );
+  try {
+    await client.query("BEGIN");
+    await deleteApplicationFromRelationalStore(client, userId, jobId);
+    await client.query(
+      `DELETE FROM user_applications
+       WHERE user_id = $1 AND job_id = $2`,
+      [userId, jobId]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

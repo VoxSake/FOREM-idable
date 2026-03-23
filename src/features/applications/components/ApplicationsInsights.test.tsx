@@ -13,6 +13,7 @@ describe("ApplicationsInsights", () => {
         upcomingInterviewCount={2}
         closedCount={4}
         coachUpdateCount={1}
+        hasCoachContext
         search=""
         modeFilter="all"
         onSearchChange={onSearchChange}
@@ -37,6 +38,7 @@ describe("ApplicationsInsights", () => {
         upcomingInterviewCount={2}
         closedCount={4}
         coachUpdateCount={2}
+        hasCoachContext
         search=""
         modeFilter="all"
         onSearchChange={vi.fn()}
