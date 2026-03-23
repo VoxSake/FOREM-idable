@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LoaderCircle, ShieldCheck, Users, KeyRound, ArrowRight } from "lucide-react";
+import { ShieldCheck, Users, KeyRound, ArrowRight } from "lucide-react";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { CoachAdminSection } from "@/features/coach/components/CoachAdminSection";
 import { useAdminPageState } from "@/features/admin/useAdminPageState";
@@ -9,6 +9,7 @@ import { AdminApiKeysSection } from "@/features/admin/components/AdminApiKeysSec
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function SummaryCard({
   title,
@@ -39,6 +40,62 @@ function SummaryCard({
   );
 }
 
+function AdminPageSkeleton() {
+  return (
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <section className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-56" />
+            </div>
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-4 w-full max-w-3xl" />
+          </div>
+          <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[360px]">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="rounded-2xl border bg-card p-5 shadow-sm">
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-7 w-56" />
+            <Skeleton className="h-4 w-full max-w-2xl" />
+          </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <div className="mt-6 grid gap-3 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="rounded-xl border p-4">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-5 w-44" />
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const page = useAdminPageState();
 
@@ -46,14 +103,7 @@ export default function AdminPage() {
   useToastFeedback(page.apiKeysFeedback, { title: "Clés API admin" });
 
   if (page.isAuthLoading || page.isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <LoaderCircle className="h-5 w-5 animate-spin" />
-          Chargement de l&apos;administration...
-        </div>
-      </div>
-    );
+    return <AdminPageSkeleton />;
   }
 
   if (!page.user || !page.isAuthorized) {

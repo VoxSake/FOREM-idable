@@ -14,14 +14,79 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import { HomePageHero } from "@/features/jobs/components/HomePageHero";
 import { HomeSearchResultsSection } from "@/features/jobs/components/HomeSearchResultsSection";
 import { useHomePageState } from "@/features/jobs/hooks/useHomePageState";
 
+function DashboardPageSkeleton() {
+  return (
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <section className="grid gap-4 rounded-3xl border bg-card/70 p-6 shadow-sm lg:grid-cols-[minmax(0,1.3fr)_320px]">
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-12 w-full max-w-3xl" />
+          <Skeleton className="h-5 w-full max-w-2xl" />
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Skeleton className="h-10 w-36" />
+            <Skeleton className="h-10 w-44" />
+          </div>
+        </div>
+        <div className="grid gap-3 rounded-2xl border bg-background/70 p-4">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </section>
+
+      <section className="rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="grid gap-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="rounded-2xl border bg-card p-5 shadow-sm">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-60" />
+                </div>
+                <Skeleton className="h-8 w-24" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-7 w-24" />
+                <Skeleton className="h-7 w-28" />
+              </div>
+              <Skeleton className="h-16 w-full" />
+              <div className="flex flex-wrap gap-3">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-40" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+
 function DashboardPageContent() {
   const page = useHomePageState();
 
-  if (!page.isPageReady) return null;
+  if (!page.isPageReady) return <DashboardPageSkeleton />;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
@@ -156,7 +221,7 @@ function DashboardPageContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<DashboardPageSkeleton />}>
       <DashboardPageContent />
     </Suspense>
   );

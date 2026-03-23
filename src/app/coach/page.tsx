@@ -1,7 +1,7 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
 import { CoachImportApplicationsDialog } from "@/features/coach/components/CoachImportApplicationsDialog";
 import { CoachPageContent } from "@/features/coach/components/CoachPageContent";
@@ -11,6 +11,79 @@ import { CoachUserSheet } from "@/features/coach/components/CoachUserSheet";
 import { useCoachPageState } from "@/features/coach/useCoachPageState";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 
+function CoachPageSkeleton() {
+  return (
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <section className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-48" />
+            </div>
+            <Skeleton className="h-10 w-72" />
+            <Skeleton className="h-4 w-full max-w-3xl" />
+          </div>
+          <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[420px]">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="rounded-2xl border bg-card p-5 shadow-sm">
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px]">
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-7 w-44" />
+            <Skeleton className="h-4 w-full max-w-xl" />
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="rounded-xl border p-4">
+                <div className="flex flex-col gap-3">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-full" />
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-7 w-24" />
+                    <Skeleton className="h-7 w-28" />
+                    <Skeleton className="h-7 w-20" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-7 w-32" />
+            <Skeleton className="h-4 w-full" />
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="rounded-xl border p-4">
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function CoachPage() {
   const page = useCoachPageState();
 
@@ -18,14 +91,7 @@ export default function CoachPage() {
   useToastFeedback(page.apiKeysFeedback, { title: "Clés API coach" });
 
   if (page.isAuthLoading || page.isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <LoaderCircle className="h-5 w-5 animate-spin" />
-          Chargement du suivi des bénéficiaires...
-        </div>
-      </div>
-    );
+    return <CoachPageSkeleton />;
   }
 
   if (

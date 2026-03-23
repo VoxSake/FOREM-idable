@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { AccountAccessPrompt } from "@/components/auth/AccountAccessPrompt";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
 import { useAccountApiKeys } from "@/hooks/useAccountApiKeys";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
@@ -28,6 +29,42 @@ import { ProfileSection } from "./components/ProfileSection";
 import { SearchPreferencesSection } from "./components/SearchPreferencesSection";
 
 const sectionClassName = "overflow-hidden shadow-sm";
+
+function AccountPageSkeleton() {
+  return (
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <section className="flex flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-10 w-56" />
+          <Skeleton className="h-4 w-full max-w-2xl" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+      </section>
+
+      <section className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-full max-w-3xl" />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="flex flex-col gap-3">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export default function AccountPage() {
   const { user, isLoading, refresh, setUser } = useAuth();
@@ -206,12 +243,7 @@ export default function AccountPage() {
   );
 
   if (isLoading || !isSettingsLoaded) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
-        <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        Chargement du compte...
-      </div>
-    );
+    return <AccountPageSkeleton />;
   }
 
   if (!user) {
