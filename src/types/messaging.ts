@@ -23,3 +23,38 @@ export interface ConversationPreview {
   unreadCount: number;
   participantCount: number;
 }
+
+export interface ConversationMessageAuthor {
+  userId: number | null;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface ConversationMessage {
+  id: number;
+  conversationId: number;
+  type: ConversationMessageType;
+  content: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
+  author: ConversationMessageAuthor | null;
+  isOwnMessage: boolean;
+}
+
+export interface ConversationDetail extends ConversationPreview {
+  participants: ConversationParticipantSummary[];
+  messages: ConversationMessage[];
+}
+
+export interface DirectMessageTarget {
+  userId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: UserRole;
+  sharedGroupCount: number;
+}
