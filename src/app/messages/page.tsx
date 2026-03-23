@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -538,14 +539,14 @@ export default function MessagesPage() {
   }, []);
 
   useEffect(() => {
-    if (!isDirectDialogOpen || isContactsLoading) {
+    if (!isDirectDialogOpen) {
       return;
     }
 
     setContactsError(null);
     setContactQuery("");
     void loadContacts({ silent: false });
-  }, [isContactsLoading, isDirectDialogOpen]);
+  }, [isDirectDialogOpen]);
 
   useEffect(() => {
     scrollThreadToBottom("auto");
@@ -601,8 +602,8 @@ export default function MessagesPage() {
                   Messages
                 </CardTitle>
                 <CardDescription className="max-w-3xl">
-                  Conversations de groupe et messages privés entre personnes reliées par un même
-                  groupe. Cette V2 permet d&apos;ouvrir un fil, écrire, et démarrer un DM.
+                  Le fil de coordination des groupes, avec des messages privés entre personnes qui
+                  partagent déjà le même cadre d&apos;accompagnement.
                 </CardDescription>
               </div>
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
@@ -1519,17 +1520,16 @@ export default function MessagesPage() {
           <DialogHeader>
             <DialogTitle>Nouveau message privé</DialogTitle>
             <DialogDescription>
-              Seules les personnes reliées à tes groupes sont proposées ici.
+              Choisis une personne déjà reliée à l&apos;un de tes groupes pour démarrer un échange
+              privé.
             </DialogDescription>
           </DialogHeader>
 
           {contactsError ? (
-            <Empty className="min-h-48 rounded-xl border border-dashed border-border/60">
-              <EmptyHeader>
-                <EmptyTitle>Contacts indisponibles.</EmptyTitle>
-                <EmptyDescription>{contactsError}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <Alert>
+              <AlertTitle>Contacts indisponibles</AlertTitle>
+              <AlertDescription>{contactsError}</AlertDescription>
+            </Alert>
           ) : isContactsLoading ? (
             <div className="flex flex-col gap-3">
               {Array.from({ length: 5 }).map((_, index) => (
