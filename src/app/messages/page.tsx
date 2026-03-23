@@ -5,6 +5,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   BriefcaseBusiness,
+  EllipsisVertical,
   ExternalLink,
   FileText,
   LoaderCircle,
@@ -18,12 +19,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyDescription,
@@ -88,12 +105,17 @@ export default function MessagesPage() {
   const [error, setError] = useState<string | null>(null);
   const [contactsError, setContactsError] = useState<string | null>(null);
   const [contactQuery, setContactQuery] = useState("");
+  const [conversationQuery, setConversationQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isConversationLoading, setIsConversationLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isContactsLoading, setIsContactsLoading] = useState(false);
   const [isDirectDialogOpen, setIsDirectDialogOpen] = useState(false);
   const [isClosingDirectConversation, setIsClosingDirectConversation] = useState(false);
+  const [messagePendingDeletion, setMessagePendingDeletion] = useState<
+    ConversationDetail["messages"][number] | null
+  >(null);
+  const [isDeletingMessage, setIsDeletingMessage] = useState(false);
   const threadViewportRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPreview = useMemo(
@@ -117,6 +139,18 @@ export default function MessagesPage() {
       `${contact.firstName} ${contact.lastName} ${contact.email}`.toLowerCase().includes(normalizedQuery)
     );
   }, [contactQuery, contacts]);
+  const filteredDirectConversations = useMemo(() => {
+    const normalizedQuery = conversationQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return groupedConversations.direct;
+    }
+
+    return groupedConversations.direct.filter((conversation) =>
+      `${conversation.title} ${conversation.subtitle ?? ""} ${conversation.lastMessagePreview ?? ""}`
+        .toLowerCase()
+        .includes(normalizedQuery)
+    );
+  }, [conversationQuery, groupedConversations.direct]);
 
   function getSharedJob(message: ConversationDetail["messages"][number]): Job | null {
     if (message.type !== "job_share" || !message.metadata.sharedJob) {
@@ -358,6 +392,45 @@ export default function MessagesPage() {
     }
   }
 
+  async function deleteSelectedMessage() {
+    if (!selectedConversation || !messagePendingDeletion) return;
+
+    setIsDeletingMessage(true);
+    try {
+      const response = await fetch(
+        `/api/messages/conversations/${selectedConversation.id}/messages/${messagePendingDeletion.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        message?: ConversationDetail["messages"][number];
+      };
+
+      if (!response.ok || !data.message) {
+        throw new Error(data.error || "Suppression du message impossible.");
+      }
+
+      setSelectedConversation((current) =>
+        current && current.id === selectedConversation.id
+          ? {
+              ...current,
+              messages: current.messages.map((message) =>
+                message.id === data.message?.id ? data.message : message
+              ),
+            }
+          : current
+      );
+      setMessagePendingDeletion(null);
+      toast.success("Message supprimé.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Suppression du message impossible.");
+    } finally {
+      setIsDeletingMessage(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -526,12 +599,21 @@ export default function MessagesPage() {
                     <p className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Messages privés
                     </p>
+                    <Input
+                      value={conversationQuery}
+                      onChange={(event) => setConversationQuery(event.target.value)}
+                      placeholder="Rechercher un DM..."
+                    />
                     {groupedConversations.direct.length === 0 ? (
                       <p className="px-1 text-sm text-muted-foreground">
                         Aucun DM ouvert pour l&apos;instant.
                       </p>
+                    ) : filteredDirectConversations.length === 0 ? (
+                      <p className="px-1 text-sm text-muted-foreground">
+                        Aucun DM ne correspond à cette recherche.
+                      </p>
                     ) : (
-                      groupedConversations.direct.map((conversation) => (
+                      filteredDirectConversations.map((conversation) => (
                         <button
                           key={conversation.id}
                           type="button"
@@ -722,8 +804,35 @@ export default function MessagesPage() {
                                           locale: fr,
                                         })}
                                       </span>
+                                      {selectedConversation.canModerateMessages &&
+                                      !message.deletedAt ? (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              className="ml-auto h-7 w-7"
+                                            >
+                                              <EllipsisVertical className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                              variant="destructive"
+                                              onClick={() => setMessagePendingDeletion(message)}
+                                            >
+                                              Supprimer le message
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      ) : null}
                                     </div>
-                                    {message.content ? (
+                                    {message.deletedAt ? (
+                                      <p className="mt-2 text-sm italic text-muted-foreground">
+                                        Message supprimé par l&apos;équipe d&apos;encadrement.
+                                      </p>
+                                    ) : message.content ? (
                                       <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
                                         {message.content}
                                       </p>
@@ -971,6 +1080,37 @@ export default function MessagesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={Boolean(messagePendingDeletion)}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingMessage) {
+            setMessagePendingDeletion(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce message ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le message restera dans l&apos;historique comme supprimé. Cette action est réservée à
+              l&apos;encadrement du groupe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingMessage}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeletingMessage}
+              onClick={(event) => {
+                event.preventDefault();
+                void deleteSelectedMessage();
+              }}
+            >
+              {isDeletingMessage ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

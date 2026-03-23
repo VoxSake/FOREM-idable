@@ -13,7 +13,7 @@ vi.mock("@/lib/server/db", () => ({
   ensureDatabase: mockEnsureDatabase,
 }));
 
-import { canDirectMessage } from "@/lib/server/messaging";
+import { canDirectMessage, canModerateGroupConversation } from "@/lib/server/messaging";
 
 const coachActor: AuthUser = {
   id: 11,
@@ -58,6 +58,40 @@ describe("messaging permissions", () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ exists: false }] });
 
     const allowed = await canDirectMessage(coachActor, 42);
+
+    expect(allowed).toBe(false);
+  });
+
+  it("allows group message moderation for assigned coaches", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ type: "group", group_id: 55 }] })
+      .mockResolvedValueOnce({ rows: [{ exists: true }] });
+
+    const allowed = await canModerateGroupConversation(
+      { query: mockQuery } as never,
+      coachActor,
+      99
+    );
+
+    expect(allowed).toBe(true);
+  });
+
+  it("rejects group message moderation for regular members", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ type: "group", group_id: 55 }] })
+      .mockResolvedValueOnce({ rows: [{ exists: false }] });
+
+    const allowed = await canModerateGroupConversation(
+      { query: mockQuery } as never,
+      {
+        id: 21,
+        email: "member@example.com",
+        firstName: "Member",
+        lastName: "User",
+        role: "user",
+      },
+      99
+    );
 
     expect(allowed).toBe(false);
   });

@@ -52,6 +52,7 @@ export interface ConversationMessage {
 }
 
 export interface ConversationDetail extends ConversationPreview {
+  canModerateMessages: boolean;
   participants: ConversationParticipantSummary[];
   messages: ConversationMessage[];
 }

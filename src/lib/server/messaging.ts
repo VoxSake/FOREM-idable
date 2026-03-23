@@ -417,6 +417,49 @@ async function assertCanAccessConversation(queryable: Queryable, actor: AuthUser
   return conversation;
 }
 
+export async function canModerateGroupConversation(
+  queryable: Queryable,
+  actor: AuthUser,
+  conversationId: number
+) {
+  const conversationResult = await queryable.query<{
+    type: ConversationPreview["type"];
+    group_id: number | null;
+  }>(
+    `SELECT type, group_id
+     FROM conversations
+     WHERE id = $1
+     LIMIT 1`,
+    [conversationId]
+  );
+
+  const conversation = conversationResult.rows[0];
+  if (!conversation || conversation.type !== "group" || !conversation.group_id) {
+    return false;
+  }
+
+  if (actor.role === "admin") {
+    return true;
+  }
+
+  const moderationScope = await queryable.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM coach_group_coaches
+       WHERE coach_group_coaches.group_id = $1
+         AND coach_group_coaches.user_id = $2
+       UNION
+       SELECT 1
+       FROM coach_groups
+       WHERE coach_groups.id = $1
+         AND coach_groups.manager_coach_user_id = $2
+     ) AS exists`,
+    [conversation.group_id, actor.id]
+  );
+
+  return Boolean(moderationScope.rows[0]?.exists);
+}
+
 async function loadConversationParticipants(queryable: Queryable, conversationId: number) {
   const result = await queryable.query<ParticipantRow>(
     `SELECT conversation_participants.user_id,
@@ -593,13 +636,15 @@ export async function getConversationDetail(
   if (!db) throw new Error("Database unavailable");
 
   const preview = await assertCanAccessConversation(db, actor, conversationId);
-  const [participants, messages] = await Promise.all([
+  const [participants, messages, canModerateMessages] = await Promise.all([
     loadConversationParticipants(db, conversationId),
     loadConversationMessages(db, actor, conversationId),
+    canModerateGroupConversation(db, actor, conversationId),
   ]);
 
   return {
     ...preview,
+    canModerateMessages,
     participants,
     messages,
   };
@@ -917,4 +962,64 @@ export async function closeDirectConversation(actor: AuthUser, conversationId: n
   );
 
   return true;
+}
+
+export async function deleteConversationMessage(
+  actor: AuthUser,
+  conversationId: number,
+  messageId: number
+) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  await assertCanAccessConversation(db, actor, conversationId);
+
+  const canModerate = await canModerateGroupConversation(db, actor, conversationId);
+  if (!canModerate) {
+    throw new Error("Forbidden");
+  }
+
+  const result = await db.query<MessageRow>(
+    `UPDATE conversation_messages
+     SET content = NULL,
+         metadata = '{}'::jsonb,
+         deleted_at = NOW()
+     WHERE id = $1
+       AND conversation_id = $2
+       AND deleted_at IS NULL
+     RETURNING id,
+               conversation_id,
+               type,
+               content,
+               metadata,
+               created_at,
+               edited_at,
+               deleted_at,
+               author_user_id,
+               NULL::text AS author_first_name,
+               NULL::text AS author_last_name,
+               NULL::text AS author_email,
+               NULL::text AS author_role`,
+    [messageId, conversationId]
+  );
+
+  if (!result.rows[0]) {
+    throw new Error("NotFound");
+  }
+
+  const updatedMessage = result.rows[0];
+  const author = updatedMessage.author_user_id
+    ? await getUserSummary(db, toNumericId(updatedMessage.author_user_id) ?? 0)
+    : null;
+
+  return toConversationMessage(
+    {
+      ...updatedMessage,
+      author_first_name: author?.first_name ?? null,
+      author_last_name: author?.last_name ?? null,
+      author_email: author?.email ?? null,
+      author_role: author?.role ?? null,
+    },
+    actor.id
+  );
 }
