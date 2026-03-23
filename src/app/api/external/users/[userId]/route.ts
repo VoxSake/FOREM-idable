@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildApplicationsCsv } from "@/lib/server/externalApi";
+import { buildApplicationsCsv, getExternalApplications } from "@/lib/server/externalApi";
 import {
   csvResponse,
   getRequestedFormat,
@@ -32,20 +32,16 @@ export async function GET(
     }
 
     if (getRequestedFormat(request) === "csv") {
+      const applicationsResponse = await getExternalApplications(actor, {
+        userId,
+        includePrivateNote: true,
+        includeSharedNotes: true,
+        includeContributors: true,
+        limit: 500,
+      });
       return csvResponse(
         `forem-user-${userId}.csv`,
-        buildApplicationsCsv(
-          (user.applications ?? []).map((application) => ({
-            userId: user.id,
-            userEmail: user.email,
-            userFirstName: user.firstName,
-            userLastName: user.lastName,
-            userRole: user.role,
-            groupIds: user.groupIds,
-            groupNames: user.groupNames,
-            application,
-          }))
-        )
+        buildApplicationsCsv(applicationsResponse.applications)
       );
     }
 

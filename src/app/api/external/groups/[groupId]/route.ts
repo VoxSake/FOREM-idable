@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildApplicationsCsv, getExternalGroupDetail } from "@/lib/server/externalApi";
+import {
+  buildApplicationsCsv,
+  getExternalApplications,
+  getExternalGroupDetail,
+} from "@/lib/server/externalApi";
 import {
   csvResponse,
   getRequestedFormat,
@@ -31,19 +35,17 @@ export async function GET(
     }
 
     if (getRequestedFormat(request) === "csv") {
-      const rows = (group.members ?? []).flatMap((member) =>
-        (member.applications ?? []).map((application) => ({
-          userId: member.id,
-          userEmail: member.email,
-          userFirstName: member.firstName,
-          userLastName: member.lastName,
-          userRole: member.role,
-          groupIds: member.groupIds,
-          groupNames: member.groupNames,
-          application,
-        }))
+      const applicationsResponse = await getExternalApplications(actor, {
+        groupId,
+        includePrivateNote: true,
+        includeSharedNotes: true,
+        includeContributors: true,
+        limit: 500,
+      });
+      return csvResponse(
+        `forem-group-${groupId}.csv`,
+        buildApplicationsCsv(applicationsResponse.applications)
       );
-      return csvResponse(`forem-group-${groupId}.csv`, buildApplicationsCsv(rows));
     }
 
     return NextResponse.json({ actor, group });

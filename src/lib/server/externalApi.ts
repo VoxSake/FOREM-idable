@@ -1,22 +1,40 @@
 import { isAfter } from "date-fns";
 import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
-import { getCoachDashboard } from "@/lib/server/coach";
+import {
+  getRelationalApplicationRecordById,
+  getRelationalApplicationRecordByUserAndJob,
+  listApplicationRecordsFromRelationalStoreByUsers,
+  RelationalApplicationRecord,
+} from "@/lib/server/applicationStore";
+import {
+  createTrackedApplicationForUser,
+  deleteApplicationForUser,
+  updateApplicationForUser,
+} from "@/lib/server/applications";
+import {
+  canAccessCoachUser,
+  getCoachDashboard,
+  updateCoachApplicationNotes,
+} from "@/lib/server/coach";
 import {
   ExternalApiActor,
+  ExternalApiApplicationDetail,
   ExternalApiApplicationRow,
   ExternalApiApplicationsResponse,
   ExternalApiFilters,
   ExternalApiGroupCoachSummary,
   ExternalApiGroupSummary,
   ExternalApiGroupsResponse,
+  ExternalApiMutationResponse,
   ExternalApiStats,
-  ExternalApiUserSummary,
   ExternalApiUserDetail,
+  ExternalApiUserSummary,
   ExternalApiUsersResponse,
 } from "@/types/externalApi";
-import { ApplicationStatus } from "@/types/application";
+import { ApplicationStatus, JobApplication } from "@/types/application";
 import { CoachGroupMember, CoachUserSummary } from "@/types/coach";
 import { escapeCsvCell } from "@/lib/csv";
+import { Job } from "@/types/job";
 
 function matchesSearch(haystack: string[], search?: string) {
   const normalized = search?.trim().toLowerCase();
@@ -112,6 +130,174 @@ async function loadDashboard(
   return getCoachDashboard(actor, filters);
 }
 
+function formatNoteContributors(application: JobApplication) {
+  return (application.sharedCoachNotes ?? [])
+    .map((note) => summarizeCoachContributors(note.contributors))
+    .join(" | ");
+}
+
+function formatSharedNotes(application: JobApplication) {
+  return (application.sharedCoachNotes ?? [])
+    .map((note) => `${formatCoachAuthorName(note.createdBy)}: ${note.content}`)
+    .join(" | ");
+}
+
+function toApplicationRow(
+  record: RelationalApplicationRecord,
+  user: CoachUserSummary
+): ExternalApiApplicationRow {
+  return {
+    applicationId: record.applicationId,
+    userId: user.id,
+    userEmail: user.email,
+    userFirstName: user.firstName,
+    userLastName: user.lastName,
+    userRole: user.role,
+    groupIds: user.groupIds,
+    groupNames: user.groupNames,
+    application: record.application,
+  };
+}
+
+function toApplicationDetail(
+  record: RelationalApplicationRecord,
+  user: CoachUserSummary
+): ExternalApiApplicationDetail {
+  return toApplicationRow(record, user);
+}
+
+function matchesApplicationFilters(row: ExternalApiApplicationRow, filters: ExternalApiFilters) {
+  if (filters.userId && row.userId !== filters.userId) return false;
+  if (filters.groupId && !row.groupIds.includes(filters.groupId)) return false;
+  if (filters.role && row.userRole !== filters.role) return false;
+  if (filters.status && row.application.status !== filters.status) return false;
+  if (
+    filters.dueOnly &&
+    !isDue(
+      row.application.status,
+      row.application.followUpDueAt,
+      row.application.followUpEnabled
+    )
+  ) {
+    return false;
+  }
+  if (filters.interviewOnly && row.application.status !== "interview") return false;
+  if (filters.updatedAfter && row.application.updatedAt < filters.updatedAfter) return false;
+  if (filters.updatedBefore && row.application.updatedAt > filters.updatedBefore) return false;
+  if (filters.appliedAfter && row.application.appliedAt < filters.appliedAfter) return false;
+  if (filters.appliedBefore && row.application.appliedAt > filters.appliedBefore) return false;
+  if (filters.hasPrivateNote && !row.application.privateCoachNote?.content.trim()) return false;
+  if (filters.hasSharedNotes && (row.application.sharedCoachNotes?.length ?? 0) === 0) return false;
+
+  return matchesSearch(
+    [
+      row.userFirstName,
+      row.userLastName,
+      `${row.userFirstName} ${row.userLastName}`.trim(),
+      row.userEmail,
+      row.application.job.company || "",
+      row.application.job.title,
+      row.application.job.location,
+      row.groupNames.join(" "),
+      row.application.notes || "",
+      row.application.proofs || "",
+      row.application.privateCoachNote?.content || "",
+      row.application.privateCoachNote
+        ? summarizeCoachContributors(row.application.privateCoachNote.contributors)
+        : "",
+      formatSharedNotes(row.application),
+      formatNoteContributors(row.application),
+    ],
+    filters.search
+  );
+}
+
+function sanitizeApplicationForList(
+  row: ExternalApiApplicationRow,
+  filters: ExternalApiFilters
+): ExternalApiApplicationRow {
+  if (
+    filters.includePrivateNote ||
+    filters.includeSharedNotes ||
+    filters.includeContributors
+  ) {
+    return row;
+  }
+
+  return {
+    ...row,
+    application: {
+      ...row.application,
+      privateCoachNote: undefined,
+      sharedCoachNotes: [],
+    },
+  };
+}
+
+async function getScopedApplicationRows(
+  actor: ExternalApiActor,
+  filters: ExternalApiFilters = {}
+) {
+  const dashboard = await loadDashboard(actor, {
+    userId: filters.userId,
+    groupId: filters.groupId,
+    role: filters.role,
+  });
+  const usersById = new Map(dashboard.users.map((user) => [user.id, user]));
+  let rows: ExternalApiApplicationRow[];
+
+  try {
+    const records = await listApplicationRecordsFromRelationalStoreByUsers(
+      dashboard.users.map((user) => user.id)
+    );
+
+    rows = records
+      .map((record) => {
+        const user = usersById.get(record.userId);
+        return user ? toApplicationRow(record, user) : null;
+      })
+      .filter((row): row is ExternalApiApplicationRow => Boolean(row));
+  } catch {
+    rows = dashboard.users.flatMap((user) =>
+      user.applications.map((application, index) => ({
+        applicationId: index + 1,
+        userId: user.id,
+        userEmail: user.email,
+        userFirstName: user.firstName,
+        userLastName: user.lastName,
+        userRole: user.role,
+        groupIds: user.groupIds,
+        groupNames: user.groupNames,
+        application,
+      }))
+    );
+  }
+
+  rows = rows.filter((row) => matchesApplicationFilters(row, filters));
+
+  return { dashboard, rows, usersById };
+}
+
+async function requireScopedUser(actor: ExternalApiActor, userId: number) {
+  if (actor.role === "admin") return true;
+  return canAccessCoachUser(actor, userId);
+}
+
+function normalizeExternalJob(input: Partial<Job> & { id?: string; title?: string }) {
+  return {
+    id: input.id?.trim() || "",
+    title: input.title?.trim() || "",
+    company: input.company?.trim() || undefined,
+    location: input.location?.trim() || "Non précisé",
+    contractType: input.contractType?.trim() || "Non précisé",
+    publicationDate: input.publicationDate?.trim() || new Date().toISOString(),
+    url: input.url?.trim() || "#",
+    description: input.description?.trim() || undefined,
+    source: input.source ?? "forem",
+    pdfUrl: input.pdfUrl?.trim() || undefined,
+  } satisfies Job;
+}
+
 export async function getExternalUsers(
   actor: ExternalApiActor,
   filters: ExternalApiFilters = {}
@@ -125,9 +311,7 @@ export async function getExternalUsers(
   const offset = normalizeOffset(filters.offset);
   const limit = normalizeLimit(filters.limit, 200);
 
-  const users = dashboard.users;
-
-  const serializedUsers = users
+  const serializedUsers = dashboard.users
     .slice(offset, offset + limit)
     .map((entry) => toExternalUserSummary(entry, Boolean(filters.includeApplications)));
 
@@ -138,7 +322,10 @@ export async function getExternalUsers(
   };
 }
 
-export async function getExternalUserDetail(actor: ExternalApiActor, userId: number): Promise<ExternalApiUserDetail | null> {
+export async function getExternalUserDetail(
+  actor: ExternalApiActor,
+  userId: number
+): Promise<ExternalApiUserDetail | null> {
   const dashboard = await loadDashboard(actor, { userId });
   const user = dashboard.users.find((entry) => entry.id === userId);
   if (!user) return null;
@@ -228,57 +415,292 @@ export async function getExternalApplications(
   actor: ExternalApiActor,
   filters: ExternalApiFilters = {}
 ): Promise<ExternalApiApplicationsResponse> {
-  const dashboard = await loadDashboard(actor, {
-    userId: filters.userId,
-    groupId: filters.groupId,
-    role: filters.role,
-  });
+  const { dashboard, rows } = await getScopedApplicationRows(actor, filters);
   const offset = normalizeOffset(filters.offset);
   const limit = normalizeLimit(filters.limit, 500);
-
-  let applications: ExternalApiApplicationRow[] = dashboard.users.flatMap((user) =>
-    user.applications.map((application) => ({
-      userId: user.id,
-      userEmail: user.email,
-      userFirstName: user.firstName,
-      userLastName: user.lastName,
-      userRole: user.role,
-      groupIds: user.groupIds,
-      groupNames: user.groupNames,
-      application,
-    }))
-  );
-
-  applications = applications.filter((row) => {
-    if (filters.userId && row.userId !== filters.userId) return false;
-    if (filters.groupId && !row.groupIds.includes(filters.groupId)) return false;
-    if (filters.role && row.userRole !== filters.role) return false;
-    if (filters.status && row.application.status !== filters.status) return false;
-    if (filters.dueOnly && !isDue(row.application.status, row.application.followUpDueAt, row.application.followUpEnabled)) return false;
-    if (filters.interviewOnly && row.application.status !== "interview") return false;
-    if (filters.updatedAfter && row.application.updatedAt < filters.updatedAfter) return false;
-    if (filters.updatedBefore && row.application.updatedAt > filters.updatedBefore) return false;
-
-    return matchesSearch(
-      [
-        row.userFirstName,
-        row.userLastName,
-        `${row.userFirstName} ${row.userLastName}`.trim(),
-        row.userEmail,
-        row.application.job.company || "",
-        row.application.job.title,
-        row.application.job.location,
-        row.groupNames.join(" "),
-      ],
-      filters.search
-    );
-  });
 
   return {
     actor,
     stats: buildStats(dashboard.users),
-    applications: applications.slice(offset, offset + limit),
+    applications: rows
+      .slice(offset, offset + limit)
+      .map((row) => sanitizeApplicationForList(row, filters)),
   };
+}
+
+export async function getExternalApplicationDetail(
+  actor: ExternalApiActor,
+  applicationId: number
+): Promise<ExternalApiApplicationDetail | null> {
+  const record = await getRelationalApplicationRecordById(applicationId);
+  if (!record) return null;
+
+  const dashboard = await loadDashboard(actor, { userId: record.userId });
+  const user = dashboard.users.find((entry) => entry.id === record.userId);
+  if (!user) return null;
+
+  return toApplicationDetail(record, user);
+}
+
+export async function upsertExternalApplication(
+  actor: ExternalApiActor,
+  input: {
+    match: { userId: number; jobId: string };
+    data: Partial<
+      Pick<
+        JobApplication,
+        | "status"
+        | "notes"
+        | "proofs"
+        | "interviewAt"
+        | "interviewDetails"
+        | "lastFollowUpAt"
+        | "followUpDueAt"
+        | "followUpEnabled"
+        | "appliedAt"
+      >
+    > & { job: Partial<Job> & { title: string } };
+  }
+): Promise<ExternalApiMutationResponse> {
+  const allowed = await requireScopedUser(actor, input.match.userId);
+  if (!allowed) throw new Error("Forbidden");
+
+  const existing = await getRelationalApplicationRecordByUserAndJob(
+    input.match.userId,
+    input.match.jobId
+  );
+
+  if (!existing) {
+    await createTrackedApplicationForUser({
+      userId: input.match.userId,
+      job: normalizeExternalJob({
+        ...input.data.job,
+        id: input.match.jobId,
+      }),
+      appliedAt: input.data.appliedAt,
+      status: input.data.status,
+      notes: input.data.notes ?? undefined,
+      proofs: input.data.proofs ?? undefined,
+      interviewAt: input.data.interviewAt ?? undefined,
+      interviewDetails: input.data.interviewDetails ?? undefined,
+    });
+
+    if (
+      input.data.followUpDueAt ||
+      input.data.followUpEnabled !== undefined ||
+      input.data.lastFollowUpAt
+    ) {
+      await updateApplicationForUser({
+        userId: input.match.userId,
+        jobId: input.match.jobId,
+        patch: {
+          followUpDueAt: input.data.followUpDueAt,
+          followUpEnabled: input.data.followUpEnabled,
+          lastFollowUpAt: input.data.lastFollowUpAt,
+        },
+      });
+    }
+
+    const detail = await getExternalApplicationDetail(
+      actor,
+      (await getRelationalApplicationRecordByUserAndJob(input.match.userId, input.match.jobId))
+        ?.applicationId ?? 0
+    );
+    if (!detail) {
+      throw new Error("Application not found");
+    }
+
+    return {
+      actor,
+      created: true,
+      application: detail,
+    };
+  }
+
+  await updateApplicationForUser({
+    userId: input.match.userId,
+    jobId: input.match.jobId,
+    patch: {
+      status: input.data.status,
+      notes: input.data.notes,
+      proofs: input.data.proofs,
+      interviewAt: input.data.interviewAt,
+      interviewDetails: input.data.interviewDetails,
+      lastFollowUpAt: input.data.lastFollowUpAt,
+      followUpDueAt: input.data.followUpDueAt,
+      followUpEnabled: input.data.followUpEnabled,
+      appliedAt: input.data.appliedAt,
+      job: input.data.job
+        ? {
+            ...normalizeExternalJob({
+              ...input.data.job,
+              id: input.match.jobId,
+            }),
+          }
+        : undefined,
+    },
+  });
+
+  const detail = await getExternalApplicationDetail(actor, existing.applicationId);
+  if (!detail) {
+    throw new Error("Application not found");
+  }
+
+  return {
+    actor,
+    created: false,
+    application: detail,
+  };
+}
+
+export async function patchExternalApplication(
+  actor: ExternalApiActor,
+  applicationId: number,
+  patch: Partial<
+    Pick<
+      JobApplication,
+      | "status"
+      | "notes"
+      | "proofs"
+      | "interviewAt"
+      | "interviewDetails"
+      | "lastFollowUpAt"
+      | "followUpDueAt"
+      | "followUpEnabled"
+      | "appliedAt"
+      | "job"
+    >
+  >
+): Promise<ExternalApiMutationResponse> {
+  const record = await getRelationalApplicationRecordById(applicationId);
+  if (!record) throw new Error("Application not found");
+
+  const allowed = await requireScopedUser(actor, record.userId);
+  if (!allowed) throw new Error("Forbidden");
+
+  await updateApplicationForUser({
+    userId: record.userId,
+    jobId: record.jobId,
+    patch,
+  });
+
+  const detail = await getExternalApplicationDetail(actor, applicationId);
+  if (!detail) throw new Error("Application not found");
+
+  return { actor, application: detail };
+}
+
+export async function deleteExternalApplication(
+  actor: ExternalApiActor,
+  applicationId: number
+) {
+  const record = await getRelationalApplicationRecordById(applicationId);
+  if (!record) throw new Error("Application not found");
+
+  const allowed = await requireScopedUser(actor, record.userId);
+  if (!allowed) throw new Error("Forbidden");
+
+  await deleteApplicationForUser(record.userId, record.jobId);
+}
+
+export async function saveExternalPrivateNote(
+  actor: ExternalApiActor,
+  applicationId: number,
+  content: string
+): Promise<ExternalApiMutationResponse> {
+  const record = await getRelationalApplicationRecordById(applicationId);
+  if (!record) throw new Error("Application not found");
+
+  const allowed = await requireScopedUser(actor, record.userId);
+  if (!allowed) throw new Error("Forbidden");
+
+  await updateCoachApplicationNotes({
+    actor,
+    userId: record.userId,
+    jobId: record.jobId,
+    privateNoteContent: content,
+  });
+
+  const detail = await getExternalApplicationDetail(actor, applicationId);
+  if (!detail) throw new Error("Application not found");
+
+  return { actor, application: detail };
+}
+
+export async function createExternalSharedNote(
+  actor: ExternalApiActor,
+  applicationId: number,
+  content: string
+): Promise<ExternalApiMutationResponse> {
+  const record = await getRelationalApplicationRecordById(applicationId);
+  if (!record) throw new Error("Application not found");
+
+  const allowed = await requireScopedUser(actor, record.userId);
+  if (!allowed) throw new Error("Forbidden");
+
+  await updateCoachApplicationNotes({
+    actor,
+    userId: record.userId,
+    jobId: record.jobId,
+    sharedNoteContent: content,
+    createSharedNote: true,
+  });
+
+  const detail = await getExternalApplicationDetail(actor, applicationId);
+  if (!detail) throw new Error("Application not found");
+
+  return { actor, application: detail };
+}
+
+export async function updateExternalSharedNote(
+  actor: ExternalApiActor,
+  applicationId: number,
+  noteId: string,
+  content: string
+): Promise<ExternalApiMutationResponse> {
+  const record = await getRelationalApplicationRecordById(applicationId);
+  if (!record) throw new Error("Application not found");
+
+  const allowed = await requireScopedUser(actor, record.userId);
+  if (!allowed) throw new Error("Forbidden");
+
+  await updateCoachApplicationNotes({
+    actor,
+    userId: record.userId,
+    jobId: record.jobId,
+    sharedNoteId: noteId,
+    sharedNoteContent: content,
+  });
+
+  const detail = await getExternalApplicationDetail(actor, applicationId);
+  if (!detail) throw new Error("Application not found");
+
+  return { actor, application: detail };
+}
+
+export async function deleteExternalSharedNote(
+  actor: ExternalApiActor,
+  applicationId: number,
+  noteId: string
+): Promise<ExternalApiMutationResponse> {
+  const record = await getRelationalApplicationRecordById(applicationId);
+  if (!record) throw new Error("Application not found");
+
+  const allowed = await requireScopedUser(actor, record.userId);
+  if (!allowed) throw new Error("Forbidden");
+
+  await updateCoachApplicationNotes({
+    actor,
+    userId: record.userId,
+    jobId: record.jobId,
+    sharedNoteId: noteId,
+    deleteSharedNote: true,
+  });
+
+  const detail = await getExternalApplicationDetail(actor, applicationId);
+  if (!detail) throw new Error("Application not found");
+
+  return { actor, application: detail };
 }
 
 export function buildUsersCsv(users: ExternalApiUsersResponse["users"]) {
@@ -349,7 +771,9 @@ export function buildGroupsCsv(groups: ExternalApiGroupsResponse["groups"]) {
 
 export function buildApplicationsCsv(applications: ExternalApiApplicationsResponse["applications"]) {
   const headers = [
+    "Application ID",
     "User ID",
+    "Job ID",
     "Prénom",
     "Nom",
     "Email",
@@ -365,10 +789,11 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
     "Date entretien",
     "Détails entretien",
     "Statut",
-    "Notes",
+    "Notes bénéficiaire",
     "Preuves",
     "Note privée coach",
     "Contributeurs note privée",
+    "Nombre notes partagées",
     "Notes coach partagées",
     "Contributeurs notes partagées",
     "Lien",
@@ -377,7 +802,9 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
   ];
 
   const rows = applications.map((row) => [
+    String(row.applicationId),
     String(row.userId),
+    row.application.job.id,
     row.userFirstName,
     row.userLastName,
     row.userEmail,
@@ -399,12 +826,9 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
     row.application.privateCoachNote
       ? summarizeCoachContributors(row.application.privateCoachNote.contributors)
       : "",
-    (row.application.sharedCoachNotes ?? [])
-      .map((note) => `${formatCoachAuthorName(note.createdBy)}: ${note.content}`)
-      .join(" | "),
-    (row.application.sharedCoachNotes ?? [])
-      .map((note) => summarizeCoachContributors(note.contributors))
-      .join(" | "),
+    String(row.application.sharedCoachNotes?.length ?? 0),
+    formatSharedNotes(row.application),
+    formatNoteContributors(row.application),
     row.application.job.url || "",
     row.application.job.pdfUrl || "",
     row.application.updatedAt,

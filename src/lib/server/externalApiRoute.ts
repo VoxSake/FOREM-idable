@@ -66,9 +66,16 @@ export function parseExternalFilters(request: NextRequest): ExternalApiFilters {
     interviewOnly: parseBoolean(request.nextUrl.searchParams.get("interviewOnly")),
     updatedAfter: request.nextUrl.searchParams.get("updatedAfter"),
     updatedBefore: request.nextUrl.searchParams.get("updatedBefore"),
+    appliedAfter: request.nextUrl.searchParams.get("appliedAfter"),
+    appliedBefore: request.nextUrl.searchParams.get("appliedBefore"),
+    hasPrivateNote: parseBoolean(request.nextUrl.searchParams.get("hasPrivateNote")),
+    hasSharedNotes: parseBoolean(request.nextUrl.searchParams.get("hasSharedNotes")),
     limit: parseInteger(request.nextUrl.searchParams.get("limit")) ?? undefined,
     offset: parseInteger(request.nextUrl.searchParams.get("offset")) ?? undefined,
     includeApplications: parseBoolean(request.nextUrl.searchParams.get("includeApplications")),
+    includePrivateNote: parseBoolean(request.nextUrl.searchParams.get("includePrivateNote")),
+    includeSharedNotes: parseBoolean(request.nextUrl.searchParams.get("includeSharedNotes")),
+    includeContributors: parseBoolean(request.nextUrl.searchParams.get("includeContributors")),
   };
 }
 

@@ -26,6 +26,19 @@ export interface ExternalApiActor {
 }
 
 export interface ExternalApiApplicationRow {
+  applicationId: number;
+  userId: number;
+  userEmail: string;
+  userFirstName: string;
+  userLastName: string;
+  userRole: UserRole;
+  groupIds: number[];
+  groupNames: string[];
+  application: JobApplication;
+}
+
+export interface ExternalApiApplicationDetail {
+  applicationId: number;
   userId: number;
   userEmail: string;
   userFirstName: string;
@@ -111,6 +124,12 @@ export interface ExternalApiApplicationsResponse {
   applications: ExternalApiApplicationRow[];
 }
 
+export interface ExternalApiMutationResponse {
+  actor: ExternalApiActor;
+  created?: boolean;
+  application: ExternalApiApplicationDetail;
+}
+
 export interface ExternalApiFilters {
   search?: string;
   groupId?: number | null;
@@ -121,7 +140,14 @@ export interface ExternalApiFilters {
   interviewOnly?: boolean;
   updatedAfter?: string | null;
   updatedBefore?: string | null;
+  appliedAfter?: string | null;
+  appliedBefore?: string | null;
+  hasPrivateNote?: boolean;
+  hasSharedNotes?: boolean;
   limit?: number;
   offset?: number;
   includeApplications?: boolean;
+  includePrivateNote?: boolean;
+  includeSharedNotes?: boolean;
+  includeContributors?: boolean;
 }

@@ -34,6 +34,14 @@ type ApplicationRow = {
   raw_payload: Job | null;
 };
 
+export interface RelationalApplicationRecord {
+  applicationId: number;
+  userId: number;
+  jobId: string;
+  position: number;
+  application: JobApplication;
+}
+
 type PrivateNoteRow = {
   id: number;
   application_id: number;
@@ -348,6 +356,171 @@ async function loadApplicationsByClause(
   return applicationsByUser;
 }
 
+async function loadApplicationRecordsByClause(
+  queryable: Queryable,
+  clause: string,
+  params: unknown[]
+): Promise<RelationalApplicationRecord[]> {
+  const applicationsResult = await queryable.query<ApplicationRow>(
+    `SELECT applications.id,
+            applications.user_id,
+            applications.job_id,
+            applications.position,
+            applications.status,
+            applications.applied_at,
+            applications.follow_up_due_at,
+            applications.follow_up_enabled,
+            applications.last_follow_up_at,
+            applications.interview_at,
+            applications.interview_details,
+            applications.beneficiary_notes,
+            applications.proofs,
+            applications.updated_at,
+            application_jobs.title,
+            application_jobs.company,
+            application_jobs.location,
+            application_jobs.contract_type,
+            application_jobs.url,
+            application_jobs.publication_date,
+            application_jobs.provider,
+            application_jobs.external_job_id,
+            application_jobs.pdf_url,
+            application_jobs.description,
+            application_jobs.raw_payload
+     FROM applications
+     LEFT JOIN application_jobs ON application_jobs.application_id = applications.id
+     ${clause}
+     ORDER BY applications.user_id ASC, applications.position ASC, applications.created_at ASC`,
+    params
+  );
+
+  if (applicationsResult.rows.length === 0) {
+    return [];
+  }
+
+  const applicationIds = applicationsResult.rows.map((row) => row.id);
+  const [privateNotesResult, privateContributorsResult, sharedNotesResult, sharedContributorsResult] =
+    await Promise.all([
+      queryable.query<PrivateNoteRow>(
+        `SELECT id,
+                application_id,
+                content,
+                created_by_user_id,
+                created_by_first_name,
+                created_by_last_name,
+                created_by_email,
+                created_by_role,
+                created_at,
+                updated_at
+         FROM application_private_notes
+         WHERE application_id = ANY($1::bigint[])`,
+        [applicationIds]
+      ),
+      queryable.query<ContributorRow & { private_note_id: number }>(
+        `SELECT private_note_id,
+                user_id,
+                first_name,
+                last_name,
+                display_name,
+                email,
+                role
+         FROM application_private_note_contributors
+         WHERE private_note_id IN (
+           SELECT id
+           FROM application_private_notes
+           WHERE application_id = ANY($1::bigint[])
+         )`,
+        [applicationIds]
+      ),
+      queryable.query<SharedNoteRow>(
+        `SELECT id,
+                application_id,
+                content,
+                created_by_user_id,
+                created_by_first_name,
+                created_by_last_name,
+                created_by_email,
+                created_by_role,
+                created_at,
+                updated_at
+         FROM application_shared_notes
+         WHERE application_id = ANY($1::bigint[])
+         ORDER BY created_at ASC, id ASC`,
+        [applicationIds]
+      ),
+      queryable.query<ContributorRow & { shared_note_id: string }>(
+        `SELECT shared_note_id,
+                user_id,
+                first_name,
+                last_name,
+                display_name,
+                email,
+                role
+         FROM application_shared_note_contributors
+         WHERE shared_note_id IN (
+           SELECT id
+           FROM application_shared_notes
+           WHERE application_id = ANY($1::bigint[])
+         )`,
+        [applicationIds]
+      ),
+    ]);
+
+  const privateContributorsByNote = new Map<number, CoachNoteAuthor[]>();
+  for (const row of privateContributorsResult.rows) {
+    privateContributorsByNote.set(row.private_note_id, [
+      ...(privateContributorsByNote.get(row.private_note_id) ?? []),
+      toContributorAuthor(row),
+    ]);
+  }
+
+  const privateNotesByApplication = new Map<number, CoachPrivateNote>();
+  for (const row of privateNotesResult.rows) {
+    privateNotesByApplication.set(row.application_id, {
+      content: row.content,
+      createdAt: toIsoOrNow(row.created_at),
+      updatedAt: toIsoOrNow(row.updated_at),
+      createdBy: buildAuthorFromNoteRow(row),
+      contributors: privateContributorsByNote.get(row.id) ?? [buildAuthorFromNoteRow(row)],
+    });
+  }
+
+  const sharedContributorsByNote = new Map<string, CoachNoteAuthor[]>();
+  for (const row of sharedContributorsResult.rows) {
+    sharedContributorsByNote.set(row.shared_note_id, [
+      ...(sharedContributorsByNote.get(row.shared_note_id) ?? []),
+      toContributorAuthor(row),
+    ]);
+  }
+
+  const sharedNotesByApplication = new Map<number, CoachSharedNote[]>();
+  for (const row of sharedNotesResult.rows) {
+    sharedNotesByApplication.set(row.application_id, [
+      ...(sharedNotesByApplication.get(row.application_id) ?? []),
+      {
+        id: row.id,
+        content: row.content,
+        createdAt: toIsoOrNow(row.created_at),
+        updatedAt: toIsoOrNow(row.updated_at),
+        createdBy: buildAuthorFromNoteRow(row),
+        contributors: sharedContributorsByNote.get(row.id) ?? [buildAuthorFromNoteRow(row)],
+      },
+    ]);
+  }
+
+  return applicationsResult.rows.map((row) => ({
+    applicationId: row.id,
+    userId: row.user_id,
+    jobId: row.job_id,
+    position: row.position,
+    application: buildApplicationAggregate({
+      row,
+      privateNote: privateNotesByApplication.get(row.id),
+      sharedNotes: sharedNotesByApplication.get(row.id) ?? [],
+    }),
+  }));
+}
+
 export async function listApplicationsFromRelationalStore(userId: number) {
   if (!db) throw new Error("Database unavailable");
   return (await loadApplicationsByClause(db, "WHERE applications.user_id = $1", [userId])).get(userId) ?? [];
@@ -361,13 +534,36 @@ export async function listApplicationsFromRelationalStoreByUsers(userIds: number
 
 export async function loadApplicationFromRelationalStore(userId: number, jobId: string) {
   if (!db) throw new Error("Database unavailable");
-  const applicationsByUser = await loadApplicationsByClause(
+  const record = await getRelationalApplicationRecordByUserAndJob(userId, jobId);
+  return record?.application ?? null;
+}
+
+export async function listApplicationRecordsFromRelationalStoreByUsers(userIds: number[]) {
+  if (!db) throw new Error("Database unavailable");
+  if (userIds.length === 0) return [];
+  return loadApplicationRecordsByClause(db, "WHERE applications.user_id = ANY($1::bigint[])", [userIds]);
+}
+
+export async function getRelationalApplicationRecordById(applicationId: number) {
+  if (!db) throw new Error("Database unavailable");
+  const records = await loadApplicationRecordsByClause(
+    db,
+    "WHERE applications.id = $1",
+    [applicationId]
+  );
+
+  return records[0] ?? null;
+}
+
+export async function getRelationalApplicationRecordByUserAndJob(userId: number, jobId: string) {
+  if (!db) throw new Error("Database unavailable");
+  const records = await loadApplicationRecordsByClause(
     db,
     "WHERE applications.user_id = $1 AND applications.job_id = $2",
     [userId, jobId]
   );
 
-  return applicationsByUser.get(userId)?.[0] ?? null;
+  return records[0] ?? null;
 }
 
 async function upsertApplicationShell(
