@@ -179,8 +179,24 @@ export function AppSidebar() {
 
     void loadMessagingMeta();
 
+    const intervalId = window.setInterval(() => {
+      void loadMessagingMeta();
+    }, 5000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadMessagingMeta();
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isLoading, user]);
 
