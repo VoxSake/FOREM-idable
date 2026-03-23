@@ -809,6 +809,7 @@ async function replaceSharedNotes(
       continue;
     }
 
+    const sharedNoteId = note.id;
     const creator = toAuthorSnapshot(note.createdBy);
     await queryable.query(
       `INSERT INTO application_shared_notes (
@@ -825,7 +826,7 @@ async function replaceSharedNotes(
        )
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
-        note.id,
+        sharedNoteId,
         applicationId,
         note.content.trim(),
         creator.userId,
@@ -852,7 +853,7 @@ async function replaceSharedNotes(
          )
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
-          noteId,
+          sharedNoteId,
           snapshot.userId,
           snapshot.firstName,
           snapshot.lastName,
