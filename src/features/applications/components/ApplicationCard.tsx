@@ -168,19 +168,19 @@ function getApplicationCardClassName(
   }
 ) {
   if (options.isDue) {
-    return "border-[#F2C27A] bg-[#FFF5E8]";
+    return "border-[#F2C27A] bg-[#FFF5E8] dark:border-[#6D4B1E] dark:bg-[#2A1D0F]";
   }
 
   if (status === "accepted") {
-    return "border-[#9BD7A1] bg-[#EEF9F0]";
+    return "border-[#9BD7A1] bg-[#EEF9F0] dark:border-[#245A31] dark:bg-[#12261A]";
   }
 
   if (status === "rejected") {
-    return "border-[#F3A19B] bg-[#FFF0EE]";
+    return "border-[#F3A19B] bg-[#FFF0EE] dark:border-[#6E3531] dark:bg-[#2C1715]";
   }
 
   if (status === "interview" || options.hasInterview) {
-    return "border-[#9FCAE8] bg-[#EEF6FC]";
+    return "border-[#9FCAE8] bg-[#EEF6FC] dark:border-[#2A5573] dark:bg-[#10202B]";
   }
 
   if (options.hasUnreadCoachUpdate) {

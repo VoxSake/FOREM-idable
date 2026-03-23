@@ -803,28 +803,28 @@ function getApplicationCardClassName(status: JobApplication["status"], isDue: bo
   if (status === "interview") {
     return cn(
       baseClassName,
-      "border-[#9FCAE8] bg-[#EEF6FC] hover:border-[#87BADF] hover:bg-[#E3F0FA]"
+      "border-[#9FCAE8] bg-[#EEF6FC] hover:border-[#87BADF] hover:bg-[#E3F0FA] dark:border-[#2A5573] dark:bg-[#10202B] dark:hover:border-[#3A6C8E] dark:hover:bg-[#152B39]"
     );
   }
 
   if (status === "accepted") {
     return cn(
       baseClassName,
-      "border-[#9BD7A1] bg-[#EEF9F0] hover:border-[#7FC788] hover:bg-[#E5F5E8]"
+      "border-[#9BD7A1] bg-[#EEF9F0] hover:border-[#7FC788] hover:bg-[#E5F5E8] dark:border-[#245A31] dark:bg-[#12261A] dark:hover:border-[#357A45] dark:hover:bg-[#173120]"
     );
   }
 
   if (status === "rejected") {
     return cn(
       baseClassName,
-      "border-[#F3A19B] bg-[#FFF0EE] hover:border-[#E78D86] hover:bg-[#FEE4E0]"
+      "border-[#F3A19B] bg-[#FFF0EE] hover:border-[#E78D86] hover:bg-[#FEE4E0] dark:border-[#6E3531] dark:bg-[#2C1715] dark:hover:border-[#8A4742] dark:hover:bg-[#351C19]"
     );
   }
 
   if (isDue) {
     return cn(
       baseClassName,
-      "border-[#F2C27A] bg-[#FFF5E8] hover:border-[#E6B35E] hover:bg-[#FDEED8]"
+      "border-[#F2C27A] bg-[#FFF5E8] hover:border-[#E6B35E] hover:bg-[#FDEED8] dark:border-[#6D4B1E] dark:bg-[#2A1D0F] dark:hover:border-[#8A6027] dark:hover:bg-[#352514]"
     );
   }
 

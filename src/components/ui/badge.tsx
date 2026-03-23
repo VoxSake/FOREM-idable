@@ -13,13 +13,13 @@ const badgeVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
         success:
-          "border-[#9BD7A1] bg-[#EEF9F0] text-[#2F7A3E] [a&]:hover:bg-[#E5F5E8] dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200",
+          "border-[#9BD7A1] bg-[#EEF9F0] text-[#2F7A3E] [a&]:hover:bg-[#E5F5E8] dark:border-[#245A31] dark:bg-[#12261A] dark:text-[#9BD7A1] dark:[a&]:hover:bg-[#173120]",
         info:
-          "border-[#9FCAE8] bg-[#EEF6FC] text-[#2E6E99] [a&]:hover:bg-[#E3F0FA] dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200",
+          "border-[#9FCAE8] bg-[#EEF6FC] text-[#2E6E99] [a&]:hover:bg-[#E3F0FA] dark:border-[#2A5573] dark:bg-[#10202B] dark:text-[#9FCAE8] dark:[a&]:hover:bg-[#152B39]",
         warning:
-          "border-[#F2C27A] bg-[#FFF5E8] text-[#A46110] [a&]:hover:bg-[#FDEED8] dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200",
+          "border-[#F2C27A] bg-[#FFF5E8] text-[#A46110] [a&]:hover:bg-[#FDEED8] dark:border-[#6D4B1E] dark:bg-[#2A1D0F] dark:text-[#F2C27A] dark:[a&]:hover:bg-[#352514]",
         error:
-          "border-[#F3A19B] bg-[#FFF0EE] text-[#C85A50] [a&]:hover:bg-[#FEE4E0] dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200",
+          "border-[#F3A19B] bg-[#FFF0EE] text-[#C85A50] [a&]:hover:bg-[#FEE4E0] dark:border-[#6E3531] dark:bg-[#2C1715] dark:text-[#F3A19B] dark:[a&]:hover:bg-[#351C19]",
         destructive:
           "bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
