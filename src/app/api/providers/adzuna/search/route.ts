@@ -1,30 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { Job } from "@/types/job";
 import { ForemSearchParams } from "@/services/api/foremClient";
 import { LocationEntry } from "@/services/location/locationCache";
 import { runtimeConfig } from "@/config/runtime";
 
-interface AdzunaResult {
-  id?: string | number;
-  title?: string;
-  description?: string;
-  created?: string;
-  redirect_url?: string;
-  company?: { display_name?: string };
-  location?: { display_name?: string; area?: string[] };
-  contract_type?: string;
-  contract_time?: string;
-  category?: { label?: string };
-}
-
-interface AdzunaApiResponse {
-  count?: number;
-  results?: AdzunaResult[];
-}
-
 const ADZUNA_BASE_URL = "https://api.adzuna.com/v1/api/jobs";
 const ADZUNA_RESULTS_PER_PAGE = 50;
 const ADZUNA_MAX_RESULTS_WINDOW = 150;
+
+const locationEntrySchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    type: z.enum(["Pays", "Régions", "Provinces", "Arrondissements", "Communes", "Localités"]),
+    parentId: z.string().optional(),
+    code: z.string().optional(),
+    level: z.number().optional(),
+    postalCode: z.string().optional(),
+  })
+  .strict();
+
+const providerSearchParamsSchema = z
+  .object({
+    keywords: z.array(z.string()).optional(),
+    locations: z.array(locationEntrySchema).optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+    booleanMode: z.enum(["AND", "OR"]).optional(),
+  })
+  .strict();
+
+const adzunaResultSchema = z
+  .object({
+    id: z.union([z.string(), z.number()]).optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    created: z.string().optional(),
+    redirect_url: z.string().optional(),
+    company: z.object({ display_name: z.string().optional() }).optional(),
+    location: z
+      .object({
+        display_name: z.string().optional(),
+        area: z.array(z.string()).optional(),
+      })
+      .optional(),
+    contract_type: z.string().optional(),
+    contract_time: z.string().optional(),
+    category: z.object({ label: z.string().optional() }).optional(),
+  })
+  .passthrough();
+
+const adzunaApiResponseSchema = z
+  .object({
+    count: z.number().optional(),
+    results: z.array(adzunaResultSchema).default([]),
+  })
+  .passthrough();
 
 function sanitizeLocationName(entry: LocationEntry): string {
   const raw = entry.name.trim();
@@ -55,13 +87,15 @@ function buildLocationQueries(locations?: LocationEntry[]): string[] {
   return Array.from(unique).slice(0, 5);
 }
 
-function normalizeContract(result: AdzunaResult): string {
-  const parts = [result.contract_type, result.contract_time].filter(Boolean) as string[];
+function normalizeContract(result: z.infer<typeof adzunaResultSchema>): string {
+  const parts = [result.contract_type, result.contract_time].filter(
+    (value): value is string => Boolean(value)
+  );
   if (parts.length > 0) return parts.join(" · ");
   return result.category?.label || "Non spécifié";
 }
 
-function mapAdzunaResultToJob(result: AdzunaResult): Job | null {
+function mapAdzunaResultToJob(result: z.infer<typeof adzunaResultSchema>): Job | null {
   const url = result.redirect_url?.trim();
   const title = result.title?.trim();
   if (!url || !title) return null;
@@ -118,7 +152,7 @@ async function fetchAdzunaPage(options: {
   where?: string;
   keywords?: string[];
   page: number;
-}): Promise<AdzunaApiResponse> {
+}): Promise<z.infer<typeof adzunaApiResponseSchema>> {
   const searchUrl = new URL(
     `${ADZUNA_BASE_URL}/${runtimeConfig.adzuna.country}/search/${options.page}`
   );
@@ -144,7 +178,13 @@ async function fetchAdzunaPage(options: {
     return { count: 0, results: [] };
   }
 
-  return (await response.json()) as AdzunaApiResponse;
+  const parsed = adzunaApiResponseSchema.safeParse(await response.json());
+  if (!parsed.success) {
+    console.error("Adzuna payload validation failed", parsed.error.flatten());
+    return { count: 0, results: [] };
+  }
+
+  return parsed.data;
 }
 
 export async function POST(request: NextRequest) {
@@ -156,11 +196,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ jobs: [], total: 0, enabled: false });
     }
 
-    const body = (await request.json()) as ForemSearchParams;
-    const keywords = Array.isArray(body.keywords) ? body.keywords : [];
+    const parsedBody = providerSearchParamsSchema.safeParse(
+      (await request.json()) as ForemSearchParams
+    );
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: "Paramètres de recherche invalides." }, { status: 400 });
+    }
+
+    const body = parsedBody.data;
+    const keywords = body.keywords ?? [];
     const requestedOffset = typeof body.offset === "number" && body.offset > 0 ? body.offset : 0;
     const requestedLimit = typeof body.limit === "number" && body.limit > 0 ? body.limit : 50;
-    const locations = Array.isArray(body.locations) ? body.locations : [];
+    const locations: LocationEntry[] = body.locations ?? [];
     const effectiveOffset = Math.min(requestedOffset, ADZUNA_MAX_RESULTS_WINDOW);
     const effectiveLimit = Math.min(requestedLimit, ADZUNA_MAX_RESULTS_WINDOW);
     const windowEndExclusive = Math.min(

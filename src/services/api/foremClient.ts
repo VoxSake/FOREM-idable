@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { Job } from '@/types/job';
 import { LocationEntry, locationCache } from '@/services/location/locationCache';
 
@@ -14,6 +15,26 @@ export interface ForemSearchParams {
     offset?: number;
     booleanMode?: 'AND' | 'OR';
 }
+
+const foremRecordSchema = z
+    .object({
+        numerooffreforem: z.union([z.string(), z.number()]).optional(),
+        titreoffre: z.string().optional(),
+        nomemployeur: z.string().optional(),
+        lieuxtravaillocalite: z.array(z.string()).optional(),
+        typecontrat: z.string().optional(),
+        datedebutdiffusion: z.string().optional(),
+        url: z.string().optional(),
+        metier: z.string().optional(),
+    })
+    .passthrough();
+
+const foremApiResponseSchema = z
+    .object({
+        results: z.array(foremRecordSchema).default([]),
+        total_count: z.number().optional(),
+    })
+    .passthrough();
 
 export async function fetchForemJobs(params: ForemSearchParams): Promise<{ jobs: Job[]; total: number }> {
     try {
@@ -130,9 +151,14 @@ async function fetchForemPage(options: { where: string | null; limit: number; of
         return null;
     }
 
-    const data = (await response.json()) as { results?: Record<string, unknown>[]; total_count?: number };
-    const results = Array.isArray(data.results) ? data.results : [];
-    const total = Number.isFinite(data.total_count) ? (data.total_count as number) : 0;
+    const parsed = foremApiResponseSchema.safeParse(await response.json());
+    if (!parsed.success) {
+        console.error("Forem API payload validation failed", parsed.error.flatten());
+        return null;
+    }
+
+    const results = parsed.data.results;
+    const total = Number.isFinite(parsed.data.total_count) ? parsed.data.total_count ?? 0 : 0;
 
     return {
         jobs: results.map(mapForemJobToStandard),
@@ -259,12 +285,16 @@ async function buildLocationFilter(location: string, locationEntry?: LocationEnt
     return `search("${escapeOdsString(normalizedRegion)}")`;
 }
 
-function mapForemJobToStandard(record: Record<string, unknown>): Job {
-    const localites = Array.isArray(record.lieuxtravaillocalite) ? record.lieuxtravaillocalite as string[] : [];
+function mapForemJobToStandard(record: z.infer<typeof foremRecordSchema>): Job {
+    const localites = record.lieuxtravaillocalite ?? [];
     const locationString = localites.length > 0 ? localites.join(', ') : 'Wallonie';
-    const url = (record.url as string) || `https://www.leforem.be/recherche-offres/offre-detail/${record.numerooffreforem}`;
-    const title = (record.titreoffre as string) || 'Poste non spécifié';
-    const company = record.nomemployeur as string | undefined;
+    const offerId =
+        typeof record.numerooffreforem === "number"
+            ? String(record.numerooffreforem)
+            : record.numerooffreforem;
+    const url = record.url || `https://www.leforem.be/recherche-offres/offre-detail/${offerId ?? ""}`;
+    const title = record.titreoffre || 'Poste non spécifié';
+    const company = record.nomemployeur;
     const fallbackId = buildStableForemFallbackId({
         url,
         title,
@@ -273,14 +303,14 @@ function mapForemJobToStandard(record: Record<string, unknown>): Job {
     });
 
     return {
-        id: (record.numerooffreforem as string) || fallbackId,
+        id: offerId || fallbackId,
         title,
         company,
         location: locationString,
-        contractType: (record.typecontrat as string) || 'Non spécifié',
-        publicationDate: (record.datedebutdiffusion as string) || new Date().toISOString(),
+        contractType: record.typecontrat || 'Non spécifié',
+        publicationDate: record.datedebutdiffusion || new Date().toISOString(),
         url,
-        description: (record.metier as string) || '',
+        description: record.metier || '',
         source: 'forem',
         pdfUrl: undefined
     };
