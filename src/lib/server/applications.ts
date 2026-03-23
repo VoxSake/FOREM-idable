@@ -1,4 +1,5 @@
 import { addDays } from "date-fns";
+import { PoolClient } from "pg";
 import {
   parseStoredJobApplication,
   safeParseStoredJobApplication,
@@ -16,6 +17,8 @@ import {
 } from "@/lib/coachNotes";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
+
+type Queryable = Pick<PoolClient, "query">;
 
 function sanitizeText(value: string | undefined, fallback = "") {
   return (value || "").trim() || fallback;
@@ -121,7 +124,7 @@ async function getNextPosition(userId: number) {
 }
 
 async function upsertLegacyApplication(
-  client: { query: typeof db.query },
+  client: Queryable,
   input: {
     userId: number;
     position: number;
