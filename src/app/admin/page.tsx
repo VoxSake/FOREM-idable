@@ -98,11 +98,12 @@ function AdminPageSkeleton() {
 
 export default function AdminPage() {
   const page = useAdminPageState();
+  const isInitialPageLoading = page.isAuthLoading || (page.isLoading && !page.dashboard);
 
   useToastFeedback(page.feedback, { title: "Administration" });
   useToastFeedback(page.apiKeysFeedback, { title: "Clés API admin" });
 
-  if (page.isAuthLoading || page.isLoading) {
+  if (isInitialPageLoading) {
     return <AdminPageSkeleton />;
   }
 
@@ -215,7 +216,6 @@ export default function AdminPage() {
 
       <AdminApiKeysSection
         apiKeys={page.apiKeys}
-        feedback={page.apiKeysFeedback}
         isLoading={page.isApiKeysLoading}
         isRevoking={page.isRevokingApiKey}
         revokeTarget={page.revokeTarget}

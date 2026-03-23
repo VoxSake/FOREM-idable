@@ -25,12 +25,14 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableCaption,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { CoachConfirmationDialog } from "@/features/coach/components/dialogs/CoachConfirmationDialog";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
+import { cn } from "@/lib/utils";
 import { AdminApiKeySummary } from "@/types/externalApi";
 
 type ApiKeyStatusFilter = "all" | "active" | "revoked" | "expired" | "expiring";
@@ -72,7 +74,6 @@ function getStatusBadge(entry: AdminApiKeySummary) {
 
 export function AdminApiKeysSection({
   apiKeys,
-  feedback,
   isLoading,
   isRevoking,
   revokeTarget,
@@ -82,7 +83,6 @@ export function AdminApiKeysSection({
   onRevokeDialogOpenChange,
 }: {
   apiKeys: AdminApiKeySummary[];
-  feedback: string | null;
   isLoading: boolean;
   isRevoking: boolean;
   revokeTarget: AdminApiKeySummary | null;
@@ -123,6 +123,8 @@ export function AdminApiKeysSection({
         .includes(normalizedSearch);
     });
   }, [apiKeys, deferredSearch, status]);
+  const hasKeys = filteredKeys.length > 0;
+  const isInitialLoading = isLoading && apiKeys.length === 0;
 
   return (
     <>
@@ -139,9 +141,12 @@ export function AdminApiKeysSection({
                 dernier usage, de l&apos;expiration et révocation centralisée.
               </CardDescription>
             </div>
-            <Button type="button" variant="outline" onClick={onRefresh}>
-              <RotateCw data-icon="inline-start" />
-              Rafraîchir
+            <Button type="button" variant="outline" onClick={onRefresh} disabled={isLoading}>
+              <RotateCw
+                data-icon="inline-start"
+                className={isLoading ? "animate-spin" : undefined}
+              />
+              {isLoading ? "Actualisation..." : "Rafraîchir"}
             </Button>
           </div>
 
@@ -175,19 +180,13 @@ export function AdminApiKeysSection({
           </FieldGroup>
         </CardHeader>
 
-        <CardContent className="px-0 py-0">
-          {feedback ? (
-            <div className="border-b border-border/60 px-6 py-3 text-sm text-muted-foreground">
-              {feedback}
-            </div>
-          ) : null}
-
-          {isLoading ? (
-            <div className="px-6 py-8 text-sm text-muted-foreground">
+        <CardContent className="px-4 py-4 sm:px-6">
+          {isInitialLoading ? (
+            <div className="rounded-xl border border-border/60 px-6 py-8 text-sm text-muted-foreground">
               Chargement des clés API...
             </div>
-          ) : filteredKeys.length === 0 ? (
-            <Empty className="min-h-52 rounded-none border-0">
+          ) : !hasKeys ? (
+            <Empty className="min-h-52 rounded-xl border border-dashed border-border/60">
               <EmptyHeader>
                 <EmptyTitle>Aucune clé à afficher.</EmptyTitle>
                 <EmptyDescription>
@@ -196,66 +195,91 @@ export function AdminApiKeysSection({
               </EmptyHeader>
             </Empty>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-muted/40">
-                  <TableRow>
-                    <TableHead>Propriétaire</TableHead>
-                    <TableHead>Clé</TableHead>
-                    <TableHead>Créée le</TableHead>
-                    <TableHead>Dernier usage</TableHead>
-                    <TableHead>Expiration</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredKeys.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="align-top">
-                        <div className="flex min-w-52 flex-col gap-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">{getAdminApiKeyOwnerName(entry)}</span>
-                            <Badge variant="outline" className="capitalize">
-                              {entry.userRole}
-                            </Badge>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{entry.userEmail}</span>
-                          <span className="text-xs text-muted-foreground">{entry.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <code className="text-xs">
-                          {entry.keyPrefix}...{entry.lastFour}
-                        </code>
-                      </TableCell>
-                      <TableCell className="align-top text-sm text-muted-foreground">
-                        {formatCoachDate(entry.createdAt, true)}
-                      </TableCell>
-                      <TableCell className="align-top text-sm text-muted-foreground">
-                        {entry.lastUsedAt ? formatCoachDate(entry.lastUsedAt, true) : "Jamais"}
-                      </TableCell>
-                      <TableCell className="align-top text-sm text-muted-foreground">
-                        {entry.expiresAt ? formatCoachDate(entry.expiresAt, true) : "Sans expiration"}
-                      </TableCell>
-                      <TableCell className="align-top">{getStatusBadge(entry)}</TableCell>
-                      <TableCell className="align-top text-right">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive hover:text-destructive"
-                          disabled={Boolean(entry.revokedAt)}
-                          onClick={() => onRevokeRequest(entry)}
-                        >
-                          <ShieldBan data-icon="inline-start" />
-                          Révoquer
-                        </Button>
-                      </TableCell>
+            <div
+              aria-busy={isLoading}
+              className={cn(
+                "rounded-xl border border-border/60 bg-background/80 transition-opacity",
+                isLoading ? "opacity-80" : "opacity-100"
+              )}
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
+                <p className="text-xs text-muted-foreground">
+                  {filteredKeys.length} clé{filteredKeys.length > 1 ? "s" : ""} affichée
+                  {filteredKeys.length > 1 ? "s" : ""}
+                </p>
+                {isLoading ? (
+                  <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <RotateCw className="animate-spin" />
+                    Mise à jour en cours...
+                  </span>
+                ) : null}
+              </div>
+              <div className="px-2 py-2 sm:px-3">
+                <Table>
+                  <TableCaption className="sr-only">
+                    Inventaire des clés API générées côté administration.
+                  </TableCaption>
+                  <TableHeader className="bg-muted/40">
+                    <TableRow>
+                      <TableHead>Propriétaire</TableHead>
+                      <TableHead>Clé</TableHead>
+                      <TableHead>Créée le</TableHead>
+                      <TableHead>Dernier usage</TableHead>
+                      <TableHead>Expiration</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredKeys.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className="align-top">
+                          <div className="flex min-w-52 flex-col gap-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{getAdminApiKeyOwnerName(entry)}</span>
+                              <Badge variant="outline" className="capitalize">
+                                {entry.userRole}
+                              </Badge>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{entry.userEmail}</span>
+                            <span className="text-xs text-muted-foreground">{entry.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <code className="text-xs">
+                            {entry.keyPrefix}...{entry.lastFour}
+                          </code>
+                        </TableCell>
+                        <TableCell className="align-top text-sm text-muted-foreground">
+                          {formatCoachDate(entry.createdAt, true)}
+                        </TableCell>
+                        <TableCell className="align-top text-sm text-muted-foreground">
+                          {entry.lastUsedAt ? formatCoachDate(entry.lastUsedAt, true) : "Jamais"}
+                        </TableCell>
+                        <TableCell className="align-top text-sm text-muted-foreground">
+                          {entry.expiresAt
+                            ? formatCoachDate(entry.expiresAt, true)
+                            : "Sans expiration"}
+                        </TableCell>
+                        <TableCell className="align-top">{getStatusBadge(entry)}</TableCell>
+                        <TableCell className="align-top text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="text-destructive hover:text-destructive"
+                            disabled={Boolean(entry.revokedAt)}
+                            onClick={() => onRevokeRequest(entry)}
+                          >
+                            <ShieldBan data-icon="inline-start" />
+                            Révoquer
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>
