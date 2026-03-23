@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,14 @@ export function CoachPageHeader({
                 </Button>
               );
             })}
+            {role === "admin" ? (
+              <Button asChild variant="secondary" className="justify-between sm:col-span-3">
+                <Link href="/admin">
+                  <span>Ouvrir l&apos;administration</span>
+                  <ArrowRight data-icon="inline-end" />
+                </Link>
+              </Button>
+            ) : null}
           </div>
         </div>
       </CardHeader>

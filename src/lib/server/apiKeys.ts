@@ -3,7 +3,12 @@ import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { headers } from "next/headers";
 import { ensureDatabase, orm } from "@/lib/server/db";
 import { apiKeys, users } from "@/lib/server/schema";
-import { ApiKeyCreateResult, ApiKeySummary, ExternalApiActor } from "@/types/externalApi";
+import {
+  AdminApiKeySummary,
+  ApiKeyCreateResult,
+  ApiKeySummary,
+  ExternalApiActor,
+} from "@/types/externalApi";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -43,6 +48,38 @@ function toApiKeySummary(row: {
   };
 }
 
+function toAdminApiKeySummary(row: {
+  id: number;
+  userId: number;
+  userEmail: string;
+  userFirstName: string;
+  userLastName: string;
+  userRole: ExternalApiActor["role"] | "user";
+  name: string;
+  keyPrefix: string;
+  lastFour: string;
+  createdAt: Date;
+  expiresAt: Date | null;
+  lastUsedAt: Date | null;
+  revokedAt: Date | null;
+}): AdminApiKeySummary {
+  return {
+    id: row.id,
+    userId: row.userId,
+    userEmail: row.userEmail,
+    userFirstName: row.userFirstName,
+    userLastName: row.userLastName,
+    userRole: row.userRole,
+    name: row.name,
+    keyPrefix: row.keyPrefix,
+    lastFour: row.lastFour,
+    createdAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt?.toISOString() ?? null,
+    lastUsedAt: row.lastUsedAt?.toISOString() ?? null,
+    revokedAt: row.revokedAt?.toISOString() ?? null,
+  };
+}
+
 export async function listApiKeysForUser(userId: number): Promise<ApiKeySummary[]> {
   await ensureDatabase();
   if (!orm) throw new Error("Database unavailable");
@@ -63,6 +100,33 @@ export async function listApiKeysForUser(userId: number): Promise<ApiKeySummary[
     .orderBy(desc(apiKeys.createdAt));
 
   return rows.map((row) => toApiKeySummary(row));
+}
+
+export async function listApiKeysForAdmin(): Promise<AdminApiKeySummary[]> {
+  await ensureDatabase();
+  if (!orm) throw new Error("Database unavailable");
+
+  const rows = await orm
+    .select({
+      id: apiKeys.id,
+      userId: apiKeys.userId,
+      userEmail: users.email,
+      userFirstName: users.firstName,
+      userLastName: users.lastName,
+      userRole: users.role,
+      name: apiKeys.name,
+      keyPrefix: apiKeys.keyPrefix,
+      lastFour: apiKeys.lastFour,
+      createdAt: apiKeys.createdAt,
+      expiresAt: apiKeys.expiresAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+      revokedAt: apiKeys.revokedAt,
+    })
+    .from(apiKeys)
+    .innerJoin(users, eq(users.id, apiKeys.userId))
+    .orderBy(desc(apiKeys.createdAt));
+
+  return rows.map((row) => toAdminApiKeySummary(row));
 }
 
 export async function createApiKey(
@@ -119,6 +183,16 @@ export async function revokeApiKey(userId: number, apiKeyId: number) {
     .update(apiKeys)
     .set({ revokedAt: new Date() })
     .where(and(eq(apiKeys.id, apiKeyId), eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
+}
+
+export async function revokeApiKeyById(apiKeyId: number) {
+  await ensureDatabase();
+  if (!orm) throw new Error("Database unavailable");
+
+  await orm
+    .update(apiKeys)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(apiKeys.id, apiKeyId), isNull(apiKeys.revokedAt)));
 }
 
 async function getBearerToken() {

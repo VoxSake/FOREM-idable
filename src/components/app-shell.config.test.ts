@@ -7,7 +7,7 @@ import {
 } from "@/components/app-shell.config";
 
 describe("app shell config", () => {
-  it("adds the coach entry only for coach and admin roles", () => {
+  it("adds role-specific navigation entries for coach and admin roles", () => {
     expect(getSidebarNavItems("user").map((item) => item.url)).toEqual([
       "/",
       "/applications",
@@ -24,6 +24,7 @@ describe("app shell config", () => {
     ]);
 
     expect(getSidebarNavItems("admin").map((item) => item.url)).toEqual([
+      "/admin",
       "/coach",
       "/",
       "/applications",

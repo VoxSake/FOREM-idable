@@ -12,6 +12,14 @@ export interface ApiKeySummary {
   revokedAt: string | null;
 }
 
+export interface AdminApiKeySummary extends ApiKeySummary {
+  userId: number;
+  userEmail: string;
+  userFirstName: string;
+  userLastName: string;
+  userRole: UserRole;
+}
+
 export interface ApiKeyCreateResult {
   apiKey: ApiKeySummary;
   plainTextKey: string;

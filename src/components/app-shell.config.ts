@@ -39,12 +39,27 @@ const COACH_NAV_ITEM: AppSidebarNavItem = {
   ],
 };
 
+const ADMIN_NAV_ITEM: AppSidebarNavItem = {
+  title: "Administration",
+  url: "/admin",
+  icon: ShieldCheck,
+  accent: true,
+  children: [
+    { title: "Coachs", url: "/admin#coachs" },
+    { title: "Clés API", url: "/admin#cles-api" },
+  ],
+};
+
 export const FOOTER_NAV_ITEMS: AppSidebarNavItem[] = [
   { title: "Confidentialité", url: "/privacy", icon: ShieldCheck },
 ];
 
 export function getSidebarNavItems(role?: UserRole): AppSidebarNavItem[] {
-  if (role === "coach" || role === "admin") {
+  if (role === "admin") {
+    return [ADMIN_NAV_ITEM, COACH_NAV_ITEM, ...BASE_NAV_ITEMS];
+  }
+
+  if (role === "coach") {
     return [COACH_NAV_ITEM, ...BASE_NAV_ITEMS];
   }
 

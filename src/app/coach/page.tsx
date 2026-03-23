@@ -2,7 +2,6 @@
 
 import { LoaderCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { CoachAdminSection } from "@/features/coach/components/CoachAdminSection";
 import { CoachDialogs } from "@/features/coach/components/CoachDialogs";
 import { CoachImportApplicationsDialog } from "@/features/coach/components/CoachImportApplicationsDialog";
 import { CoachPageContent } from "@/features/coach/components/CoachPageContent";
@@ -105,18 +104,6 @@ export default function CoachPage() {
       />
 
       <CoachDialogs page={page} />
-
-      {page.user.role === "admin" ? (
-        <CoachAdminSection
-          coaches={page.managedCoaches}
-          groups={page.dashboard?.groups ?? []}
-          promotableUsers={page.promotableUsers}
-          isPromoteCoachOpen={page.isPromoteCoachOpen}
-          onPromoteCoachOpenChange={page.setIsPromoteCoachOpen}
-          onPromoteCoach={(userId) => void page.promoteCoach(userId)}
-          onDemoteCoach={(userId) => void page.demoteCoach(userId)}
-        />
-      ) : null}
 
       <CoachImportApplicationsDialog
         open={Boolean(page.importTargetUser)}

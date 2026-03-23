@@ -2,6 +2,7 @@ import { db, ensureDatabase } from "@/lib/server/db";
 
 export type AuditAction =
   | "admin_role_changed"
+  | "api_key_revoked"
   | "user_deleted"
   | "user_profile_updated"
   | "group_created"
