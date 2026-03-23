@@ -1,10 +1,16 @@
+import { randomUUID } from "crypto";
 import { isAfter } from "date-fns";
-import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
+import {
+  formatCoachAuthorName,
+  summarizeCoachContributors,
+  toCoachNoteAuthor,
+} from "@/lib/coachNotes";
 import {
   getRelationalApplicationRecordById,
   getRelationalApplicationRecordByUserAndJob,
   listApplicationRecordsFromRelationalStoreByUsers,
   RelationalApplicationRecord,
+  saveApplicationToRelationalStore,
 } from "@/lib/server/applicationStore";
 import {
   createTrackedApplicationForUser,
@@ -14,8 +20,8 @@ import {
 import {
   canAccessCoachUser,
   getCoachDashboard,
-  updateCoachApplicationNotes,
 } from "@/lib/server/coach";
+import { db } from "@/lib/server/db";
 import {
   ExternalApiActor,
   ExternalApiApplicationDetail,
@@ -296,6 +302,39 @@ function normalizeExternalJob(input: Partial<Job> & { id?: string; title?: strin
     source: input.source ?? "forem",
     pdfUrl: input.pdfUrl?.trim() || undefined,
   } satisfies Job;
+}
+
+async function persistApplicationRecord(record: RelationalApplicationRecord, application: JobApplication) {
+  if (!db) throw new Error("Database unavailable");
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+    await saveApplicationToRelationalStore(client, {
+      userId: record.userId,
+      position: record.position,
+      application,
+      sourceType:
+        application.job.url === "#" || application.job.id.startsWith("manual-")
+          ? "manual"
+          : "tracked",
+    });
+    await client.query(
+      `INSERT INTO user_applications (user_id, job_id, position, application)
+       VALUES ($1, $2, $3, $4::jsonb)
+       ON CONFLICT (user_id, job_id)
+       DO UPDATE SET
+         position = EXCLUDED.position,
+         application = EXCLUDED.application`,
+      [record.userId, record.jobId, record.position, JSON.stringify(application)]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function getExternalUsers(
@@ -613,13 +652,26 @@ export async function saveExternalPrivateNote(
 
   const allowed = await requireScopedUser(actor, record.userId);
   if (!allowed) throw new Error("Forbidden");
-
-  await updateCoachApplicationNotes({
-    actor,
-    userId: record.userId,
-    jobId: record.jobId,
-    privateNoteContent: content,
-  });
+  const author = toCoachNoteAuthor(actor);
+  const now = new Date().toISOString();
+  const nextApplication: JobApplication = {
+    ...record.application,
+    privateCoachNote: content.trim()
+      ? {
+          content: content.trim(),
+          createdAt: record.application.privateCoachNote?.createdAt ?? now,
+          updatedAt: now,
+          createdBy: record.application.privateCoachNote?.createdBy ?? author,
+          contributors: record.application.privateCoachNote?.contributors?.some(
+            (entry) => entry.id === author.id
+          )
+            ? (record.application.privateCoachNote?.contributors ?? [])
+            : [...(record.application.privateCoachNote?.contributors ?? []), author],
+        }
+      : undefined,
+    updatedAt: now,
+  };
+  await persistApplicationRecord(record, nextApplication);
 
   const detail = await getExternalApplicationDetail(actor, applicationId);
   if (!detail) throw new Error("Application not found");
@@ -637,14 +689,25 @@ export async function createExternalSharedNote(
 
   const allowed = await requireScopedUser(actor, record.userId);
   if (!allowed) throw new Error("Forbidden");
-
-  await updateCoachApplicationNotes({
-    actor,
-    userId: record.userId,
-    jobId: record.jobId,
-    sharedNoteContent: content,
-    createSharedNote: true,
-  });
+  if (!content.trim()) throw new Error("Shared note content required");
+  const author = toCoachNoteAuthor(actor);
+  const now = new Date().toISOString();
+  const nextApplication: JobApplication = {
+    ...record.application,
+    sharedCoachNotes: [
+      ...(record.application.sharedCoachNotes ?? []),
+      {
+        id: randomUUID(),
+        content: content.trim(),
+        createdAt: now,
+        updatedAt: now,
+        createdBy: author,
+        contributors: [author],
+      },
+    ],
+    updatedAt: now,
+  };
+  await persistApplicationRecord(record, nextApplication);
 
   const detail = await getExternalApplicationDetail(actor, applicationId);
   if (!detail) throw new Error("Application not found");
@@ -663,14 +726,27 @@ export async function updateExternalSharedNote(
 
   const allowed = await requireScopedUser(actor, record.userId);
   if (!allowed) throw new Error("Forbidden");
-
-  await updateCoachApplicationNotes({
-    actor,
-    userId: record.userId,
-    jobId: record.jobId,
-    sharedNoteId: noteId,
-    sharedNoteContent: content,
-  });
+  const author = toCoachNoteAuthor(actor);
+  const now = new Date().toISOString();
+  const nextApplication: JobApplication = {
+    ...record.application,
+    sharedCoachNotes: (record.application.sharedCoachNotes ?? [])
+      .map((note) =>
+        note.id === noteId
+          ? {
+              ...note,
+              content: content.trim(),
+              updatedAt: now,
+              contributors: note.contributors.some((entry) => entry.id === author.id)
+                ? note.contributors
+                : [...note.contributors, author],
+            }
+          : note
+      )
+      .filter((note) => note.content.trim()),
+    updatedAt: now,
+  };
+  await persistApplicationRecord(record, nextApplication);
 
   const detail = await getExternalApplicationDetail(actor, applicationId);
   if (!detail) throw new Error("Application not found");
@@ -688,14 +764,12 @@ export async function deleteExternalSharedNote(
 
   const allowed = await requireScopedUser(actor, record.userId);
   if (!allowed) throw new Error("Forbidden");
-
-  await updateCoachApplicationNotes({
-    actor,
-    userId: record.userId,
-    jobId: record.jobId,
-    sharedNoteId: noteId,
-    deleteSharedNote: true,
-  });
+  const nextApplication: JobApplication = {
+    ...record.application,
+    sharedCoachNotes: (record.application.sharedCoachNotes ?? []).filter((note) => note.id !== noteId),
+    updatedAt: new Date().toISOString(),
+  };
+  await persistApplicationRecord(record, nextApplication);
 
   const detail = await getExternalApplicationDetail(actor, applicationId);
   if (!detail) throw new Error("Application not found");
