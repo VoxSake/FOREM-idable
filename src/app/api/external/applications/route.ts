@@ -10,6 +10,7 @@ import {
   parseExternalFilters,
   requireExternalApiAccess,
 } from "@/lib/server/externalApiRoute";
+import { externalApplicationUpsertSchema } from "@/lib/server/requestSchemas";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,38 +33,14 @@ export async function PUT(request: NextRequest) {
     const actor = await requireExternalApiAccess();
     if (actor instanceof NextResponse) return actor;
 
-    const body = (await request.json()) as {
-      match?: { userId?: number; jobId?: string };
-      data?: {
-        status?: string;
-        notes?: string;
-        proofs?: string;
-        interviewAt?: string | null;
-        interviewDetails?: string | null;
-        lastFollowUpAt?: string | null;
-        followUpDueAt?: string | null;
-        followUpEnabled?: boolean;
-        appliedAt?: string;
-        job?: {
-          title?: string;
-          company?: string;
-          location?: string;
-          contractType?: string;
-          url?: string;
-          publicationDate?: string;
-          description?: string;
-          source?: "forem" | "linkedin" | "indeed" | "adzuna";
-          pdfUrl?: string;
-        };
-      };
-    };
-
-    if (!body.match?.userId || !body.match?.jobId || !body.data?.job?.title) {
+    const parsed = externalApplicationUpsertSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
         { error: "match.userId, match.jobId et data.job.title sont requis." },
         { status: 400 }
       );
     }
+    const body = parsed.data;
 
     const response = await upsertExternalApplication(actor, {
       match: {
@@ -71,7 +48,7 @@ export async function PUT(request: NextRequest) {
         jobId: body.match.jobId,
       },
       data: {
-        status: body.data.status as never,
+        status: body.data.status,
         notes: body.data.notes,
         proofs: body.data.proofs,
         interviewAt: body.data.interviewAt ?? undefined,

@@ -15,6 +15,7 @@ import {
 import { recordAuditEvent } from "@/lib/server/auditLog";
 import { getCurrentUser } from "@/lib/server/auth";
 import { db, ensureDatabase } from "@/lib/server/db";
+import { ApplicationPatchInput, normalizeApplicationPatch } from "@/lib/server/requestSchemas";
 import { logServerEvent } from "@/lib/server/observability";
 import {
   createTrackedApplicationForUser,
@@ -1092,28 +1093,14 @@ export async function updateCoachManagedApplication(input: {
   actor: CoachCapableUser;
   userId: number;
   jobId: string;
-  patch: Partial<
-    Pick<
-      JobApplication,
-      | "status"
-      | "notes"
-      | "proofs"
-      | "interviewAt"
-      | "interviewDetails"
-      | "lastFollowUpAt"
-      | "followUpDueAt"
-      | "followUpEnabled"
-      | "appliedAt"
-      | "job"
-    >
-  >;
+  patch: ApplicationPatchInput;
 }) {
   await assertCanAccessCoachUser(input.actor, input.userId);
 
   const application = await updateApplicationForUser({
     userId: input.userId,
     jobId: input.jobId,
-    patch: input.patch,
+    patch: normalizeApplicationPatch(input.jobId, input.patch),
   });
 
   await markCoachAction(input.actor.id);

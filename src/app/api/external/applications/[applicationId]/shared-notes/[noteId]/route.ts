@@ -4,11 +4,7 @@ import {
   updateExternalSharedNote,
 } from "@/lib/server/externalApi";
 import { requireExternalApiAccess } from "@/lib/server/externalApiRoute";
-
-function parseApplicationId(value: string) {
-  const id = Number(value);
-  return Number.isInteger(id) ? id : null;
-}
+import { parseIntegerParam, textContentSchema } from "@/lib/server/requestSchemas";
 
 export async function PATCH(
   request: NextRequest,
@@ -19,15 +15,16 @@ export async function PATCH(
     if (actor instanceof NextResponse) return actor;
 
     const { applicationId: rawApplicationId, noteId } = await context.params;
-    const applicationId = parseApplicationId(rawApplicationId);
+    const applicationId = parseIntegerParam(rawApplicationId);
     if (!applicationId || !noteId) {
       return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
     }
 
-    const body = (await request.json()) as { content?: string };
-    if (typeof body.content !== "string") {
+    const parsed = textContentSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json({ error: "content requis." }, { status: 400 });
     }
+    const body = parsed.data;
 
     const response = await updateExternalSharedNote(actor, applicationId, noteId, body.content);
     return NextResponse.json(response);
@@ -52,7 +49,7 @@ export async function DELETE(
     if (actor instanceof NextResponse) return actor;
 
     const { applicationId: rawApplicationId, noteId } = await context.params;
-    const applicationId = parseApplicationId(rawApplicationId);
+    const applicationId = parseIntegerParam(rawApplicationId);
     if (!applicationId || !noteId) {
       return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
     }

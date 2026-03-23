@@ -4,8 +4,8 @@ import {
   requireCoachAccess,
   updateCoachManagedApplication,
 } from "@/lib/server/coach";
+import { parseIntegerParam, patchEnvelopeSchema } from "@/lib/server/requestSchemas";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
-import { JobApplication } from "@/types/application";
 
 export async function PATCH(
   request: NextRequest,
@@ -21,31 +21,19 @@ export async function PATCH(
     }
 
     const { userId, jobId } = await context.params;
-    const body = (await request.json()) as {
-      patch?: Partial<
-        Pick<
-          JobApplication,
-          | "status"
-          | "notes"
-          | "proofs"
-          | "interviewAt"
-          | "interviewDetails"
-          | "lastFollowUpAt"
-          | "followUpDueAt"
-          | "followUpEnabled"
-          | "appliedAt"
-          | "job"
-        >
-      >;
-    };
-
-    if (!body.patch || typeof body.patch !== "object") {
+    const parsedUserId = parseIntegerParam(userId);
+    if (!parsedUserId) {
+      return NextResponse.json({ error: "Utilisateur invalide." }, { status: 400 });
+    }
+    const parsed = patchEnvelopeSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json({ error: "Modification invalide." }, { status: 400 });
     }
+    const body = parsed.data;
 
     const application = await updateCoachManagedApplication({
       actor: viewer,
-      userId: Number(userId),
+      userId: parsedUserId,
       jobId,
       patch: body.patch,
     });
@@ -86,9 +74,13 @@ export async function DELETE(
     }
 
     const { userId, jobId } = await context.params;
+    const parsedUserId = parseIntegerParam(userId);
+    if (!parsedUserId) {
+      return NextResponse.json({ error: "Utilisateur invalide." }, { status: 400 });
+    }
     await deleteCoachManagedApplication({
       actor: viewer,
-      userId: Number(userId),
+      userId: parsedUserId,
       jobId,
     });
 

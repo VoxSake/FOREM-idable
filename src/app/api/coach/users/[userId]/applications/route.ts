@@ -6,6 +6,11 @@ import {
   updateCoachApplicationNotes,
 } from "@/lib/server/coach";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
+import {
+  coachImportRequestSchema,
+  coachNotesActionSchema,
+  parseIntegerParam,
+} from "@/lib/server/requestSchemas";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 export async function PATCH(
@@ -23,24 +28,20 @@ export async function PATCH(
     }
 
     const { userId } = await context.params;
-    const body = (await request.json()) as {
-      jobId?: string;
-      action?: "save-private" | "create-shared" | "update-shared" | "delete-shared";
-      content?: string;
-      noteId?: string;
-    };
-
-    if (!body.jobId || typeof body.jobId !== "string") {
-      return NextResponse.json({ error: "jobId requis." }, { status: 400 });
+    const parsedUserId = parseIntegerParam(userId);
+    if (!parsedUserId) {
+      return NextResponse.json({ error: "Utilisateur invalide." }, { status: 400 });
     }
-
-    if (!body.action) {
-      return NextResponse.json({ error: "Action requise." }, { status: 400 });
+    const parsed = coachNotesActionSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      return NextResponse.json({ error: issue?.message || "Action invalide." }, { status: 400 });
     }
+    const body = parsed.data;
 
     const application = await updateCoachApplicationNotes({
       actor: viewer,
-      userId: Number(userId),
+      userId: parsedUserId,
       jobId: body.jobId,
       privateNoteContent: body.action === "save-private" ? body.content ?? "" : undefined,
       sharedNoteContent:
@@ -90,34 +91,27 @@ export async function POST(
     }
 
     const { userId } = await context.params;
-    const body = (await request.json()) as {
-      dateFormat?: CoachImportDateFormat;
-      rows?: Array<{
-        company?: string;
-        contractType?: string;
-        title?: string;
-        location?: string;
-        appliedAt?: string;
-        status?: string;
-        notes?: string;
-      }>;
-    };
-
-    if (!Array.isArray(body.rows) || body.rows.length === 0) {
+    const parsedUserId = parseIntegerParam(userId);
+    if (!parsedUserId) {
+      return NextResponse.json({ error: "Utilisateur invalide." }, { status: 400 });
+    }
+    const parsed = coachImportRequestSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json({ error: "Aucune ligne à importer." }, { status: 400 });
     }
+    const body = parsed.data;
 
     const importedApplications = await importCoachApplicationsForUser({
       actor: viewer,
-      userId: Number(userId),
-      dateFormat: body.dateFormat === "mdy" ? "mdy" : "dmy",
+      userId: parsedUserId,
+      dateFormat: (body.dateFormat ?? "dmy") as CoachImportDateFormat,
       rows: body.rows.map((row) => ({
         company: row.company ?? "",
         contractType: row.contractType,
         title: row.title ?? "",
         location: row.location,
         appliedAt: row.appliedAt,
-        status: row.status as never,
+        status: row.status,
         notes: row.notes,
       })),
     });

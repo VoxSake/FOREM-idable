@@ -22,6 +22,7 @@ import {
   getCoachDashboard,
 } from "@/lib/server/coach";
 import { db } from "@/lib/server/db";
+import { ApplicationPatchInput, normalizeApplicationPatch } from "@/lib/server/requestSchemas";
 import {
   ExternalApiActor,
   ExternalApiApplicationDetail,
@@ -595,21 +596,7 @@ export async function upsertExternalApplication(
 export async function patchExternalApplication(
   actor: ExternalApiActor,
   applicationId: number,
-  patch: Partial<
-    Pick<
-      JobApplication,
-      | "status"
-      | "notes"
-      | "proofs"
-      | "interviewAt"
-      | "interviewDetails"
-      | "lastFollowUpAt"
-      | "followUpDueAt"
-      | "followUpEnabled"
-      | "appliedAt"
-      | "job"
-    >
-  >
+  patch: ApplicationPatchInput
 ): Promise<ExternalApiMutationResponse> {
   const record = await getRelationalApplicationRecordById(applicationId);
   if (!record) throw new Error("Application not found");
@@ -620,7 +607,7 @@ export async function patchExternalApplication(
   await updateApplicationForUser({
     userId: record.userId,
     jobId: record.jobId,
-    patch,
+    patch: normalizeApplicationPatch(record.jobId, patch),
   });
 
   const detail = await getExternalApplicationDetail(actor, applicationId);

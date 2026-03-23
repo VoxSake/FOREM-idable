@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createExternalSharedNote } from "@/lib/server/externalApi";
 import { requireExternalApiAccess } from "@/lib/server/externalApiRoute";
-
-function parseApplicationId(value: string) {
-  const id = Number(value);
-  return Number.isInteger(id) ? id : null;
-}
+import { parseIntegerParam, textContentSchema } from "@/lib/server/requestSchemas";
 
 export async function POST(
   request: NextRequest,
@@ -16,15 +12,16 @@ export async function POST(
     if (actor instanceof NextResponse) return actor;
 
     const { applicationId: rawApplicationId } = await context.params;
-    const applicationId = parseApplicationId(rawApplicationId);
+    const applicationId = parseIntegerParam(rawApplicationId);
     if (!applicationId) {
       return NextResponse.json({ error: "Candidature invalide." }, { status: 400 });
     }
 
-    const body = (await request.json()) as { content?: string };
-    if (typeof body.content !== "string" || !body.content.trim()) {
+    const parsed = textContentSchema.safeParse(await request.json());
+    if (!parsed.success || !parsed.data.content.trim()) {
       return NextResponse.json({ error: "content requis." }, { status: 400 });
     }
+    const body = parsed.data;
 
     const response = await createExternalSharedNote(actor, applicationId, body.content);
     return NextResponse.json(response, { status: 201 });

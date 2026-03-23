@@ -5,12 +5,10 @@ import {
   patchExternalApplication,
 } from "@/lib/server/externalApi";
 import { requireExternalApiAccess } from "@/lib/server/externalApiRoute";
-import { JobApplication } from "@/types/application";
-
-function parseApplicationId(value: string) {
-  const id = Number(value);
-  return Number.isInteger(id) ? id : null;
-}
+import {
+  parseIntegerParam,
+  patchEnvelopeSchema,
+} from "@/lib/server/requestSchemas";
 
 export async function GET(
   _request: NextRequest,
@@ -21,7 +19,7 @@ export async function GET(
     if (actor instanceof NextResponse) return actor;
 
     const { applicationId: rawApplicationId } = await context.params;
-    const applicationId = parseApplicationId(rawApplicationId);
+    const applicationId = parseIntegerParam(rawApplicationId);
     if (!applicationId) {
       return NextResponse.json({ error: "Candidature invalide." }, { status: 400 });
     }
@@ -46,32 +44,16 @@ export async function PATCH(
     if (actor instanceof NextResponse) return actor;
 
     const { applicationId: rawApplicationId } = await context.params;
-    const applicationId = parseApplicationId(rawApplicationId);
+    const applicationId = parseIntegerParam(rawApplicationId);
     if (!applicationId) {
       return NextResponse.json({ error: "Candidature invalide." }, { status: 400 });
     }
 
-    const body = (await request.json()) as {
-      patch?: Partial<
-        Pick<
-          JobApplication,
-          | "status"
-          | "notes"
-          | "proofs"
-          | "interviewAt"
-          | "interviewDetails"
-          | "lastFollowUpAt"
-          | "followUpDueAt"
-          | "followUpEnabled"
-          | "appliedAt"
-          | "job"
-        >
-      >;
-    };
-
-    if (!body.patch || typeof body.patch !== "object") {
+    const parsed = patchEnvelopeSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json({ error: "Patch invalide." }, { status: 400 });
     }
+    const body = parsed.data;
 
     const response = await patchExternalApplication(actor, applicationId, body.patch);
     return NextResponse.json(response);
@@ -102,7 +84,7 @@ export async function DELETE(
     if (actor instanceof NextResponse) return actor;
 
     const { applicationId: rawApplicationId } = await context.params;
-    const applicationId = parseApplicationId(rawApplicationId);
+    const applicationId = parseIntegerParam(rawApplicationId);
     if (!applicationId) {
       return NextResponse.json({ error: "Candidature invalide." }, { status: 400 });
     }
