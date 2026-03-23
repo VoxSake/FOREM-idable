@@ -28,14 +28,14 @@ import { ConversationDetail, ConversationPreview, DirectMessageTarget } from "@/
 
 function MessagesPageSkeleton() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 lg:px-6">
       <Card className="border-border/60 py-0">
         <CardHeader className="gap-3 border-b border-border/60 px-6 py-5">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="h-4 w-full max-w-2xl" />
         </CardHeader>
       </Card>
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <Card className="border-border/60 py-0">
           <CardContent className="flex flex-col gap-3 px-4 py-4">
             {Array.from({ length: 6 }).map((_, index) => (
@@ -222,7 +222,7 @@ export default function MessagesPage() {
 
   return (
     <>
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 animate-in fade-in duration-500 lg:px-6">
         <Card className="border-border/60 py-0">
           <CardHeader className="gap-4 border-b border-border/60 px-6 py-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -249,8 +249,8 @@ export default function MessagesPage() {
           </CardHeader>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <Card className="border-border/60 py-0">
+        <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <Card className="border-border/60 py-0 xl:sticky xl:top-6 xl:self-start">
             <CardHeader className="border-b border-border/60 px-4 py-4">
               <CardTitle className="text-lg">Conversations</CardTitle>
             </CardHeader>
@@ -356,7 +356,7 @@ export default function MessagesPage() {
                     </div>
                   ) : selectedConversation ? (
                     <>
-                      <div className="flex min-h-[360px] flex-col gap-3 rounded-2xl border border-border/60 bg-muted/10 p-4">
+                      <div className="flex min-h-[520px] flex-col gap-3 rounded-2xl border border-border/60 bg-muted/10 p-4 lg:min-h-[620px]">
                         {selectedConversation.messages.length === 0 ? (
                           <Empty className="min-h-[300px] rounded-xl border border-dashed border-border/60 bg-background/70">
                             <EmptyHeader>
@@ -367,34 +367,36 @@ export default function MessagesPage() {
                             </EmptyHeader>
                           </Empty>
                         ) : (
-                          selectedConversation.messages.map((message) => (
-                            <div
-                              key={message.id}
-                              className={cn(
-                                "max-w-[85%] rounded-2xl border px-4 py-3",
-                                message.isOwnMessage
-                                  ? "ml-auto border-primary/30 bg-primary/10"
-                                  : "border-border/60 bg-background"
-                              )}
-                            >
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-sm font-medium">
-                                  {message.author
-                                    ? `${message.author.firstName} ${message.author.lastName}`.trim() ||
-                                      message.author.email
-                                    : "Système"}
+                          <div className="flex flex-col gap-3">
+                            {selectedConversation.messages.map((message) => (
+                              <div
+                                key={message.id}
+                                className={cn(
+                                  "max-w-[92%] rounded-2xl border px-4 py-3 lg:max-w-[78%]",
+                                  message.isOwnMessage
+                                    ? "ml-auto border-primary/30 bg-primary/10"
+                                    : "border-border/60 bg-background"
+                                )}
+                              >
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="text-sm font-medium">
+                                    {message.author
+                                      ? `${message.author.firstName} ${message.author.lastName}`.trim() ||
+                                        message.author.email
+                                      : "Système"}
+                                  </p>
+                                  <span className="text-xs text-muted-foreground">
+                                    {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm", {
+                                      locale: fr,
+                                    })}
+                                  </span>
+                                </div>
+                                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+                                  {message.content || ""}
                                 </p>
-                                <span className="text-xs text-muted-foreground">
-                                  {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm", {
-                                    locale: fr,
-                                  })}
-                                </span>
                               </div>
-                              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
-                                {message.content || ""}
-                              </p>
-                            </div>
-                          ))
+                            ))}
+                          </div>
                         )}
                       </div>
 
