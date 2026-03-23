@@ -156,20 +156,12 @@ export function CoachGroupsSection({
           }
         />
 
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline">Nom du groupe</Badge>
-          <span>puis</span>
-          <Badge variant="outline">membres visibles</Badge>
-          <span>et enfin</span>
-          <Badge variant="outline">actions</Badge>
-        </div>
-
         <div className="space-y-4">
         {groupedUsers.length > 0 ? (
           groupedUsers.map((group) => (
           <div key={`${group.kind}-${group.id}`} className="rounded-xl border border-border/60 bg-muted/20 p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-semibold">{group.name}</p>
                   <Badge variant={group.kind === "ungrouped" ? "secondary" : "outline"}>
@@ -182,8 +174,10 @@ export function CoachGroupsSection({
                     {group.members.length} membre{group.members.length > 1 ? "s" : ""}
                   </Badge>
                   <Badge variant="outline">{group.totalApplications} candidatures</Badge>
-                  <Badge variant="outline">{group.totalInterviews} entretien(s)</Badge>
-                  {group.totalDue > 0 && <Badge variant="destructive">{group.totalDue} relance(s)</Badge>}
+                  <Badge variant="info" className="hidden sm:inline-flex">
+                    {group.totalInterviews} entretien(s)
+                  </Badge>
+                  {group.totalDue > 0 && <Badge variant="warning">{group.totalDue} relance(s)</Badge>}
                   {group.totalAccepted > 0 && (
                     <Badge variant={getSummaryBadgeVariant("accepted")}>
                       {group.totalAccepted} acceptée(s)
@@ -249,7 +243,7 @@ export function CoachGroupsSection({
                   </TooltipProvider>
                 ) : null}
               </div>
-              <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
                 <Button
                   type="button"
                   size="sm"
@@ -403,35 +397,46 @@ export function CoachGroupsSection({
                           firstItemClassName="mt-1 text-xs text-muted-foreground"
                         />
                       </div>
-                      <div className="grid min-w-0 gap-2 sm:min-w-[210px]">
-                        {entry.applicationCount > 0 ? (
-                          <Badge variant="outline" className="justify-center">
-                            {entry.applicationCount} candidatures
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="justify-center">
-                            Aucune candidature
-                          </Badge>
-                        )}
-                        <div className="flex flex-wrap justify-end gap-2">
-                          {entry.interviewCount > 0 && (
-                            <Badge variant={getSummaryBadgeVariant("interview")}>
-                              {entry.interviewCount} entretien{entry.interviewCount > 1 ? "s" : ""}
-                            </Badge>
-                          )}
-                          {entry.dueCount > 0 && (
-                            <Badge variant="destructive">{entry.dueCount} relance(s)</Badge>
-                          )}
-                          {entry.acceptedCount > 0 && (
-                            <Badge variant={getSummaryBadgeVariant("accepted")}>
-                              {entry.acceptedCount} acceptée{entry.acceptedCount > 1 ? "s" : ""}
-                            </Badge>
-                          )}
-                          {entry.rejectedCount > 0 && (
-                            <Badge variant={getSummaryBadgeVariant("rejected")}>
-                              {entry.rejectedCount} refusée{entry.rejectedCount > 1 ? "s" : ""}
-                            </Badge>
-                          )}
+                      <div className="grid min-w-0 gap-2 sm:min-w-[250px]">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-center">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              Candidatures
+                            </p>
+                            <p className="text-sm font-semibold text-foreground">
+                              {entry.applicationCount}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border border-border/60 bg-[#EEF6FC] px-3 py-2 text-center">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              Entretiens
+                            </p>
+                            <p className="text-sm font-semibold text-[#2E6E99] dark:text-sky-300">
+                              {entry.interviewCount}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border border-border/60 bg-[#FFF5E8] px-3 py-2 text-center">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              Relances
+                            </p>
+                            <p className="text-sm font-semibold text-[#A46110] dark:text-amber-300">
+                              {entry.dueCount}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border border-border/60 bg-background px-3 py-2 text-center">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              Résultats
+                            </p>
+                            <div className="flex items-center justify-center gap-1 text-sm font-semibold text-foreground">
+                              <span className="text-[#2F7A3E] dark:text-emerald-300">
+                                {entry.acceptedCount}
+                              </span>
+                              <span className="text-muted-foreground">/</span>
+                              <span className="text-[#C85A50] dark:text-rose-300">
+                                {entry.rejectedCount}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -503,7 +508,7 @@ export function CoachGroupsSection({
 
 function getSummaryBadgeVariant(tone: "accepted" | "rejected" | "interview") {
   if (tone === "rejected") {
-    return "destructive";
+    return "error";
   }
 
   if (tone === "accepted") {

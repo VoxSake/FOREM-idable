@@ -803,28 +803,28 @@ function getApplicationCardClassName(status: JobApplication["status"], isDue: bo
   if (status === "interview") {
     return cn(
       baseClassName,
-      "border-border/60 bg-secondary/35 hover:border-primary/40 hover:bg-secondary/50"
+      "border-[#9FCAE8] bg-[#EEF6FC] hover:border-[#87BADF] hover:bg-[#E3F0FA]"
     );
   }
 
   if (status === "accepted") {
     return cn(
       baseClassName,
-      "border-border/60 bg-secondary/30 hover:border-primary/40 hover:bg-secondary/45"
+      "border-[#9BD7A1] bg-[#EEF9F0] hover:border-[#7FC788] hover:bg-[#E5F5E8]"
     );
   }
 
   if (status === "rejected") {
     return cn(
       baseClassName,
-      "border-border/60 bg-destructive/8 hover:border-destructive/40 hover:bg-destructive/12"
+      "border-[#F3A19B] bg-[#FFF0EE] hover:border-[#E78D86] hover:bg-[#FEE4E0]"
     );
   }
 
   if (isDue) {
     return cn(
       baseClassName,
-      "border-border/60 bg-destructive/6 hover:border-destructive/40 hover:bg-destructive/10"
+      "border-[#F2C27A] bg-[#FFF5E8] hover:border-[#E6B35E] hover:bg-[#FDEED8]"
     );
   }
 
@@ -840,7 +840,7 @@ function getApplicationStatusBadgeVariant(
   }
 
   if (status === "rejected") {
-    return "destructive";
+    return "error";
   }
 
   if (status === "interview") {

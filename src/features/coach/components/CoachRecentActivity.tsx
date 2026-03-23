@@ -48,7 +48,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
               et entretiens planifiés.
             </CardDescription>
           </div>
-          <Badge variant="outline">6 derniers événements</Badge>
+          <Badge variant="outline">Derniers événements</Badge>
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 p-5">
@@ -67,7 +67,11 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
                   <button
                     key={item.id}
                     type="button"
-                    className="flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/30"
+                    className={
+                      `flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-background p-3 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/20 ${
+                        index >= 4 ? "hidden md:flex" : ""
+                      }`
+                    }
                     style={{ animationDelay: `${index * 35}ms` }}
                     onClick={() => onOpenItem(item.userId, item.jobId)}
                   >
@@ -77,7 +81,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
                           {item.userName}
                         </p>
                         <Badge variant="outline">{item.groupLabel}</Badge>
-                        <Badge variant={item.kind === "interview" ? "secondary" : "outline"}>
+                        <Badge variant={item.kind === "interview" ? "info" : "outline"}>
                           {item.kind === "interview" ? (
                             <CalendarClock data-icon="inline-start" />
                           ) : (

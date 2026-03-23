@@ -168,19 +168,19 @@ function getApplicationCardClassName(
   }
 ) {
   if (options.isDue) {
-    return "border-destructive/40 bg-destructive/5";
+    return "border-[#F2C27A] bg-[#FFF5E8]";
   }
 
   if (status === "accepted") {
-    return "border-emerald-300 bg-emerald-50/60";
+    return "border-[#9BD7A1] bg-[#EEF9F0]";
   }
 
   if (status === "rejected") {
-    return "border-rose-300 bg-rose-50/60";
+    return "border-[#F3A19B] bg-[#FFF0EE]";
   }
 
   if (status === "interview" || options.hasInterview) {
-    return "border-sky-300 bg-sky-50/50";
+    return "border-[#9FCAE8] bg-[#EEF6FC]";
   }
 
   if (options.hasUnreadCoachUpdate) {
@@ -226,17 +226,41 @@ function ApplicationCardBadges({
           {hasUnreadCoachUpdate ? "Nouveau" : "Retour coach"}
         </Badge>
       ) : null}
-      <Badge variant={isDue ? "destructive" : "secondary"}>
+      <Badge variant={getApplicationStatusBadgeVariant(displayStatus, isDue, hasInterview)}>
         {applicationStatusLabel(displayStatus)}
       </Badge>
       <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
       {hasInterview ? (
-        <Badge variant="secondary">
+        <Badge variant="info">
           Entretien {formatApplicationDateTime(application.interviewAt ?? undefined)}
         </Badge>
       ) : null}
     </div>
   );
+}
+
+function getApplicationStatusBadgeVariant(
+  status: ApplicationStatus,
+  isDue: boolean,
+  hasInterview: boolean
+) {
+  if (status === "accepted") {
+    return "success";
+  }
+
+  if (status === "rejected") {
+    return "error";
+  }
+
+  if (status === "interview" || hasInterview) {
+    return "info";
+  }
+
+  if (isDue) {
+    return "warning";
+  }
+
+  return "secondary";
 }
 
 function ApplicationCardMeta({
