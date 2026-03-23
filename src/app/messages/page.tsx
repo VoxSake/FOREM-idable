@@ -340,12 +340,41 @@ export default function MessagesPage() {
         body: JSON.stringify({ content: draft }),
       });
       const data = (await response.json().catch(() => ({}))) as {
+        command?: "clean";
         error?: string;
         message?: ConversationDetail["messages"][number];
       };
 
-      if (!response.ok || !data.message) {
+      if (!response.ok) {
         throw new Error(data.error || "Envoi du message impossible.");
+      }
+
+      if (data.command === "clean") {
+        setDraft("");
+        setSelectedConversation((current) =>
+          current && current.id === selectedConversation.id
+            ? {
+                ...current,
+                messages: [],
+              }
+            : current
+        );
+        setConversations((current) =>
+          current.map((entry) =>
+            entry.id === selectedConversation.id
+              ? {
+                  ...entry,
+                  lastMessagePreview: null,
+                }
+              : entry
+          )
+        );
+        toast.success("Conversation nettoyée.");
+        return;
+      }
+
+      if (!data.message) {
+        throw new Error("Envoi du message impossible.");
       }
 
       setDraft("");
@@ -408,21 +437,33 @@ export default function MessagesPage() {
         message?: ConversationDetail["messages"][number];
       };
 
-      if (!response.ok || !data.message) {
+      if (!response.ok) {
         throw new Error(data.error || "Suppression du message impossible.");
       }
 
-      setSelectedConversation((current) =>
-        current && current.id === selectedConversation.id
-          ? {
-              ...current,
-              messages: current.messages.map((message) =>
-                message.id === data.message?.id ? data.message : message
-              ),
-            }
-          : current
-      );
+      if (data.message) {
+        setSelectedConversation((current) =>
+          current && current.id === selectedConversation.id
+            ? {
+                ...current,
+                messages: current.messages.map((message) =>
+                  message.id === data.message?.id ? data.message : message
+                ),
+              }
+            : current
+        );
+      } else {
+        setSelectedConversation((current) =>
+          current && current.id === selectedConversation.id
+            ? {
+                ...current,
+                messages: current.messages.filter((message) => message.id !== messagePendingDeletion.id),
+              }
+            : current
+        );
+      }
       setMessagePendingDeletion(null);
+      await loadConversations(selectedConversation.id, { silent: true });
       toast.success("Message supprimé.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Suppression du message impossible.");
@@ -804,7 +845,7 @@ export default function MessagesPage() {
                                           locale: fr,
                                         })}
                                       </span>
-                                      {selectedConversation.canModerateMessages &&
+                                      {(message.isOwnMessage || selectedConversation.canModerateMessages) &&
                                       !message.deletedAt ? (
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
@@ -822,7 +863,9 @@ export default function MessagesPage() {
                                               variant="destructive"
                                               onClick={() => setMessagePendingDeletion(message)}
                                             >
-                                              Supprimer le message
+                                              {message.isOwnMessage && !selectedConversation.canModerateMessages
+                                                ? "Supprimer pour moi"
+                                                : "Supprimer le message"}
                                             </DropdownMenuItem>
                                           </DropdownMenuContent>
                                         </DropdownMenu>
@@ -928,6 +971,12 @@ export default function MessagesPage() {
                                 placeholder="Écris un message utile, clair et actionnable..."
                                 className="min-h-16 resize-none"
                               />
+                              {selectedConversation.canModerateMessages &&
+                              selectedConversation.type === "group" ? (
+                                <p className="mt-2 text-[11px] text-muted-foreground">
+                                  `/clean` efface tout l&apos;historique de ce groupe.
+                                </p>
+                              ) : null}
                             </Field>
                           </FieldGroup>
 

@@ -25,8 +25,12 @@ export async function POST(
       return NextResponse.json({ error: "Message invalide." }, { status: 400 });
     }
 
-    const message = await sendTextMessage(user, conversationId, body.data.content);
-    return NextResponse.json({ message });
+    const result = await sendTextMessage(user, conversationId, body.data.content);
+    if ("command" in result) {
+      return NextResponse.json({ command: result.command });
+    }
+
+    return NextResponse.json({ message: result });
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

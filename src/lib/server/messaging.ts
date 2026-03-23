@@ -662,11 +662,11 @@ export async function sendTextMessage(
   actor: AuthUser,
   conversationId: number,
   content: string
-): Promise<ConversationMessage> {
+): Promise<ConversationMessage | { command: "clean" }> {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
-  await assertCanAccessConversation(db, actor, conversationId);
+  const preview = await assertCanAccessConversation(db, actor, conversationId);
 
   const conversationResult = await db.query<{ type: ConversationPreview["type"] }>(
     `SELECT type
@@ -677,6 +677,35 @@ export async function sendTextMessage(
   );
   const conversationType = conversationResult.rows[0]?.type ?? "group";
   const normalizedContent = content.trim();
+
+  if (normalizedContent === "/clean") {
+    const canModerate = await canModerateGroupConversation(db, actor, conversationId);
+    if (preview.type !== "group" || !canModerate) {
+      throw new Error("Forbidden");
+    }
+
+    await db.query(
+      `DELETE FROM conversation_messages
+       WHERE conversation_id = $1`,
+      [conversationId]
+    );
+
+    await db.query(
+      `DELETE FROM conversation_reads
+       WHERE conversation_id = $1`,
+      [conversationId]
+    );
+
+    await db.query(
+      `UPDATE conversations
+       SET last_message_at = NOW()
+       WHERE id = $1`,
+      [conversationId]
+    );
+
+    return { command: "clean" };
+  }
+
   const messagePayload = await resolveSharedJobMetadata(normalizedContent);
 
   const result = await db.query<MessageRow>(
@@ -974,6 +1003,35 @@ export async function deleteConversationMessage(
 
   await assertCanAccessConversation(db, actor, conversationId);
 
+  const messageResult = await db.query<{
+    author_user_id: number | string | null;
+    deleted_at: string | null;
+  }>(
+    `SELECT author_user_id, deleted_at
+     FROM conversation_messages
+     WHERE id = $1
+       AND conversation_id = $2
+     LIMIT 1`,
+    [messageId, conversationId]
+  );
+
+  const targetMessage = messageResult.rows[0];
+  if (!targetMessage || targetMessage.deleted_at) {
+    throw new Error("NotFound");
+  }
+
+  const authorUserId = toNumericId(targetMessage.author_user_id);
+  if (authorUserId === actor.id) {
+    await db.query(
+      `DELETE FROM conversation_messages
+       WHERE id = $1
+         AND conversation_id = $2`,
+      [messageId, conversationId]
+    );
+
+    return null;
+  }
+
   const canModerate = await canModerateGroupConversation(db, actor, conversationId);
   if (!canModerate) {
     throw new Error("Forbidden");
@@ -1003,9 +1061,7 @@ export async function deleteConversationMessage(
     [messageId, conversationId]
   );
 
-  if (!result.rows[0]) {
-    throw new Error("NotFound");
-  }
+  if (!result.rows[0]) throw new Error("NotFound");
 
   const updatedMessage = result.rows[0];
   const author = updatedMessage.author_user_id
