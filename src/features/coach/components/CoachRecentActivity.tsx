@@ -51,7 +51,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
           <Badge variant="outline">Derniers événements</Badge>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 p-5">
+      <CardContent className="flex flex-col gap-3 p-4 sm:gap-4 sm:p-5">
         {items.length > 0 ? (
           <>
             <CoachFilterToggleGroup
@@ -68,7 +68,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
                     key={item.id}
                     type="button"
                     className={
-                      `flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-background p-3 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/20 ${
+                      `flex w-full animate-in items-start justify-between gap-3 rounded-xl border border-border/60 bg-background p-2.5 text-left transition fade-in-0 slide-in-from-bottom-1 hover:border-primary/30 hover:bg-muted/20 sm:p-3 ${
                         index >= 4 ? "hidden md:flex" : ""
                       }`
                     }

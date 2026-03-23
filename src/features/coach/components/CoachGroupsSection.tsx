@@ -140,7 +140,7 @@ export function CoachGroupsSection({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 px-5 pb-5">
+      <CardContent className="space-y-3 px-5 pb-5 sm:space-y-4">
         <Input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
@@ -159,7 +159,7 @@ export function CoachGroupsSection({
         <div className="space-y-4">
         {groupedUsers.length > 0 ? (
           groupedUsers.map((group) => (
-          <div key={`${group.kind}-${group.id}`} className="rounded-xl border border-border/60 bg-muted/20 p-4">
+          <div key={`${group.kind}-${group.id}`} className="rounded-xl border border-border/60 bg-muted/20 p-3.5 sm:p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -168,7 +168,7 @@ export function CoachGroupsSection({
                     {group.kind === "ungrouped" ? "Groupe système" : "Groupe actif"}
                   </Badge>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground sm:gap-2">
                   <Badge variant="outline">
                     <Users data-icon="inline-start" />
                     {group.members.length} membre{group.members.length > 1 ? "s" : ""}
@@ -197,12 +197,12 @@ export function CoachGroupsSection({
                 </p>
                 {group.kind === "standard" ? (
                   <TooltipProvider>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
                     {group.coaches.length > 0 ? (
                       group.coaches.map((coach) => (
                         <Tooltip key={`${group.id}-coach-${coach.id}`}>
                           <TooltipTrigger asChild>
-                            <Badge variant="secondary" className="flex items-center gap-2 py-1">
+                            <Badge variant="secondary" className="flex items-center gap-1.5 py-1 text-[11px] sm:gap-2 sm:text-xs">
                               <span className="max-w-52 truncate">
                                 {getCoachUserDisplayName(coach)}
                               </span>
@@ -322,14 +322,14 @@ export function CoachGroupsSection({
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <div className="mt-3 grid gap-2.5 sm:mt-4 sm:gap-3 lg:grid-cols-2">
               {group.members.length > 0 ? (
                 group.members.map((entry) => (
                   <div
                     key={`${group.id}-${entry.id}`}
                     role="button"
                     tabIndex={0}
-                    className="min-w-0 rounded-xl border border-border/60 bg-background px-4 py-3 text-left transition-colors hover:border-primary/30 hover:bg-muted/30"
+                    className="min-w-0 rounded-xl border border-border/60 bg-background px-3 py-3 text-left transition-colors hover:border-primary/30 hover:bg-muted/30 sm:px-4"
                     onClick={() => onOpenUser(entry.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -338,7 +338,7 @@ export function CoachGroupsSection({
                       }
                     }}
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                       <div className="min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
@@ -398,8 +398,8 @@ export function CoachGroupsSection({
                         />
                       </div>
                       <div className="grid min-w-0 gap-2 sm:min-w-[250px]">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-center">
+                        <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                          <div className="rounded-lg border border-border/60 bg-muted/10 px-2.5 py-2 text-center sm:px-3">
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                               Candidatures
                             </p>
@@ -407,7 +407,7 @@ export function CoachGroupsSection({
                               {entry.applicationCount}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/60 bg-[#EEF6FC] px-3 py-2 text-center">
+                          <div className="rounded-lg border border-border/60 bg-[#EEF6FC] px-2.5 py-2 text-center sm:px-3">
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                               Entretiens
                             </p>
@@ -415,7 +415,7 @@ export function CoachGroupsSection({
                               {entry.interviewCount}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/60 bg-[#FFF5E8] px-3 py-2 text-center">
+                          <div className="rounded-lg border border-border/60 bg-[#FFF5E8] px-2.5 py-2 text-center sm:px-3">
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                               Relances
                             </p>
@@ -423,7 +423,7 @@ export function CoachGroupsSection({
                               {entry.dueCount}
                             </p>
                           </div>
-                          <div className="rounded-lg border border-border/60 bg-background px-3 py-2 text-center">
+                          <div className="rounded-lg border border-border/60 bg-background px-2.5 py-2 text-center sm:px-3">
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                               Résultats
                             </p>
