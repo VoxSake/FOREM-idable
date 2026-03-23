@@ -77,6 +77,15 @@ type ContributorRow = {
   role: CoachNoteAuthor["role"];
 };
 
+function toNumericId(value: number | string | null | undefined) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 function splitDisplayName(displayName: string) {
   const trimmed = displayName.trim();
   if (!trimmed) {
@@ -126,7 +135,7 @@ function toAuthorSnapshot(author: CoachNoteAuthor) {
 function toContributorAuthor(row: ContributorRow): CoachNoteAuthor {
   const inferred = splitDisplayName(row.display_name);
   return {
-    id: row.user_id ?? 0,
+    id: toNumericId(row.user_id) ?? 0,
     firstName: row.first_name || inferred.firstName,
     lastName: row.last_name || inferred.lastName,
     email: row.email ?? "",
@@ -136,7 +145,7 @@ function toContributorAuthor(row: ContributorRow): CoachNoteAuthor {
 
 function buildAuthorFromNoteRow(row: PrivateNoteRow | SharedNoteRow): CoachNoteAuthor {
   return {
-    id: row.created_by_user_id ?? 0,
+    id: toNumericId(row.created_by_user_id) ?? 0,
     firstName: row.created_by_first_name,
     lastName: row.created_by_last_name,
     email: row.created_by_email,
@@ -343,8 +352,10 @@ async function loadApplicationsByClause(
 
   const applicationsByUser = new Map<number, JobApplication[]>();
   for (const row of applicationsResult.rows) {
-    applicationsByUser.set(row.user_id, [
-      ...(applicationsByUser.get(row.user_id) ?? []),
+    const userId = toNumericId(row.user_id);
+    if (userId === null) continue;
+    applicationsByUser.set(userId, [
+      ...(applicationsByUser.get(userId) ?? []),
       buildApplicationAggregate({
         row,
         privateNote: privateNotesByApplication.get(row.id),
@@ -509,8 +520,8 @@ async function loadApplicationRecordsByClause(
   }
 
   return applicationsResult.rows.map((row) => ({
-    applicationId: row.id,
-    userId: row.user_id,
+    applicationId: toNumericId(row.id) ?? 0,
+    userId: toNumericId(row.user_id) ?? 0,
     jobId: row.job_id,
     position: row.position,
     application: buildApplicationAggregate({
