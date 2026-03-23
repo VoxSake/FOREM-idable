@@ -294,7 +294,7 @@ function mapForemJobToStandard(record: z.infer<typeof foremRecordSchema>): Job {
             : record.numerooffreforem;
     const url = record.url || `https://www.leforem.be/recherche-offres/offre-detail/${offerId ?? ""}`;
     const title = record.titreoffre || 'Poste non spécifié';
-    const company = record.nomemployeur;
+    const company = record.nomemployeur ?? undefined;
     const fallbackId = buildStableForemFallbackId({
         url,
         title,
