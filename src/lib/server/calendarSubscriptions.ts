@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "crypto";
 import { buildCalendarIcsFeed } from "@/lib/calendarIcs";
-import { safeParseStoredJobApplication } from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
+import { listApplicationRecordsFromRelationalStoreByUsers } from "@/lib/server/applicationStore";
 import { UserRole } from "@/types/auth";
 import { CalendarFeedApplicationRow, CalendarSubscriptionScope, CalendarSubscriptionSummary } from "@/types/calendar";
 
@@ -225,17 +225,12 @@ export async function touchCalendarSubscriptionUsage(subscriptionId: number) {
 }
 
 async function listApplicationsForUsers(userIds: number[]) {
-  if (!db) throw new Error("Database unavailable");
   if (userIds.length === 0) return [];
-
-  const result = await db.query<{ user_id: number; application: CalendarFeedApplicationRow["application"] }>(
-    `SELECT user_id, application
-     FROM user_applications
-     WHERE user_id = ANY($1::bigint[])`,
-    [userIds]
-  );
-
-  return result.rows;
+  const records = await listApplicationRecordsFromRelationalStoreByUsers(userIds);
+  return records.map((record) => ({
+    user_id: record.userId,
+    application: record.application,
+  }));
 }
 
 function buildCalendarFeedRows(input: {
@@ -246,15 +241,9 @@ function buildCalendarFeedRows(input: {
     .map((row) => {
       const member = input.membersById.get(row.user_id);
       if (!member) return null;
-      const application = safeParseStoredJobApplication(
-        row.application,
-        `calendar:${row.user_id}`
-      );
-      if (!application) return null;
-
       return {
         ...member,
-        application,
+        application: row.application,
       };
     })
     .filter((entry): entry is CalendarFeedApplicationRow => Boolean(entry));

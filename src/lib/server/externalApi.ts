@@ -320,15 +320,6 @@ async function persistApplicationRecord(record: RelationalApplicationRecord, app
           ? "manual"
           : "tracked",
     });
-    await client.query(
-      `INSERT INTO user_applications (user_id, job_id, position, application)
-       VALUES ($1, $2, $3, $4::jsonb)
-       ON CONFLICT (user_id, job_id)
-       DO UPDATE SET
-         position = EXCLUDED.position,
-         application = EXCLUDED.application`,
-      [record.userId, record.jobId, record.position, JSON.stringify(application)]
-    );
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");

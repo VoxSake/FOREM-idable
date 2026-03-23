@@ -1,9 +1,5 @@
 import { STORAGE_KEYS } from "@/lib/storageKeys";
 import {
-  parseStoredJobApplication,
-  safeParseStoredJobApplication,
-} from "@/lib/server/applicationSchemas";
-import {
   listApplicationsFromRelationalStore,
   replaceApplicationsInRelationalStore,
 } from "@/lib/server/applicationStore";
@@ -136,25 +132,9 @@ async function persistNormalizedState(userId: number, values: Record<string, str
   const analyticsConsent = values[STORAGE_KEYS.analyticsConsent] ?? null;
   const locationsCache = safeJsonParse<unknown>(values[STORAGE_KEYS.locationsCache], null);
   const existingRelationalApplications = await listApplicationsFromRelationalStore(userId);
-  const existingApplicationsResult =
-    existingRelationalApplications.length > 0
-      ? null
-      : await db.query<{ application: JobApplication }>(
-          `SELECT application
-           FROM user_applications
-           WHERE user_id = $1`,
-          [userId]
-        );
   const applications = mergeApplicationsWithServerFields({
     incoming: incomingApplications,
-    existing:
-      existingRelationalApplications.length > 0
-        ? existingRelationalApplications
-        : (existingApplicationsResult?.rows ?? [])
-            .map((row, index) =>
-              safeParseStoredJobApplication(row.application, `user-state:${userId}:existing:${index}`)
-            )
-            .filter((entry): entry is JobApplication => Boolean(entry)),
+    existing: existingRelationalApplications,
   });
 
   const client = await db.connect();
@@ -162,7 +142,6 @@ async function persistNormalizedState(userId: number, values: Record<string, str
   try {
     await client.query("BEGIN");
     await client.query("DELETE FROM user_favorites WHERE user_id = $1", [userId]);
-    await client.query("DELETE FROM user_applications WHERE user_id = $1", [userId]);
     await client.query("DELETE FROM user_search_history WHERE user_id = $1", [userId]);
     await replaceApplicationsInRelationalStore(client, userId, applications);
 
@@ -171,15 +150,6 @@ async function persistNormalizedState(userId: number, values: Record<string, str
         `INSERT INTO user_favorites (user_id, job_id, position, job)
          VALUES ($1, $2, $3, $4::jsonb)`,
         [userId, job.id, position, JSON.stringify(job)]
-      );
-    }
-
-    for (const [position, application] of applications.entries()) {
-      parseStoredJobApplication(application, `user-state:${userId}:write:${position}`);
-      await client.query(
-        `INSERT INTO user_applications (user_id, job_id, position, application)
-         VALUES ($1, $2, $3, $4::jsonb)`,
-        [userId, application.job.id, position, JSON.stringify(application)]
       );
     }
 
@@ -224,8 +194,7 @@ async function persistNormalizedState(userId: number, values: Record<string, str
 export async function getUserState(userId: number): Promise<PersistedUserState | null> {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
-
-  const [favoritesResult, applicationsResult, searchHistoryResult, settingsResult] = await Promise.all([
+  const [favoritesResult, relationalApplications, searchHistoryResult, settingsResult] = await Promise.all([
     db.query<{ job: Job }>(
       `SELECT job
        FROM user_favorites
@@ -233,13 +202,7 @@ export async function getUserState(userId: number): Promise<PersistedUserState |
        ORDER BY position ASC`,
       [userId]
     ),
-    db.query<{ application: JobApplication }>(
-      `SELECT application
-       FROM user_applications
-       WHERE user_id = $1
-       ORDER BY position ASC`,
-      [userId]
-    ),
+    listApplicationsFromRelationalStore(userId),
     db.query<{ entry: SearchHistoryEntry }>(
       `SELECT entry
        FROM user_search_history
@@ -263,7 +226,7 @@ export async function getUserState(userId: number): Promise<PersistedUserState |
 
   const hasNormalizedData =
     favoritesResult.rows.length > 0 ||
-    applicationsResult.rows.length > 0 ||
+    relationalApplications.length > 0 ||
     searchHistoryResult.rows.length > 0 ||
     settingsResult.rows.length > 0;
 
@@ -283,13 +246,7 @@ export async function getUserState(userId: number): Promise<PersistedUserState |
   const settingsRow = settingsResult.rows[0];
   const values = buildValues({
     favorites: favoritesResult.rows.map((row) => row.job),
-    applications: sanitizeApplicationsForBeneficiary(
-      applicationsResult.rows
-        .map((row, index) =>
-          safeParseStoredJobApplication(row.application, `user-state:${userId}:read:${index}`)
-        )
-        .filter((entry): entry is JobApplication => Boolean(entry))
-    ),
+    applications: sanitizeApplicationsForBeneficiary(relationalApplications),
     searchHistory: searchHistoryResult.rows.map((row) => row.entry),
     settings: settingsRow?.settings ?? {},
     theme: settingsRow?.theme ?? null,

@@ -1,12 +1,7 @@
 import { addDays } from "date-fns";
-import { PoolClient } from "pg";
-import {
-  parseStoredJobApplication,
-  safeParseStoredJobApplication,
-} from "@/lib/server/applicationSchemas";
+import { parseStoredJobApplication } from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
 import {
-  deleteApplicationFromRelationalStore,
   listApplicationsFromRelationalStore,
   loadApplicationFromRelationalStore,
   saveApplicationToRelationalStore,
@@ -17,8 +12,6 @@ import {
 } from "@/lib/coachNotes";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
-
-type Queryable = Pick<PoolClient, "query">;
 
 function sanitizeText(value: string | undefined, fallback = "") {
   return (value || "").trim() || fallback;
@@ -81,22 +74,7 @@ function buildApplication(job: Job): JobApplication {
 
 async function getStoredApplication(userId: number, jobId: string) {
   if (!db) throw new Error("Database unavailable");
-
-  const relational = await loadApplicationFromRelationalStore(userId, jobId);
-  if (relational) {
-    return relational;
-  }
-
-  const result = await db.query<{ application: JobApplication }>(
-    `SELECT application
-     FROM user_applications
-     WHERE user_id = $1 AND job_id = $2
-     LIMIT 1`,
-    [userId, jobId]
-  );
-
-  const stored = result.rows[0]?.application;
-  return stored ? parseStoredJobApplication(stored, `user:${userId}:job:${jobId}`) : null;
+  return loadApplicationFromRelationalStore(userId, jobId);
 }
 
 async function getNextPosition(userId: number) {
@@ -112,34 +90,7 @@ async function getNextPosition(userId: number) {
   if (typeof result.rows[0]?.next_position === "number") {
     return result.rows[0].next_position;
   }
-
-  const legacyResult = await db.query<{ next_position: number }>(
-    `SELECT COALESCE(MAX(position), -1) + 1 AS next_position
-     FROM user_applications
-     WHERE user_id = $1`,
-    [userId]
-  );
-
-  return legacyResult.rows[0]?.next_position ?? 0;
-}
-
-async function upsertLegacyApplication(
-  client: Queryable,
-  input: {
-    userId: number;
-    position: number;
-    application: JobApplication;
-  }
-) {
-  await client.query(
-    `INSERT INTO user_applications (user_id, job_id, position, application)
-     VALUES ($1, $2, $3, $4::jsonb)
-     ON CONFLICT (user_id, job_id)
-     DO UPDATE SET
-       position = EXCLUDED.position,
-       application = EXCLUDED.application`,
-    [input.userId, input.application.job.id, input.position, JSON.stringify(input.application)]
-  );
+  return 0;
 }
 
 async function getApplicationPosition(userId: number, jobId: string) {
@@ -156,16 +107,7 @@ async function getApplicationPosition(userId: number, jobId: string) {
   if (typeof result.rows[0]?.position === "number") {
     return result.rows[0].position;
   }
-
-  const legacyResult = await db.query<{ position: number }>(
-    `SELECT position
-     FROM user_applications
-     WHERE user_id = $1 AND job_id = $2
-     LIMIT 1`,
-    [userId, jobId]
-  );
-
-  return legacyResult.rows[0]?.position ?? null;
+  return null;
 }
 
 export async function listApplicationsForUser(userId: number) {
@@ -173,27 +115,8 @@ export async function listApplicationsForUser(userId: number) {
   if (!db) throw new Error("Database unavailable");
 
   const relationalApplications = await listApplicationsFromRelationalStore(userId);
-  if (relationalApplications.length > 0) {
-    return sortApplicationsByAppliedAt(
-      relationalApplications.map((application) => sanitizeApplicationForBeneficiary(application))
-    );
-  }
-
-  const result = await db.query<{ application: JobApplication }>(
-    `SELECT application
-     FROM user_applications
-     WHERE user_id = $1
-     ORDER BY position ASC`,
-    [userId]
-  );
-
   return sortApplicationsByAppliedAt(
-    result.rows
-      .map((row, index) =>
-        safeParseStoredJobApplication(row.application, `user:${userId}:position:${index}`)
-      )
-      .filter((entry): entry is JobApplication => Boolean(entry))
-      .map((application) => sanitizeApplicationForBeneficiary(application))
+    relationalApplications.map((application) => sanitizeApplicationForBeneficiary(application))
   );
 }
 
@@ -255,11 +178,6 @@ export async function createTrackedApplicationForUser(input: {
       position,
       application: next,
       sourceType: isManualJob(next.job) ? "manual" : "tracked",
-    });
-    await upsertLegacyApplication(client, {
-      userId: input.userId,
-      position,
-      application: next,
     });
     await client.query("COMMIT");
   } catch (error) {
@@ -351,11 +269,6 @@ export async function updateApplicationForUser(input: {
       application: next,
       sourceType: isManualJob(next.job) ? "manual" : "tracked",
     });
-    await upsertLegacyApplication(client, {
-      userId: input.userId,
-      position,
-      application: next,
-    });
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -374,9 +287,8 @@ export async function deleteApplicationForUser(userId: number, jobId: string) {
 
   try {
     await client.query("BEGIN");
-    await deleteApplicationFromRelationalStore(client, userId, jobId);
     await client.query(
-      `DELETE FROM user_applications
+      `DELETE FROM applications
        WHERE user_id = $1 AND job_id = $2`,
       [userId, jobId]
     );

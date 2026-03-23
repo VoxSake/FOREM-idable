@@ -1,9 +1,5 @@
 import { randomUUID } from "crypto";
 import {
-  parseStoredJobApplication,
-  safeParseStoredJobApplication,
-} from "@/lib/server/applicationSchemas";
-import {
   listApplicationsFromRelationalStoreByUsers,
   loadApplicationFromRelationalStore,
   saveApplicationToRelationalStore,
@@ -412,38 +408,6 @@ export async function getCoachDashboard(
     .filter((userId): userId is number => userId !== null);
   const applicationsByUser = await listApplicationsFromRelationalStoreByUsers(scopedUserIds);
 
-  if (scopedUserIds.length > 0) {
-    const missingUserIds = scopedUserIds.filter((userId) => !applicationsByUser.has(userId));
-
-    if (missingUserIds.length > 0) {
-      const applicationsResult = await db.query<{
-        user_id: number;
-        application: JobApplication;
-      }>(
-        `SELECT user_id, application
-         FROM user_applications
-         WHERE user_id = ANY($1::bigint[])
-         ORDER BY user_id ASC, position ASC`,
-        [missingUserIds]
-      );
-
-      for (const row of applicationsResult.rows) {
-        const userId = toNumericId(row.user_id);
-        if (userId === null) continue;
-        const application = safeParseStoredJobApplication(
-          row.application,
-          `coach-dashboard:${userId}`
-        );
-        if (!application) continue;
-
-        applicationsByUser.set(userId, [
-          ...(applicationsByUser.get(userId) ?? []),
-          normalizeApplicationCoachNotes(application),
-        ]);
-      }
-    }
-  }
-
   const users: CoachUserSummary[] = scopedUserRows.map((row) => {
     const userId = toNumericId(row.id);
     if (userId === null) {
@@ -814,23 +778,7 @@ export async function updateCoachApplicationNotes(input: {
   await assertCanAccessCoachUser(input.actor, input.userId);
   const actor = toCoachNoteAuthor(input.actor);
   const relational = await loadApplicationFromRelationalStore(input.userId, input.jobId);
-  const existingResult = relational
-    ? null
-    : await db.query<{ application: JobApplication; position: number }>(
-        `SELECT application, position
-         FROM user_applications
-         WHERE user_id = $1 AND job_id = $2
-         LIMIT 1`,
-        [input.userId, input.jobId]
-      );
-  const existing = relational
-    ? relational
-    : existingResult?.rows[0]?.application
-      ? parseStoredJobApplication(
-          existingResult.rows[0].application,
-          `coach-update:${input.userId}:${input.jobId}`
-        )
-      : null;
+  const existing = relational;
   if (!existing) {
     throw new Error("Application not found");
   }
@@ -908,7 +856,7 @@ export async function updateCoachApplicationNotes(input: {
      LIMIT 1`,
     [input.userId, input.jobId]
   );
-  const position = positionResult.rows[0]?.position ?? existingResult?.rows[0]?.position ?? 0;
+  const position = positionResult.rows[0]?.position ?? 0;
   const client = await db.connect();
 
   try {
@@ -922,15 +870,6 @@ export async function updateCoachApplicationNotes(input: {
           ? "manual"
           : "tracked",
     });
-    await client.query(
-      `INSERT INTO user_applications (user_id, job_id, position, application)
-       VALUES ($1, $2, $3, $4::jsonb)
-       ON CONFLICT (user_id, job_id)
-       DO UPDATE SET
-         position = EXCLUDED.position,
-         application = EXCLUDED.application`,
-      [input.userId, input.jobId, position, JSON.stringify(nextApplication)]
-    );
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -1031,14 +970,7 @@ export async function importCoachApplicationsForUser(input: {
     }
     seenJobIds.add(job.id);
 
-    const existingResult = await db.query<{ job_id: string }>(
-      `SELECT job_id
-       FROM user_applications
-       WHERE user_id = $1 AND job_id = $2
-       LIMIT 1`,
-      [input.userId, job.id]
-    );
-    const existed = Boolean(existingResult?.rows[0]);
+    const existed = Boolean(await loadApplicationFromRelationalStore(input.userId, job.id));
 
     const application = await createTrackedApplicationForUser({
       userId: input.userId,
