@@ -73,7 +73,7 @@ export function JobDetailsSheet({
           </div>
         </SheetHeader>
 
-        <div className="p-5 text-sm leading-6 text-foreground/90 overflow-y-auto space-y-5">
+        <div className="space-y-5 overflow-y-auto p-5 text-sm leading-6 text-foreground/90">
           {description ? (
             <p className="whitespace-pre-wrap">{description}</p>
           ) : (
@@ -81,7 +81,7 @@ export function JobDetailsSheet({
           )}
 
           {details?.highlights && details.highlights.length > 0 && (
-            <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-2">
+            <div className="space-y-2 rounded-2xl border border-border/60 bg-muted/20 p-4">
               <h3 className="font-semibold text-foreground">Informations complémentaires</h3>
               <div className="space-y-2">
                 {details.highlights.map((item) => (
@@ -96,7 +96,7 @@ export function JobDetailsSheet({
           {details?.sections && details.sections.length > 0 && (
             <div className="space-y-3">
               {details.sections.map((section) => (
-                <section key={`${section.title}-${section.content.slice(0, 20)}`} className="rounded-xl border border-border/60 bg-card p-4">
+                <section key={`${section.title}-${section.content.slice(0, 20)}`} className="rounded-2xl border border-border/60 bg-card/90 p-4 shadow-sm">
                   <h3 className="font-semibold text-foreground">{section.title}</h3>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground/90">{section.content}</p>
                 </section>

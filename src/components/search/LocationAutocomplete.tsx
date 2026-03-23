@@ -116,26 +116,30 @@ export function LocationAutocomplete({
                                 <span className="text-xs text-muted-foreground">
                                     {values.length} sélection{values.length > 1 ? "s" : ""}
                                 </span>
-                                <button
+                                <Button
                                     type="button"
-                                    className="text-xs font-medium text-primary hover:underline"
+                                    variant="ghost"
+                                    size="xs"
+                                    className="h-6 rounded-full px-2 text-xs"
                                     onClick={() => onChange([])}
                                 >
                                     Tout effacer
-                                </button>
+                                </Button>
                             </div>
                             <div className="flex flex-wrap gap-1 max-h-16 overflow-auto">
                                 {values.map((entry) => (
-                                    <Badge key={entry.id} variant="secondary" className="rounded-full">
+                                    <Badge key={entry.id} variant="secondary" className="gap-1 rounded-full border border-border/60 bg-background/80">
                                         <span className="max-w-[160px] truncate">{entry.name}</span>
-                                        <button
+                                        <Button
                                             type="button"
-                                            className="ml-1 rounded-full hover:bg-muted/50"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            className="ml-0.5 rounded-full"
                                             onClick={() => toggleLocation(entry)}
                                             aria-label={`Retirer ${entry.name}`}
                                         >
                                             <X className="h-3 w-3" />
-                                        </button>
+                                        </Button>
                                     </Badge>
                                 ))}
                             </div>

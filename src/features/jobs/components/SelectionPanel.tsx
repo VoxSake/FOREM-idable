@@ -54,14 +54,16 @@ export function SelectionPanel({
           >
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-sm leading-snug">{job.title}</p>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => onRemove(job)}
-                className="text-muted-foreground hover:text-foreground"
+                className="rounded-full"
                 aria-label="Retirer de la sélection"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
             <div className="flex flex-wrap gap-1">
               <Badge variant="outline">{job.source}</Badge>

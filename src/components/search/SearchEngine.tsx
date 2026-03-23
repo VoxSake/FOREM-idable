@@ -240,16 +240,18 @@ function KeywordBadge({
             className="flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1 text-sm shadow-sm"
         >
             {keyword}
-            <button
+            <Button
                 type="button"
                 onClick={(event) => {
                     event.stopPropagation();
                     onRemove();
                 }}
-                className="rounded-full p-0.5 hover:bg-muted"
+                variant="ghost"
+                size="icon-xs"
+                className="rounded-full"
             >
                 <X className="h-3 w-3" />
-            </button>
+            </Button>
         </Badge>
     );
 }
@@ -264,22 +266,24 @@ function BooleanModePill({
     const label = booleanMode === "OR" ? "OU" : "ET";
 
     return (
-        <button
+        <Button
             type="button"
             onClick={(event) => {
                 event.stopPropagation();
                 onToggle();
             }}
+            variant={booleanMode === "OR" ? "outline" : "default"}
+            size="xs"
             className={cn(
-                "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors",
+                "shrink-0 rounded-full text-[10px] font-bold transition-colors",
                 booleanMode === "OR"
-                    ? "border-slate-200 bg-slate-100 text-slate-500 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                    : "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                    ? "border-border/70 bg-background/80 text-muted-foreground hover:bg-muted/70"
+                    : ""
             )}
             title="Basculer OU/ET"
         >
             {label}
-        </button>
+        </Button>
     );
 }
 
@@ -289,17 +293,17 @@ function SearchHints({
     selectedLocationsLabel: string | null;
 }) {
     return (
-        <div className="flex flex-col gap-3 px-4 text-xs text-muted-foreground">
-            <div className="space-y-2">
-                <p>
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-muted/15 px-4 py-3 text-xs text-muted-foreground">
+            <div className="grid gap-2 sm:grid-cols-2">
+                <p className="leading-5">
                     Astuce : cliquez sur <strong className="font-semibold text-foreground">OU / ET</strong> entre les mots-clés pour ajuster la recherche.
                 </p>
-                <p>
+                <p className="leading-5">
                     <strong className="font-semibold text-foreground">OU</strong> = plus large
                     {" "}
                     (ex: <span className="font-mono">comptable OU aide-comptable</span>).
                 </p>
-                <p>
+                <p className="leading-5 sm:col-span-2">
                     <strong className="font-semibold text-foreground">ET</strong> = plus précis
                     {" "}
                     (ex: <span className="font-mono">comptable ET Bruxelles</span>).

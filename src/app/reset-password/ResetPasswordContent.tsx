@@ -18,7 +18,7 @@ export function ResetPasswordContent() {
 
   if (!runtimeConfig.auth.passwordResetEnabled) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6 animate-in fade-in duration-500">
+      <div className="mx-auto max-w-2xl animate-in space-y-6 fade-in duration-500">
         <div className="space-y-2">
           <h1 className="text-3xl font-black tracking-tight">Réinitialisation indisponible</h1>
           <p className="text-lg text-muted-foreground">
@@ -67,7 +67,7 @@ export function ResetPasswordContent() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 animate-in fade-in duration-500">
+    <div className="mx-auto max-w-2xl animate-in space-y-6 fade-in duration-500">
       <div className="space-y-2">
         <h1 className="text-3xl font-black tracking-tight">Choisir un nouveau mot de passe</h1>
         <p className="text-lg text-muted-foreground">
@@ -75,7 +75,7 @@ export function ResetPasswordContent() {
         </p>
       </div>
 
-      <div className="rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm">
         {isSuccess ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -86,7 +86,7 @@ export function ResetPasswordContent() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="reset-password">
                 Nouveau mot de passe
@@ -115,19 +115,21 @@ export function ResetPasswordContent() {
                 placeholder="Confirmer le mot de passe"
               />
             </div>
-            <Button
-              type="button"
-              onClick={() => void submit()}
-              disabled={
-                isSubmitting ||
-                !token ||
-                password.length < 8 ||
-                confirmPassword.length < 8 ||
-                password !== confirmPassword
-              }
-            >
-              Mettre à jour le mot de passe
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                onClick={() => void submit()}
+                disabled={
+                  isSubmitting ||
+                  !token ||
+                  password.length < 8 ||
+                  confirmPassword.length < 8 ||
+                  password !== confirmPassword
+                }
+              >
+                Mettre à jour le mot de passe
+              </Button>
+            </div>
           </div>
         )}
       </div>

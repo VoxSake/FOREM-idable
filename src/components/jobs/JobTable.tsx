@@ -20,6 +20,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Job } from "@/types/job";
 import { ExternalLink, FileText, Send } from "lucide-react";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
@@ -387,7 +388,7 @@ function JobActions({
                             <ContractTypeBadge contractType={job.contractType} />
                         ) : null}
                         {job.location ? (
-                            <span className="rounded-full border border-border/70 px-2.5 py-1 text-xs text-muted-foreground">
+                            <span className="rounded-full border border-border/70 bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
                                 {job.location}
                             </span>
                         ) : null}
@@ -455,9 +456,9 @@ function JobActions({
             ) : null}
 
             <Button
-                variant={isApplied ? "secondary" : "ghost"}
+                variant={isApplied ? "success" : "ghost"}
                 size="icon"
-                className={isApplied ? "bg-emerald-100/60 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 dark:bg-emerald-950/40" : "text-muted-foreground transition-colors hover:text-emerald-600"}
+                className={isApplied ? "" : "text-muted-foreground transition-colors hover:text-emerald-600"}
                 onClick={handleTrackApplication}
                 title={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
                 disabled={!isApplicationsLoaded}
@@ -506,11 +507,9 @@ function SelectionCheckbox({
 }) {
     return (
         <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <input
-                type="checkbox"
-                className="h-4 w-4 cursor-pointer accent-primary"
+            <Checkbox
                 checked={checked}
-                onChange={onChange}
+                onCheckedChange={() => onChange()}
                 title={title}
                 aria-label="Sélectionner l'offre"
             />
