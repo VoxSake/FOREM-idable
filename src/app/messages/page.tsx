@@ -560,9 +560,9 @@ export default function MessagesPage() {
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 animate-in fade-in duration-500 lg:px-6">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 overflow-x-hidden px-3 animate-in fade-in duration-500 sm:px-4 lg:px-6">
         <Card className="border-border/60 py-0">
-          <CardHeader className="gap-4 border-b border-border/60 px-6 py-5">
+          <CardHeader className="gap-4 border-b border-border/60 px-4 py-5 sm:px-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight">
@@ -574,11 +574,16 @@ export default function MessagesPage() {
                   groupe. Cette V2 permet d&apos;ouvrir un fil, écrire, et démarrer un DM.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <Badge variant="outline">
                   {conversations.length} conversation{conversations.length > 1 ? "s" : ""}
                 </Badge>
-                <Button type="button" variant="outline" onClick={() => setIsDirectDialogOpen(true)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => setIsDirectDialogOpen(true)}
+                >
                   <UserRound data-icon="inline-start" />
                   Nouveau DM
                 </Button>
@@ -721,25 +726,25 @@ export default function MessagesPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 py-0 lg:flex lg:h-[calc(100dvh-15rem)] lg:max-h-[calc(100dvh-15rem)] lg:flex-col lg:overflow-hidden">
+          <Card className="overflow-hidden border-border/60 py-0 lg:flex lg:h-[calc(100dvh-15rem)] lg:max-h-[calc(100dvh-15rem)] lg:flex-col lg:overflow-hidden">
             {selectedPreview ? (
               <>
-                <CardHeader className="border-b border-border/60 px-6 py-5">
+                <CardHeader className="border-b border-border/60 px-4 py-5 sm:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <CardTitle className="flex items-center gap-2 text-xl">
+                      <CardTitle className="flex min-w-0 items-start gap-2 text-xl">
                         {selectedPreview.type === "group" ? (
-                          <Users data-icon="inline-start" className="text-primary" />
+                          <Users data-icon="inline-start" className="mt-0.5 shrink-0 text-primary" />
                         ) : (
-                          <UserRound data-icon="inline-start" className="text-primary" />
+                          <UserRound data-icon="inline-start" className="mt-0.5 shrink-0 text-primary" />
                         )}
-                        {selectedPreview.title}
+                        <span className="min-w-0 break-words">{selectedPreview.title}</span>
                       </CardTitle>
                       {selectedConversation?.subtitle ? (
                         <CardDescription>{selectedConversation.subtitle}</CardDescription>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                       {selectedConversation ? (
                         <Badge variant="outline">
                           {selectedConversation.participantCount} participant
@@ -801,7 +806,7 @@ export default function MessagesPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-6 py-5">
+                <CardContent className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-5 sm:px-6">
                   {error ? (
                     <Empty className="min-h-72 rounded-xl border border-dashed border-border/60">
                       <EmptyHeader>
@@ -845,14 +850,14 @@ export default function MessagesPage() {
                                   <div
                                     key={message.id}
                                     className={cn(
-                                      "max-w-[92%] rounded-2xl border px-4 py-3 lg:max-w-[78%]",
+                                      "w-full min-w-0 max-w-full rounded-2xl border px-4 py-3 sm:max-w-[92%] lg:max-w-[78%]",
                                       message.isOwnMessage
                                         ? "ml-auto border-primary/30 bg-primary/10"
                                         : "border-border/60 bg-background"
                                     )}
                                   >
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <p className="text-sm font-medium">
+                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                      <p className="min-w-0 break-words text-sm font-medium">
                                         {message.author
                                           ? `${message.author.firstName} ${message.author.lastName}`.trim() ||
                                             message.author.email
@@ -901,13 +906,13 @@ export default function MessagesPage() {
                                     {sharedJob ? (
                                       <div className="mt-3 rounded-2xl border border-border/70 bg-background/90 p-4 shadow-sm">
                                         <div className="flex flex-col gap-3">
-                                          <div className="flex flex-wrap items-start justify-between gap-3">
+                                          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
                                             <div className="min-w-0 flex-1">
                                               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                                                 <BriefcaseBusiness className="h-3.5 w-3.5" />
                                                 Offre Forem
                                               </div>
-                                              <p className="mt-2 text-base font-semibold leading-snug">
+                                              <p className="mt-2 break-words text-base font-semibold leading-snug">
                                                 {sharedJob.title}
                                               </p>
                                               <p className="mt-1 text-sm text-muted-foreground">
@@ -915,7 +920,9 @@ export default function MessagesPage() {
                                                 {sharedJob.location}
                                               </p>
                                             </div>
-                                            <ContractTypeBadge contractType={sharedJob.contractType} />
+                                            <div className="self-start">
+                                              <ContractTypeBadge contractType={sharedJob.contractType} />
+                                            </div>
                                           </div>
 
                                           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -928,8 +935,8 @@ export default function MessagesPage() {
                                             </span>
                                           </div>
 
-                                          <div className="flex flex-wrap gap-2">
-                                            <Button size="sm" asChild>
+                                          <div className="grid gap-2 sm:flex sm:flex-wrap">
+                                            <Button size="sm" className="w-full sm:w-auto" asChild>
                                               <a href={sharedJob.url} target="_blank" rel="noopener noreferrer">
                                                 <ExternalLink data-icon="inline-start" />
                                                 Ouvrir l&apos;offre
@@ -937,6 +944,7 @@ export default function MessagesPage() {
                                             </Button>
                                             <Button
                                               size="sm"
+                                              className="w-full sm:w-auto"
                                               variant={isTracked ? "secondary" : "outline"}
                                               disabled={isTracked}
                                               onClick={() => {
@@ -947,7 +955,7 @@ export default function MessagesPage() {
                                               {isTracked ? "Déjà dans le suivi" : "Ajouter au suivi"}
                                             </Button>
                                             {pdfUrl ? (
-                                              <Button size="sm" variant="outline" asChild>
+                                              <Button size="sm" variant="outline" className="w-full sm:w-auto" asChild>
                                                 <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
                                                   <FileText data-icon="inline-start" />
                                                   PDF
@@ -965,10 +973,10 @@ export default function MessagesPage() {
                           )}
                         </div>
 
-                        <div className="border-t border-border/60 bg-background/80 px-4 py-4 backdrop-blur">
+                        <div className="border-t border-border/60 bg-background/80 px-3 py-4 backdrop-blur sm:px-4">
                           <FieldGroup>
                             <Field>
-                              <div className="mb-2 flex items-center justify-between gap-3">
+                              <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <FieldLabel htmlFor="message-compose" className="mb-0">
                                   Nouveau message
                                 </FieldLabel>
@@ -1090,7 +1098,7 @@ export default function MessagesPage() {
                     <button
                       key={contact.userId}
                       type="button"
-                      className="flex items-center justify-between gap-4 rounded-xl border border-border/60 px-4 py-3 text-left transition-colors hover:border-primary/20 hover:bg-muted/30"
+                      className="flex flex-col gap-3 rounded-xl border border-border/60 px-4 py-3 text-left transition-colors hover:border-primary/20 hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                       onClick={async () => {
                         setContactsError(null);
 
@@ -1122,7 +1130,7 @@ export default function MessagesPage() {
                         }
                       }}
                     >
-                      <div className="flex min-w-0 flex-col gap-1">
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">
                             {`${contact.firstName} ${contact.lastName}`.trim() || contact.email}
@@ -1134,7 +1142,7 @@ export default function MessagesPage() {
                         <span className="truncate text-sm text-muted-foreground">{contact.email}</span>
                       </div>
 
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="self-start sm:self-center">
                         {contact.sharedGroupCount > 0
                           ? `${contact.sharedGroupCount} groupe${contact.sharedGroupCount > 1 ? "s" : ""} commun${contact.sharedGroupCount > 1 ? "s" : ""}`
                           : "Admin"}
