@@ -180,7 +180,7 @@ export function JobTable({
       accessorKey: "publicationDate",
       header: "Publication",
       cell: ({ row }) => (
-        <span className="text-xs font-medium text-foreground" title={row.original.publicationDate}>
+        <span className="text-xs text-muted-foreground" title={row.original.publicationDate}>
           {formatPublicationDateTable(row.original.publicationDate)}
         </span>
       ),
@@ -294,6 +294,7 @@ export function JobTable({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(
+                    row.index % 2 === 0 ? "bg-background" : "bg-muted/10",
                     "group border-border/60 hover:bg-muted/30 data-[state=selected]:bg-primary/6",
                     onOpenDetails ? "cursor-pointer" : undefined
                   )}
@@ -511,9 +512,9 @@ function JobActions({
     return (
         <div className="flex items-center justify-end gap-1 sm:gap-2" onClick={(event) => event.stopPropagation()}>
             <Button
-                variant={isApplied ? "success" : "ghost"}
-                size="icon"
-                className={isApplied ? "" : "text-muted-foreground transition-colors hover:text-emerald-600"}
+                variant={isApplied ? "success" : "outline"}
+                size="icon-sm"
+                className="rounded-full"
                 onClick={handleTrackApplication}
                 title={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
                 disabled={!isApplicationsLoaded}
@@ -525,8 +526,8 @@ function JobActions({
                 <Button
                     variant="outline"
                     size="icon-sm"
-                    asChild
                     className="rounded-full"
+                    asChild
                 >
                     <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
                         <FileText />
