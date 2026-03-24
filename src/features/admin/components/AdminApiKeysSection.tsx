@@ -128,7 +128,7 @@ export function AdminApiKeysSection({
 
   return (
     <>
-      <Card id="cles-api" className="overflow-hidden border-border/60 py-0">
+      <Card id="cles-api" className="min-w-0 overflow-hidden border-border/60 py-0">
         <CardHeader className="gap-4 border-b border-border/60 px-6 py-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
@@ -198,7 +198,7 @@ export function AdminApiKeysSection({
             <div
               aria-busy={isLoading}
               className={cn(
-                "rounded-xl border border-border/60 bg-background/80 transition-opacity",
+                "min-w-0 rounded-xl border border-border/60 bg-background/80 transition-opacity",
                 isLoading ? "opacity-80" : "opacity-100"
               )}
             >
@@ -214,8 +214,8 @@ export function AdminApiKeysSection({
                   </span>
                 ) : null}
               </div>
-              <div className="px-2 py-2 sm:px-3">
-                <Table>
+              <div className="min-w-0 px-2 py-2 sm:px-3">
+                <Table className="min-w-[760px]">
                   <TableCaption className="sr-only">
                     Inventaire des clés API générées côté administration.
                   </TableCaption>
@@ -234,7 +234,7 @@ export function AdminApiKeysSection({
                     {filteredKeys.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell className="align-top">
-                          <div className="flex min-w-52 flex-col gap-1">
+                          <div className="flex min-w-44 flex-col gap-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-medium">{getAdminApiKeyOwnerName(entry)}</span>
                               <Badge variant="outline" className="capitalize">

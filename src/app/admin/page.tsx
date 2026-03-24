@@ -43,7 +43,7 @@ function SummaryCard({
 
 function AdminPageSkeleton() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex min-w-0 max-w-6xl flex-col gap-6">
       <section className="rounded-2xl border bg-card p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -123,14 +123,16 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
+    <div className="mx-auto flex min-w-0 max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       <Card className="overflow-hidden border-border/60 bg-card py-0">
         <CardHeader className="gap-5 border-b border-border/60 px-6 py-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">admin</Badge>
-                <Badge variant="outline">Pilotage des rôles et des accès API</Badge>
+                <Badge variant="outline" className="h-auto max-w-full whitespace-normal py-1 text-left">
+                  Pilotage des rôles et des accès API
+                </Badge>
               </div>
               <div className="flex flex-col gap-1.5">
                 <CardTitle className="text-2xl font-black tracking-tight sm:text-3xl">
