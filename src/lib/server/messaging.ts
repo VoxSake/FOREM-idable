@@ -549,8 +549,24 @@ async function markConversationAsReadInternal(
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (conversation_id, user_id)
      DO UPDATE SET
-       last_read_message_id = EXCLUDED.last_read_message_id,
-       last_read_at = EXCLUDED.last_read_at`,
+       last_read_message_id = CASE
+         WHEN EXCLUDED.last_read_at > conversation_reads.last_read_at
+           OR (
+             EXCLUDED.last_read_at = conversation_reads.last_read_at
+             AND EXCLUDED.last_read_message_id > conversation_reads.last_read_message_id
+           )
+         THEN EXCLUDED.last_read_message_id
+         ELSE conversation_reads.last_read_message_id
+       END,
+       last_read_at = CASE
+         WHEN EXCLUDED.last_read_at > conversation_reads.last_read_at
+           OR (
+             EXCLUDED.last_read_at = conversation_reads.last_read_at
+             AND EXCLUDED.last_read_message_id > conversation_reads.last_read_message_id
+           )
+         THEN EXCLUDED.last_read_at
+         ELSE conversation_reads.last_read_at
+       END`,
     [conversationId, actor.id, latestMessage.id, latestMessage.created_at]
   );
 
