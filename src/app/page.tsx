@@ -89,98 +89,134 @@ function DashboardPageContent() {
 
   if (!page.isPageReady) return <DashboardPageSkeleton />;
 
+  const featuredSearches = page.featuredSearches ?? [];
+  const featuredSearchesPanel =
+    !page.isFeaturedSearchesLoading && featuredSearches.length > 0 ? (
+      <FeaturedSearchesPanel
+        items={featuredSearches}
+        onRunSearch={(item) => {
+          void page.runFeaturedSearch(item);
+        }}
+      />
+    ) : null;
+
+  const authPanel = !page.user ? (
+    <Alert className="bg-card">
+      <AlertTitle>Connectez-vous pour aller plus loin.</AlertTitle>
+      <AlertDescription className="gap-3">
+        <p>
+          Le compte permet de suivre les candidatures, conserver l&apos;historique de recherche,
+          retrouver vos données sur tous vos appareils et partager l&apos;avancement avec un coach.
+        </p>
+        <Button type="button" size="sm" onClick={() => page.setIsAuthRequiredOpen(true)}>
+          Connexion / création de compte
+        </Button>
+      </AlertDescription>
+    </Alert>
+  ) : null;
+
+  const historyPanel =
+    page.user && page.isHistoryLoaded ? (
+      <SearchHistoryPanel
+        history={page.history}
+        maxVisible={4}
+        onReplay={async (query) => {
+          page.resetSelection();
+          page.updateUrlFromQuery(query);
+          await page.executeSearch(query, { persistInHistory: false });
+        }}
+        onClear={page.clearHistory}
+      />
+    ) : null;
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
-      <HomePageHero />
+      {page.hasSearched ? (
+        <>
+          <section className="flex flex-col gap-4 rounded-[28px] border border-border/60 bg-card/70 p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-muted-foreground">
+                Recherche d&apos;offres
+              </p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                Reprenez la recherche ou affinez-la.
+              </h1>
+            </div>
+            <SearchEngine
+              onSearch={(state: SearchState) => page.handleSearch(state)}
+              initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
+            />
+          </section>
 
-      <SearchEngine
-        onSearch={(state: SearchState) => page.handleSearch(state)}
-        initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
-      />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+            <div className="min-w-0">
+              <HomeSearchResultsSection
+                jobs={page.jobs}
+                selectedJobs={page.selectedJobs}
+                selectedJobIds={page.selectedJobIds}
+                hasSearched={page.hasSearched}
+                isSearching={page.isSearching}
+                isLoadingMore={page.isLoadingMore}
+                hasMoreResults={page.hasMoreResults}
+                searchSessionId={page.searchSessionId}
+                isAuthenticated={page.isApplicationAuth}
+                isApplicationsLoaded={page.areApplicationsLoaded}
+                jobsCount={page.jobs.length}
+                selectedCount={page.selectedJobs.length}
+                canCopySearchLink={Boolean(page.lastSearchQuery)}
+                isApplied={page.isApplied}
+                onLoadMore={page.loadMore}
+                onOpenDetails={page.openJobDetails}
+                onToggleSelection={page.toggleSelection}
+                onResetSelection={page.resetSelection}
+                onRemoveSelection={page.toggleSelection}
+                onSendToApplications={() => {
+                  if (!page.user) {
+                    page.requestAuthForApplications(page.selectedJobs);
+                    return;
+                  }
 
-      {!page.isFeaturedSearchesLoading && page.featuredSearches.length > 0 ? (
-        <FeaturedSearchesPanel
-          items={page.featuredSearches}
-          onRunSearch={(item) => {
-            void page.runFeaturedSearch(item);
-          }}
-        />
-      ) : null}
+                  void page.trackJobs(page.selectedJobs).then(() => page.resetSelection());
+                }}
+                onExportAll={() => page.openExportDialog("all")}
+                onExportSelected={() => page.openExportDialog("selected")}
+                onCopySearchLink={page.handleCopySearchLink}
+                onTrackApplication={async (job) => {
+                  await page.addApplication(job);
+                }}
+                onRequireAuth={(job) => page.requestAuthForApplications([job])}
+              />
+            </div>
 
-      {!page.user ? (
-        <Alert className="bg-card">
-          <AlertTitle>Connectez-vous pour aller plus loin.</AlertTitle>
-          <AlertDescription className="gap-3">
-            <p>
-              Le compte permet de suivre les candidatures, conserver l&apos;historique de recherche,
-              retrouver vos données sur tous vos appareils et partager l&apos;avancement avec un coach.
-            </p>
-            <Button type="button" size="sm" onClick={() => page.setIsAuthRequiredOpen(true)}>
-              Connexion / création de compte
-            </Button>
-          </AlertDescription>
-        </Alert>
-      ) : null}
+            <aside className="flex flex-col gap-4">
+              {historyPanel}
+              {featuredSearchesPanel}
+              {authPanel}
+            </aside>
+          </div>
+        </>
+      ) : (
+        <>
+          <HomePageHero />
 
-      {page.user && page.isHistoryLoaded && (
-        <SearchHistoryPanel
-          history={page.history}
-          onReplay={async (query) => {
-            page.resetSelection();
-            page.updateUrlFromQuery(query);
-            await page.executeSearch(query, { persistInHistory: false });
-          }}
-          onClear={page.clearHistory}
-        />
-      )}
+          <SearchEngine
+            onSearch={(state: SearchState) => page.handleSearch(state)}
+            initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
+          />
 
-      <HomeSearchResultsSection
-        jobs={page.jobs}
-        selectedJobs={page.selectedJobs}
-        selectedJobIds={page.selectedJobIds}
-        hasSearched={page.hasSearched}
-        isSearching={page.isSearching}
-        isLoadingMore={page.isLoadingMore}
-        hasMoreResults={page.hasMoreResults}
-        searchSessionId={page.searchSessionId}
-        isAuthenticated={page.isApplicationAuth}
-        isApplicationsLoaded={page.areApplicationsLoaded}
-        jobsCount={page.jobs.length}
-        selectedCount={page.selectedJobs.length}
-        canCopySearchLink={Boolean(page.lastSearchQuery)}
-        isApplied={page.isApplied}
-        onLoadMore={page.loadMore}
-        onOpenDetails={page.openJobDetails}
-        onToggleSelection={page.toggleSelection}
-        onResetSelection={page.resetSelection}
-        onRemoveSelection={page.toggleSelection}
-        onSendToApplications={() => {
-          if (!page.user) {
-            page.requestAuthForApplications(page.selectedJobs);
-            return;
-          }
+          {featuredSearchesPanel}
+          {authPanel}
 
-          void page.trackJobs(page.selectedJobs).then(() => page.resetSelection());
-        }}
-        onExportAll={() => page.openExportDialog("all")}
-        onExportSelected={() => page.openExportDialog("selected")}
-        onCopySearchLink={page.handleCopySearchLink}
-        onTrackApplication={async (job) => {
-          await page.addApplication(job);
-        }}
-        onRequireAuth={(job) => page.requestAuthForApplications([job])}
-      />
-
-      {!page.hasSearched && (
-        <Empty className="mt-8 min-h-64 bg-card/50">
-          <EmptyHeader>
-            <EmptyTitle>Effectuez une recherche pour commencer.</EmptyTitle>
-            <EmptyDescription>
-              Lance une première recherche pour afficher les offres, l&apos;historique et les actions
-              d&apos;export.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+          <Empty className="mt-8 min-h-64 bg-card/50">
+            <EmptyHeader>
+              <EmptyTitle>Effectuez une recherche pour commencer.</EmptyTitle>
+              <EmptyDescription>
+                Lance une première recherche pour afficher les offres, l&apos;historique et les actions
+                d&apos;export.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </>
       )}
 
       <ExportDialog

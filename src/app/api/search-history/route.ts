@@ -6,7 +6,10 @@ import {
   listSearchHistoryForUser,
 } from "@/lib/server/searchHistory";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
-import { SearchHistoryEntry } from "@/features/jobs/types/searchHistory";
+import {
+  searchHistoryArraySchema,
+  searchHistoryEntrySchema,
+} from "@/features/jobs/types/searchHistory";
 
 export async function GET() {
   try {
@@ -15,7 +18,9 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const history = await listSearchHistoryForUser(user.id);
+    const history = searchHistoryArraySchema.parse(
+      await listSearchHistoryForUser(user.id)
+    );
     return NextResponse.json({ history });
   } catch {
     return NextResponse.json({ error: "Impossible de charger l'historique." }, { status: 500 });
@@ -32,12 +37,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json()) as { entry?: SearchHistoryEntry };
-    if (!body.entry || typeof body.entry.id !== "string") {
+    const body = await request.json();
+    const parsed = searchHistoryEntrySchema.safeParse(body?.entry);
+    if (!parsed.success) {
       return NextResponse.json({ error: "Entrée invalide." }, { status: 400 });
     }
 
-    const history = await addSearchHistoryEntryForUser(user.id, body.entry);
+    const history = searchHistoryArraySchema.parse(
+      await addSearchHistoryEntryForUser(user.id, parsed.data)
+    );
     return NextResponse.json({ history });
   } catch {
     return NextResponse.json({ error: "Impossible d'ajouter l'historique." }, { status: 500 });

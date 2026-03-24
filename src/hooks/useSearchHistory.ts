@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { SearchQuery } from "@/types/search";
-import { SearchHistoryEntry } from "@/features/jobs/types/searchHistory";
+import {
+  SearchHistoryEntry,
+  searchHistoryArraySchema,
+} from "@/features/jobs/types/searchHistory";
 
 export function useSearchHistory() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -22,7 +25,8 @@ export function useSearchHistory() {
     try {
       const response = await fetch("/api/search-history", { cache: "no-store" });
       const data = (await response.json()) as { history?: SearchHistoryEntry[] };
-      setHistory(Array.isArray(data.history) ? data.history : []);
+      const parsedHistory = searchHistoryArraySchema.safeParse(data.history);
+      setHistory(parsedHistory.success ? parsedHistory.data : []);
     } catch {
       setHistory([]);
     } finally {
@@ -55,7 +59,8 @@ export function useSearchHistory() {
     }
 
     const data = (await response.json()) as { history?: SearchHistoryEntry[] };
-    setHistory(Array.isArray(data.history) ? data.history : []);
+    const parsedHistory = searchHistoryArraySchema.safeParse(data.history);
+    setHistory(parsedHistory.success ? parsedHistory.data : []);
     return true;
   };
 

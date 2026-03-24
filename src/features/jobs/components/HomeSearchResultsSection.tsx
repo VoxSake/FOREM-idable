@@ -73,40 +73,44 @@ export function HomeSearchResultsSection({
         onSendToApplications={onSendToApplications}
       />
 
-      <ResultsToolbar
-        jobsCount={jobsCount}
-        selectedCount={selectedCount}
-        isSearching={isSearching}
-        onExportAll={onExportAll}
-        onExportSelected={onExportSelected}
-        onCopySearchLink={onCopySearchLink}
-        canCopySearchLink={canCopySearchLink}
-      />
-
-      {isSearching ? (
-        <div className="flex h-64 flex-col items-center justify-center gap-4 rounded-[24px] border border-border/60 bg-linear-to-br from-card to-muted/20">
-          <div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-          <p className="font-medium text-muted-foreground animate-pulse">
-            Le FOREM-fouille analyse les offres...
-          </p>
-        </div>
-      ) : (
-        <JobTable
-          data={jobs}
-          resetPaginationToken={searchSessionId}
-          isLoadingMore={isLoadingMore}
-          hasMoreResults={hasMoreResults}
-          onLoadMore={onLoadMore}
-          selectedJobIds={selectedJobIds}
-          onToggleSelection={onToggleSelection}
-          onOpenDetails={onOpenDetails}
-          isAuthenticated={isAuthenticated}
-          isApplicationsLoaded={isApplicationsLoaded}
-          isApplied={isApplied}
-          onTrackApplication={onTrackApplication}
-          onRequireAuth={onRequireAuth}
+      <div className="overflow-hidden rounded-[24px] border border-border/60 bg-card shadow-sm">
+        <ResultsToolbar
+          jobsCount={jobsCount}
+          selectedCount={selectedCount}
+          isSearching={isSearching}
+          onExportAll={onExportAll}
+          onExportSelected={onExportSelected}
+          onCopySearchLink={onCopySearchLink}
+          canCopySearchLink={canCopySearchLink}
         />
-      )}
+
+        <div className="p-4 sm:p-5">
+          {isSearching ? (
+            <div className="flex h-64 flex-col items-center justify-center gap-4 rounded-[20px] bg-linear-to-br from-muted/10 to-muted/30">
+              <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="animate-pulse font-medium text-muted-foreground">
+                Le FOREM-fouille analyse les offres...
+              </p>
+            </div>
+          ) : (
+            <JobTable
+              data={jobs}
+              resetPaginationToken={searchSessionId}
+              isLoadingMore={isLoadingMore}
+              hasMoreResults={hasMoreResults}
+              onLoadMore={onLoadMore}
+              selectedJobIds={selectedJobIds}
+              onToggleSelection={onToggleSelection}
+              onOpenDetails={onOpenDetails}
+              isAuthenticated={isAuthenticated}
+              isApplicationsLoaded={isApplicationsLoaded}
+              isApplied={isApplied}
+              onTrackApplication={onTrackApplication}
+              onRequireAuth={onRequireAuth}
+            />
+          )}
+        </div>
+      </div>
     </section>
   );
 }
