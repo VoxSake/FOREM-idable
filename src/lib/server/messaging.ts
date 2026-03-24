@@ -1005,12 +1005,76 @@ export async function shareTextInDirectConversation(
   targetUserId: number,
   content: string
 ) {
-  const conversationId = await findOrCreateDirectConversationId(actor, targetUserId);
-  const message = await sendTextMessage(actor, conversationId, content);
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
 
-  if ("command" in message) {
+  const conversationId = await findOrCreateDirectConversationId(actor, targetUserId);
+  const normalizedContent = content.trim();
+  if (normalizedContent === "/clean") {
     throw new Error("InvalidDirectMessageContent");
   }
+
+  const messagePayload = await resolveSharedJobMetadata(normalizedContent);
+
+  const result = await db.query<MessageRow>(
+    `INSERT INTO conversation_messages (
+       conversation_id,
+       author_user_id,
+       type,
+       content,
+       metadata
+     )
+     VALUES ($1, $2, $3, $4, $5::jsonb)
+     RETURNING id,
+               conversation_id,
+               type,
+               content,
+               metadata,
+               created_at,
+               edited_at,
+               deleted_at,
+               author_user_id,
+               NULL::text AS author_first_name,
+               NULL::text AS author_last_name,
+               NULL::text AS author_email,
+               NULL::text AS author_role`,
+    [
+      conversationId,
+      actor.id,
+      messagePayload.type,
+      normalizedContent,
+      JSON.stringify(messagePayload.metadata),
+    ]
+  );
+
+  await db.query(
+    `UPDATE conversations
+     SET last_message_at = NOW()
+     WHERE id = $1`,
+    [conversationId]
+  );
+
+  await db.query(
+    `UPDATE conversation_participants
+     SET left_at = NULL
+     WHERE conversation_id = $1`,
+    [conversationId]
+  );
+
+  await markConversationAsReadInternal(db, actor, conversationId);
+
+  const author = await getUserSummary(db, actor.id);
+  const row = result.rows[0];
+  const message = toConversationMessage(
+    {
+      ...row,
+      author_first_name: author?.first_name ?? actor.firstName,
+      author_last_name: author?.last_name ?? actor.lastName,
+      author_email: author?.email ?? actor.email,
+      author_role: author?.role ?? actor.role,
+    },
+    actor.id
+  );
 
   return { conversationId, message };
 }
