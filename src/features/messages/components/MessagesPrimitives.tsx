@@ -7,6 +7,12 @@ import {
   AvatarGroup,
   AvatarGroupCount,
 } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ConversationParticipantSummary, ConversationPreview } from "@/types/messaging";
 import { getDisplayName, getInitials } from "@/features/messages/messages.utils";
@@ -35,37 +41,66 @@ export function ConversationAvatar({
 
 export function ParticipantStack({
   participants,
+  className,
 }: {
   participants: ConversationParticipantSummary[];
+  className?: string;
 }) {
   const visibleParticipants = participants.slice(0, 3);
-  const hiddenCount = Math.max(participants.length - visibleParticipants.length, 0);
+  const hiddenParticipants = participants.slice(visibleParticipants.length);
+  const hiddenCount = hiddenParticipants.length;
 
   if (participants.length === 0) {
     return null;
   }
 
   return (
-    <AvatarGroup>
-      {visibleParticipants.map((participant) => {
-        const displayName = getDisplayName({
-          firstName: participant.firstName,
-          lastName: participant.lastName,
-          email: participant.email,
-          fallback: "Participant",
-        });
+    <TooltipProvider delayDuration={120}>
+      <AvatarGroup className={cn("-space-x-1.5", className)}>
+        {visibleParticipants.map((participant) => {
+          const displayName = getDisplayName({
+            firstName: participant.firstName,
+            lastName: participant.lastName,
+            email: participant.email,
+            fallback: "Participant",
+          });
 
-        return (
-          <Avatar
-            key={participant.userId}
-            size="sm"
-            className="border border-border/70 bg-background"
-          >
-            <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-          </Avatar>
-        );
-      })}
-      {hiddenCount > 0 ? <AvatarGroupCount>+{hiddenCount}</AvatarGroupCount> : null}
-    </AvatarGroup>
+          return (
+            <Tooltip key={participant.userId}>
+              <TooltipTrigger asChild>
+                <Avatar size="sm" className="border border-border/70 bg-background">
+                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6}>
+                {displayName}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+        {hiddenCount > 0 ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <AvatarGroupCount>+{hiddenCount}</AvatarGroupCount>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={6} className="max-w-56">
+              <p className="font-medium">Participants supplémentaires</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {hiddenParticipants
+                  .map((participant) =>
+                    getDisplayName({
+                      firstName: participant.firstName,
+                      lastName: participant.lastName,
+                      email: participant.email,
+                      fallback: "Participant",
+                    })
+                  )
+                  .join(", ")}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
+      </AvatarGroup>
+    </TooltipProvider>
   );
 }

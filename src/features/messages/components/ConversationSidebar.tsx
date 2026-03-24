@@ -42,7 +42,7 @@ function ConversationListItem({
     <button
       type="button"
       className={cn(
-        "flex w-full items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-all",
+        "flex w-full items-start gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all",
         isMobile && "gap-3 rounded-[1.4rem] border-x-0 border-t-0 border-b border-border/50 px-1 py-3.5",
         isSelected
           ? "border-primary/35 bg-primary/8 shadow-sm"
@@ -52,7 +52,7 @@ function ConversationListItem({
     >
       <ConversationAvatar conversation={conversation} size={isMobile ? "default" : "lg"} />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className={cn("line-clamp-2 break-words font-medium", isMobile && "line-clamp-1")}>
@@ -64,7 +64,7 @@ function ConversationListItem({
               </p>
             ) : null}
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
             <span className={cn("text-xs text-muted-foreground", isMobile && "text-[11px]")}>
               {formatDistanceToNow(new Date(conversation.lastMessageAt), {
                 addSuffix: true,
@@ -172,41 +172,43 @@ export function ConversationSidebar({
                 {unreadConversationCount} non lu{unreadConversationCount > 1 ? "s" : ""}
               </Badge>
             </div>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="dm-search" className={cn(isMobile && "sr-only")}>
-                  Rechercher un message privé
-                </FieldLabel>
-                <Input
-                  id="dm-search"
-                  value={conversationQuery}
-                  onChange={(event) => onConversationQueryChange(event.target.value)}
-                  placeholder="Rechercher une conversation"
-                  className={cn(isMobile && "h-11 rounded-full bg-muted/35")}
-                />
-              </Field>
-            </FieldGroup>
             {isMobile ? (
-              <ToggleGroup
-                type="single"
-                value={mobileFilter}
-                onValueChange={(value) => {
-                  if (value === "all" || value === "group" || value === "direct") {
-                    setMobileFilter(value);
-                  }
-                }}
-                className="grid grid-cols-3 gap-2"
-              >
-                <ToggleGroupItem value="all" className="rounded-full text-xs">
-                  Tout
-                </ToggleGroupItem>
-                <ToggleGroupItem value="group" className="rounded-full text-xs">
-                  Groupes
-                </ToggleGroupItem>
-                <ToggleGroupItem value="direct" className="rounded-full text-xs">
-                  Privés
-                </ToggleGroupItem>
-              </ToggleGroup>
+              <>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="dm-search" className="sr-only">
+                      Rechercher un message privé
+                    </FieldLabel>
+                    <Input
+                      id="dm-search"
+                      value={conversationQuery}
+                      onChange={(event) => onConversationQueryChange(event.target.value)}
+                      placeholder="Rechercher une conversation"
+                      className="h-11 rounded-full bg-muted/35"
+                    />
+                  </Field>
+                </FieldGroup>
+                <ToggleGroup
+                  type="single"
+                  value={mobileFilter}
+                  onValueChange={(value) => {
+                    if (value === "all" || value === "group" || value === "direct") {
+                      setMobileFilter(value);
+                    }
+                  }}
+                  className="grid grid-cols-3 gap-2"
+                >
+                  <ToggleGroupItem value="all" className="rounded-full text-xs">
+                    Tout
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="group" className="rounded-full text-xs">
+                    Groupes
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="direct" className="rounded-full text-xs">
+                    Privés
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </>
             ) : null}
           </div>
           <div className="flex items-center gap-2">
@@ -279,7 +281,7 @@ export function ConversationSidebar({
                 )
               ) : (
                 <div className="flex flex-col gap-4 pb-1">
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-3 px-1">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Groupes
@@ -312,13 +314,25 @@ export function ConversationSidebar({
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-3 px-1">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Messages privés
                       </p>
                       <Badge variant="outline">{groupedConversations.direct.length}</Badge>
                     </div>
+
+                    <FieldGroup>
+                      <Field>
+                        <FieldLabel htmlFor="dm-search">Rechercher un message privé</FieldLabel>
+                        <Input
+                          id="dm-search"
+                          value={conversationQuery}
+                          onChange={(event) => onConversationQueryChange(event.target.value)}
+                          placeholder="Retrouver un DM existant"
+                        />
+                      </Field>
+                    </FieldGroup>
 
                     {groupedConversations.direct.length === 0 ? (
                       <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">

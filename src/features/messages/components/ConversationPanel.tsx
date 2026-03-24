@@ -242,7 +242,6 @@ function MessageBubble({
 }
 
 function MessageComposer({
-  conversation,
   draft,
   isSending,
   onDraftChange,
@@ -250,7 +249,6 @@ function MessageComposer({
   inputId,
   isMobile,
 }: {
-  conversation: ConversationDetail;
   draft: string;
   isSending: boolean;
   onDraftChange: (value: string) => void;
@@ -325,11 +323,6 @@ function MessageComposer({
               </Button>
             ) : null}
           </div>
-          {conversation.canModerateMessages && conversation.type === "group" ? (
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              `/clean` efface tout l&apos;historique de ce groupe.
-            </p>
-          ) : null}
         </Field>
       </FieldGroup>
 
@@ -421,7 +414,7 @@ export function ConversationPanel({
     >
       <CardHeader
         className={cn(
-          "gap-3 border-b border-border/60 px-4 py-4 sm:px-5",
+          "gap-2.5 border-b border-border/60 px-4 py-3.5 sm:px-5",
           isMobile && "sticky top-0 z-10 gap-1.5 bg-background/95 px-2.5 py-2 backdrop-blur"
         )}
       >
@@ -466,10 +459,10 @@ export function ConversationPanel({
                     {selectedConversation.participantCount} participant
                     {selectedConversation.participantCount > 1 ? "s" : ""}
                   </Badge>
-                  <ParticipantStack participants={selectedConversation.participants} />
-                  <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    Historique synchronisé automatiquement
-                  </span>
+                  <ParticipantStack
+                    participants={selectedConversation.participants}
+                    className="ml-1"
+                  />
                 </div>
               ) : null}
             </div>
@@ -499,6 +492,7 @@ export function ConversationPanel({
                 type="button"
                 variant="ghost"
                 size="sm"
+                className="text-muted-foreground hover:text-foreground"
                 disabled={isClosingDirectConversation}
                 onClick={onCloseDirectConversation}
               >
@@ -583,7 +577,6 @@ export function ConversationPanel({
             </ScrollArea>
 
             <MessageComposer
-              conversation={selectedConversation}
               draft={draft}
               isSending={isSending}
               onDraftChange={onDraftChange}
