@@ -740,9 +740,9 @@ function ConversationPanel({
   }
 
   return (
-    <Card className="overflow-hidden border-border/60 py-0 lg:flex lg:h-[calc(100dvh-15rem)] lg:max-h-[calc(100dvh-15rem)] lg:flex-col">
-      <CardHeader className="border-b border-border/60 px-4 py-5 sm:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <Card className="overflow-hidden border-border/60 py-0 lg:flex lg:h-[calc(100dvh-13.5rem)] lg:max-h-[calc(100dvh-13.5rem)] lg:flex-col">
+      <CardHeader className="gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             {isMobile && onBack ? (
               <Button type="button" variant="ghost" size="icon" onClick={onBack}>
@@ -750,7 +750,7 @@ function ConversationPanel({
               </Button>
             ) : null}
             <ConversationAvatar conversation={selectedPreview} size="lg" />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <div>
                 <CardTitle className="break-words text-xl">
                   {selectedPreview.title}
@@ -764,10 +764,16 @@ function ConversationPanel({
                 {selectedConversation ? (
                   <>
                     <Badge variant="outline">
+                      {selectedConversation.type === "group" ? "Groupe" : "Privé"}
+                    </Badge>
+                    <Badge variant="outline">
                       {selectedConversation.participantCount} participant
                       {selectedConversation.participantCount > 1 ? "s" : ""}
                     </Badge>
                     <ParticipantStack participants={selectedConversation.participants} />
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                      Historique synchronisé automatiquement
+                    </span>
                   </>
                 ) : null}
               </div>
@@ -789,7 +795,7 @@ function ConversationPanel({
         </div>
       </CardHeader>
 
-      <CardContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 px-3 py-4 sm:px-6 sm:py-5">
+      <CardContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4">
         {error ? (
           <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
             <EmptyHeader>
@@ -814,18 +820,9 @@ function ConversationPanel({
           </div>
         ) : selectedConversation ? (
           <div className="flex min-h-0 flex-1 flex-col rounded-[1.75rem] border border-border/60 bg-muted/10">
-            <div className="border-b border-border/60 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                <Badge variant="outline">
-                  {selectedConversation.type === "group" ? "Groupe" : "Privé"}
-                </Badge>
-                <span>Historique synchronisé automatiquement</span>
-              </div>
-            </div>
-
             <ScrollArea
               ref={threadScrollAreaRef}
-              className="min-h-[220px] flex-1 px-3 py-4 sm:px-4"
+              className="min-h-[220px] flex-1 px-3 py-3 sm:px-4 sm:py-4"
             >
               {selectedConversation.messages.length === 0 ? (
                 <Empty className="min-h-[320px] rounded-2xl border border-dashed border-border/60 bg-background/75">
@@ -1492,12 +1489,12 @@ export default function MessagesPage() {
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 overflow-x-hidden px-3 animate-in fade-in duration-500 sm:px-4 lg:px-6">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 overflow-x-hidden px-3 animate-in fade-in duration-500 sm:px-4 lg:px-6">
         <Card className="overflow-hidden border-border/60 py-0">
-          <CardHeader className="gap-4 border-b border-border/60 px-4 py-6 sm:px-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight sm:text-3xl">
+          <CardHeader className="gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight">
                   <MessagesSquare data-icon="inline-start" className="text-primary" />
                   Messages
                 </CardTitle>
