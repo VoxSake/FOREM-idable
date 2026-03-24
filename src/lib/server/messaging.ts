@@ -414,6 +414,81 @@ async function assertCanAccessConversation(queryable: Queryable, actor: AuthUser
   return conversation;
 }
 
+async function loadDirectConversationPreview(
+  queryable: Queryable,
+  actor: AuthUser,
+  conversationId: number
+): Promise<ConversationPreview | null> {
+  const result = await queryable.query<ConversationSummaryRow>(
+    `SELECT conversations.id,
+            conversations.type,
+            conversations.group_id,
+            coach_groups.name AS group_name,
+            conversations.last_message_at,
+            latest_message.content AS last_message_preview,
+            COUNT(DISTINCT active_participants.user_id)::int AS participant_count,
+            COUNT(DISTINCT unread_messages.id)::int AS unread_count,
+            other_user.first_name AS other_user_first_name,
+            other_user.last_name AS other_user_last_name,
+            other_user.email AS other_user_email
+     FROM conversations
+     LEFT JOIN coach_groups ON coach_groups.id = conversations.group_id
+     LEFT JOIN conversation_participants active_participants
+       ON active_participants.conversation_id = conversations.id
+      AND active_participants.left_at IS NULL
+     LEFT JOIN LATERAL (
+       SELECT conversation_messages.content
+       FROM conversation_messages
+       WHERE conversation_messages.conversation_id = conversations.id
+         AND conversation_messages.deleted_at IS NULL
+       ORDER BY conversation_messages.created_at DESC
+       LIMIT 1
+     ) latest_message ON TRUE
+     LEFT JOIN conversation_reads
+       ON conversation_reads.conversation_id = conversations.id
+      AND conversation_reads.user_id = $1
+     LEFT JOIN conversation_messages unread_messages
+       ON unread_messages.conversation_id = conversations.id
+      AND unread_messages.deleted_at IS NULL
+      AND unread_messages.author_user_id IS DISTINCT FROM $1
+      AND unread_messages.id > COALESCE(conversation_reads.last_read_message_id, 0)
+     LEFT JOIN LATERAL (
+       SELECT users.first_name,
+              users.last_name,
+              users.email
+       FROM conversation_participants
+       INNER JOIN users ON users.id = conversation_participants.user_id
+       WHERE conversation_participants.conversation_id = conversations.id
+         AND conversation_participants.user_id <> $1
+         AND conversation_participants.left_at IS NULL
+       ORDER BY conversation_participants.joined_at ASC
+       LIMIT 1
+     ) other_user ON TRUE
+     WHERE conversations.id = $2
+       AND conversations.type = 'direct'
+       AND EXISTS (
+         SELECT 1
+         FROM conversation_participants
+         WHERE conversation_participants.conversation_id = conversations.id
+           AND conversation_participants.user_id = $1
+           AND conversation_participants.left_at IS NULL
+       )
+     GROUP BY conversations.id,
+              conversations.type,
+              conversations.group_id,
+              coach_groups.name,
+              conversations.last_message_at,
+              latest_message.content,
+              other_user.first_name,
+              other_user.last_name,
+              other_user.email`,
+    [actor.id, conversationId]
+  );
+
+  const row = result.rows[0];
+  return row ? normalizeConversationPreview(row) : null;
+}
+
 export async function canModerateGroupConversation(
   queryable: Queryable,
   actor: AuthUser,
@@ -909,7 +984,22 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
   if (!db) throw new Error("Database unavailable");
 
   const conversationId = await findOrCreateDirectConversationId(actor, targetUserId);
-  return getConversationDetail(actor, conversationId);
+  const [preview, participants, messages] = await Promise.all([
+    loadDirectConversationPreview(db, actor, conversationId),
+    loadConversationParticipants(db, conversationId),
+    loadConversationMessages(db, actor, conversationId),
+  ]);
+
+  if (!preview) {
+    throw new Error("Forbidden");
+  }
+
+  return {
+    ...preview,
+    canModerateMessages: false,
+    participants,
+    messages,
+  };
 }
 
 export async function findOrCreateDirectConversationId(actor: AuthUser, targetUserId: number) {
