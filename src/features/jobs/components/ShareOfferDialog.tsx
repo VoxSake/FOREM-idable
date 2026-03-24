@@ -125,15 +125,33 @@ export function ShareOfferDialog({
       });
 
       if (!response.ok) {
-        throw new Error("Envoi impossible.");
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error || "Envoi impossible.");
       }
 
       toast.success("Offre partagée dans la conversation.");
       onOpenChange(false);
-    } catch {
-      toast.error("Impossible de partager cette offre.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible de partager cette offre.");
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const sendOfferMessage = async (conversationId: number) => {
+    if (!job) {
+      throw new Error("Offre indisponible.");
+    }
+
+    const sendResponse = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: job.url }),
+    });
+
+    if (!sendResponse.ok) {
+      const sendData = (await sendResponse.json().catch(() => ({}))) as { error?: string };
+      throw new Error(sendData.error || "Envoi impossible.");
     }
   };
 
@@ -156,23 +174,32 @@ export function ShareOfferDialog({
         throw new Error("Conversation privée indisponible.");
       }
 
-      const sendResponse = await fetch(
-        `/api/messages/conversations/${directData.conversation.id}/messages`,
-        {
+      try {
+        await sendOfferMessage(directData.conversation.id);
+      } catch {
+        const retryDirectResponse = await fetch("/api/messages/conversations/direct", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: job.url }),
-        }
-      );
+          body: JSON.stringify({ targetUserId }),
+        });
+        const retryDirectData = (await retryDirectResponse.json().catch(() => ({}))) as {
+          conversation?: ConversationPreview;
+          error?: string;
+        };
 
-      if (!sendResponse.ok) {
-        throw new Error("Envoi impossible.");
+        if (!retryDirectResponse.ok || !retryDirectData.conversation) {
+          throw new Error(retryDirectData.error || "Conversation privée indisponible.");
+        }
+
+        await sendOfferMessage(retryDirectData.conversation.id);
       }
 
       toast.success("Offre envoyée en message privé.");
       onOpenChange(false);
-    } catch {
-      toast.error("Impossible d'envoyer cette offre en privé.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Impossible d'envoyer cette offre en privé."
+      );
     } finally {
       setIsSharing(false);
     }

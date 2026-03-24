@@ -74,8 +74,8 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
     cell: "hidden xl:table-cell xl:w-[112px] align-top",
   },
   actions: {
-    head: "w-[96px] text-right lg:w-[144px]",
-    cell: "w-[96px] whitespace-nowrap align-top lg:w-[144px]",
+    head: "w-[132px] text-right lg:w-[176px]",
+    cell: "w-[132px] whitespace-nowrap align-top lg:w-[176px]",
   },
 };
 
@@ -579,12 +579,12 @@ function JobActions({
             ) : null}
 
             <Button
-                size="sm"
+                variant="outline"
+                size="icon-sm"
                 asChild
-                className="h-8 w-8 gap-1 rounded-full p-0 whitespace-nowrap sm:h-8 sm:w-auto sm:px-3"
+                className="rounded-md"
             >
                 <a href={job.url} target="_blank" rel="noopener noreferrer">
-                    <span className="hidden sm:inline">Voir l&apos;offre</span>
                     <ExternalLink />
                 </a>
             </Button>
