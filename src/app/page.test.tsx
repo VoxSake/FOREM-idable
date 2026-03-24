@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import DashboardPage from "./page";
 import { SearchQuery } from "@/types/search";
 import { Job } from "@/types/job";
@@ -10,19 +10,32 @@ vi.mock("@/features/jobs/hooks/useHomePageState", () => ({
 }));
 
 vi.mock("@/components/search/SearchEngine", () => ({
-  SearchEngine: ({ onSearch }: { onSearch: (state: SearchQuery) => void }) => (
-    <button
-      type="button"
-      onClick={() =>
-        onSearch({
-          keywords: ["dev"],
-          locations: [{ id: "loc1", name: "4000 Liège", type: "Localités" }],
-          booleanMode: "OR",
-        })
-      }
-    >
-      trigger-search
-    </button>
+  SearchEngine: ({
+    onSearch,
+    onOpenHistory,
+  }: {
+    onSearch: (state: SearchQuery) => void;
+    onOpenHistory?: () => void;
+  }) => (
+    <div>
+      <button
+        type="button"
+        onClick={() =>
+          onSearch({
+            keywords: ["dev"],
+            locations: [{ id: "loc1", name: "4000 Liège", type: "Localités" }],
+            booleanMode: "OR",
+          })
+        }
+      >
+        trigger-search
+      </button>
+      {onOpenHistory ? (
+        <button type="button" onClick={onOpenHistory}>
+          open-history
+        </button>
+      ) : null}
+    </div>
   ),
 }));
 
@@ -182,7 +195,12 @@ describe("DashboardPage integration", () => {
   it("replays history with persistInHistory=false and resets selection", async () => {
     render(<DashboardPage />);
 
-    fireEvent.click(screen.getByText("replay-history"));
+    await act(async () => {
+      fireEvent.click(screen.getByText("open-history"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("replay-history"));
+    });
 
     const { executeSearch } = mockUseHomePageState.mock.results[0].value as {
       executeSearch: ReturnType<typeof vi.fn>;

@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { SearchEngine, SearchState } from "@/components/search/SearchEngine";
-import { FeaturedSearchesPanel } from "@/features/jobs/components/FeaturedSearchesPanel";
 import { SearchHistoryPanel } from "@/features/jobs/components/SearchHistoryPanel";
 import { ExportDialog } from "@/features/jobs/components/ExportDialog";
 import { JobDetailsSheet } from "@/features/jobs/components/JobDetailsSheet";
@@ -15,6 +14,13 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HomePageHero } from "@/features/jobs/components/HomePageHero";
 import { HomeSearchResultsSection } from "@/features/jobs/components/HomeSearchResultsSection";
@@ -86,19 +92,12 @@ function DashboardPageSkeleton() {
 
 function DashboardPageContent() {
   const page = useHomePageState();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   if (!page.isPageReady) return <DashboardPageSkeleton />;
 
   const featuredSearches = page.featuredSearches ?? [];
-  const featuredSearchesPanel =
-    !page.isFeaturedSearchesLoading && featuredSearches.length > 0 ? (
-      <FeaturedSearchesPanel
-        items={featuredSearches}
-        onRunSearch={(item) => {
-          void page.runFeaturedSearch(item);
-        }}
-      />
-    ) : null;
+  const availableFeaturedSearches = !page.isFeaturedSearchesLoading ? featuredSearches : [];
 
   const authPanel = !page.user ? (
     <Alert className="bg-card">
@@ -115,19 +114,11 @@ function DashboardPageContent() {
     </Alert>
   ) : null;
 
-  const historyPanel =
-    page.user && page.isHistoryLoaded ? (
-      <SearchHistoryPanel
-        history={page.history}
-        maxVisible={4}
-        onReplay={async (query) => {
-          page.resetSelection();
-          page.updateUrlFromQuery(query);
-          await page.executeSearch(query, { persistInHistory: false });
-        }}
-        onClear={page.clearHistory}
-      />
-    ) : null;
+  const replayHistory = async (query: SearchState) => {
+    page.resetSelection();
+    page.updateUrlFromQuery(query);
+    await page.executeSearch(query, { persistInHistory: false });
+  };
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
@@ -145,55 +136,57 @@ function DashboardPageContent() {
             <SearchEngine
               onSearch={(state: SearchState) => page.handleSearch(state)}
               initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
+              featuredSearches={availableFeaturedSearches}
+              onRunFeaturedSearch={(item) => {
+                void page.runFeaturedSearch(item);
+              }}
+              historyCount={page.user && page.isHistoryLoaded ? page.history.length : 0}
+              onOpenHistory={
+                page.user && page.isHistoryLoaded && page.history.length > 0
+                  ? () => setIsHistoryOpen(true)
+                  : undefined
+              }
             />
           </section>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-            <div className="min-w-0">
-              <HomeSearchResultsSection
-                jobs={page.jobs}
-                selectedJobs={page.selectedJobs}
-                selectedJobIds={page.selectedJobIds}
-                hasSearched={page.hasSearched}
-                isSearching={page.isSearching}
-                isLoadingMore={page.isLoadingMore}
-                hasMoreResults={page.hasMoreResults}
-                searchSessionId={page.searchSessionId}
-                isAuthenticated={page.isApplicationAuth}
-                isApplicationsLoaded={page.areApplicationsLoaded}
-                jobsCount={page.jobs.length}
-                selectedCount={page.selectedJobs.length}
-                canCopySearchLink={Boolean(page.lastSearchQuery)}
-                isApplied={page.isApplied}
-                onLoadMore={page.loadMore}
-                onOpenDetails={page.openJobDetails}
-                onToggleSelection={page.toggleSelection}
-                onResetSelection={page.resetSelection}
-                onRemoveSelection={page.toggleSelection}
-                onSendToApplications={() => {
-                  if (!page.user) {
-                    page.requestAuthForApplications(page.selectedJobs);
-                    return;
-                  }
+          <HomeSearchResultsSection
+            jobs={page.jobs}
+            selectedJobs={page.selectedJobs}
+            selectedJobIds={page.selectedJobIds}
+            hasSearched={page.hasSearched}
+            isSearching={page.isSearching}
+            isLoadingMore={page.isLoadingMore}
+            hasMoreResults={page.hasMoreResults}
+            searchSessionId={page.searchSessionId}
+            isAuthenticated={page.isApplicationAuth}
+            isApplicationsLoaded={page.areApplicationsLoaded}
+            jobsCount={page.jobs.length}
+            selectedCount={page.selectedJobs.length}
+            canCopySearchLink={Boolean(page.lastSearchQuery)}
+            isApplied={page.isApplied}
+            onLoadMore={page.loadMore}
+            onOpenDetails={page.openJobDetails}
+            onToggleSelection={page.toggleSelection}
+            onResetSelection={page.resetSelection}
+            onRemoveSelection={page.toggleSelection}
+            onSendToApplications={() => {
+              if (!page.user) {
+                page.requestAuthForApplications(page.selectedJobs);
+                return;
+              }
 
-                  void page.trackJobs(page.selectedJobs).then(() => page.resetSelection());
-                }}
-                onExportAll={() => page.openExportDialog("all")}
-                onExportSelected={() => page.openExportDialog("selected")}
-                onCopySearchLink={page.handleCopySearchLink}
-                onTrackApplication={async (job) => {
-                  await page.addApplication(job);
-                }}
-                onRequireAuth={(job) => page.requestAuthForApplications([job])}
-              />
-            </div>
+              void page.trackJobs(page.selectedJobs).then(() => page.resetSelection());
+            }}
+            onExportAll={() => page.openExportDialog("all")}
+            onExportSelected={() => page.openExportDialog("selected")}
+            onCopySearchLink={page.handleCopySearchLink}
+            onTrackApplication={async (job) => {
+              await page.addApplication(job);
+            }}
+            onRequireAuth={(job) => page.requestAuthForApplications([job])}
+          />
 
-            <aside className="flex flex-col gap-4">
-              {historyPanel}
-              {featuredSearchesPanel}
-              {authPanel}
-            </aside>
-          </div>
+          {authPanel}
         </>
       ) : (
         <>
@@ -202,9 +195,18 @@ function DashboardPageContent() {
           <SearchEngine
             onSearch={(state: SearchState) => page.handleSearch(state)}
             initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
+            featuredSearches={availableFeaturedSearches}
+            onRunFeaturedSearch={(item) => {
+              void page.runFeaturedSearch(item);
+            }}
+            historyCount={page.user && page.isHistoryLoaded ? page.history.length : 0}
+            onOpenHistory={
+              page.user && page.isHistoryLoaded && page.history.length > 0
+                ? () => setIsHistoryOpen(true)
+                : undefined
+            }
           />
 
-          {featuredSearchesPanel}
           {authPanel}
 
           <Empty className="mt-8 min-h-64 bg-card/50">
@@ -261,6 +263,28 @@ function DashboardPageContent() {
         onOpenChange={page.setIsAuthRequiredOpen}
         onSuccess={page.replayPendingApplications}
       />
+
+      <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Historique récent</DialogTitle>
+            <DialogDescription>
+              Rejouez une recherche précédente sans surcharger la page principale.
+            </DialogDescription>
+          </DialogHeader>
+          {page.user && page.isHistoryLoaded ? (
+            <SearchHistoryPanel
+              history={page.history}
+              maxVisible={4}
+              onReplay={async (query) => {
+                await replayHistory(query);
+                setIsHistoryOpen(false);
+              }}
+              onClear={page.clearHistory}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -109,8 +109,9 @@ test("shows the search workspace and a collapsed recent history for authenticate
   await expect(page.getByRole("heading", { name: "Reprenez la recherche ou affinez-la." })).toBeVisible();
   await expect(page.locator("tbody").getByText("Technicien de maintenance")).toBeVisible();
   await expect(page.locator("tbody").getByText("Electromécanicien")).toBeVisible();
-  await expect(page.getByText("Historique récent")).toBeVisible();
+  await page.getByRole("button", { name: "Historique (6)" }).click();
 
+  await expect(page.getByRole("heading", { name: "Historique récent" })).toBeVisible();
   await expect(page.getByRole("button", { name: /history-one/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /history-two/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /history-three/i })).toBeVisible();

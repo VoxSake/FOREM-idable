@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { format, isToday, isYesterday } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   ColumnDef,
@@ -53,9 +53,13 @@ interface JobTableProps {
 }
 
 const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
+  selection: {
+    head: "w-[52px]",
+    cell: "w-[52px] align-top",
+  },
   title: {
-    head: "w-[42%]",
-    cell: "w-[42%] whitespace-normal align-top",
+    head: "w-[38%]",
+    cell: "w-[38%] whitespace-normal align-top",
   },
   location: {
     head: "hidden sm:table-cell sm:w-[18%]",
@@ -70,8 +74,8 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
     cell: "hidden xl:table-cell xl:w-[148px] align-top",
   },
   actions: {
-    head: "w-[124px] text-right lg:w-[188px]",
-    cell: "w-[124px] whitespace-nowrap align-top lg:w-[188px]",
+    head: "w-[112px] text-right lg:w-[176px]",
+    cell: "w-[112px] whitespace-nowrap align-top lg:w-[176px]",
   },
 };
 
@@ -91,6 +95,25 @@ export function JobTable({
   onRequireAuth,
 }: JobTableProps) {
   const columns: ColumnDef<Job>[] = [
+    {
+      id: "selection",
+      header: "",
+      cell: ({ row }) => {
+        const job = row.original;
+
+        if (!onToggleSelection) {
+          return null;
+        }
+
+        return (
+          <SelectionCheckbox
+            checked={selectedJobIds?.has(job.id) ?? false}
+            onChange={() => onToggleSelection(job)}
+            title={selectedJobIds?.has(job.id) ? "Retirer de la sélection" : "Ajouter à la sélection"}
+          />
+        );
+      },
+    },
     {
       accessorKey: "title",
       header: "Offre",
@@ -126,7 +149,7 @@ export function JobTable({
               </Badge>
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground xl:hidden">
                 <CalendarDays className="size-3.5" />
-                {formatPublicationDate(row.original.publicationDate)}
+                {formatPublicationDateAbsolute(row.original.publicationDate)}
               </span>
             </div>
           </div>
@@ -159,14 +182,9 @@ export function JobTable({
       accessorKey: "publicationDate",
       header: "Publication",
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 text-sm">
-          <span className="font-medium text-foreground">
-            {formatPublicationDate(row.original.publicationDate)}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {formatPublicationDateAbsolute(row.original.publicationDate)}
-          </span>
-        </div>
+        <span className="text-sm font-medium text-foreground">
+          {formatPublicationDateAbsolute(row.original.publicationDate)}
+        </span>
       ),
     },
     {
@@ -363,7 +381,7 @@ function JobMobileCard({
           </Badge>
           <ContractTypeBadge contractType={job.contractType} />
           <span className="text-xs text-muted-foreground">
-            {formatPublicationDate(job.publicationDate)}
+            {formatPublicationDateAbsolute(job.publicationDate)}
           </span>
         </div>
         <div className="flex flex-col gap-1">
@@ -495,14 +513,6 @@ function JobActions({
 
     return (
         <div className="flex items-center justify-end gap-1 sm:gap-2" onClick={(event) => event.stopPropagation()}>
-            {onToggleSelection ? (
-                <SelectionCheckbox
-                    checked={isSelected}
-                    onChange={() => onToggleSelection(job)}
-                    title={isSelected ? "Retirer de la sélection" : "Ajouter à la sélection"}
-                />
-            ) : null}
-
             <Button
                 variant={isApplied ? "success" : "ghost"}
                 size="icon"
@@ -669,18 +679,6 @@ function getSourceLabel(source: Job["source"]) {
     default:
       return source;
   }
-}
-
-function formatPublicationDate(dateStr: string) {
-  if (!dateStr) return "Date inconnue";
-
-  const parsedDate = new Date(dateStr);
-  if (Number.isNaN(parsedDate.getTime())) return "Date inconnue";
-
-  if (isToday(parsedDate)) return "Aujourd'hui";
-  if (isYesterday(parsedDate)) return "Hier";
-
-  return format(parsedDate, "dd MMM", { locale: fr });
 }
 
 function formatPublicationDateAbsolute(dateStr: string) {

@@ -1,22 +1,34 @@
 "use client";
 
 import { useState, useRef, KeyboardEvent, RefObject } from "react";
-import { Search, X } from "lucide-react";
+import { ArrowRight, History, Search, Sparkles, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LocationAutocomplete } from "./LocationAutocomplete";
 import { LocationEntry } from "@/services/location/locationCache";
 import { cn } from "@/lib/utils";
 import { BooleanMode, SearchQuery } from "@/types/search";
+import { FeaturedSearch } from "@/types/featuredSearch";
 
 export type SearchState = SearchQuery;
 
 interface SearchEngineProps {
-    onSearch: (state: SearchState) => void;
-    initialState?: Partial<SearchState>;
+  onSearch: (state: SearchState) => void;
+  initialState?: Partial<SearchState>;
+  featuredSearches?: FeaturedSearch[];
+  onRunFeaturedSearch?: (item: FeaturedSearch) => void;
+  historyCount?: number;
+  onOpenHistory?: () => void;
 }
 
-export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
+export function SearchEngine({
+  onSearch,
+  initialState,
+  featuredSearches = [],
+  onRunFeaturedSearch,
+  historyCount = 0,
+  onOpenHistory,
+}: SearchEngineProps) {
     const [keywords, setKeywords] = useState<string[]>(initialState?.keywords || []);
     const [inputValue, setInputValue] = useState("");
     const [selectedLocations, setSelectedLocations] = useState<LocationEntry[]>(initialState?.locations || []);
@@ -119,44 +131,47 @@ export function SearchEngine({ onSearch, initialState }: SearchEngineProps) {
         onSearch({ keywords: finalKeywords, locations: selectedLocations, booleanMode });
     };
 
-    return (
-        <div className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card p-4 shadow-sm transition-all hover:shadow-md lg:p-6">
-            <div className="flex w-full flex-col items-center gap-3 lg:flex-row">
-                <KeywordComposer
-                    keywords={keywords}
-                    inputValue={inputValue}
-                    booleanMode={booleanMode}
-                    inputRef={inputRef}
-                    onInputValueChange={handleInputValueChange}
-                    onInputKeyDown={handleKeyDown}
-                    onInputBlur={() => {
-                        if (inputValue.trim()) {
-                            addKeyword(inputValue);
-                        }
-                    }}
-                    onRemoveKeyword={removeKeyword}
-                    onToggleBooleanMode={toggleBooleanMode}
-                />
+  return (
+    <div className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card p-4 shadow-sm transition-all hover:shadow-md lg:p-6">
+      <div className="flex w-full flex-col items-center gap-3 lg:flex-row">
+        <KeywordComposer
+          keywords={keywords}
+          inputValue={inputValue}
+          booleanMode={booleanMode}
+          inputRef={inputRef}
+          onInputValueChange={handleInputValueChange}
+          onInputKeyDown={handleKeyDown}
+          onInputBlur={() => {
+            if (inputValue.trim()) {
+              addKeyword(inputValue);
+            }
+          }}
+          onRemoveKeyword={removeKeyword}
+          onToggleBooleanMode={toggleBooleanMode}
+        />
 
-                <div className="w-full shrink-0 lg:w-72">
-                    <LocationAutocomplete
-                        values={selectedLocations}
-                        onChange={setSelectedLocations}
-                    />
-                </div>
-
-                <Button
-                    onClick={triggerSearch}
-                    className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 lg:w-14"
-                >
-                    <Search className="h-5 w-5 shrink-0" />
-                    <span className="lg:hidden">Rechercher</span>
-                </Button>
-            </div>
-
-            <SearchHints selectedLocationsLabel={selectedLocationsLabel} />
+        <div className="w-full shrink-0 lg:w-72">
+          <LocationAutocomplete values={selectedLocations} onChange={setSelectedLocations} />
         </div>
-    );
+
+        <Button
+          onClick={triggerSearch}
+          className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 lg:w-14"
+        >
+          <Search className="h-5 w-5 shrink-0" />
+          <span className="lg:hidden">Rechercher</span>
+        </Button>
+      </div>
+
+      <SearchHints
+        selectedLocationsLabel={selectedLocationsLabel}
+        featuredSearches={featuredSearches}
+        onRunFeaturedSearch={onRunFeaturedSearch}
+        historyCount={historyCount}
+        onOpenHistory={onOpenHistory}
+      />
+    </div>
+  );
 }
 
 function KeywordComposer({
@@ -288,34 +303,90 @@ function BooleanModePill({
 }
 
 function SearchHints({
-    selectedLocationsLabel,
+  selectedLocationsLabel,
+  featuredSearches,
+  onRunFeaturedSearch,
+  historyCount,
+  onOpenHistory,
 }: {
-    selectedLocationsLabel: string | null;
+  selectedLocationsLabel: string | null;
+  featuredSearches: FeaturedSearch[];
+  onRunFeaturedSearch?: (item: FeaturedSearch) => void;
+  historyCount: number;
+  onOpenHistory?: () => void;
 }) {
-    return (
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-muted/15 px-4 py-3 text-xs text-muted-foreground">
-            <div className="grid gap-2 sm:grid-cols-2">
-                <p className="leading-5">
-                    Astuce : cliquez sur <strong className="font-semibold text-foreground">OU / ET</strong> entre les mots-clés pour ajuster la recherche.
-                </p>
-                <p className="leading-5">
-                    <strong className="font-semibold text-foreground">OU</strong> = plus large
-                    {" "}
-                    (ex: <span className="font-mono">comptable OU aide-comptable</span>).
-                </p>
-                <p className="leading-5 sm:col-span-2">
-                    <strong className="font-semibold text-foreground">ET</strong> = plus précis
-                    {" "}
-                    (ex: <span className="font-mono">comptable ET Bruxelles</span>).
-                </p>
+  const visibleFeaturedSearches = featuredSearches.slice(0, 3);
+
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-muted/15 px-4 py-3 text-xs text-muted-foreground">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <p className="leading-5">
+          Astuce : cliquez sur <strong className="font-semibold text-foreground">OU / ET</strong>{" "}
+          entre les mots-clés pour ajuster la recherche.
+        </p>
+        <p className="leading-5">
+          <strong className="font-semibold text-foreground">OU</strong> = plus large{" "}
+          (ex: <span className="font-mono">comptable OU aide-comptable</span>).
+        </p>
+        <p className="leading-5 sm:col-span-2">
+          <strong className="font-semibold text-foreground">ET</strong> = plus précis{" "}
+          (ex: <span className="font-mono">comptable ET Bruxelles</span>).
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {selectedLocationsLabel ? (
+          <Badge variant="outline" className="rounded-full border-border/70">
+            Filtre lieu: {selectedLocationsLabel}
+          </Badge>
+        ) : null}
+        {historyCount > 0 && onOpenHistory ? (
+          <Button type="button" variant="outline" size="sm" onClick={onOpenHistory}>
+            <History data-icon="inline-start" />
+            Historique ({historyCount})
+          </Button>
+        ) : null}
+      </div>
+
+      {visibleFeaturedSearches.length > 0 && onRunFeaturedSearch ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-background/70 p-3">
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="size-4" />
             </div>
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-                {selectedLocationsLabel ? (
-                    <Badge variant="outline" className="rounded-full border-border/70">
-                        Filtre lieu: {selectedLocationsLabel}
-                    </Badge>
-                ) : null}
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">Suggestions rapides</p>
+              <p className="text-xs text-muted-foreground">
+                Recherches mises en avant depuis l’administration.
+              </p>
             </div>
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-3">
+            {visibleFeaturedSearches.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onRunFeaturedSearch(item)}
+                className="flex min-h-24 flex-col items-start justify-between rounded-2xl border border-border/60 bg-card px-3 py-3 text-left transition-colors hover:border-primary/30 hover:bg-muted/20"
+              >
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold leading-5 text-foreground">{item.title}</p>
+                  {item.message ? (
+                    <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+                      {item.message}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                  {item.ctaLabel}
+                  <ArrowRight className="size-3.5" />
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-    );
+      ) : null}
+    </div>
+  );
 }
