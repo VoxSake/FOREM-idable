@@ -908,6 +908,14 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
+  const conversationId = await findOrCreateDirectConversationId(actor, targetUserId);
+  return getConversationDetail(actor, conversationId);
+}
+
+export async function findOrCreateDirectConversationId(actor: AuthUser, targetUserId: number) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
   const [userAId, userBId] =
     actor.id < targetUserId ? [actor.id, targetUserId] : [targetUserId, actor.id];
 
@@ -984,7 +992,22 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
     );
   }
 
-  return getConversationDetail(actor, conversationId);
+  return conversationId;
+}
+
+export async function shareTextInDirectConversation(
+  actor: AuthUser,
+  targetUserId: number,
+  content: string
+) {
+  const conversationId = await findOrCreateDirectConversationId(actor, targetUserId);
+  const message = await sendTextMessage(actor, conversationId, content);
+
+  if ("command" in message) {
+    throw new Error("InvalidDirectMessageContent");
+  }
+
+  return { conversationId, message };
 }
 
 export async function closeDirectConversation(actor: AuthUser, conversationId: number) {

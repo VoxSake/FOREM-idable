@@ -11,3 +11,10 @@ export const sendConversationMessageSchema = z
     content: z.string().trim().min(1).max(4000),
   })
   .strict();
+
+export const shareDirectMessageSchema = z
+  .object({
+    targetUserId: z.number().int().positive(),
+    content: z.string().trim().min(1).max(4000),
+  })
+  .strict();

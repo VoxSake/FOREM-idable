@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -29,6 +29,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Job } from "@/types/job";
 import { CalendarDays, ExternalLink, FileText, MapPin, MessagesSquare, Send } from "lucide-react";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
@@ -70,12 +76,12 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
     cell: "hidden md:table-cell md:w-[92px] lg:w-[104px] whitespace-normal align-top",
   },
   publicationDate: {
-    head: "hidden xl:table-cell xl:w-[112px]",
-    cell: "hidden xl:table-cell xl:w-[112px] align-top",
+    head: "hidden xl:table-cell xl:w-[104px]",
+    cell: "hidden xl:table-cell xl:w-[104px] align-top",
   },
   actions: {
-    head: "w-[132px] text-right lg:w-[176px]",
-    cell: "w-[132px] whitespace-nowrap align-top lg:w-[176px]",
+    head: "w-[156px] text-right lg:w-[196px]",
+    cell: "w-[156px] whitespace-nowrap align-top lg:w-[196px]",
   },
 };
 
@@ -182,7 +188,10 @@ export function JobTable({
       accessorKey: "publicationDate",
       header: "Publication",
       cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground" title={row.original.publicationDate}>
+        <span
+          className="block text-right text-[11px] text-muted-foreground/90"
+          title={row.original.publicationDate}
+        >
           {formatPublicationDateTable(row.original.publicationDate)}
         </span>
       ),
@@ -293,30 +302,32 @@ export function JobTable({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={cn(
-                    row.index % 2 === 0 ? "bg-background" : "bg-muted/10",
-                    "group border-border/60 hover:bg-muted/30 data-[state=selected]:bg-primary/6",
-                    onOpenDetails ? "cursor-pointer" : undefined
-                  )}
-                  onClick={onOpenDetails ? () => onOpenDetails(row.original) : undefined}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        "px-3 py-4 align-top",
-                        COLUMN_CLASSES[cell.column.id]?.cell
-                      )}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              <TooltipProvider delayDuration={120}>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={cn(
+                      row.index % 2 === 0 ? "bg-background" : "bg-muted/20",
+                      "group border-border/60 hover:bg-muted/35 data-[state=selected]:bg-primary/6",
+                      onOpenDetails ? "cursor-pointer" : undefined
+                    )}
+                    onClick={onOpenDetails ? () => onOpenDetails(row.original) : undefined}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          "px-3 py-4 align-top",
+                          COLUMN_CLASSES[cell.column.id]?.cell
+                        )}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TooltipProvider>
             ) : (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={columns.length} className="h-36 text-center text-muted-foreground">
@@ -542,54 +553,93 @@ function JobActions({
 
     return (
         <div className="flex items-center justify-end gap-1 sm:gap-2" onClick={(event) => event.stopPropagation()}>
-            <Button
-                variant={isApplied ? "success" : "outline"}
-                size="icon-sm"
-                className="rounded-md"
-                onClick={handleTrackApplication}
-                title={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
-                disabled={!isApplicationsLoaded}
-            >
-                <Send className={isApplied ? "fill-current" : undefined} />
-            </Button>
-
-            {onShareJob ? (
+            <ActionTooltip label={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}>
                 <Button
-                    variant="outline"
+                    variant={isApplied ? "success" : "outline"}
                     size="icon-sm"
                     className="rounded-md"
-                    onClick={() => onShareJob(job)}
-                    title="Partager dans les messages"
+                    onClick={handleTrackApplication}
+                    title={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
+                    aria-label={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
+                    disabled={!isApplicationsLoaded}
                 >
-                    <MessagesSquare />
+                    <Send className={isApplied ? "fill-current" : undefined} />
                 </Button>
+            </ActionTooltip>
+
+            {onShareJob ? (
+                <ActionTooltip label="Partager dans les messages">
+                    <Button
+                        variant="outline"
+                        size="icon-sm"
+                        className="rounded-md"
+                        onClick={() => onShareJob(job)}
+                        title="Partager dans les messages"
+                        aria-label="Partager dans les messages"
+                    >
+                        <MessagesSquare />
+                    </Button>
+                </ActionTooltip>
             ) : null}
 
             {pdfUrl ? (
-                <Button
-                    variant="outline"
-                    size="icon-sm"
-                    className="rounded-md"
-                    asChild
-                >
-                    <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                        <FileText />
-                    </a>
-                </Button>
+                <ActionTooltip label="Télécharger le PDF">
+                    <Button
+                        variant="outline"
+                        size="icon-sm"
+                        className="rounded-md"
+                        asChild
+                    >
+                        <a
+                          href={pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Télécharger le PDF"
+                          title="Télécharger le PDF"
+                        >
+                            <FileText />
+                        </a>
+                    </Button>
+                </ActionTooltip>
             ) : null}
 
-            <Button
-                variant="outline"
-                size="icon-sm"
-                asChild
-                className="rounded-md"
-            >
-                <a href={job.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink />
-                </a>
-            </Button>
+            <ActionTooltip label="Ouvrir l'offre sur le site">
+                <Button
+                    variant="default"
+                    size="icon-sm"
+                    asChild
+                    className="rounded-md"
+                >
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Ouvrir l'offre sur le site"
+                      title="Ouvrir l'offre sur le site"
+                    >
+                        <ExternalLink />
+                    </a>
+                </Button>
+            </ActionTooltip>
         </div>
     );
+}
+
+function ActionTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 function SelectionCheckbox({
