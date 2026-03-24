@@ -22,6 +22,9 @@ const PRODUCT_UPDATES = [
   {
     month: "Mars 2026",
     items: [
+      "Arrivée de la page `/messages` avec conversations de groupe et messages privés (DM) entre personnes autorisées, accès direct depuis la navigation principale et base de messagerie dédiée côté serveur.",
+      "Messagerie enrichie avec parsing des liens d'offres FOREM dans le chat: un lien offre valide est transformé en carte lisible avec les informations utiles et une action directe pour ajouter l'offre au suivi des candidatures.",
+      "UX mobile des messages retravaillée pour les démos: affichage plein écran du fil, suppression du footer parasite sur `/messages`, header DM resserré et comportement de scroll fiabilisé sur l'ouverture d'une conversation.",
       "Refonte de la structure de données des candidatures: sortie progressive du blob JSONB vers un modèle relationnel avec tables dédiées pour les candidatures, snapshots d'offres, note privée coach, notes partagées multiples, contributeurs et événements, sans perte de données grâce à une migration additive.",
       "Refonte complète de l'API externe pour les usages Excel / Power Query: filtres métier enrichis (nom, prénom, email, groupe, entreprise, notes), `format=json|csv` sur les listes, `applicationId` exposé, upsert de candidature et endpoints d'écriture pour la note privée et les notes partagées.",
       "Refonte de la vue coach/admin pour les démos: hiérarchie de page clarifiée, KPI rééquilibrés, sections Priorités / Activité / Groupes mieux structurées, module d'administration coach repositionné et système de badges métier harmonisé (relances, entretiens, acceptées, refusées).",
