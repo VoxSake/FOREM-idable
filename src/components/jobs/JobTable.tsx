@@ -18,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -58,8 +57,8 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
     cell: "w-[52px] align-top",
   },
   title: {
-    head: "w-[38%]",
-    cell: "w-[38%] whitespace-normal align-top",
+    head: "w-[44%]",
+    cell: "w-[44%] whitespace-normal align-top",
   },
   location: {
     head: "hidden sm:table-cell sm:w-[18%]",
@@ -70,12 +69,12 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
     cell: "hidden md:table-cell md:w-[124px] whitespace-normal align-top",
   },
   publicationDate: {
-    head: "hidden xl:table-cell xl:w-[148px]",
-    cell: "hidden xl:table-cell xl:w-[148px] align-top",
+    head: "hidden xl:table-cell xl:w-[104px]",
+    cell: "hidden xl:table-cell xl:w-[104px] align-top",
   },
   actions: {
-    head: "w-[112px] text-right lg:w-[176px]",
-    cell: "w-[112px] whitespace-nowrap align-top lg:w-[176px]",
+    head: "w-[104px] text-right lg:w-[164px]",
+    cell: "w-[104px] whitespace-nowrap align-top lg:w-[164px]",
   },
 };
 
@@ -144,12 +143,9 @@ export function JobTable({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="rounded-full text-[11px]">
-                {getSourceLabel(row.original.source)}
-              </Badge>
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground xl:hidden">
                 <CalendarDays className="size-3.5" />
-                {formatPublicationDateAbsolute(row.original.publicationDate)}
+                {formatPublicationDateCompact(row.original.publicationDate)}
               </span>
             </div>
           </div>
@@ -183,7 +179,7 @@ export function JobTable({
       header: "Publication",
       cell: ({ row }) => (
         <span className="text-sm font-medium text-foreground">
-          {formatPublicationDateAbsolute(row.original.publicationDate)}
+          {formatPublicationDateCompact(row.original.publicationDate)}
         </span>
       ),
     },
@@ -376,12 +372,9 @@ function JobMobileCard({
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="rounded-full text-[11px]">
-            {getSourceLabel(job.source)}
-          </Badge>
           <ContractTypeBadge contractType={job.contractType} />
           <span className="text-xs text-muted-foreground">
-            {formatPublicationDateAbsolute(job.publicationDate)}
+            {formatPublicationDateCompact(job.publicationDate)}
           </span>
         </div>
         <div className="flex flex-col gap-1">
@@ -458,7 +451,9 @@ function JobActions({
                             onChange={() => onToggleSelection(job)}
                         />
                     ) : <span />}
-                    <span className="text-xs text-muted-foreground">{getSourceLabel(job.source)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatPublicationDateCompact(job.publicationDate)}
+                    </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -564,9 +559,13 @@ function SelectionCheckbox({
     title?: string;
 }) {
     return (
-        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <label
+            className="flex items-center gap-2 text-xs font-medium text-muted-foreground"
+            onClick={(event) => event.stopPropagation()}
+        >
             <Checkbox
                 checked={checked}
+                onClick={(event) => event.stopPropagation()}
                 onCheckedChange={() => onChange()}
                 title={title}
                 aria-label="Sélectionner l'offre"
@@ -666,28 +665,13 @@ function JobTablePagination({
   );
 }
 
-function getSourceLabel(source: Job["source"]) {
-  switch (source) {
-    case "forem":
-      return "FOREM";
-    case "linkedin":
-      return "LinkedIn";
-    case "indeed":
-      return "Indeed";
-    case "adzuna":
-      return "Adzuna";
-    default:
-      return source;
-  }
-}
-
-function formatPublicationDateAbsolute(dateStr: string) {
+function formatPublicationDateCompact(dateStr: string) {
   if (!dateStr) return "Date inconnue";
 
   const parsedDate = new Date(dateStr);
   if (Number.isNaN(parsedDate.getTime())) return "Date inconnue";
 
-  return format(parsedDate, "dd MMM yyyy", { locale: fr });
+  return format(parsedDate, "dd MMM", { locale: fr });
 }
 
 type PaginationItem = number | "ellipsis";

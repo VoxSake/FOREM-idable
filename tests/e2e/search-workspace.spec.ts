@@ -102,7 +102,7 @@ test("shows the search workspace and a collapsed recent history for authenticate
 
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Consulter les offres" }).click();
+  await page.getByRole("button", { name: /Sélection maintenance/ }).click();
 
   await expect(page).toHaveURL(/kw=maintenance/);
   await expect(page.getByRole("heading", { name: "Résultats de recherche" })).toBeVisible();

@@ -133,7 +133,7 @@ export function SearchEngine({
 
   return (
     <div className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card p-4 shadow-sm transition-all hover:shadow-md lg:p-6">
-      <div className="flex w-full flex-col items-center gap-3 lg:flex-row">
+      <div className="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_240px_auto] lg:items-center">
         <KeywordComposer
           keywords={keywords}
           inputValue={inputValue}
@@ -150,16 +150,16 @@ export function SearchEngine({
           onToggleBooleanMode={toggleBooleanMode}
         />
 
-        <div className="w-full shrink-0 lg:w-72">
+        <div className="w-full shrink-0">
           <LocationAutocomplete values={selectedLocations} onChange={setSelectedLocations} />
         </div>
 
         <Button
           onClick={triggerSearch}
-          className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 lg:w-14"
+          className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-5 text-primary-foreground shadow-sm hover:bg-primary/90 lg:w-auto"
         >
           <Search className="h-5 w-5 shrink-0" />
-          <span className="lg:hidden">Rechercher</span>
+          <span>Rechercher</span>
         </Button>
       </div>
 
@@ -349,40 +349,28 @@ function SearchHints({
       </div>
 
       {visibleFeaturedSearches.length > 0 && onRunFeaturedSearch ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-background/70 p-3">
+        <div className="flex flex-col gap-2 rounded-2xl border border-border/50 bg-background/70 p-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Sparkles className="size-4" />
+            <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="size-3.5" />
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">Suggestions rapides</p>
-              <p className="text-xs text-muted-foreground">
-                Recherches mises en avant depuis l’administration.
-              </p>
-            </div>
+            <p className="text-sm font-semibold text-foreground">Suggestions rapides</p>
           </div>
 
-          <div className="grid gap-2 md:grid-cols-3">
+          <div className="flex flex-wrap gap-2">
             {visibleFeaturedSearches.map((item) => (
-              <button
+              <Button
                 key={item.id}
                 type="button"
+                variant="outline"
+                size="sm"
+                className="max-w-full rounded-full"
                 onClick={() => onRunFeaturedSearch(item)}
-                className="flex min-h-24 flex-col items-start justify-between rounded-2xl border border-border/60 bg-card px-3 py-3 text-left transition-colors hover:border-primary/30 hover:bg-muted/20"
+                title={item.message || item.title}
               >
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-semibold leading-5 text-foreground">{item.title}</p>
-                  {item.message ? (
-                    <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
-                      {item.message}
-                    </p>
-                  ) : null}
-                </div>
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                  {item.ctaLabel}
-                  <ArrowRight className="size-3.5" />
-                </span>
-              </button>
+                <span className="max-w-[220px] truncate">{item.title}</span>
+                <ArrowRight data-icon="inline-end" />
+              </Button>
             ))}
           </div>
         </div>
