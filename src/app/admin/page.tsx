@@ -6,6 +6,7 @@ import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { CoachAdminSection } from "@/features/coach/components/CoachAdminSection";
 import { useAdminPageState } from "@/features/admin/useAdminPageState";
 import { AdminApiKeysSection } from "@/features/admin/components/AdminApiKeysSection";
+import { AdminFeaturedSearchesSection } from "@/features/admin/components/AdminFeaturedSearchesSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,6 +103,7 @@ export default function AdminPage() {
 
   useToastFeedback(page.feedback, { title: "Administration" });
   useToastFeedback(page.apiKeysFeedback, { title: "Clés API admin" });
+  useToastFeedback(page.featuredSearchesFeedback, { title: "Recherches mises en avant" });
 
   if (isInitialPageLoading) {
     return <AdminPageSkeleton />;
@@ -203,6 +205,20 @@ export default function AdminPage() {
       </div>
 
       <div id="coachs">
+        <AdminFeaturedSearchesSection
+          featuredSearches={page.featuredSearches}
+          isLoading={page.isFeaturedSearchesLoading}
+          isSaving={page.isSavingFeaturedSearch}
+          savingId={page.savingFeaturedSearchId}
+          isDeleting={page.isDeletingFeaturedSearch}
+          onRefresh={() => void page.loadFeaturedSearches()}
+          onCreate={(payload) => page.createFeaturedSearch(payload)}
+          onUpdate={(id, payload) => page.updateFeaturedSearch(id, payload)}
+          onDelete={(id) => page.deleteFeaturedSearch(id)}
+        />
+      </div>
+
+      <div>
         <CoachAdminSection
           coaches={page.managedCoaches}
           groups={page.dashboard?.groups ?? []}

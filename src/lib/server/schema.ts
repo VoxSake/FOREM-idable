@@ -287,6 +287,25 @@ export const userSearchHistory = pgTable(
   })
 );
 
+export const featuredSearches = pgTable(
+  "featured_searches",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    ctaLabel: text("cta_label").notNull(),
+    query: jsonb("query").notNull().default(sql`'{}'::jsonb`),
+    isActive: boolean("is_active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    activeSortIdx: index("featured_searches_active_sort_idx").on(table.isActive, table.sortOrder),
+    updatedAtIdx: index("featured_searches_updated_at_idx").on(table.updatedAt),
+  })
+);
+
 export const userSettings = pgTable("user_settings", {
   userId: bigint("user_id", { mode: "number" })
     .primaryKey()

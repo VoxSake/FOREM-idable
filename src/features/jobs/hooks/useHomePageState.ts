@@ -9,6 +9,7 @@ import { useExportJobs } from "@/features/jobs/hooks/useExportJobs";
 import { useJobSearch } from "@/features/jobs/hooks/useJobSearch";
 import { useSelectionJobs } from "@/features/jobs/hooks/useSelectionJobs";
 import { fromSearchParams, toSearchPath } from "@/features/jobs/utils/searchUrl";
+import { FeaturedSearch } from "@/types/featuredSearch";
 import { Job } from "@/types/job";
 import { SearchQuery } from "@/types/search";
 
@@ -27,6 +28,8 @@ export function useHomePageState() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAuthRequiredOpen, setIsAuthRequiredOpen] = useState(false);
   const [pendingApplicationJobs, setPendingApplicationJobs] = useState<Job[]>([]);
+  const [featuredSearches, setFeaturedSearches] = useState<FeaturedSearch[]>([]);
+  const [isFeaturedSearchesLoading, setIsFeaturedSearchesLoading] = useState(true);
   const urlQuery = fromSearchParams(searchParams);
 
   const updateUrlFromQuery = (query: SearchQuery) => {
@@ -47,6 +50,30 @@ export function useHomePageState() {
       console.error("Impossible de copier le lien de recherche", error);
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void fetch("/api/featured-searches", { cache: "no-store" })
+      .then((response) => response.json().then((data) => ({ response, data })))
+      .then(({ response, data }) => {
+        if (!isMounted || !response.ok || !Array.isArray(data.featuredSearches)) {
+          return;
+        }
+
+        setFeaturedSearches(data.featuredSearches);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (isMounted) {
+          setIsFeaturedSearchesLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (hasAppliedInitialUrlQuery.current) return;
@@ -87,6 +114,13 @@ export function useHomePageState() {
     setIsDetailsOpen(true);
   };
 
+  const runFeaturedSearch = async (featuredSearch: FeaturedSearch) => {
+    const query = featuredSearch.query;
+    selection.resetSelection();
+    updateUrlFromQuery(query);
+    await jobSearch.executeSearch(query);
+  };
+
   return {
     user,
     isPageReady: isLoaded,
@@ -94,6 +128,8 @@ export function useHomePageState() {
     selectedJob,
     isDetailsOpen,
     isAuthRequiredOpen,
+    featuredSearches,
+    isFeaturedSearchesLoading,
     urlQuery,
     ...jobSearch,
     ...selection,
@@ -110,5 +146,6 @@ export function useHomePageState() {
     updateUrlFromQuery,
     trackJobs,
     openJobDetails,
+    runFeaturedSearch,
   };
 }

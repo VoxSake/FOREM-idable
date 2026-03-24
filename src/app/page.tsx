@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { SearchEngine, SearchState } from "@/components/search/SearchEngine";
+import { FeaturedSearchesPanel } from "@/features/jobs/components/FeaturedSearchesPanel";
 import { SearchHistoryPanel } from "@/features/jobs/components/SearchHistoryPanel";
 import { ExportDialog } from "@/features/jobs/components/ExportDialog";
 import { JobDetailsSheet } from "@/features/jobs/components/JobDetailsSheet";
@@ -96,6 +97,15 @@ function DashboardPageContent() {
         onSearch={(state: SearchState) => page.handleSearch(state)}
         initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
       />
+
+      {!page.isFeaturedSearchesLoading && page.featuredSearches.length > 0 ? (
+        <FeaturedSearchesPanel
+          items={page.featuredSearches}
+          onRunSearch={(item) => {
+            void page.runFeaturedSearch(item);
+          }}
+        />
+      ) : null}
 
       {!page.user ? (
         <Alert className="bg-card">
