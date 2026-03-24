@@ -61,20 +61,20 @@ const COLUMN_CLASSES: Record<string, { head?: string; cell?: string }> = {
     cell: "w-[44%] whitespace-normal align-top",
   },
   location: {
-    head: "hidden sm:table-cell sm:w-[18%]",
-    cell: "hidden sm:table-cell sm:w-[18%] align-top",
+    head: "hidden sm:table-cell sm:w-[96px] lg:w-[112px]",
+    cell: "hidden sm:table-cell sm:w-[96px] lg:w-[112px] align-top",
   },
   contractType: {
-    head: "hidden md:table-cell md:w-[124px]",
-    cell: "hidden md:table-cell md:w-[124px] whitespace-normal align-top",
+    head: "hidden md:table-cell md:w-[92px] lg:w-[104px]",
+    cell: "hidden md:table-cell md:w-[92px] lg:w-[104px] whitespace-normal align-top",
   },
   publicationDate: {
-    head: "hidden xl:table-cell xl:w-[104px]",
-    cell: "hidden xl:table-cell xl:w-[104px] align-top",
+    head: "hidden xl:table-cell xl:w-[112px]",
+    cell: "hidden xl:table-cell xl:w-[112px] align-top",
   },
   actions: {
-    head: "w-[104px] text-right lg:w-[164px]",
-    cell: "w-[104px] whitespace-nowrap align-top lg:w-[164px]",
+    head: "w-[96px] text-right lg:w-[144px]",
+    cell: "w-[96px] whitespace-nowrap align-top lg:w-[144px]",
   },
 };
 
@@ -161,7 +161,9 @@ export function JobTable({
         return (
           <div className="flex items-start gap-2 pt-0.5 text-sm text-foreground">
             <MapPin className="mt-0.5 size-3.5 text-muted-foreground" />
-            <span className="line-clamp-2">{location || "Lieu non précisé"}</span>
+            <span className="max-w-[10ch] truncate" title={location || "Lieu non précisé"}>
+              {location || "Lieu non précisé"}
+            </span>
           </div>
         );
       },
@@ -178,8 +180,8 @@ export function JobTable({
       accessorKey: "publicationDate",
       header: "Publication",
       cell: ({ row }) => (
-        <span className="text-sm font-medium text-foreground">
-          {formatPublicationDateCompact(row.original.publicationDate)}
+        <span className="text-xs font-medium text-foreground" title={row.original.publicationDate}>
+          {formatPublicationDateTable(row.original.publicationDate)}
         </span>
       ),
     },
@@ -522,12 +524,11 @@ function JobActions({
             {pdfUrl ? (
                 <Button
                     variant="outline"
-                    size="sm"
+                    size="icon-sm"
                     asChild
-                    className="h-8 w-8 rounded-full p-0 whitespace-nowrap sm:h-8 sm:w-auto sm:px-3"
+                    className="rounded-full"
                 >
                     <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                        <span className="hidden sm:inline">PDF</span>
                         <FileText />
                     </a>
                 </Button>
@@ -672,6 +673,15 @@ function formatPublicationDateCompact(dateStr: string) {
   if (Number.isNaN(parsedDate.getTime())) return "Date inconnue";
 
   return format(parsedDate, "dd MMM", { locale: fr });
+}
+
+function formatPublicationDateTable(dateStr: string) {
+  if (!dateStr) return "Date inconnue";
+
+  const parsedDate = new Date(dateStr);
+  if (Number.isNaN(parsedDate.getTime())) return "Date inconnue";
+
+  return format(parsedDate, "dd MMM yyyy", { locale: fr });
 }
 
 type PaginationItem = number | "ellipsis";
