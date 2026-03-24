@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -115,13 +114,10 @@ export function ConversationSidebar({
 
   return (
     <Card className="overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col">
-      <CardHeader className="border-b border-border/60 px-4 py-4">
+      <CardHeader className="border-b border-border/60 px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col">
             <CardTitle className="text-lg">Conversations</CardTitle>
-            <CardDescription>
-              Groupes de coordination et échanges privés autorisés.
-            </CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">
