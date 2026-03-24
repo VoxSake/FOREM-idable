@@ -16,7 +16,7 @@ export function MessagesPageContent() {
 
   return (
     <>
-      <div className="-mx-4 -my-4 flex h-[calc(100svh-3.5rem)] w-[calc(100%+2rem)] flex-col gap-4 overflow-hidden px-0 animate-in fade-in duration-500 md:mx-auto md:my-0 md:h-auto md:min-h-[calc(100svh-3.5rem)] md:w-full md:max-w-[1440px] md:overflow-x-hidden md:overflow-y-visible md:px-4 lg:h-[calc(100svh-4rem)] lg:max-w-none lg:gap-0 lg:px-0">
+      <div className="-mx-4 -my-4 flex h-[calc(100svh-3.5rem)] w-[calc(100%+2rem)] flex-col gap-4 overflow-hidden px-0 animate-in fade-in duration-500 md:mx-auto md:my-0 md:h-[calc(100svh-3.5rem-2rem)] md:min-h-0 md:w-full md:max-w-[1440px] md:overflow-hidden md:px-4 lg:h-[calc(100svh-4rem-4rem)] lg:max-w-none lg:gap-0 lg:px-0">
         <div className="min-h-0 flex-1 md:hidden">
           {page.isMobileConversationOpen && page.selectedPreview ? (
             <ConversationPanel
