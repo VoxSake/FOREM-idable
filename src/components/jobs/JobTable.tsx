@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -30,10 +30,11 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Job } from "@/types/job";
-import { CalendarDays, ExternalLink, FileText, MapPin, Send } from "lucide-react";
+import { CalendarDays, ExternalLink, FileText, MapPin, MessagesSquare, Send } from "lucide-react";
 import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { cn } from "@/lib/utils";
+import { ShareOfferDialog } from "@/features/jobs/components/ShareOfferDialog";
 
 interface JobTableProps {
   data: Job[];
@@ -93,6 +94,7 @@ export function JobTable({
   onTrackApplication,
   onRequireAuth,
 }: JobTableProps) {
+  const [shareJob, setShareJob] = useState<Job | null>(null);
   const columns: ColumnDef<Job>[] = [
     {
       id: "selection",
@@ -202,6 +204,7 @@ export function JobTable({
             onTrackApplication={onTrackApplication}
             onRequireAuth={onRequireAuth}
             onOpenDetails={onOpenDetails}
+            onShareJob={isAuthenticated ? (selectedJob) => setShareJob(selectedJob) : undefined}
           />
         );
       },
@@ -256,6 +259,7 @@ export function JobTable({
                 onTrackApplication={onTrackApplication}
                 onRequireAuth={onRequireAuth}
                 onOpenDetails={onOpenDetails}
+                onShareJob={isAuthenticated ? (selectedJob) => setShareJob(selectedJob) : undefined}
               />
             );
           })
@@ -340,6 +344,16 @@ export function JobTable({
         onNextPage={() => table.nextPage()}
         onLoadMore={onLoadMore}
       />
+
+      <ShareOfferDialog
+        job={shareJob}
+        open={Boolean(shareJob)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShareJob(null);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -354,6 +368,7 @@ function JobMobileCard({
     onTrackApplication,
     onRequireAuth,
     onOpenDetails,
+    onShareJob,
 }: {
     job: Job;
     isSelected: boolean;
@@ -364,6 +379,7 @@ function JobMobileCard({
     onTrackApplication?: (job: Job) => Promise<void> | void;
     onRequireAuth?: (job: Job) => void;
     onOpenDetails?: (job: Job) => void;
+    onShareJob?: (job: Job) => void;
 }) {
   return (
     <div
@@ -403,6 +419,7 @@ function JobMobileCard({
           onTrackApplication={onTrackApplication}
           onRequireAuth={onRequireAuth}
           onOpenDetails={onOpenDetails}
+          onShareJob={onShareJob}
         />
       </div>
     </div>
@@ -420,6 +437,7 @@ function JobActions({
     onTrackApplication,
     onRequireAuth,
     onOpenDetails,
+    onShareJob,
 }: {
     job: Job;
     layout: "table" | "mobile";
@@ -431,6 +449,7 @@ function JobActions({
     onTrackApplication?: (job: Job) => Promise<void> | void;
     onRequireAuth?: (job: Job) => void;
     onOpenDetails?: (job: Job) => void;
+    onShareJob?: (job: Job) => void;
 }) {
     const pdfUrl = getJobPdfUrl(job);
 
@@ -470,6 +489,18 @@ function JobActions({
                         <Send data-icon="inline-start" className={isApplied ? "fill-current" : undefined} />
                         {isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
                     </Button>
+
+                    {onShareJob ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-md"
+                            onClick={() => onShareJob(job)}
+                        >
+                            <MessagesSquare />
+                        </Button>
+                    ) : null}
 
                     <Button type="button" className="h-10 w-full" asChild>
                         <a href={job.url} target="_blank" rel="noopener noreferrer">
@@ -514,7 +545,7 @@ function JobActions({
             <Button
                 variant={isApplied ? "success" : "outline"}
                 size="icon-sm"
-                className="rounded-full"
+                className="rounded-md"
                 onClick={handleTrackApplication}
                 title={isApplied ? "Déjà dans le suivi" : "Ajouter au suivi"}
                 disabled={!isApplicationsLoaded}
@@ -522,11 +553,23 @@ function JobActions({
                 <Send className={isApplied ? "fill-current" : undefined} />
             </Button>
 
+            {onShareJob ? (
+                <Button
+                    variant="outline"
+                    size="icon-sm"
+                    className="rounded-md"
+                    onClick={() => onShareJob(job)}
+                    title="Partager dans les messages"
+                >
+                    <MessagesSquare />
+                </Button>
+            ) : null}
+
             {pdfUrl ? (
                 <Button
                     variant="outline"
                     size="icon-sm"
-                    className="rounded-full"
+                    className="rounded-md"
                     asChild
                 >
                     <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
