@@ -282,6 +282,8 @@ function ConversationSidebar({
   onSelectConversation,
   conversationQuery,
   onConversationQueryChange,
+  unreadConversationCount,
+  onOpenDirectDialog,
 }: {
   groupedConversations: {
     group: ConversationPreview[];
@@ -291,6 +293,8 @@ function ConversationSidebar({
   onSelectConversation: (conversationId: number) => void;
   conversationQuery: string;
   onConversationQueryChange: (value: string) => void;
+  unreadConversationCount: number;
+  onOpenDirectDialog: () => void;
 }) {
   const filteredDirectConversations = useMemo(() => {
     const normalizedQuery = conversationQuery.trim().toLowerCase();
@@ -311,7 +315,7 @@ function ConversationSidebar({
     groupedConversations.group.length > 0 || groupedConversations.direct.length > 0;
 
   return (
-    <Card className="overflow-hidden border-border/60 py-0 xl:sticky xl:top-6 xl:self-start">
+    <Card className="overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col">
       <CardHeader className="border-b border-border/60 px-4 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
@@ -320,13 +324,25 @@ function ConversationSidebar({
               Groupes de coordination et échanges privés autorisés.
             </CardDescription>
           </div>
-          <Badge variant="outline">
-            {groupedConversations.group.length + groupedConversations.direct.length}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">
+              {unreadConversationCount} non lu{unreadConversationCount > 1 ? "s" : ""}
+            </Badge>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="hidden md:inline-flex"
+              onClick={onOpenDirectDialog}
+            >
+              <UserRound data-icon="inline-start" />
+              Nouveau DM
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="px-3 py-3">
+      <CardContent className="min-h-0 flex-1 px-3 py-3">
         {!hasConversations ? (
           <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
             <EmptyHeader>
@@ -341,7 +357,7 @@ function ConversationSidebar({
           </Empty>
         ) : (
           <div className="flex flex-col gap-4">
-            <ScrollArea className="h-[min(64vh,42rem)] pr-1 xl:h-[calc(100dvh-20rem)]">
+            <ScrollArea className="h-[min(64vh,42rem)] pr-1 md:h-full">
               <div className="flex flex-col gap-4 pb-1">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3 px-1">
@@ -740,7 +756,7 @@ function ConversationPanel({
   }
 
   return (
-    <Card className="overflow-hidden border-border/60 py-0 lg:flex lg:h-[calc(100dvh-13.5rem)] lg:max-h-[calc(100dvh-13.5rem)] lg:flex-col">
+    <Card className="overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col">
       <CardHeader className="gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
@@ -1489,8 +1505,8 @@ export default function MessagesPage() {
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 overflow-x-hidden px-3 animate-in fade-in duration-500 sm:px-4 lg:px-6">
-        <Card className="overflow-hidden border-border/60 py-0">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 overflow-x-hidden px-3 animate-in fade-in duration-500 sm:px-4 lg:h-[calc(100svh-4rem)] lg:max-w-none lg:gap-0 lg:px-0">
+        <Card className="overflow-hidden border-border/60 py-0 lg:hidden">
           <CardHeader className="gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -1559,17 +1575,21 @@ export default function MessagesPage() {
               onSelectConversation={openConversation}
               conversationQuery={conversationQuery}
               onConversationQueryChange={setConversationQuery}
+              unreadConversationCount={unreadConversationCount}
+              onOpenDirectDialog={() => setIsDirectDialogOpen(true)}
             />
           )}
         </div>
 
-        <div className="hidden min-w-0 gap-6 md:grid xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="hidden min-h-0 min-w-0 gap-4 md:grid md:h-full md:grid-cols-[360px_minmax(0,1fr)]">
           <ConversationSidebar
             groupedConversations={groupedConversations}
             selectedConversationId={selectedConversationId}
             onSelectConversation={openConversation}
             conversationQuery={conversationQuery}
             onConversationQueryChange={setConversationQuery}
+            unreadConversationCount={unreadConversationCount}
+            onOpenDirectDialog={() => setIsDirectDialogOpen(true)}
           />
 
           <ConversationPanel
