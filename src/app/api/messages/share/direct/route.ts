@@ -24,7 +24,10 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Ce destinataire n'est pas disponible en message privé." },
+        { status: 403 }
+      );
     }
 
     if (error instanceof Error && error.message === "NotFound") {

@@ -935,8 +935,13 @@ export async function findOrCreateDirectConversationId(actor: AuthUser, targetUs
   }
 
   if (!existing.rows[0]?.id) {
-    const canMessage = await canDirectMessage(actor, targetUserId);
-    if (!canMessage) {
+    const [canMessage, availableTargets] = await Promise.all([
+      canDirectMessage(actor, targetUserId),
+      listDirectMessageTargets(actor),
+    ]);
+
+    const isListedTarget = availableTargets.some((target) => target.userId === targetUserId);
+    if (!canMessage && !isListedTarget) {
       throw new Error("Forbidden");
     }
   }
