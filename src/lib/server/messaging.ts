@@ -351,14 +351,7 @@ async function loadConversationSummaries(
        ON unread_messages.conversation_id = conversations.id
       AND unread_messages.deleted_at IS NULL
       AND unread_messages.author_user_id IS DISTINCT FROM $1
-      AND (
-        conversation_reads.last_read_at IS NULL
-        OR unread_messages.created_at > conversation_reads.last_read_at
-        OR (
-          unread_messages.created_at = conversation_reads.last_read_at
-          AND unread_messages.id > COALESCE(conversation_reads.last_read_message_id, 0)
-        )
-      )
+      AND unread_messages.id > COALESCE(conversation_reads.last_read_message_id, 0)
      LEFT JOIN LATERAL (
        SELECT users.first_name,
               users.last_name,

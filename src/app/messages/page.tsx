@@ -68,7 +68,6 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
@@ -83,8 +82,6 @@ import {
   ConversationPreview,
   DirectMessageTarget,
 } from "@/types/messaging";
-
-type SidebarTab = "group" | "direct";
 
 function getDisplayName(input: {
   firstName?: string;
@@ -250,8 +247,8 @@ function ConversationListItem({
 
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate font-medium">{conversation.title}</p>
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 break-words font-medium">{conversation.title}</p>
             {conversation.subtitle ? (
               <p className="truncate text-sm text-muted-foreground">
                 {conversation.subtitle}
@@ -285,8 +282,6 @@ function ConversationSidebar({
   onSelectConversation,
   conversationQuery,
   onConversationQueryChange,
-  activeTab,
-  onTabChange,
 }: {
   groupedConversations: {
     group: ConversationPreview[];
@@ -296,8 +291,6 @@ function ConversationSidebar({
   onSelectConversation: (conversationId: number) => void;
   conversationQuery: string;
   onConversationQueryChange: (value: string) => void;
-  activeTab: SidebarTab;
-  onTabChange: (tab: SidebarTab) => void;
 }) {
   const filteredDirectConversations = useMemo(() => {
     const normalizedQuery = conversationQuery.trim().toLowerCase();
@@ -347,27 +340,19 @@ function ConversationSidebar({
             </EmptyHeader>
           </Empty>
         ) : (
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => onTabChange(value as SidebarTab)}
-            className="gap-4"
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="group">
-                Groupes
-                <Badge variant="outline">{groupedConversations.group.length}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="direct">
-                DM
-                <Badge variant="outline">{groupedConversations.direct.length}</Badge>
-              </TabsTrigger>
-            </TabsList>
+          <div className="flex flex-col gap-4">
+            <ScrollArea className="h-[min(64vh,42rem)] pr-1 xl:h-[calc(100dvh-20rem)]">
+              <div className="flex flex-col gap-4 pb-1">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Groupes
+                    </p>
+                    <Badge variant="outline">{groupedConversations.group.length}</Badge>
+                  </div>
 
-            <TabsContent value="group" className="min-h-0">
-              <ScrollArea className="h-[min(58vh,36rem)] pr-1 xl:h-[calc(100dvh-20rem)]">
-                <div className="flex flex-col gap-3 pb-1">
                   {groupedConversations.group.length === 0 ? (
-                    <Empty className="min-h-56 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                    <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
                       <EmptyHeader>
                         <EmptyMedia variant="icon">
                           <Users />
@@ -389,64 +374,65 @@ function ConversationSidebar({
                     ))
                   )}
                 </div>
-              </ScrollArea>
-            </TabsContent>
 
-            <TabsContent value="direct" className="min-h-0">
-              <div className="flex flex-col gap-3">
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="dm-search">Rechercher un message privé</FieldLabel>
-                    <Input
-                      id="dm-search"
-                      value={conversationQuery}
-                      onChange={(event) => onConversationQueryChange(event.target.value)}
-                      placeholder="Nom, email ou dernier message"
-                    />
-                  </Field>
-                </FieldGroup>
-
-                <ScrollArea className="h-[min(50vh,31rem)] pr-1 xl:h-[calc(100dvh-25rem)]">
-                  <div className="flex flex-col gap-3 pb-1">
-                    {groupedConversations.direct.length === 0 ? (
-                      <Empty className="min-h-56 rounded-2xl border border-dashed border-border/60 bg-muted/10">
-                        <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <UserRound />
-                          </EmptyMedia>
-                          <EmptyTitle>Aucun DM ouvert.</EmptyTitle>
-                          <EmptyDescription>
-                            Démarre un échange privé depuis l&apos;action en haut de page.
-                          </EmptyDescription>
-                        </EmptyHeader>
-                      </Empty>
-                    ) : filteredDirectConversations.length === 0 ? (
-                      <Empty className="min-h-56 rounded-2xl border border-dashed border-border/60 bg-muted/10">
-                        <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <MessageSquareDashed />
-                          </EmptyMedia>
-                          <EmptyTitle>Aucun résultat.</EmptyTitle>
-                          <EmptyDescription>
-                            Ajuste la recherche pour retrouver un DM existant.
-                          </EmptyDescription>
-                        </EmptyHeader>
-                      </Empty>
-                    ) : (
-                      filteredDirectConversations.map((conversation) => (
-                        <ConversationListItem
-                          key={conversation.id}
-                          conversation={conversation}
-                          isSelected={selectedConversationId === conversation.id}
-                          onSelect={onSelectConversation}
-                        />
-                      ))
-                    )}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Messages privés
+                    </p>
+                    <Badge variant="outline">{groupedConversations.direct.length}</Badge>
                   </div>
-                </ScrollArea>
+
+                  <FieldGroup>
+                    <Field>
+                      <FieldLabel htmlFor="dm-search">Rechercher un message privé</FieldLabel>
+                      <Input
+                        id="dm-search"
+                        value={conversationQuery}
+                        onChange={(event) => onConversationQueryChange(event.target.value)}
+                        placeholder="Nom, email ou dernier message"
+                      />
+                    </Field>
+                  </FieldGroup>
+
+                  {groupedConversations.direct.length === 0 ? (
+                    <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <UserRound />
+                        </EmptyMedia>
+                        <EmptyTitle>Aucun DM ouvert.</EmptyTitle>
+                        <EmptyDescription>
+                          Démarre un échange privé depuis l&apos;action en haut de page.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : filteredDirectConversations.length === 0 ? (
+                    <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <MessageSquareDashed />
+                        </EmptyMedia>
+                        <EmptyTitle>Aucun résultat.</EmptyTitle>
+                        <EmptyDescription>
+                          Ajuste la recherche pour retrouver un DM existant.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : (
+                    filteredDirectConversations.map((conversation) => (
+                      <ConversationListItem
+                        key={conversation.id}
+                        conversation={conversation}
+                        isSelected={selectedConversationId === conversation.id}
+                        onSelect={onSelectConversation}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            </ScrollArea>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -899,7 +885,6 @@ export default function MessagesPage() {
   const [contactsError, setContactsError] = useState<string | null>(null);
   const [contactQuery, setContactQuery] = useState("");
   const [conversationQuery, setConversationQuery] = useState("");
-  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("group");
   const [isLoading, setIsLoading] = useState(true);
   const [isConversationLoading, setIsConversationLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -939,19 +924,10 @@ export default function MessagesPage() {
     );
   }, [contactQuery, contacts]);
 
-  const messagingStats = useMemo(() => {
-    const unreadCount = conversations.reduce(
-      (total, conversation) => total + conversation.unreadCount,
-      0
-    );
-
-    return {
-      total: conversations.length,
-      groups: groupedConversations.group.length,
-      directs: groupedConversations.direct.length,
-      unread: unreadCount,
-    };
-  }, [conversations, groupedConversations.direct.length, groupedConversations.group.length]);
+  const unreadConversationCount = useMemo(
+    () => conversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+    [conversations]
+  );
 
   const scrollThreadToBottom = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -1453,17 +1429,6 @@ export default function MessagesPage() {
   }, [scheduleScrollThreadToBottom]);
 
   useEffect(() => {
-    if (!groupedConversations.group.length && groupedConversations.direct.length) {
-      setSidebarTab("direct");
-      return;
-    }
-
-    if (groupedConversations.group.length && !groupedConversations.direct.length) {
-      setSidebarTab("group");
-    }
-  }, [groupedConversations.direct.length, groupedConversations.group.length]);
-
-  useEffect(() => {
     if (!isDirectDialogOpen) {
       return;
     }
@@ -1545,7 +1510,8 @@ export default function MessagesPage() {
 
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <Badge variant="outline">
-                  {messagingStats.unread} non lu{messagingStats.unread > 1 ? "s" : ""}
+                  {unreadConversationCount} non lu
+                  {unreadConversationCount > 1 ? "s" : ""}
                 </Badge>
                 <Button
                   type="button"
@@ -1560,32 +1526,6 @@ export default function MessagesPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="grid gap-3 px-4 py-4 sm:px-6 md:grid-cols-3">
-            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Conversations
-              </p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight">
-                {messagingStats.total}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Groupes actifs
-              </p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight">
-                {messagingStats.groups}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                DMs ouverts
-              </p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight">
-                {messagingStats.directs}
-              </p>
-            </div>
-          </CardContent>
         </Card>
 
         <div className="md:hidden">
@@ -1622,8 +1562,6 @@ export default function MessagesPage() {
               onSelectConversation={openConversation}
               conversationQuery={conversationQuery}
               onConversationQueryChange={setConversationQuery}
-              activeTab={sidebarTab}
-              onTabChange={setSidebarTab}
             />
           )}
         </div>
@@ -1635,8 +1573,6 @@ export default function MessagesPage() {
             onSelectConversation={openConversation}
             conversationQuery={conversationQuery}
             onConversationQueryChange={setConversationQuery}
-            activeTab={sidebarTab}
-            onTabChange={setSidebarTab}
           />
 
           <ConversationPanel
@@ -1773,7 +1709,6 @@ export default function MessagesPage() {
                               await loadConversations(data.conversation.id, {
                                 silent: true,
                               });
-                              setSidebarTab("direct");
                               setIsMobileConversationOpen(true);
                             } catch (directError) {
                               setIsDirectDialogOpen(true);
