@@ -565,6 +565,7 @@ export function useCoachDashboard() {
       return;
     }
 
+    await loadDashboard({ preserveFeedback: true });
     setUndoAction(null);
     setFeedback("Groupe supprimé.");
   };
