@@ -422,11 +422,11 @@ export function ConversationPanel({
       <CardHeader
         className={cn(
           "gap-3 border-b border-border/60 px-4 py-4 sm:px-5",
-          isMobile && "sticky top-0 z-10 gap-2 bg-background/95 px-3 py-2.5 backdrop-blur"
+          isMobile && "sticky top-0 z-10 gap-1.5 bg-background/95 px-2.5 py-2 backdrop-blur"
         )}
       >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <div className={cn("flex flex-wrap items-start justify-between gap-3", isMobile && "gap-2")}>
+          <div className={cn("flex min-w-0 flex-1 items-center gap-2.5", isMobile && "gap-2")}>
             {isMobile && onBack ? (
               <Button
                 type="button"
@@ -434,19 +434,24 @@ export function ConversationPanel({
                 size="icon"
                 aria-label="Retour aux conversations"
                 onClick={onBack}
-                className="-ml-1 size-9 shrink-0"
+                className="-ml-1 size-8 shrink-0"
               >
                 <ChevronLeft />
               </Button>
             ) : null}
-            <ConversationAvatar conversation={selectedPreview} size={isMobile ? "default" : "lg"} />
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <ConversationAvatar conversation={selectedPreview} size={isMobile ? "sm" : "lg"} />
+            <div className={cn("flex min-w-0 flex-1 flex-col gap-1.5", isMobile && "gap-0.5")}>
               <div className="min-w-0">
-                <CardTitle className={cn("break-words text-xl", isMobile && "truncate text-base")}>
+                <CardTitle
+                  className={cn(
+                    "break-words text-xl",
+                    isMobile && "truncate text-sm leading-tight font-semibold"
+                  )}
+                >
                   {selectedPreview.title}
                 </CardTitle>
                 {selectedConversation?.subtitle ? (
-                  <CardDescription className={cn(isMobile && "truncate text-xs")}>
+                  <CardDescription className={cn(isMobile && "truncate text-[11px] leading-tight")}>
                     {selectedConversation.subtitle}
                   </CardDescription>
                 ) : null}
@@ -474,7 +479,7 @@ export function ConversationPanel({
             isMobile ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0">
+                  <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0">
                     <EllipsisVertical />
                   </Button>
                 </DropdownMenuTrigger>
