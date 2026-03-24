@@ -1,0 +1,161 @@
+"use client";
+
+import { MessagesSquare, UserRound } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteMessageDialog } from "@/features/messages/components/DeleteMessageDialog";
+import { ConversationPanel } from "@/features/messages/components/ConversationPanel";
+import { ConversationSidebar } from "@/features/messages/components/ConversationSidebar";
+import { DirectMessageDialog } from "@/features/messages/components/DirectMessageDialog";
+import { MessagesPageSkeleton } from "@/features/messages/components/MessagesPageSkeleton";
+import { useMessagesPageState } from "@/features/messages/hooks/useMessagesPageState";
+
+export function MessagesPageContent() {
+  const page = useMessagesPageState();
+
+  if (page.isLoading || page.hasMessagingAccess === false) {
+    return <MessagesPageSkeleton />;
+  }
+
+  return (
+    <>
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 overflow-x-hidden px-3 animate-in fade-in duration-500 sm:px-4 lg:h-[calc(100svh-4rem)] lg:max-w-none lg:gap-0 lg:px-0">
+        <Card className="overflow-hidden border-border/60 py-0 lg:hidden">
+          <CardHeader className="gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight">
+                  <MessagesSquare data-icon="inline-start" className="text-primary" />
+                  Messages
+                </CardTitle>
+                <CardDescription className="max-w-3xl text-sm leading-relaxed">
+                  Un espace de coordination propre, lisible et actionnable pour les
+                  groupes, avec des DM limités aux personnes déjà dans le même cadre
+                  d&apos;accompagnement.
+                </CardDescription>
+              </div>
+
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                <Badge variant="outline">
+                  {page.unreadConversationCount} non lu
+                  {page.unreadConversationCount > 1 ? "s" : ""}
+                </Badge>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => page.setIsDirectDialogOpen(true)}
+                >
+                  <UserRound data-icon="inline-start" />
+                  Nouveau DM
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        <div className="md:hidden">
+          {page.isMobileConversationOpen && page.selectedPreview ? (
+            <ConversationPanel
+              selectedPreview={page.selectedPreview}
+              selectedConversation={page.selectedConversation}
+              error={page.error}
+              isConversationLoading={page.isConversationLoading}
+              isClosingDirectConversation={page.isClosingDirectConversation}
+              trackedJobIds={page.trackedJobIds}
+              draft={page.draft}
+              isSending={page.isSending}
+              isMobile
+              onBack={() => page.setIsMobileConversationOpen(false)}
+              onCloseDirectConversation={() => {
+                void page.closeSelectedDirectConversation();
+              }}
+              onTrackJob={(job) => {
+                void page.addSharedJobToApplications(job);
+              }}
+              onDeleteMessage={page.setMessagePendingDeletion}
+              onDraftChange={page.setDraft}
+              onSend={() => {
+                void page.sendCurrentMessage();
+              }}
+              threadBottomRef={page.threadBottomRef}
+              threadScrollAreaRef={page.threadScrollAreaRef}
+            />
+          ) : (
+            <ConversationSidebar
+              groupedConversations={page.groupedConversations}
+              selectedConversationId={page.selectedConversationId}
+              conversationQuery={page.conversationQuery}
+              unreadConversationCount={page.unreadConversationCount}
+              onConversationQueryChange={page.setConversationQuery}
+              onOpenDirectDialog={() => page.setIsDirectDialogOpen(true)}
+              onSelectConversation={page.openConversation}
+            />
+          )}
+        </div>
+
+        <div className="hidden min-h-0 min-w-0 gap-4 md:grid md:h-full md:grid-cols-[360px_minmax(0,1fr)]">
+          <ConversationSidebar
+            groupedConversations={page.groupedConversations}
+            selectedConversationId={page.selectedConversationId}
+            conversationQuery={page.conversationQuery}
+            unreadConversationCount={page.unreadConversationCount}
+            onConversationQueryChange={page.setConversationQuery}
+            onOpenDirectDialog={() => page.setIsDirectDialogOpen(true)}
+            onSelectConversation={page.openConversation}
+          />
+
+          <ConversationPanel
+            selectedPreview={page.selectedPreview}
+            selectedConversation={page.selectedConversation}
+            error={page.error}
+            isConversationLoading={page.isConversationLoading}
+            isClosingDirectConversation={page.isClosingDirectConversation}
+            trackedJobIds={page.trackedJobIds}
+            draft={page.draft}
+            isSending={page.isSending}
+            onCloseDirectConversation={() => {
+              void page.closeSelectedDirectConversation();
+            }}
+            onTrackJob={(job) => {
+              void page.addSharedJobToApplications(job);
+            }}
+            onDeleteMessage={page.setMessagePendingDeletion}
+            onDraftChange={page.setDraft}
+            onSend={() => {
+              void page.sendCurrentMessage();
+            }}
+            threadBottomRef={page.threadBottomRef}
+            threadScrollAreaRef={page.threadScrollAreaRef}
+          />
+        </div>
+      </div>
+
+      <DirectMessageDialog
+        open={page.isDirectDialogOpen}
+        contacts={page.contacts}
+        contactQuery={page.contactQuery}
+        contactsError={page.contactsError}
+        filteredContacts={page.filteredContacts}
+        isContactsLoading={page.isContactsLoading}
+        onContactQueryChange={page.setContactQuery}
+        onOpenChange={page.setIsDirectDialogOpen}
+        onSelectContact={page.createDirectConversation}
+      />
+
+      <DeleteMessageDialog
+        open={Boolean(page.messagePendingDeletion)}
+        isDeleting={page.isDeletingMessage}
+        onConfirm={() => {
+          void page.deleteSelectedMessage();
+        }}
+        onOpenChange={(open) => {
+          if (!open && !page.isDeletingMessage) {
+            page.setMessagePendingDeletion(null);
+          }
+        }}
+      />
+    </>
+  );
+}
