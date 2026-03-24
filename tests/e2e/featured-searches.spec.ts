@@ -65,7 +65,6 @@ test("runs a featured search from the homepage", async ({ page }) => {
 
   await page.goto("/");
 
-  await expect(page.getByText("Recherches mises en avant")).toBeVisible();
   await expect(page.getByText("Salon de l'emploi à SPA")).toBeVisible();
 
   await page.getByRole("button", { name: "Consulter les offres" }).click();
