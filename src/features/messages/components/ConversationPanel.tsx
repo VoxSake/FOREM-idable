@@ -416,7 +416,7 @@ export function ConversationPanel({
       className={cn(
         "overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col",
         isMobile &&
-          "fixed inset-x-0 bottom-0 top-14 z-20 rounded-none border-x-0 border-y-0 shadow-none"
+          "fixed inset-x-0 top-14 z-20 flex h-[calc(100svh-3.5rem)] flex-col rounded-none border-x-0 border-y-0 shadow-none"
       )}
     >
       <CardHeader

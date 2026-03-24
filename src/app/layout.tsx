@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SiteFooter } from "@/components/site-footer";
+import { ConditionalSiteFooter } from "@/components/conditional-site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { runtimeConfig } from "@/config/runtime";
@@ -63,7 +63,7 @@ export default function RootLayout({
                     {children}
                   </div>
                 </div>
-                <SiteFooter />
+                <ConditionalSiteFooter />
               </main>
             </SidebarProvider>
           </AuthProvider>

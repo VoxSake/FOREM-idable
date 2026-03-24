@@ -127,6 +127,7 @@ test("opens a DM in a dedicated mobile thread and lands at the bottom", async ({
   await page.goto("/messages");
 
   await expect(page.getByText("Conversations").first()).toBeVisible();
+  await expect(page.locator("main > footer")).toHaveCount(0);
   await page.getByText("Camille Coach").first().click();
 
   const mobileThread = page

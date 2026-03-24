@@ -153,7 +153,7 @@ export function ConversationSidebar({
       className={cn(
         "overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col",
         isMobile &&
-          "-mx-4 -my-4 min-h-[calc(100svh-3.5rem)] rounded-none border-x-0 border-y-0 bg-background shadow-none"
+          "flex h-full rounded-none border-x-0 border-y-0 bg-background shadow-none"
       )}
     >
       <CardHeader
@@ -225,7 +225,12 @@ export function ConversationSidebar({
         </div>
       </CardHeader>
 
-      <CardContent className={cn("min-h-0 flex-1 px-3 py-3", isMobile && "px-3 pb-4 pt-3")}>
+      <CardContent
+        className={cn(
+          "min-h-0 flex-1 px-3 py-3",
+          isMobile && "flex min-h-0 flex-1 flex-col px-3 pb-4 pt-3"
+        )}
+      >
         {!hasConversations ? (
           <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
             <EmptyHeader>
@@ -242,8 +247,8 @@ export function ConversationSidebar({
           <div className="flex h-full flex-col gap-4">
             <ScrollArea
               className={cn(
-                "pr-1 md:h-full",
-                isMobile ? "h-[calc(100svh-9.75rem)]" : "h-[min(64vh,42rem)]"
+                "min-h-0 pr-1 md:h-full",
+                isMobile ? "h-full" : "h-[min(64vh,42rem)]"
               )}
             >
               {isMobile ? (
