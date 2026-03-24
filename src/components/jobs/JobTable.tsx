@@ -308,8 +308,8 @@ export function JobTable({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={cn(
-                      row.index % 2 === 0 ? "bg-background" : "bg-muted/20",
-                      "group border-border/60 hover:bg-muted/35 data-[state=selected]:bg-primary/6",
+                      row.index % 2 === 0 ? "bg-background" : "bg-muted/30 dark:bg-muted/20",
+                      "group border-border/60 hover:bg-muted/45 dark:hover:bg-muted/35 data-[state=selected]:bg-primary/6",
                       onOpenDetails ? "cursor-pointer" : undefined
                     )}
                     onClick={onOpenDetails ? () => onOpenDetails(row.original) : undefined}
