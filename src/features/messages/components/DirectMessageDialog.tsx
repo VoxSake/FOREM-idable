@@ -52,8 +52,7 @@ export function DirectMessageDialog({
         <DialogHeader>
           <DialogTitle>Nouveau message privé</DialogTitle>
           <DialogDescription>
-            Choisis une personne déjà reliée à l&apos;un de tes groupes pour démarrer
-            un échange privé.
+            Choisis une personne liée à l&apos;un de tes groupes.
           </DialogDescription>
         </DialogHeader>
 
@@ -76,7 +75,7 @@ export function DirectMessageDialog({
               </EmptyMedia>
               <EmptyTitle>Aucun contact disponible.</EmptyTitle>
               <EmptyDescription>
-                Aucun DM autorisé pour l&apos;instant dans ton périmètre.
+                Aucun message privé disponible pour le moment.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -104,7 +103,7 @@ export function DirectMessageDialog({
                   </EmptyMedia>
                   <EmptyTitle>Aucun contact trouvé.</EmptyTitle>
                   <EmptyDescription>
-                    Ajuste la recherche ou vérifie ton périmètre de groupe.
+                    Aucun contact ne correspond à cette recherche.
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

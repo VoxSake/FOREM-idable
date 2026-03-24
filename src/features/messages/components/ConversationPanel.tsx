@@ -269,7 +269,7 @@ function MessageComposer({
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <FieldLabel htmlFor={inputId}>Nouveau message</FieldLabel>
               <p className="text-[11px] text-muted-foreground">
-                Entrée envoie, Shift + Entrée ajoute une ligne
+                Entrée pour envoyer, Shift + Entrée pour une ligne
               </p>
             </div>
           ) : (
@@ -296,7 +296,7 @@ function MessageComposer({
               placeholder={
                 isMobile
                   ? "Message"
-                  : "Écris un message utile, clair et actionnable..."
+                  : "Écrire un message"
               }
               className={cn(
                 "resize-none",
@@ -395,7 +395,7 @@ export function ConversationPanel({
               </EmptyMedia>
               <EmptyTitle>Sélectionne une conversation.</EmptyTitle>
               <EmptyDescription>
-                Ouvre un groupe ou démarre un DM pour afficher le fil des messages.
+                Choisis une conversation pour voir les messages.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -554,7 +554,7 @@ export function ConversationPanel({
                     </EmptyMedia>
                     <EmptyTitle>Aucun message pour l&apos;instant.</EmptyTitle>
                     <EmptyDescription>
-                      Lance la conversation avec un premier message clair et utile.
+                      Envoie le premier message.
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>

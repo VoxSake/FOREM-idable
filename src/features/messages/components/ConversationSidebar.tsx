@@ -78,7 +78,7 @@ function ConversationListItem({
         </div>
 
         <p className={cn("line-clamp-2 text-sm text-muted-foreground", isMobile && "line-clamp-1")}>
-          {conversation.lastMessagePreview || "Aucun message pour l'instant."}
+          {conversation.lastMessagePreview || "Pas encore de message."}
         </p>
       </div>
     </button>
@@ -183,7 +183,7 @@ export function ConversationSidebar({
                       id="dm-search"
                       value={conversationQuery}
                       onChange={(event) => onConversationQueryChange(event.target.value)}
-                      placeholder="Rechercher une conversation"
+                      placeholder="Rechercher"
                       className="h-11 rounded-full bg-muted/35"
                     />
                   </Field>
@@ -241,7 +241,7 @@ export function ConversationSidebar({
               </EmptyMedia>
               <EmptyTitle>Aucune conversation.</EmptyTitle>
               <EmptyDescription>
-                Rejoins un groupe ou démarre un DM autorisé.
+                Les groupes et messages privés apparaîtront ici.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -262,7 +262,7 @@ export function ConversationSidebar({
                       </EmptyMedia>
                       <EmptyTitle>Aucune conversation trouvée.</EmptyTitle>
                       <EmptyDescription>
-                        Ajuste la recherche ou démarre un nouveau DM.
+                        Aucun résultat pour cette recherche.
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -329,7 +329,7 @@ export function ConversationSidebar({
                           id="dm-search"
                           value={conversationQuery}
                           onChange={(event) => onConversationQueryChange(event.target.value)}
-                          placeholder="Retrouver un DM existant"
+                          placeholder="Nom, email ou message"
                         />
                       </Field>
                     </FieldGroup>
@@ -342,7 +342,7 @@ export function ConversationSidebar({
                           </EmptyMedia>
                           <EmptyTitle>Aucun DM ouvert.</EmptyTitle>
                           <EmptyDescription>
-                            Démarre un échange privé depuis l&apos;action en haut de page.
+                            Ouvre un message privé avec le bouton en haut.
                           </EmptyDescription>
                         </EmptyHeader>
                       </Empty>
@@ -354,7 +354,7 @@ export function ConversationSidebar({
                           </EmptyMedia>
                           <EmptyTitle>Aucun résultat.</EmptyTitle>
                           <EmptyDescription>
-                            Ajuste la recherche pour retrouver un DM existant.
+                            Aucun message privé ne correspond à cette recherche.
                           </EmptyDescription>
                         </EmptyHeader>
                       </Empty>
