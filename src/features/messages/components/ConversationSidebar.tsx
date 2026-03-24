@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MessageSquareDashed, UserRound, Users } from "lucide-react";
@@ -21,6 +22,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ConversationPreview } from "@/types/messaging";
 import { ConversationAvatar } from "@/features/messages/components/MessagesPrimitives";
 import { cn } from "@/lib/utils";
@@ -28,10 +30,12 @@ import { cn } from "@/lib/utils";
 function ConversationListItem({
   conversation,
   isSelected,
+  isMobile,
   onSelect,
 }: {
   conversation: ConversationPreview;
   isSelected: boolean;
+  isMobile?: boolean;
   onSelect: (conversationId: number) => void;
 }) {
   return (
@@ -39,26 +43,29 @@ function ConversationListItem({
       type="button"
       className={cn(
         "flex w-full items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-all",
+        isMobile && "gap-3 rounded-[1.4rem] border-x-0 border-t-0 border-b border-border/50 px-1 py-3.5",
         isSelected
           ? "border-primary/35 bg-primary/8 shadow-sm"
           : "border-border/60 bg-background/70 hover:border-primary/20 hover:bg-muted/40"
       )}
       onClick={() => onSelect(conversation.id)}
     >
-      <ConversationAvatar conversation={conversation} size="lg" />
+      <ConversationAvatar conversation={conversation} size={isMobile ? "default" : "lg"} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 break-words font-medium">{conversation.title}</p>
+            <p className={cn("line-clamp-2 break-words font-medium", isMobile && "line-clamp-1")}>
+              {conversation.title}
+            </p>
             {conversation.subtitle ? (
-              <p className="truncate text-sm text-muted-foreground">
+              <p className={cn("truncate text-sm text-muted-foreground", isMobile && "text-xs")}>
                 {conversation.subtitle}
               </p>
             ) : null}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
-            <span className="text-xs text-muted-foreground">
+            <span className={cn("text-xs text-muted-foreground", isMobile && "text-[11px]")}>
               {formatDistanceToNow(new Date(conversation.lastMessageAt), {
                 addSuffix: true,
                 locale: fr,
@@ -70,7 +77,7 @@ function ConversationListItem({
           </div>
         </div>
 
-        <p className="line-clamp-2 text-sm text-muted-foreground">
+        <p className={cn("line-clamp-2 text-sm text-muted-foreground", isMobile && "line-clamp-1")}>
           {conversation.lastMessagePreview || "Aucun message pour l'instant."}
         </p>
       </div>
@@ -100,6 +107,7 @@ export function ConversationSidebar({
   onOpenDirectDialog: () => void;
   onSelectConversation: (conversationId: number) => void;
 }) {
+  const [mobileFilter, setMobileFilter] = useState<"all" | "group" | "direct">("all");
   const normalizedQuery = conversationQuery.trim().toLowerCase();
   const filteredDirectConversations = !normalizedQuery
     ? groupedConversations.direct
@@ -110,6 +118,32 @@ export function ConversationSidebar({
           .toLowerCase()
           .includes(normalizedQuery)
       );
+  const filteredGroupConversations = useMemo(() => {
+    if (!normalizedQuery) {
+      return groupedConversations.group;
+    }
+
+    return groupedConversations.group.filter((conversation) =>
+      `${conversation.title} ${conversation.subtitle ?? ""} ${
+        conversation.lastMessagePreview ?? ""
+      }`
+        .toLowerCase()
+        .includes(normalizedQuery)
+    );
+  }, [groupedConversations.group, normalizedQuery]);
+  const mobileConversations = useMemo(() => {
+    const source =
+      mobileFilter === "group"
+        ? filteredGroupConversations
+        : mobileFilter === "direct"
+          ? filteredDirectConversations
+          : [...filteredGroupConversations, ...filteredDirectConversations].sort(
+              (left, right) =>
+                new Date(right.lastMessageAt).getTime() - new Date(left.lastMessageAt).getTime()
+            );
+
+    return source;
+  }, [filteredDirectConversations, filteredGroupConversations, mobileFilter]);
 
   const hasConversations =
     groupedConversations.group.length > 0 || groupedConversations.direct.length > 0;
@@ -118,34 +152,74 @@ export function ConversationSidebar({
     <Card
       className={cn(
         "overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col",
-        isMobile && "-mx-4 -my-4 min-h-[calc(100svh-3.5rem)] rounded-none border-x-0 border-y-0 shadow-none"
+        isMobile &&
+          "-mx-4 -my-4 min-h-[calc(100svh-3.5rem)] rounded-none border-x-0 border-y-0 bg-background shadow-none"
       )}
     >
       <CardHeader
         className={cn(
           "border-b border-border/60 px-4 py-3.5",
-          isMobile && "sticky top-0 z-10 bg-background/95 px-4 pb-4 pt-4 backdrop-blur"
+          isMobile && "sticky top-0 z-10 bg-background/95 px-4 pb-3 pt-3 backdrop-blur"
         )}
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col">
-            <CardTitle className={cn("text-lg", isMobile && "text-2xl font-black tracking-tight")}>
-              Conversations
-            </CardTitle>
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className={cn("text-lg", isMobile && "text-xl font-black tracking-tight")}>
+                Conversations
+              </CardTitle>
+              <Badge variant="outline">
+                {unreadConversationCount} non lu{unreadConversationCount > 1 ? "s" : ""}
+              </Badge>
+            </div>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="dm-search" className={cn(isMobile && "sr-only")}>
+                  Rechercher un message privé
+                </FieldLabel>
+                <Input
+                  id="dm-search"
+                  value={conversationQuery}
+                  onChange={(event) => onConversationQueryChange(event.target.value)}
+                  placeholder="Rechercher une conversation"
+                  className={cn(isMobile && "h-11 rounded-full bg-muted/35")}
+                />
+              </Field>
+            </FieldGroup>
+            {isMobile ? (
+              <ToggleGroup
+                type="single"
+                value={mobileFilter}
+                onValueChange={(value) => {
+                  if (value === "all" || value === "group" || value === "direct") {
+                    setMobileFilter(value);
+                  }
+                }}
+                className="grid grid-cols-3 gap-2"
+              >
+                <ToggleGroupItem value="all" className="rounded-full text-xs">
+                  Tout
+                </ToggleGroupItem>
+                <ToggleGroupItem value="group" className="rounded-full text-xs">
+                  Groupes
+                </ToggleGroupItem>
+                <ToggleGroupItem value="direct" className="rounded-full text-xs">
+                  Privés
+                </ToggleGroupItem>
+              </ToggleGroup>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {unreadConversationCount} non lu{unreadConversationCount > 1 ? "s" : ""}
-            </Badge>
             <Button
               type="button"
-              variant="outline"
-              size={isMobile ? "default" : "sm"}
-              className={cn(isMobile ? "inline-flex" : "hidden md:inline-flex")}
+              variant={isMobile ? "default" : "outline"}
+              size={isMobile ? "icon" : "sm"}
+              className={cn(isMobile ? "mt-0.5 size-11 rounded-full shadow-sm" : "hidden md:inline-flex")}
               onClick={onOpenDirectDialog}
+              aria-label="Nouveau DM"
             >
               <UserRound data-icon="inline-start" />
-              Nouveau DM
+              {!isMobile ? "Nouveau DM" : null}
             </Button>
           </div>
         </div>
@@ -169,98 +243,116 @@ export function ConversationSidebar({
             <ScrollArea
               className={cn(
                 "pr-1 md:h-full",
-                isMobile ? "h-[calc(100svh-13.5rem)]" : "h-[min(64vh,42rem)]"
+                isMobile ? "h-[calc(100svh-9.75rem)]" : "h-[min(64vh,42rem)]"
               )}
             >
-              <div className="flex flex-col gap-4 pb-1">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between gap-3 px-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Groupes
-                    </p>
-                    <Badge variant="outline">{groupedConversations.group.length}</Badge>
-                  </div>
-
-                  {groupedConversations.group.length === 0 ? (
-                    <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <Users />
-                        </EmptyMedia>
-                        <EmptyTitle>Aucun groupe actif.</EmptyTitle>
-                        <EmptyDescription>
-                          Les conversations de groupe apparaîtront ici.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
-                  ) : (
-                    groupedConversations.group.map((conversation) => (
+              {isMobile ? (
+                mobileConversations.length === 0 ? (
+                  <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <MessageSquareDashed />
+                      </EmptyMedia>
+                      <EmptyTitle>Aucune conversation trouvée.</EmptyTitle>
+                      <EmptyDescription>
+                        Ajuste la recherche ou démarre un nouveau DM.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                ) : (
+                  <div className="flex flex-col gap-1 pb-2">
+                    {mobileConversations.map((conversation) => (
                       <ConversationListItem
                         key={conversation.id}
                         conversation={conversation}
                         isSelected={selectedConversationId === conversation.id}
+                        isMobile={isMobile}
                         onSelect={onSelectConversation}
                       />
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col gap-4 pb-1">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-3 px-1">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Groupes
+                      </p>
+                      <Badge variant="outline">{groupedConversations.group.length}</Badge>
+                    </div>
 
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between gap-3 px-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Messages privés
-                    </p>
-                    <Badge variant="outline">{groupedConversations.direct.length}</Badge>
+                    {groupedConversations.group.length === 0 ? (
+                      <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <Users />
+                          </EmptyMedia>
+                          <EmptyTitle>Aucun groupe actif.</EmptyTitle>
+                          <EmptyDescription>
+                            Les conversations de groupe apparaîtront ici.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    ) : (
+                      groupedConversations.group.map((conversation) => (
+                        <ConversationListItem
+                          key={conversation.id}
+                          conversation={conversation}
+                          isSelected={selectedConversationId === conversation.id}
+                          isMobile={isMobile}
+                          onSelect={onSelectConversation}
+                        />
+                      ))
+                    )}
                   </div>
 
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="dm-search">Rechercher un message privé</FieldLabel>
-                      <Input
-                        id="dm-search"
-                        value={conversationQuery}
-                        onChange={(event) => onConversationQueryChange(event.target.value)}
-                        placeholder="Nom, email ou dernier message"
-                      />
-                    </Field>
-                  </FieldGroup>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-3 px-1">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Messages privés
+                      </p>
+                      <Badge variant="outline">{groupedConversations.direct.length}</Badge>
+                    </div>
 
-                  {groupedConversations.direct.length === 0 ? (
-                    <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <UserRound />
-                        </EmptyMedia>
-                        <EmptyTitle>Aucun DM ouvert.</EmptyTitle>
-                        <EmptyDescription>
-                          Démarre un échange privé depuis l&apos;action en haut de page.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
-                  ) : filteredDirectConversations.length === 0 ? (
-                    <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <MessageSquareDashed />
-                        </EmptyMedia>
-                        <EmptyTitle>Aucun résultat.</EmptyTitle>
-                        <EmptyDescription>
-                          Ajuste la recherche pour retrouver un DM existant.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
-                  ) : (
-                    filteredDirectConversations.map((conversation) => (
-                      <ConversationListItem
-                        key={conversation.id}
-                        conversation={conversation}
-                        isSelected={selectedConversationId === conversation.id}
-                        onSelect={onSelectConversation}
-                      />
-                    ))
-                  )}
+                    {groupedConversations.direct.length === 0 ? (
+                      <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <UserRound />
+                          </EmptyMedia>
+                          <EmptyTitle>Aucun DM ouvert.</EmptyTitle>
+                          <EmptyDescription>
+                            Démarre un échange privé depuis l&apos;action en haut de page.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    ) : filteredDirectConversations.length === 0 ? (
+                      <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <MessageSquareDashed />
+                          </EmptyMedia>
+                          <EmptyTitle>Aucun résultat.</EmptyTitle>
+                          <EmptyDescription>
+                            Ajuste la recherche pour retrouver un DM existant.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    ) : (
+                      filteredDirectConversations.map((conversation) => (
+                        <ConversationListItem
+                          key={conversation.id}
+                          conversation={conversation}
+                          isSelected={selectedConversationId === conversation.id}
+                          isMobile={isMobile}
+                          onSelect={onSelectConversation}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </ScrollArea>
           </div>
         )}

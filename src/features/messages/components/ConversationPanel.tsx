@@ -154,11 +154,17 @@ function MessageBubble({
     <div
       className={cn(
         "flex gap-3",
+        isMobile && "gap-2",
         message.isOwnMessage ? "justify-end" : "justify-start"
       )}
     >
       {!message.isOwnMessage ? (
-        <Avatar className="mt-1 border border-border/70 bg-background">
+        <Avatar
+          className={cn(
+            "mt-1 border border-border/70 bg-background",
+            isMobile && "size-8"
+          )}
+        >
           <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
         </Avatar>
       ) : null}
@@ -166,15 +172,17 @@ function MessageBubble({
       <div
         className={cn(
           "min-w-0 max-w-[92%] rounded-3xl border px-4 py-4 shadow-sm lg:max-w-[78%]",
-          isMobile && "max-w-[95%]",
+          isMobile && "max-w-[96%] rounded-[1.6rem] px-3.5 py-3",
           message.isOwnMessage
             ? "border-primary/25 bg-primary/10"
             : "border-border/60 bg-background"
         )}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-medium break-words">{displayName}</p>
-          <span className="text-xs text-muted-foreground">
+          {!message.isOwnMessage || !isMobile ? (
+            <p className="font-medium break-words">{displayName}</p>
+          ) : null}
+          <span className={cn("text-xs text-muted-foreground", isMobile && "text-[11px]")}>
             {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm", {
               locale: fr,
             })}
@@ -207,11 +215,16 @@ function MessageBubble({
         </div>
 
         {message.deletedAt ? (
-          <p className="mt-3 text-sm italic text-muted-foreground">
+          <p className={cn("mt-3 text-sm italic text-muted-foreground", isMobile && "mt-2")}>
             Message supprimé par l&apos;équipe d&apos;encadrement.
           </p>
         ) : message.content ? (
-          <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">
+          <p
+            className={cn(
+              "mt-3 text-sm leading-relaxed whitespace-pre-wrap",
+              isMobile && "mt-2 text-[0.95rem] leading-6"
+            )}
+          >
             {message.content}
           </p>
         ) : null}
@@ -249,30 +262,69 @@ function MessageComposer({
     <div
       className={cn(
         "border-t border-border/60 bg-background/85 px-4 py-4 backdrop-blur",
-        isMobile && "px-3 pb-[calc(env(safe-area-inset-bottom)+0.9rem)] pt-3"
+        isMobile && "px-3 pb-[calc(env(safe-area-inset-bottom)+0.8rem)] pt-2.5"
       )}
     >
       <FieldGroup>
         <Field>
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <FieldLabel htmlFor={inputId}>Nouveau message</FieldLabel>
-            <p className="text-[11px] text-muted-foreground">
-              Entrée envoie, Shift + Entrée ajoute une ligne
-            </p>
-          </div>
-          <Textarea
-            id={inputId}
-            value={draft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                onSend();
+          {!isMobile ? (
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <FieldLabel htmlFor={inputId}>Nouveau message</FieldLabel>
+              <p className="text-[11px] text-muted-foreground">
+                Entrée envoie, Shift + Entrée ajoute une ligne
+              </p>
+            </div>
+          ) : (
+            <FieldLabel htmlFor={inputId} className="sr-only">
+              Nouveau message
+            </FieldLabel>
+          )}
+          <div
+            className={cn(
+              !isMobile && "mt-2",
+              isMobile && "flex items-end gap-2 rounded-[1.6rem] border border-border/70 bg-background px-2.5 py-2 shadow-sm"
+            )}
+          >
+            <Textarea
+              id={inputId}
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  onSend();
+                }
+              }}
+              placeholder={
+                isMobile
+                  ? "Message"
+                  : "Écris un message utile, clair et actionnable..."
               }
-            }}
-            placeholder="Écris un message utile, clair et actionnable..."
-            className="mt-2 min-h-20 resize-none"
-          />
+              className={cn(
+                "resize-none",
+                isMobile
+                  ? "min-h-0 border-0 bg-transparent px-1 py-1 text-[0.95rem] leading-6 shadow-none focus-visible:ring-0"
+                  : "min-h-20"
+              )}
+              rows={isMobile ? 1 : 4}
+            />
+            {isMobile ? (
+              <Button
+                type="button"
+                size="icon"
+                className="mb-0.5 size-10 shrink-0 rounded-full"
+                disabled={isSending || !draft.trim()}
+                onClick={onSend}
+                aria-label="Envoyer le message"
+              >
+                {isSending ? (
+                  <LoaderCircle className="animate-spin" />
+                ) : (
+                  <Send />
+                )}
+              </Button>
+            ) : null}
+          </div>
           {conversation.canModerateMessages && conversation.type === "group" ? (
             <p className="mt-2 text-[11px] text-muted-foreground">
               `/clean` efface tout l&apos;historique de ce groupe.
@@ -281,21 +333,23 @@ function MessageComposer({
         </Field>
       </FieldGroup>
 
-      <div className="mt-3 flex items-center justify-end gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={isSending || !draft.trim()}
-          onClick={onSend}
-        >
-          {isSending ? (
-            <LoaderCircle data-icon="inline-start" className="animate-spin" />
-          ) : (
-            <Send data-icon="inline-start" />
-          )}
-          Envoyer
-        </Button>
-      </div>
+      {!isMobile ? (
+        <div className="mt-3 flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            size="sm"
+            disabled={isSending || !draft.trim()}
+            onClick={onSend}
+          >
+            {isSending ? (
+              <LoaderCircle data-icon="inline-start" className="animate-spin" />
+            ) : (
+              <Send data-icon="inline-start" />
+            )}
+            Envoyer
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -368,11 +422,11 @@ export function ConversationPanel({
       <CardHeader
         className={cn(
           "gap-3 border-b border-border/60 px-4 py-4 sm:px-5",
-          isMobile && "sticky top-0 z-10 bg-background/95 px-3 py-3 backdrop-blur"
+          isMobile && "sticky top-0 z-10 gap-2 bg-background/95 px-3 py-2.5 backdrop-blur"
         )}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             {isMobile && onBack ? (
               <Button
                 type="button"
@@ -380,52 +434,73 @@ export function ConversationPanel({
                 size="icon"
                 aria-label="Retour aux conversations"
                 onClick={onBack}
+                className="-ml-1 size-9 shrink-0"
               >
                 <ChevronLeft />
               </Button>
             ) : null}
-            <ConversationAvatar conversation={selectedPreview} size="lg" />
+            <ConversationAvatar conversation={selectedPreview} size={isMobile ? "default" : "lg"} />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <div>
-                <CardTitle className="break-words text-xl">
+              <div className="min-w-0">
+                <CardTitle className={cn("break-words text-xl", isMobile && "truncate text-base")}>
                   {selectedPreview.title}
                 </CardTitle>
                 {selectedConversation?.subtitle ? (
-                  <CardDescription>{selectedConversation.subtitle}</CardDescription>
+                  <CardDescription className={cn(isMobile && "truncate text-xs")}>
+                    {selectedConversation.subtitle}
+                  </CardDescription>
                 ) : null}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {selectedConversation ? (
-                  <>
-                    <Badge variant="outline">
-                      {selectedConversation.type === "group" ? "Groupe" : "Privé"}
-                    </Badge>
-                    <Badge variant="outline">
-                      {selectedConversation.participantCount} participant
-                      {selectedConversation.participantCount > 1 ? "s" : ""}
-                    </Badge>
-                    <ParticipantStack participants={selectedConversation.participants} />
-                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                      Historique synchronisé automatiquement
-                    </span>
-                  </>
-                ) : null}
-              </div>
+              {!isMobile && selectedConversation ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">
+                    {selectedConversation.type === "group" ? "Groupe" : "Privé"}
+                  </Badge>
+                  <Badge variant="outline">
+                    {selectedConversation.participantCount} participant
+                    {selectedConversation.participantCount > 1 ? "s" : ""}
+                  </Badge>
+                  <ParticipantStack participants={selectedConversation.participants} />
+                  <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    Historique synchronisé automatiquement
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
 
           {selectedPreview.type === "direct" ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={isClosingDirectConversation}
-              onClick={onCloseDirectConversation}
-            >
-              <X data-icon="inline-start" />
-              Fermer le DM
-            </Button>
+            isMobile ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0">
+                    <EllipsisVertical />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={isClosingDirectConversation}
+                    onClick={onCloseDirectConversation}
+                  >
+                    <X data-icon="inline-start" />
+                    Fermer le DM
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isClosingDirectConversation}
+                onClick={onCloseDirectConversation}
+              >
+                <X data-icon="inline-start" />
+                Fermer le DM
+              </Button>
+            )
           ) : null}
         </div>
       </CardHeader>
@@ -462,14 +537,14 @@ export function ConversationPanel({
           <div
             className={cn(
               "flex min-h-0 flex-1 flex-col rounded-[1.75rem] border border-border/60 bg-muted/10",
-              isMobile && "rounded-none border-x-0 border-b-0"
+              isMobile && "rounded-none border-x-0 border-b-0 bg-background"
             )}
           >
             <ScrollArea
               ref={threadScrollAreaRef}
               className={cn(
                 "min-h-[220px] flex-1 px-3 py-3 sm:px-4 sm:py-4",
-                isMobile && "min-h-0 px-3 py-3"
+                isMobile && "min-h-0 px-2 py-2"
               )}
             >
               {selectedConversation.messages.length === 0 ? (
