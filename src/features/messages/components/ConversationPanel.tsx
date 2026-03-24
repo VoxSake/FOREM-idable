@@ -127,12 +127,14 @@ function MessageBubble({
   trackedJobIds,
   onTrackJob,
   onDeleteMessage,
+  isMobile,
 }: {
   message: ConversationMessage;
   canModerateMessages: boolean;
   trackedJobIds: string[];
   onTrackJob: (job: Job) => void;
   onDeleteMessage: (message: ConversationMessage) => void;
+  isMobile?: boolean;
 }) {
   const displayName = message.author
     ? getDisplayName({
@@ -164,6 +166,7 @@ function MessageBubble({
       <div
         className={cn(
           "min-w-0 max-w-[92%] rounded-3xl border px-4 py-4 shadow-sm lg:max-w-[78%]",
+          isMobile && "max-w-[95%]",
           message.isOwnMessage
             ? "border-primary/25 bg-primary/10"
             : "border-border/60 bg-background"
@@ -232,6 +235,7 @@ function MessageComposer({
   onDraftChange,
   onSend,
   inputId,
+  isMobile,
 }: {
   conversation: ConversationDetail;
   draft: string;
@@ -239,9 +243,15 @@ function MessageComposer({
   onDraftChange: (value: string) => void;
   onSend: () => void;
   inputId: string;
+  isMobile?: boolean;
 }) {
   return (
-    <div className="border-t border-border/60 bg-background/85 px-4 py-4 backdrop-blur">
+    <div
+      className={cn(
+        "border-t border-border/60 bg-background/85 px-4 py-4 backdrop-blur",
+        isMobile && "px-3 pb-[calc(env(safe-area-inset-bottom)+0.9rem)] pt-3"
+      )}
+    >
       <FieldGroup>
         <Field>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -348,12 +358,29 @@ export function ConversationPanel({
   }
 
   return (
-    <Card className="overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col">
-      <CardHeader className="gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
+    <Card
+      className={cn(
+        "overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col",
+        isMobile &&
+          "fixed inset-x-0 bottom-0 top-14 z-20 rounded-none border-x-0 border-y-0 shadow-none"
+      )}
+    >
+      <CardHeader
+        className={cn(
+          "gap-3 border-b border-border/60 px-4 py-4 sm:px-5",
+          isMobile && "sticky top-0 z-10 bg-background/95 px-3 py-3 backdrop-blur"
+        )}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             {isMobile && onBack ? (
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Retour aux conversations"
+                onClick={onBack}
+              >
                 <ChevronLeft />
               </Button>
             ) : null}
@@ -403,7 +430,12 @@ export function ConversationPanel({
         </div>
       </CardHeader>
 
-      <CardContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4">
+      <CardContent
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4",
+          isMobile && "px-0 py-0"
+        )}
+      >
         {error ? (
           <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
             <EmptyHeader>
@@ -427,10 +459,18 @@ export function ConversationPanel({
             ))}
           </div>
         ) : selectedConversation ? (
-          <div className="flex min-h-0 flex-1 flex-col rounded-[1.75rem] border border-border/60 bg-muted/10">
+          <div
+            className={cn(
+              "flex min-h-0 flex-1 flex-col rounded-[1.75rem] border border-border/60 bg-muted/10",
+              isMobile && "rounded-none border-x-0 border-b-0"
+            )}
+          >
             <ScrollArea
               ref={threadScrollAreaRef}
-              className="min-h-[220px] flex-1 px-3 py-3 sm:px-4 sm:py-4"
+              className={cn(
+                "min-h-[220px] flex-1 px-3 py-3 sm:px-4 sm:py-4",
+                isMobile && "min-h-0 px-3 py-3"
+              )}
             >
               {selectedConversation.messages.length === 0 ? (
                 <Empty className="min-h-[320px] rounded-2xl border border-dashed border-border/60 bg-background/75">
@@ -454,6 +494,7 @@ export function ConversationPanel({
                       trackedJobIds={trackedJobIds}
                       onTrackJob={onTrackJob}
                       onDeleteMessage={onDeleteMessage}
+                      isMobile={isMobile}
                     />
                   ))}
                   <div ref={threadBottomRef} />
@@ -468,6 +509,7 @@ export function ConversationPanel({
               onDraftChange={onDraftChange}
               onSend={onSend}
               inputId={isMobile ? "message-compose-mobile" : "message-compose"}
+              isMobile={isMobile}
             />
           </div>
         ) : null}

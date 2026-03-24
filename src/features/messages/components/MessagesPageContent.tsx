@@ -1,9 +1,5 @@
 "use client";
 
-import { MessagesSquare, UserRound } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteMessageDialog } from "@/features/messages/components/DeleteMessageDialog";
 import { ConversationPanel } from "@/features/messages/components/ConversationPanel";
 import { ConversationSidebar } from "@/features/messages/components/ConversationSidebar";
@@ -20,37 +16,8 @@ export function MessagesPageContent() {
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 overflow-x-hidden px-3 animate-in fade-in duration-500 sm:px-4 lg:h-[calc(100svh-4rem)] lg:max-w-none lg:gap-0 lg:px-0">
-        <Card className="overflow-hidden border-border/60 py-0 lg:hidden">
-          <CardHeader className="gap-2 border-b border-border/60 px-4 py-3.5 sm:px-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex min-w-0 flex-1 flex-col">
-                <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight">
-                  <MessagesSquare data-icon="inline-start" className="text-primary" />
-                  Messages
-                </CardTitle>
-              </div>
-
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                <Badge variant="outline">
-                  {page.unreadConversationCount} non lu
-                  {page.unreadConversationCount > 1 ? "s" : ""}
-                </Badge>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={() => page.setIsDirectDialogOpen(true)}
-                >
-                  <UserRound data-icon="inline-start" />
-                  Nouveau DM
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        <div className="md:hidden">
+      <div className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-[1440px] flex-col gap-4 overflow-x-hidden px-0 animate-in fade-in duration-500 sm:px-4 lg:h-[calc(100svh-4rem)] lg:max-w-none lg:gap-0 lg:px-0">
+        <div className="min-h-0 flex-1 md:hidden">
           {page.isMobileConversationOpen && page.selectedPreview ? (
             <ConversationPanel
               selectedPreview={page.selectedPreview}
@@ -74,11 +41,12 @@ export function MessagesPageContent() {
               onSend={() => {
                 void page.sendCurrentMessage();
               }}
-              threadBottomRef={page.threadBottomRef}
-              threadScrollAreaRef={page.threadScrollAreaRef}
+              threadBottomRef={page.mobileThreadBottomRef}
+              threadScrollAreaRef={page.mobileThreadScrollAreaRef}
             />
           ) : (
             <ConversationSidebar
+              isMobile
               groupedConversations={page.groupedConversations}
               selectedConversationId={page.selectedConversationId}
               conversationQuery={page.conversationQuery}
@@ -121,8 +89,8 @@ export function MessagesPageContent() {
             onSend={() => {
               void page.sendCurrentMessage();
             }}
-            threadBottomRef={page.threadBottomRef}
-            threadScrollAreaRef={page.threadScrollAreaRef}
+            threadBottomRef={page.desktopThreadBottomRef}
+            threadScrollAreaRef={page.desktopThreadScrollAreaRef}
           />
         </div>
       </div>

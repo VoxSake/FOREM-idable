@@ -79,6 +79,7 @@ function ConversationListItem({
 }
 
 export function ConversationSidebar({
+  isMobile,
   groupedConversations,
   selectedConversationId,
   conversationQuery,
@@ -87,6 +88,7 @@ export function ConversationSidebar({
   onOpenDirectDialog,
   onSelectConversation,
 }: {
+  isMobile?: boolean;
   groupedConversations: {
     group: ConversationPreview[];
     direct: ConversationPreview[];
@@ -113,11 +115,23 @@ export function ConversationSidebar({
     groupedConversations.group.length > 0 || groupedConversations.direct.length > 0;
 
   return (
-    <Card className="overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col">
-      <CardHeader className="border-b border-border/60 px-4 py-3.5">
+    <Card
+      className={cn(
+        "overflow-hidden border-border/60 py-0 md:flex md:h-full md:flex-col",
+        isMobile && "-mx-4 -my-4 min-h-[calc(100svh-3.5rem)] rounded-none border-x-0 border-y-0 shadow-none"
+      )}
+    >
+      <CardHeader
+        className={cn(
+          "border-b border-border/60 px-4 py-3.5",
+          isMobile && "sticky top-0 z-10 bg-background/95 px-4 pb-4 pt-4 backdrop-blur"
+        )}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col">
-            <CardTitle className="text-lg">Conversations</CardTitle>
+            <CardTitle className={cn("text-lg", isMobile && "text-2xl font-black tracking-tight")}>
+              Conversations
+            </CardTitle>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">
@@ -126,8 +140,8 @@ export function ConversationSidebar({
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              className="hidden md:inline-flex"
+              size={isMobile ? "default" : "sm"}
+              className={cn(isMobile ? "inline-flex" : "hidden md:inline-flex")}
               onClick={onOpenDirectDialog}
             >
               <UserRound data-icon="inline-start" />
@@ -137,7 +151,7 @@ export function ConversationSidebar({
         </div>
       </CardHeader>
 
-      <CardContent className="min-h-0 flex-1 px-3 py-3">
+      <CardContent className={cn("min-h-0 flex-1 px-3 py-3", isMobile && "px-3 pb-4 pt-3")}>
         {!hasConversations ? (
           <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
             <EmptyHeader>
@@ -152,7 +166,12 @@ export function ConversationSidebar({
           </Empty>
         ) : (
           <div className="flex h-full flex-col gap-4">
-            <ScrollArea className="h-[min(64vh,42rem)] pr-1 md:h-full">
+            <ScrollArea
+              className={cn(
+                "pr-1 md:h-full",
+                isMobile ? "h-[calc(100svh-13.5rem)]" : "h-[min(64vh,42rem)]"
+              )}
+            >
               <div className="flex flex-col gap-4 pb-1">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3 px-1">

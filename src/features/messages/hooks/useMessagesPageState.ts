@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
 import {
@@ -14,6 +15,7 @@ import {
 
 export function useMessagesPageState() {
   const router = useRouter();
+  const isMobileViewport = useIsMobile();
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
   const [hasMessagingAccess, setHasMessagingAccess] = useState<boolean | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
@@ -36,8 +38,10 @@ export function useMessagesPageState() {
   const [messagePendingDeletion, setMessagePendingDeletion] =
     useState<ConversationMessage | null>(null);
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
-  const threadBottomRef = useRef<HTMLDivElement | null>(null);
-  const threadScrollAreaRef = useRef<HTMLDivElement | null>(null);
+  const mobileThreadBottomRef = useRef<HTMLDivElement | null>(null);
+  const mobileThreadScrollAreaRef = useRef<HTMLDivElement | null>(null);
+  const desktopThreadBottomRef = useRef<HTMLDivElement | null>(null);
+  const desktopThreadScrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPreview = useMemo(
     () => conversations.find((entry) => entry.id === selectedConversationId) ?? null,
@@ -71,7 +75,12 @@ export function useMessagesPageState() {
   );
 
   const scrollThreadToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const viewport = threadScrollAreaRef.current?.querySelector<HTMLElement>(
+    const activeScrollAreaRef = isMobileViewport
+      ? mobileThreadScrollAreaRef
+      : desktopThreadScrollAreaRef;
+    const activeThreadBottomRef = isMobileViewport ? mobileThreadBottomRef : desktopThreadBottomRef;
+
+    const viewport = activeScrollAreaRef.current?.querySelector<HTMLElement>(
       "[data-slot='scroll-area-viewport']"
     );
 
@@ -83,11 +92,11 @@ export function useMessagesPageState() {
       return;
     }
 
-    threadBottomRef.current?.scrollIntoView({
+    activeThreadBottomRef.current?.scrollIntoView({
       behavior,
       block: "end",
     });
-  }, []);
+  }, [isMobileViewport]);
 
   const scheduleScrollThreadToBottom = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -607,6 +616,28 @@ export function useMessagesPageState() {
   }, [scheduleScrollThreadToBottom, selectedConversationId, selectedConversation?.messages.length]);
 
   useEffect(() => {
+    if (!isMobileConversationOpen || !selectedConversationId) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+    scheduleScrollThreadToBottom("auto");
+  }, [isMobileConversationOpen, scheduleScrollThreadToBottom, selectedConversationId]);
+
+  useEffect(() => {
+    if (!isMobileConversationOpen || window.innerWidth >= 768) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileConversationOpen]);
+
+  useEffect(() => {
     if (!selectedConversationId) {
       setIsMobileConversationOpen(false);
       return;
@@ -659,10 +690,12 @@ export function useMessagesPageState() {
     selectedConversation,
     selectedConversationId,
     selectedPreview,
-    threadBottomRef,
-    threadScrollAreaRef,
+    desktopThreadBottomRef,
+    desktopThreadScrollAreaRef,
     trackedJobIds,
     unreadConversationCount,
+    mobileThreadBottomRef,
+    mobileThreadScrollAreaRef,
     addSharedJobToApplications,
     closeSelectedDirectConversation,
     createDirectConversation,
