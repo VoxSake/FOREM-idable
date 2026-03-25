@@ -28,10 +28,19 @@ export async function GET(
       return NextResponse.json({ error: "Export non disponible." }, { status: 409 });
     }
 
+    const expiresAt = exportRequest.summary.expiresAt ? new Date(exportRequest.summary.expiresAt) : null;
+    if (expiresAt && !Number.isNaN(expiresAt.getTime()) && expiresAt.getTime() <= Date.now()) {
+      return NextResponse.json({ error: "Export expiré." }, { status: 410 });
+    }
+
     return new NextResponse(JSON.stringify(exportRequest.payload, null, 2), {
       headers: {
         "content-type": "application/json; charset=utf-8",
         "content-disposition": `attachment; filename="forem-idable-export-${requestId}.json"`,
+        "cache-control": "no-store, private",
+        pragma: "no-cache",
+        expires: "0",
+        "x-content-type-options": "nosniff",
       },
     });
   } catch {

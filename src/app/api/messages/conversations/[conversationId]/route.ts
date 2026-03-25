@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
-import { markConversationAsRead, getConversationDetail } from "@/lib/server/messaging";
+import { getConversationDetail } from "@/lib/server/messaging";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ conversationId: string }> }
 ) {
   try {
@@ -17,11 +17,6 @@ export async function GET(
     const conversationId = parseIntegerParam(params.conversationId);
     if (!conversationId) {
       return NextResponse.json({ error: "Conversation invalide." }, { status: 400 });
-    }
-
-    const markAsRead = request.nextUrl.searchParams.get("markAsRead") === "1";
-    if (markAsRead) {
-      await markConversationAsRead(user, conversationId);
     }
 
     const conversation = await getConversationDetail(user, conversationId);

@@ -45,8 +45,11 @@ const ADMIN_NAV_ITEM: AppSidebarNavItem = {
   icon: ShieldCheck,
   accent: true,
   children: [
+    { title: "Recherches", url: "/admin#recherches" },
     { title: "Coachs", url: "/admin#coachs" },
     { title: "Clés API", url: "/admin#cles-api" },
+    { title: "Suppressions", url: "/admin#suppression-comptes" },
+    { title: "Conformité", url: "/admin#conformite" },
   ],
 };
 
@@ -72,4 +75,18 @@ export function isSidebarItemActive(pathname: string, itemUrl: string) {
 
 export function isSidebarSubItemVisible(pathname: string, item: AppSidebarNavItem) {
   return pathname === item.url && Boolean(item.children?.length);
+}
+
+export function isSidebarSubItemActive(pathname: string, hash: string, itemUrl: string) {
+  const [itemPath, itemAnchor] = itemUrl.split("#");
+
+  if (pathname !== itemPath) {
+    return false;
+  }
+
+  if (!itemAnchor) {
+    return true;
+  }
+
+  return hash === `#${itemAnchor}`;
 }

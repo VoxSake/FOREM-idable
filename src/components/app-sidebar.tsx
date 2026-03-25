@@ -11,6 +11,7 @@ import {
   type AppSidebarNavItem,
   getSidebarNavItems,
   isSidebarItemActive,
+  isSidebarSubItemActive,
   isSidebarSubItemVisible,
 } from "@/components/app-shell.config";
 import { AuthSidebarPanel } from "@/components/auth/AuthSidebarPanel";
@@ -29,6 +30,9 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
@@ -50,10 +54,12 @@ function AppSidebarBrand() {
 
 function AppSidebarNavigation({
   pathname,
+  hash,
   items,
   unreadMessagesCount,
 }: {
   pathname: string;
+  hash: string;
   items: AppSidebarNavItem[];
   unreadMessagesCount: number;
 }) {
@@ -79,17 +85,18 @@ function AppSidebarNavigation({
           ) : null}
 
           {isSidebarSubItemVisible(pathname, item) ? (
-            <div className="ml-6 mt-2 flex flex-col gap-1 border-l border-border/70 pl-3">
+            <SidebarMenuSub className="mt-2">
               {item.children?.map((subItem) => (
-                <Link
-                  key={subItem.title}
-                  href={subItem.url}
-                  className="text-sm text-muted-foreground transition hover:text-foreground"
-                >
-                  {subItem.title}
-                </Link>
+                <SidebarMenuSubItem key={subItem.title}>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isSidebarSubItemActive(pathname, hash, subItem.url)}
+                  >
+                    <Link href={subItem.url}>{subItem.title}</Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
               ))}
-            </div>
+            </SidebarMenuSub>
           ) : null}
         </SidebarMenuItem>
       ))}
@@ -140,7 +147,25 @@ function ThemeToggleButton() {
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
+  const [currentHash, setCurrentHash] = useState("");
   const [messagingConversations, setMessagingConversations] = useState<ConversationPreview[] | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncHash = () => {
+      setCurrentHash(window.location.hash);
+    };
+
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+
+    return () => {
+      window.removeEventListener("hashchange", syncHash);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (isLoading) {
@@ -261,6 +286,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <AppSidebarNavigation
               pathname={pathname}
+              hash={currentHash}
               items={navItems}
               unreadMessagesCount={messagingNav.unreadCount}
             />

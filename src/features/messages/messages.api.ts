@@ -27,10 +27,15 @@ export async function fetchConversationDetail(
   conversationId: number,
   options?: { markAsRead?: boolean }
 ) {
-  const response = await fetch(
-    `/api/messages/conversations/${conversationId}${options?.markAsRead ? "?markAsRead=1" : ""}`,
-    { cache: "no-store" }
-  );
+  if (options?.markAsRead) {
+    await fetch(`/api/messages/conversations/${conversationId}/read`, {
+      method: "POST",
+    });
+  }
+
+  const response = await fetch(`/api/messages/conversations/${conversationId}`, {
+    cache: "no-store",
+  });
   const data = await readJson<{
     error?: string;
     conversation?: ConversationDetail;

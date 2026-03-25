@@ -70,5 +70,18 @@ export function rejectCrossOriginRequest(request: NextRequest) {
     return NextResponse.json({ error: "Requête interdite." }, { status: 403 });
   }
 
+  if (!fetchSite) {
+    logServerEvent({
+      category: "security",
+      action: "csrf_blocked",
+      level: "warn",
+      meta: {
+        expectedOrigin,
+        fetchSite,
+      },
+    });
+    return NextResponse.json({ error: "Requête interdite." }, { status: 403 });
+  }
+
   return null;
 }

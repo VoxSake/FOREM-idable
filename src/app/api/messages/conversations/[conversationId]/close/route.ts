@@ -1,13 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
 import { closeDirectConversation } from "@/lib/server/messaging";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 export async function POST(
-  _request: Request,
+  request: NextRequest,
   context: { params: Promise<{ conversationId: string }> }
 ) {
   try {
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

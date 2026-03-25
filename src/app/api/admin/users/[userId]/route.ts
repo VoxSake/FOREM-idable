@@ -3,7 +3,12 @@ import { recordAuditEvent } from "@/lib/server/auditLog";
 import { assertNoActiveUserLegalHold } from "@/lib/server/compliance";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { deleteUserAccount, setUserPassword, updateUserProfile } from "@/lib/server/auth";
-import { markCoachAction, requireAdminAccess, requireCoachAccess } from "@/lib/server/coach";
+import {
+  assertCanAccessCoachUser,
+  markCoachAction,
+  requireAdminAccess,
+  requireCoachAccess,
+} from "@/lib/server/coach";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import {
@@ -56,8 +61,12 @@ export async function PATCH(
         return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
       }
 
-      if (actor.role !== "admin" && target.role !== "user") {
-        return NextResponse.json({ error: "Modification interdite pour ce rôle." }, { status: 403 });
+      if (actor.role !== "admin") {
+        if (target.role !== "user") {
+          return NextResponse.json({ error: "Modification interdite pour ce rôle." }, { status: 403 });
+        }
+
+        await assertCanAccessCoachUser(actor, userId);
       }
 
       const { firstName, lastName, password } = parsed.data;
@@ -89,7 +98,14 @@ export async function PATCH(
       });
 
       return NextResponse.json({ ok: true });
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === "Forbidden") {
+        return NextResponse.json(
+          { error: "Modification interdite pour ce périmètre." },
+          { status: 403 }
+        );
+      }
+
       return NextResponse.json({ error: "Mise à jour utilisateur impossible." }, { status: 500 });
     }
   });

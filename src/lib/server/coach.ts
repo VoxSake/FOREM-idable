@@ -378,6 +378,7 @@ export async function setUserRole(userId: number, role: UserRole, actorId?: numb
 
 export {
   addCoachToGroup,
+  assertCanAccessCoachUser,
   addUserToCoachGroup,
   canAccessCoachUser,
   canManageCoachAssignments,
