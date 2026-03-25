@@ -556,6 +556,10 @@ export function useMessagesPageState() {
             silent: true,
           });
 
+          if (event.type === "conversation.message_created") {
+            appendMessageToSelectedConversation(event.message);
+          }
+
           if (
             event.type === "conversation.message_created" ||
             event.type === "conversation.cleared"
