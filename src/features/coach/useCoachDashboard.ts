@@ -8,9 +8,7 @@ import {
 } from "@/lib/exportCoachApplicationsCsv";
 import {
   fetchCoachDashboard,
-  fetchManagedUserApiKeys,
   requestCalendarSubscription as requestCalendarSubscriptionApi,
-  requestCoachApplicationNote,
 } from "@/features/coach/coachDashboardApi";
 import {
   addMembershipToDashboard,
@@ -34,6 +32,7 @@ import {
   CoachApiKeysTarget,
   CoachCalendarRegenerationTarget,
   CoachDeleteUserTarget,
+  CoachUndoAction,
   CoachRemoveCoachTarget,
   CoachUserFilter,
   CoachRevokeApiKeyTarget,
@@ -41,25 +40,13 @@ import {
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
 import { useCoachDashboardDerivedState } from "@/features/coach/useCoachDashboardDerivedState";
+import { useCoachApplicationActions } from "@/features/coach/useCoachApplicationActions";
+import { useCoachAdminActions } from "@/features/coach/useCoachAdminActions";
+import { useCoachGroupActions } from "@/features/coach/useCoachGroupActions";
 import {
   buildGroupExportRows,
   buildUserExportRows,
 } from "@/features/coach/utils";
-
-type CoachUndoAction =
-  | {
-      type: "remove-membership";
-      label: string;
-      groupId: number;
-      userId: number;
-      groupName: string;
-    }
-  | {
-      type: "demote-coach";
-      label: string;
-      userId: number;
-      previousRole: "coach" | "admin";
-    };
 
 export function useCoachDashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -82,13 +69,11 @@ export function useCoachDashboard() {
   const [managedApiKeys, setManagedApiKeys] = useState<ApiKeySummary[]>([]);
   const [apiKeysFeedback, setApiKeysFeedback] = useState<string | null>(null);
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
-  const [isImportingApplications, setIsImportingApplications] = useState(false);
   const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<CoachRevokeApiKeyTarget | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<CoachDeleteUserTarget | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [calendarRegenerationTarget, setCalendarRegenerationTarget] =
     useState<CoachCalendarRegenerationTarget | null>(null);
-  const [savingCoachNoteKey, setSavingCoachNoteKey] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
 
@@ -228,6 +213,39 @@ export function useCoachDashboard() {
     void loadDashboard();
   }, [isAuthLoading, user]);
 
+  const coachApplicationActions = useCoachApplicationActions({
+    applyApplicationUpdate,
+    loadDashboard,
+    removeApplicationLocally,
+    setFeedback,
+    onImportComplete: () => {
+      setImportTargetUserId(null);
+    },
+  });
+
+  const coachGroupActions = useCoachGroupActions({
+    user,
+    dashboard,
+    groupName,
+    addCoachLocally,
+    addGroupLocally,
+    addMembershipLocally,
+    loadDashboard,
+    removeCoachLocally,
+    removeGroupLocally,
+    removeMembershipLocally,
+    replaceGroupIdLocally,
+    setCoachPickerGroupId,
+    setDashboard,
+    setFeedback,
+    setGroupManagerLocally,
+    setGroupName,
+    setIsCreateGroupOpen,
+    setManagerPickerGroupId,
+    setMemberPickerGroupId,
+    setUndoAction,
+  });
+
   const {
     selectedUser,
     memberPickerGroup,
@@ -260,470 +278,29 @@ export function useCoachDashboard() {
     userFilter,
   });
 
-  const createGroup = async () => {
-    const trimmedGroupName = groupName.trim();
-    if (!trimmedGroupName) return;
-
-    const temporaryGroupId = -Date.now();
-    const createdAt = new Date().toISOString();
-    const creatorEmail = user?.email ?? dashboard?.viewer.email ?? "";
-    const creatorRole = user?.role;
-
-    addGroupLocally({
-      id: temporaryGroupId,
-      name: trimmedGroupName,
-      createdAt,
-      createdBy: {
-        id: user?.id ?? 0,
-        email: creatorEmail,
-        firstName: user?.firstName ?? "",
-        lastName: user?.lastName ?? "",
-      },
-      managerCoachId: creatorRole === "coach" ? user?.id ?? null : null,
-      initialCoach:
-        creatorRole === "coach"
-          ? {
-              id: user?.id ?? 0,
-              email: creatorEmail,
-              firstName: user?.firstName ?? "",
-              lastName: user?.lastName ?? "",
-              role: "coach",
-              lastSeenAt: null,
-            }
-          : null,
-    });
-
-    const response = await fetch("/api/coach/groups", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: trimmedGroupName }),
-    });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      group?: { id: number };
-    };
-
-    if (!response.ok) {
-      removeGroupLocally(temporaryGroupId);
-      setFeedback(data.error || "Création du groupe impossible.");
-      return;
-    }
-
-    if (data.group?.id) {
-      replaceGroupIdLocally(temporaryGroupId, data.group.id);
-    }
-
-    setUndoAction(null);
-    setGroupName("");
-    setIsCreateGroupOpen(false);
-    setFeedback(`Groupe créé: ${trimmedGroupName}.`);
-  };
-
-  const promoteCoach = async (userId: number) => {
-    updateUserRoleLocally(userId, "coach");
-    const response = await fetch("/api/admin/coaches", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      updateUserRoleLocally(userId, "user");
-      setFeedback("Promotion coach impossible.");
-      return false;
-    }
-
-    setUndoAction(null);
-    setIsPromoteCoachOpen(false);
-    setFeedback("Utilisateur promu coach.");
-    return true;
-  };
-
-  const addMember = async (groupId: number, userId: number) => {
-    addMembershipLocally(groupId, userId);
-    const response = await fetch(`/api/coach/groups/${groupId}/members`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      removeMembershipLocally(groupId, userId);
-      setFeedback("Ajout au groupe impossible.");
-      return;
-    }
-
-    setUndoAction(null);
-    setMemberPickerGroupId(null);
-    setFeedback("Membre ajouté au groupe.");
-  };
-
-  const addCoach = async (groupId: number, userId: number) => {
-    addCoachLocally(groupId, userId);
-    const response = await fetch(`/api/coach/groups/${groupId}/coaches`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      removeCoachLocally(groupId, userId);
-      setFeedback("Attribution du coach impossible.");
-      return;
-    }
-
-    setUndoAction(null);
-    setCoachPickerGroupId(null);
-    setFeedback("Coach attribué au groupe.");
-  };
-
-  const setGroupManager = async (groupId: number, userId: number) => {
-    const previousManagerId =
-      dashboard?.groups.find((entry) => entry.id === groupId)?.managerCoachId ?? null;
-    setGroupManagerLocally(groupId, userId);
-    const response = await fetch(`/api/coach/groups/${groupId}/manager`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      setDashboard((current) => {
-        if (!current) return current;
-        return {
-          ...current,
-          groups: current.groups.map((entry) =>
-            entry.id === groupId
-              ? {
-                  ...entry,
-                  managerCoachId: previousManagerId,
-                }
-              : entry
-          ),
-        };
-      });
-      setFeedback("Définition du manager impossible.");
-      return;
-    }
-
-    setManagerPickerGroupId(null);
-    setUndoAction(null);
-    setFeedback("Manager du groupe mis à jour.");
-  };
-
-  const removeMember = async (groupId: number, userId: number) => {
-    const targetGroup = dashboard?.groups.find((group) => group.id === groupId);
-    if (!targetGroup) {
-      setFeedback("Groupe introuvable.");
-      return;
-    }
-
-    removeMembershipLocally(groupId, userId);
-    const response = await fetch(`/api/coach/groups/${groupId}/members?userId=${userId}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      addMembershipLocally(groupId, userId);
-      setFeedback("Suppression du groupe impossible.");
-      return;
-    }
-
-    setUndoAction({
-      type: "remove-membership",
-      label: "Retrait du groupe effectué.",
-      groupId,
-      userId,
-      groupName: targetGroup.name,
-    });
-    setFeedback("Membre retiré du groupe.");
-  };
-
-  const removeAssignedCoach = async (groupId: number, userId: number) => {
-    const previousManagerId =
-      dashboard?.groups.find((entry) => entry.id === groupId)?.managerCoachId ?? null;
-    removeCoachLocally(groupId, userId);
-    const response = await fetch(`/api/coach/groups/${groupId}/coaches?userId=${userId}`, {
-      method: "DELETE",
-    });
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
-
-    if (!response.ok) {
-      addCoachLocally(groupId, userId);
-      if (previousManagerId) {
-        setGroupManagerLocally(groupId, previousManagerId);
-      }
-      setFeedback(data.error || "Retrait du coach impossible.");
-      return;
-    }
-
-    setUndoAction(null);
-    setFeedback("Coach retiré du groupe.");
-  };
-
-  const demoteCoach = async (userId: number) => {
-    const targetUser = dashboard?.users.find((entry) => entry.id === userId);
-    if (!targetUser || (targetUser.role !== "coach" && targetUser.role !== "admin")) {
-      setFeedback("Utilisateur introuvable.");
-      return;
-    }
-
-    updateUserRoleLocally(userId, "user");
-    const response = await fetch(`/api/admin/coaches?userId=${userId}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      updateUserRoleLocally(userId, targetUser.role);
-      setFeedback("Retrait du rôle coach impossible.");
-      return;
-    }
-
-    setUndoAction({
-      type: "demote-coach",
-      label: "Retrait du rôle coach effectué.",
-      userId,
-      previousRole: targetUser.role,
-    });
-    setFeedback("Rôle coach retiré.");
-  };
-
-  const deleteGroup = async (groupId: number) => {
-    const previousDashboard = dashboard;
-    removeGroupLocally(groupId);
-    const response = await fetch(`/api/coach/groups?groupId=${groupId}`, {
-      method: "DELETE",
-    });
-
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
-
-    if (!response.ok) {
-      setDashboard(previousDashboard);
-      setFeedback(data.error || "Suppression du groupe impossible.");
-      return;
-    }
-
-    await loadDashboard({ preserveFeedback: true });
-    setUndoAction(null);
-    setFeedback("Groupe supprimé.");
-  };
-
-  const updateManagedUser = async (
-    target: { userId: number; email: string },
-    values: { firstName: string; lastName: string; password?: string }
-  ) => {
-    if (!values.firstName.trim() || !values.lastName.trim()) {
-      setFeedback("Nom et prénom invalides.");
-      return false;
-    }
-
-    const response = await fetch(`/api/admin/users/${target.userId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        firstName: values.firstName,
-        lastName: values.lastName,
-        password: values.password,
-      }),
-    });
-
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
-    if (!response.ok) {
-      setFeedback(data.error || "Mise à jour utilisateur impossible.");
-      return false;
-    }
-
-    updateManagedUserLocally(target.userId, {
-      firstName: values.firstName,
-      lastName: values.lastName,
-    });
-    setUndoAction(null);
-    setFeedback(`Utilisateur mis à jour: ${target.email}.`);
-    return true;
-  };
-
-  const deleteUser = async () => {
-    if (!deleteUserTarget) return;
-    const target = deleteUserTarget;
-    setIsDeletingUser(true);
-
-    try {
-      const response = await fetch(`/api/admin/users/${target.userId}`, {
-        method: "DELETE",
-      });
-
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) {
-        setFeedback(data.error || "Suppression utilisateur impossible.");
-        return;
-      }
-
-      setUndoAction(null);
-      if (selectedUserId === target.userId) {
-        setSelectedUserId(null);
-      }
-      setDeleteUserTarget(null);
-      setFeedback(`Compte supprimé: ${target.email}.`);
-      void loadDashboard({ preserveFeedback: true });
-    } catch {
-      setFeedback("Suppression utilisateur impossible.");
-    } finally {
-      setIsDeletingUser(false);
-    }
-  };
-
-  const savePrivateCoachNote = async (
-    userId: number,
-    jobId: string,
-    content: string
-  ) => {
-    setSavingCoachNoteKey(`private:${jobId}`);
-
-    const { response, data } = await requestCoachApplicationNote({
-      userId,
-      jobId,
-      action: "save-private",
-      content,
-    });
-    if (!response.ok) {
-      setFeedback(data.error || "Note coach impossible à enregistrer.");
-      setSavingCoachNoteKey(null);
-      return false;
-    }
-
-    setFeedback("Note privée enregistrée.");
-    if (data.application) {
-      applyApplicationUpdate(userId, data.application);
-    }
-    setSavingCoachNoteKey(null);
-    return true;
-  };
-
-  const createSharedCoachNote = async (userId: number, jobId: string, content: string) => {
-    setSavingCoachNoteKey(`create:${jobId}`);
-
-    const { response, data } = await requestCoachApplicationNote({
-      userId,
-      jobId,
-      action: "create-shared",
-      content,
-    });
-    if (!response.ok) {
-      setFeedback(data.error || "Note partagée impossible à créer.");
-      setSavingCoachNoteKey(null);
-      return false;
-    }
-
-    setFeedback("Note partagée enregistrée.");
-    if (data.application) {
-      applyApplicationUpdate(userId, data.application);
-    }
-    setSavingCoachNoteKey(null);
-    return true;
-  };
-
-  const updateSharedCoachNote = async (
-    userId: number,
-    jobId: string,
-    noteId: string,
-    content: string
-  ) => {
-    setSavingCoachNoteKey(`shared:${noteId}`);
-
-    const { response, data } = await requestCoachApplicationNote({
-      userId,
-      jobId,
-      noteId,
-      action: "update-shared",
-      content,
-    });
-    if (!response.ok) {
-      setFeedback(data.error || "Note partagée impossible à mettre à jour.");
-      setSavingCoachNoteKey(null);
-      return false;
-    }
-
-    setFeedback("Note partagée mise à jour.");
-    if (data.application) {
-      applyApplicationUpdate(userId, data.application);
-    }
-    setSavingCoachNoteKey(null);
-    return true;
-  };
-
-  const deleteSharedCoachNote = async (userId: number, jobId: string, noteId: string) => {
-    setSavingCoachNoteKey(`delete:${noteId}`);
-
-    const { response, data } = await requestCoachApplicationNote({
-      userId,
-      jobId,
-      noteId,
-      action: "delete-shared",
-    });
-    if (!response.ok) {
-      setFeedback(data.error || "Suppression de la note partagée impossible.");
-      setSavingCoachNoteKey(null);
-      return false;
-    }
-
-    setFeedback("Note partagée supprimée.");
-    if (data.application) {
-      applyApplicationUpdate(userId, data.application);
-    }
-    setSavingCoachNoteKey(null);
-    return true;
-  };
-
-  const openManagedUserApiKeys = async () => {
-    if (!selectedUser || user?.role !== "admin") return;
-    if (selectedUser.role !== "coach" && selectedUser.role !== "admin") return;
-
-    setApiKeysTarget({
-      userId: selectedUser.id,
-      email: selectedUser.email,
-      role: selectedUser.role,
-    });
-    setManagedApiKeys([]);
-    setApiKeysFeedback(null);
-    setIsApiKeysLoading(true);
-
-    try {
-      const { response, data } = await fetchManagedUserApiKeys(selectedUser.id);
-
-      if (!response.ok || !data.apiKeys) {
-        setApiKeysFeedback(data.error || "Chargement des clés API impossible.");
-        return;
-      }
-
-      setManagedApiKeys(data.apiKeys);
-    } catch {
-      setApiKeysFeedback("Chargement des clés API impossible.");
-    } finally {
-      setIsApiKeysLoading(false);
-    }
-  };
-
-  const revokeManagedApiKey = async () => {
-    if (!revokeApiKeyTarget) return;
-
-    const response = await fetch(
-      `/api/admin/users/${revokeApiKeyTarget.userId}/api-keys/${revokeApiKeyTarget.keyId}`,
-      { method: "DELETE" }
-    );
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
-
-    if (!response.ok) {
-      setApiKeysFeedback(data.error || "Révocation impossible.");
-      return;
-    }
-
-    setManagedApiKeys((current) =>
-      current.filter((entry) => entry.id !== revokeApiKeyTarget.keyId)
-    );
-    setApiKeysFeedback(`Clé API révoquée: ${revokeApiKeyTarget.keyName}.`);
-    setRevokeApiKeyTarget(null);
-  };
+  const coachAdminActions = useCoachAdminActions({
+    user,
+    dashboard,
+    selectedUser,
+    selectedUserId,
+    apiKeysTarget,
+    revokeApiKeyTarget,
+    deleteUserTarget,
+    loadDashboard,
+    setApiKeysFeedback,
+    setApiKeysTarget,
+    setDeleteUserTarget,
+    setFeedback,
+    setIsApiKeysLoading,
+    setIsDeletingUser,
+    setIsPromoteCoachOpen,
+    setManagedApiKeys,
+    setRevokeApiKeyTarget,
+    setSelectedUserId,
+    setUndoAction,
+    updateManagedUserLocally,
+    updateUserRoleLocally,
+  });
 
   const exportRows = (filenamePrefix: string, rows: CoachApplicationExportRow[]) => {
     exportCoachApplicationsToCSV({
@@ -837,146 +414,13 @@ export function useCoachDashboard() {
     if (!undoAction) return;
 
     if (undoAction.type === "remove-membership") {
-      addMembershipLocally(undoAction.groupId, undoAction.userId);
-      const response = await fetch(`/api/coach/groups/${undoAction.groupId}/members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: undoAction.userId }),
-      });
-
-      if (!response.ok) {
-        removeMembershipLocally(undoAction.groupId, undoAction.userId);
-        setFeedback("Impossible d'annuler le retrait du groupe.");
-        return;
-      }
-
-      setUndoAction(null);
-      setFeedback("Retrait du groupe annulé.");
+      await coachGroupActions.restoreMembership(undoAction);
       return;
     }
 
     if (undoAction.type === "demote-coach") {
-      updateUserRoleLocally(undoAction.userId, undoAction.previousRole);
-      const response = await fetch("/api/admin/coaches", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: undoAction.userId }),
-      });
-
-      if (!response.ok) {
-        updateUserRoleLocally(undoAction.userId, "user");
-        setFeedback("Impossible d'annuler le retrait du rôle coach.");
-        return;
-      }
-
-      setUndoAction(null);
-      setFeedback("Retrait du rôle coach annulé.");
+      await coachAdminActions.restoreCoachRole(undoAction);
     }
-  };
-
-  const importApplicationsForUser = async (
-    userId: number,
-    dateFormat: "dmy" | "mdy",
-    rows: Array<{
-      company: string;
-      contractType: string;
-      title: string;
-      location: string;
-      appliedAt: string;
-      status: string;
-      notes: string;
-    }>
-  ) => {
-    setIsImportingApplications(true);
-
-    const response = await fetch(`/api/coach/users/${userId}/applications`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dateFormat, rows }),
-    });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      importedCount?: number;
-      createdCount?: number;
-      updatedCount?: number;
-      ignoredCount?: number;
-    };
-
-    setIsImportingApplications(false);
-
-    if (!response.ok) {
-      setFeedback(data.error || "Import CSV impossible.");
-      return null;
-    }
-
-    setFeedback(
-      `Import CSV terminé: ${data.importedCount ?? rows.length} candidature${(data.importedCount ?? rows.length) > 1 ? "s" : ""} ajoutée${(data.importedCount ?? rows.length) > 1 ? "s" : ""}.`
-    );
-    setImportTargetUserId(null);
-    await loadDashboard({ preserveFeedback: true });
-    return {
-      importedCount: data.importedCount ?? rows.length,
-      createdCount: data.createdCount ?? 0,
-      updatedCount: data.updatedCount ?? 0,
-      ignoredCount: data.ignoredCount ?? 0,
-    };
-  };
-
-  const updateManagedApplication = async (
-    userId: number,
-    jobId: string,
-    patch: Partial<
-      Pick<
-        JobApplication,
-        | "status"
-        | "notes"
-        | "proofs"
-        | "interviewAt"
-        | "interviewDetails"
-        | "lastFollowUpAt"
-        | "followUpDueAt"
-        | "followUpEnabled"
-        | "appliedAt"
-        | "job"
-      >
-    >
-  ) => {
-    const response = await fetch(`/api/coach/users/${userId}/applications/${jobId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patch }),
-    });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      application?: JobApplication;
-    };
-
-    if (!response.ok || !data.application) {
-      setFeedback(data.error || "Mise à jour de la candidature impossible.");
-      return false;
-    }
-
-    setFeedback("Candidature mise à jour.");
-    applyApplicationUpdate(userId, data.application);
-    return true;
-  };
-
-  const deleteManagedApplication = async (userId: number, jobId: string) => {
-    const response = await fetch(`/api/coach/users/${userId}/applications/${jobId}`, {
-      method: "DELETE",
-    });
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
-
-    if (!response.ok) {
-      setFeedback(data.error || "Suppression de la candidature impossible.");
-      return false;
-    }
-
-    setFeedback("Candidature supprimée.");
-    removeApplicationLocally(userId, jobId);
-    return true;
   };
 
   return {
@@ -1015,7 +459,7 @@ export function useCoachDashboard() {
     managedApiKeys,
     apiKeysFeedback,
     isApiKeysLoading,
-    isImportingApplications,
+    isImportingApplications: coachApplicationActions.isImportingApplications,
     revokeApiKeyTarget,
     setRevokeApiKeyTarget,
     deleteUserTarget,
@@ -1023,7 +467,7 @@ export function useCoachDashboard() {
     setDeleteUserTarget,
     calendarRegenerationTarget,
     setCalendarRegenerationTarget,
-    savingCoachNoteKey,
+    savingCoachNoteKey: coachApplicationActions.savingCoachNoteKey,
     search,
     setSearch,
     userFilter,
@@ -1047,31 +491,31 @@ export function useCoachDashboard() {
     totalAccepted,
     totalRejected,
     loadDashboard,
-    createGroup,
-    promoteCoach,
-    addMember,
-    addCoach,
-    setGroupManager,
-    removeMember,
-    removeAssignedCoach,
-    demoteCoach,
-    deleteGroup,
-    updateManagedUser,
-    openManagedUserApiKeys,
-    revokeManagedApiKey,
-    deleteUser,
-    savePrivateCoachNote,
-    createSharedCoachNote,
-    updateSharedCoachNote,
-    deleteSharedCoachNote,
+    createGroup: coachGroupActions.createGroup,
+    promoteCoach: coachAdminActions.promoteCoach,
+    addMember: coachGroupActions.addMember,
+    addCoach: coachGroupActions.addCoach,
+    setGroupManager: coachGroupActions.setGroupManager,
+    removeMember: coachGroupActions.removeMember,
+    removeAssignedCoach: coachGroupActions.removeAssignedCoach,
+    demoteCoach: coachAdminActions.demoteCoach,
+    deleteGroup: coachGroupActions.deleteGroup,
+    updateManagedUser: coachAdminActions.updateManagedUser,
+    openManagedUserApiKeys: coachAdminActions.openManagedUserApiKeys,
+    revokeManagedApiKey: coachAdminActions.revokeManagedApiKey,
+    deleteUser: coachAdminActions.deleteUser,
+    savePrivateCoachNote: coachApplicationActions.savePrivateCoachNote,
+    createSharedCoachNote: coachApplicationActions.createSharedCoachNote,
+    updateSharedCoachNote: coachApplicationActions.updateSharedCoachNote,
+    deleteSharedCoachNote: coachApplicationActions.deleteSharedCoachNote,
     exportUserApplications,
     exportGroupApplications,
     copyGroupCalendarUrl,
     copyAllGroupsCalendarUrl,
     regenerateCalendarUrl,
     undoLastAction,
-    importApplicationsForUser,
-    updateManagedApplication,
-    deleteManagedApplication,
+    importApplicationsForUser: coachApplicationActions.importApplicationsForUser,
+    updateManagedApplication: coachApplicationActions.updateManagedApplication,
+    deleteManagedApplication: coachApplicationActions.deleteManagedApplication,
   };
 }

@@ -68,6 +68,21 @@ export interface CoachRevokeApiKeyTarget {
   email: string;
 }
 
+export type CoachUndoAction =
+  | {
+      type: "remove-membership";
+      label: string;
+      groupId: number;
+      userId: number;
+      groupName: string;
+    }
+  | {
+      type: "demote-coach";
+      label: string;
+      userId: number;
+      previousRole: "coach" | "admin";
+    };
+
 export type CoachMemberPickerGroup = CoachGroupSummary;
 
 export interface CoachGroupedUserGroup {
