@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
+import { publishConversationEvent } from "@/lib/server/messageEvents";
 import { sendTextMessage } from "@/lib/server/messaging";
 import { sendConversationMessageSchema } from "@/lib/server/messagingSchemas";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
@@ -27,8 +28,18 @@ export async function POST(
 
     const result = await sendTextMessage(user, conversationId, body.data.content);
     if ("command" in result) {
+      await publishConversationEvent(conversationId, {
+        type: "conversation.cleared",
+        conversationId,
+      });
       return NextResponse.json({ command: result.command });
     }
+
+    await publishConversationEvent(conversationId, {
+      type: "conversation.message_created",
+      conversationId,
+      messageId: result.id,
+    });
 
     return NextResponse.json({ message: result });
   } catch (error) {

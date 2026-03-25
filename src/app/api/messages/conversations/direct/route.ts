@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
+import { publishMessageEvent } from "@/lib/server/messageEvents";
 import { findOrCreateDirectConversation } from "@/lib/server/messaging";
 import { directConversationRequestSchema } from "@/lib/server/messagingSchemas";
 
@@ -16,6 +17,14 @@ export async function POST(request: Request) {
     }
 
     const conversation = await findOrCreateDirectConversation(user, body.data.targetUserId);
+    await publishMessageEvent(
+      conversation.participants.map((participant) => participant.userId),
+      {
+        type: "conversation.created",
+        conversationId: conversation.id,
+      }
+    );
+
     return NextResponse.json({ conversation });
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {

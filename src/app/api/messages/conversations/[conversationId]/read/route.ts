@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
+import { publishConversationEvent } from "@/lib/server/messageEvents";
 import { markConversationAsRead } from "@/lib/server/messaging";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
 
@@ -20,6 +21,12 @@ export async function POST(
     }
 
     await markConversationAsRead(user, conversationId);
+    await publishConversationEvent(conversationId, {
+      type: "conversation.read_updated",
+      conversationId,
+      userId: user.id,
+    });
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {

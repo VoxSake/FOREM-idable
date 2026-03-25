@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
+import { publishConversationEvent } from "@/lib/server/messageEvents";
 import { deleteConversationMessage } from "@/lib/server/messaging";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
 
@@ -21,6 +22,12 @@ export async function DELETE(
     }
 
     const message = await deleteConversationMessage(user, conversationId, messageId);
+    await publishConversationEvent(conversationId, {
+      type: "conversation.message_deleted",
+      conversationId,
+      messageId,
+    });
+
     return NextResponse.json({ message });
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {

@@ -66,3 +66,32 @@ export interface DirectMessageTarget {
   sharedGroupCount: number;
   relationLabel: string;
 }
+
+export type MessageStreamEvent =
+  | {
+      type: "stream.connected";
+      connectedAt: string;
+    }
+  | {
+      type: "conversation.created";
+      conversationId: number;
+    }
+  | {
+      type: "conversation.message_created";
+      conversationId: number;
+      messageId: number;
+    }
+  | {
+      type: "conversation.message_deleted";
+      conversationId: number;
+      messageId: number;
+    }
+  | {
+      type: "conversation.read_updated";
+      conversationId: number;
+      userId: number;
+    }
+  | {
+      type: "conversation.cleared";
+      conversationId: number;
+    };

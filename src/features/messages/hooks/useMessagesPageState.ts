@@ -23,6 +23,8 @@ import {
 } from "@/features/messages/messages.api";
 import { useMessagesDerivedState } from "@/features/messages/hooks/useMessagesDerivedState";
 import { useMessageThreadScroll } from "@/features/messages/hooks/useMessageThreadScroll";
+import { useMessagesStream } from "@/features/messages/hooks/useMessagesStream";
+import { MessageStreamEvent } from "@/types/messaging";
 
 export function useMessagesPageState() {
   const isMobileViewport = useIsMobile();
@@ -464,6 +466,48 @@ export function useMessagesPageState() {
     [loadConversations]
   );
 
+  const handleStreamEvent = useCallback(
+    (event: MessageStreamEvent) => {
+      if (event.type === "stream.connected") {
+        return;
+      }
+
+      void (async () => {
+        const preferredConversationId =
+          selectedConversationId === event.conversationId
+            ? selectedConversationId
+            : selectedConversationId ?? event.conversationId;
+
+        await loadConversations(preferredConversationId, { silent: true });
+
+        if (selectedConversationId === event.conversationId) {
+          await loadConversationDetail(event.conversationId, {
+            markAsRead: true,
+            silent: true,
+          });
+
+          if (
+            event.type === "conversation.message_created" ||
+            event.type === "conversation.cleared"
+          ) {
+            scheduleScrollThreadToBottom("auto");
+          }
+        }
+      })();
+    },
+    [
+      loadConversationDetail,
+      loadConversations,
+      scheduleScrollThreadToBottom,
+      selectedConversationId,
+    ]
+  );
+
+  useMessagesStream({
+    enabled: !isLoading && hasMessagingAccess !== false,
+    onEvent: handleStreamEvent,
+  });
+
   useEffect(() => {
     let cancelled = false;
 
@@ -545,23 +589,8 @@ export function useMessagesPageState() {
   useEffect(() => {
     if (!selectedConversationId) {
       setIsMobileConversationOpen(false);
-      return;
     }
-
-    const intervalId = window.setInterval(() => {
-      void (async () => {
-        await loadConversationDetail(selectedConversationId, {
-          markAsRead: true,
-          silent: true,
-        });
-        await loadConversations(selectedConversationId, { silent: true });
-      })();
-    }, 5000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [loadConversationDetail, loadConversations, selectedConversationId]);
+  }, [selectedConversationId]);
 
   return {
     contacts,

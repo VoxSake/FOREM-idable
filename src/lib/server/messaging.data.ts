@@ -353,6 +353,23 @@ export async function loadConversationParticipants(queryable: Queryable, convers
   );
 }
 
+export async function loadActiveConversationParticipantIds(
+  queryable: Queryable,
+  conversationId: number
+) {
+  const result = await queryable.query<{ user_id: number | string }>(
+    `SELECT user_id
+     FROM conversation_participants
+     WHERE conversation_id = $1
+       AND left_at IS NULL`,
+    [conversationId]
+  );
+
+  return result.rows
+    .map((row) => toNumericId(row.user_id))
+    .filter((userId): userId is number => userId !== null);
+}
+
 export async function loadConversationMessages(
   queryable: Queryable,
   actor: AuthUser,

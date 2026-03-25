@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
+import { publishMessageEvent } from "@/lib/server/messageEvents";
 import { shareTextInDirectConversation } from "@/lib/server/messaging";
 import { shareDirectMessageSchema } from "@/lib/server/messagingSchemas";
 
@@ -20,6 +21,12 @@ export async function POST(request: Request) {
       body.data.targetUserId,
       body.data.content
     );
+
+    await publishMessageEvent([user.id, body.data.targetUserId], {
+      type: "conversation.message_created",
+      conversationId: result.conversationId,
+      messageId: result.message.id,
+    });
 
     return NextResponse.json(result);
   } catch (error) {
