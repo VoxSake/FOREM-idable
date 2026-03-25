@@ -1,162 +1,134 @@
-# FOREM-idable
+# 🚀 FOREM-idable
 
-FOREM-idable est une application Next.js orientee recherche d'emploi, suivi de candidatures et accompagnement par coachs. Le projet cible un usage reel, mais aussi un niveau de code defendable en entretien: front coherent, contrats d'entree valides, persistance type-safe, erreurs gerees explicitement et couverture de test sur les flux critiques.
+**FOREM-idable** est une plateforme moderne développée avec Next.js, dédiée à la recherche d'emploi, au suivi de candidatures et à l'accompagnement par coachs. 
 
-Version live:
-- https://forem.brisbois.dev
+Ce projet a été conçu avec une double exigence : répondre à un **usage réel** tout en maintenant un niveau de **clean code** exemplaire, idéal pour une revue technique ou une démonstration en entretien. L'accent est mis sur la cohérence du front-end, la validation stricte des contrats d'entrée, une persistance type-safe et une gestion explicite des erreurs.
 
-## Produit
+---
 
-Le produit couvre six domaines principaux:
-- recherche d'offres avec moteur multi-source et historique
-- suivi des candidatures pour les beneficiaires
-- dashboard coach pour le pilotage par groupe
-- administration des coachs, recherches mises en avant et cles API
-- messagerie de groupe et messages prives
-- API externe JSON/CSV pour reporting et automatisation
+### 🌐 Version Live
+🔗 [forem.brisbois.dev](https://forem.brisbois.dev)
 
-## Stack
+---
 
-- Next.js 16 App Router
-- React 19
-- TypeScript strict
-- PostgreSQL + Drizzle ORM
-- Zod pour la validation serveur
-- Tailwind CSS + composants shadcn/ui
-- Vitest pour l'unitaire
-- Playwright pour l'end-to-end
-- Redis optionnel pour rate limiting et diffusion d'evenements messages
+## 🎯 Fonctionnalités Clés
 
-Runtime cible:
-- Node 24
+Le produit couvre six domaines stratégiques :
+*   🔍 **Recherche d'offres** : Moteur multi-source performant avec historique de recherche.
+*   📋 **Suivi de candidatures** : Gestion complète du tunnel de recrutement pour les bénéficiaires.
+*   👨‍🏫 **Dashboard Coach** : Pilotage et suivi par groupes pour un accompagnement personnalisé.
+*   ⚙️ **Administration** : Gestion des coachs, mises en avant (featured searches) et gestion des clés API.
+*   💬 **Messagerie temps réel** : Canaux de groupe et messages privés.
+*   📊 **API Externe** : Endpoints JSON/CSV pour le reporting et l'automatisation.
 
-## Architecture
+---
 
-Le code suit une organisation feature-first:
+## 💻 Stack Technique
+
+Le projet s'appuie sur les dernières versions stables de l'écosystème React/Next.js :
+
+*   **Framework** : [Next.js 15+](https://nextjs.org/) (App Router)
+*   **Langage** : [TypeScript](https://www.typescriptlang.org/) (Strict Mode)
+*   **Runtime** : Node.js 24
+*   **Base de données** : PostgreSQL avec [Drizzle ORM](https://orm.drizzle.team/)
+*   **Validation** : [Zod](https://zod.dev/) pour le typage des contrats et la validation runtime
+*   **UI/UX** : Tailwind CSS + [shadcn/ui](https://ui.shadcn.com/)
+*   **Tests** : [Vitest](https://vitest.dev/) (Unit/Integration) & [Playwright](https://playwright.dev/) (E2E)
+*   **Infrastructure** : Redis (optionnel) pour le rate limiting et le pub/sub de la messagerie.
+
+---
+
+## 🏗️ Architecture
+
+L'organisation du code suit une approche **feature-first** pour garantir la scalabilité :
 
 ```txt
 src/
-  app/                    routes Next.js et handlers API
-  features/               UI, hooks et logique de presentation par domaine
-  lib/server/             logique serveur, acces DB, services metier
-  components/ui/          primitives UI
-  types/                  contrats applicatifs partages
+  ├── app/             # Routes Next.js (Pages, Layouts) et Handlers API
+  ├── features/        # Composants UI, hooks et logique métier par domaine
+  ├── lib/server/      # Logique serveur pure : Services, Accès DB, Sécurité
+  ├── components/ui/   # Primitives UI (Design System atomique)
+  └── types/           # Contrats applicatifs et interfaces partagées
 ```
 
-Principes utilises dans le repo:
-- routes API minces: auth, validation, orchestration, mapping d'erreurs
-- logique metier serveur dans `src/lib/server`
-- etat de page concentre dans des hooks `use*PageState`
-- schemas Zod pour verrouiller les payloads d'entree
-- types partages pour garder le contrat front/server explicite
+### Principes Fondamentaux :
+*   **API Routes "Thin"** : Responsables uniquement de l'auth, de la validation et de l'orchestration.
+*   **Business Logic isolée** : Toute la logique métier réside dans `src/lib/server`.
+*   **State Management localisé** : Utilisation de hooks `use*PageState` pour concentrer l'état de page.
+*   **Type Safety de bout en bout** : Contrats Front/Back explicites via Zod et TypeScript.
 
-## Choix techniques
+---
 
-### Validation
+## 🛠️ Choix Techniques & Qualité logicielle
 
-Les mutations critiques passent par Zod avant d'entrer dans la logique metier. L'objectif n'est pas seulement d'eviter des 500, mais de rendre les contrats defendables et homogenes.
+### ✅ Validation & Sécurité
+Toutes les mutations critiques sont verrouillées par des schémas Zod. L'objectif est double : prévenir les erreurs 500 et garantir des contrats d'interface homogènes et robustes.
 
-### Persistance
+### 🗄️ Persistance Type-Safe
+L'utilisation de **Drizzle ORM** permet de manipuler une base de données typée. Le domaine "Candidature" repose sur une couche relationnelle explicite, optimisée pour les exports et les besoins analytiques des coachs.
 
-Drizzle est utilise pour garder une base typée et evolutive, avec PostgreSQL comme source de verite. Une partie du domaine candidature repose sur une couche relationnelle explicite pour les operations coach, l'API externe et les exports.
+### 📨 Messagerie Hybride
+La messagerie utilise HTTP pour l'écriture et **Server-Sent Events (SSE)** pour le live-stream. Le bus d'événements est conçu pour être résilient :
+*   **Mode Standard** : Fallback en mémoire pour un déploiement simplifié.
+*   **Mode Distribué** : Redis Pub/Sub activable via `REDIS_URL` pour la scalabilité.
 
-### Messagerie
+### 🛡️ Gestion d'Erreurs
+Utilisation systématique des `error.tsx` de Next.js pour des Error Boundaries segmentaires, offrant une expérience utilisateur fluide même en cas d'imprévu.
 
-La messagerie utilise HTTP pour les mutations et SSE pour les mises a jour live. Le bus d'evenements est hybride:
-- fallback memoire pour un runtime simple
-- Redis pub/sub si `REDIS_URL` est configure
+### 🧪 Stratégie de Tests
+Le projet ne vise pas le 100% théorique, mais une **couverture pragmatique des flux critiques** :
+*   **Vitest** : Logique métier pure et helpers.
+*   **Playwright** : Parcours utilisateurs (Auth, Suivi, Messagerie, Admin).
 
-Ce choix est volontairement plus simple qu'un WebSocket complet tout en restant defensable pour un produit interne ou un MVP enrichi.
+---
 
-### Gestion d'erreurs
+## 🔌 API Externe & Intégrations
 
-Les pages majeures disposent d'error boundaries segmentaires (`error.tsx`) et les routes API renvoient des erreurs metier explicites plutot que de laisser remonter des erreurs non controlees.
+Réservée aux comptes `coach` et `admin` via clés API.
+*   **Endpoints** : Gestion utilisateurs, groupes et mutations de candidatures.
+*   **Reporting** : Exports CSV avec indicateurs calculés (`isFollowUpDue`, `isInterviewScheduled`).
 
-### Tests
+📖 [Consulter la documentation API détaillée](DOCAPI.md)
 
-Le projet couvre:
-- la logique pure et les helpers metier avec Vitest
-- les parcours critiques UI et metier avec Playwright
+---
 
-La cible n'est pas le 100% coverage, mais une couverture utile des flux a risque:
-- auth
-- suivi candidatures
-- actions coach
-- admin mobile
-- messagerie
-- workspace de recherche
+## 🚀 Installation & Développement
 
-## External API
-
-L'API externe est reservee aux comptes `coach` et `admin`, via cles API.
-
-Elle expose:
-- listes et details utilisateurs
-- listes et details groupes
-- listes, details et mutations de candidatures
-- exports CSV pour Excel / Power Query
-
-Points importants:
-- les filtres ne sont pas identiques sur tous les endpoints
-- les reponses applications exposent maintenant des champs derives:
-  - `isFollowUpDue`
-  - `isInterviewScheduled`
-- les exports CSV gardent des headers francais mais utilisent `yes/no` sur ces indicateurs derives
-
-Documentation detaillee:
-- [DOCAPI.md](/home/computebox/code/FOREM-idable/DOCAPI.md)
-
-## Scripts
-
-```bash
-npm install
-npm run dev
-npm run lint
-npm test
-npm run test:e2e
-npm run build
-```
-
-Drizzle:
-
-```bash
-npm run db:generate
-npm run db:migrate
-```
-
-## Installation locale
-
+### Pré-requis
 ```bash
 cp env.example .env.local
 npm install
-npm run dev
 ```
 
-Variables importantes:
-- `DATABASE_URL`
-- `REDIS_URL` optionnel
-- `RESEND_API_KEY` pour le reset password
-- `ADZUNA_*` si le provider secondaire est active
-- `SERVER_TIMING_LOGS`, `SERVER_AUDIT_LOGS`, `DB_SLOW_QUERY_MS` pour l'observabilite
+### Commandes utiles
+```bash
+# Développement
+npm run dev
 
-## Conventions de code
+# Qualité & Tests
+npm run lint
+npm test            # Unitaires
+npm run test:e2e    # End-to-end
 
-- validation d'entree via Zod sur les mutations
-- front compose par domaine avant de descendre au niveau composant
-- refactors prudents: extraction de modules serveurs sans casser les facades publiques
-- pas de logique metier lourde dans les composants de rendu
-- tests E2E axes sur les parcours critiques, pas sur le pixel perfect
+# Base de données
+npm run db:generate
+npm run db:migrate
 
-## Etat actuel
+# Production
+npm run build
+npm start
+```
 
-Le repo vise un niveau "portfolio propre", pas une demo jetable:
-- lint
-- build production Next
-- tests unitaires
-- tests E2E Playwright
+---
 
-Le codebase continue toutefois d'etre refactorise par tranches. Les zones encore les plus denses sont principalement dans le domaine coach et certains services serveur historiques.
+## 📋 Conventions de Code
 
-## Licence
+*   **Validation systématique** : Pas d'entrée de données sans schéma Zod.
+*   **Composition de composants** : Logique métier extraite des composants de rendu.
+*   **Observabilité** : Logs de timing serveur et audit activables en environnement critique.
+*   **Refactoring continu** : Isolation progressive des services historiques vers des modules serveurs propres.
 
-MIT
+---
+
+## 📄 Licence
+Ce projet est sous licence [MIT](LICENSE).
