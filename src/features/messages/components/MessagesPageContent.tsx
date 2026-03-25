@@ -1,5 +1,6 @@
 "use client";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteMessageDialog } from "@/features/messages/components/DeleteMessageDialog";
 import { ConversationPanel } from "@/features/messages/components/ConversationPanel";
 import { ConversationSidebar } from "@/features/messages/components/ConversationSidebar";
@@ -10,8 +11,31 @@ import { useMessagesPageState } from "@/features/messages/hooks/useMessagesPageS
 export function MessagesPageContent() {
   const page = useMessagesPageState();
 
-  if (page.isLoading || page.hasMessagingAccess === false) {
+  if (page.isLoading) {
     return <MessagesPageSkeleton />;
+  }
+
+  if (page.hasMessagingAccess === false) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 animate-in fade-in duration-500">
+        <Card className="overflow-hidden border-border/60 py-0">
+          <CardHeader className="border-b border-border/60 px-6 py-6">
+            <CardTitle className="text-2xl font-black tracking-tight">
+              Messagerie indisponible
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 px-6 py-5 text-sm text-muted-foreground">
+            <p>
+              La messagerie est reservee aux personnes rattachees a au moins un groupe de suivi.
+            </p>
+            <p>
+              Lorsqu&apos;un groupe vous est attribue, les conversations de groupe et les DM avec les
+              personnes du meme perimetre apparaissent ici.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

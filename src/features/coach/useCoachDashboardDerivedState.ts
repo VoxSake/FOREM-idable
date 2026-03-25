@@ -1,0 +1,155 @@
+"use client";
+
+import { useDeferredValue, useMemo } from "react";
+import { CoachDashboardData } from "@/types/coach";
+import { AuthUser } from "@/types/auth";
+import {
+  CoachGroupedUserGroup,
+  CoachManagerPickerGroup,
+  CoachMemberPickerGroup,
+  CoachUserFilter,
+} from "@/features/coach/types";
+import {
+  buildCoachRecentActivity,
+  buildGroupedUsers,
+  buildManagerPickerGroup,
+  buildMemberPickerGroup,
+} from "@/features/coach/utils";
+
+type UseCoachDashboardDerivedStateParams = {
+  dashboard: CoachDashboardData | null;
+  user: AuthUser | null;
+  selectedUserId: number | null;
+  memberPickerGroupId: number | null;
+  coachPickerGroupId: number | null;
+  managerPickerGroupId: number | null;
+  importTargetUserId: number | null;
+  search: string;
+  userFilter: CoachUserFilter;
+};
+
+export function useCoachDashboardDerivedState({
+  dashboard,
+  user,
+  selectedUserId,
+  memberPickerGroupId,
+  coachPickerGroupId,
+  managerPickerGroupId,
+  importTargetUserId,
+  search,
+  userFilter,
+}: UseCoachDashboardDerivedStateParams) {
+  const deferredSearch = useDeferredValue(search);
+
+  const selectedUser = useMemo(
+    () => dashboard?.users.find((entry) => entry.id === selectedUserId) ?? null,
+    [dashboard, selectedUserId]
+  );
+
+  const memberPickerGroup: CoachMemberPickerGroup | null = useMemo(
+    () => buildMemberPickerGroup(dashboard?.groups, memberPickerGroupId),
+    [dashboard?.groups, memberPickerGroupId]
+  );
+  const coachPickerGroup: CoachMemberPickerGroup | null = useMemo(
+    () => buildMemberPickerGroup(dashboard?.groups, coachPickerGroupId),
+    [dashboard?.groups, coachPickerGroupId]
+  );
+  const managerPickerGroup: CoachManagerPickerGroup | null = useMemo(
+    () => buildManagerPickerGroup(dashboard?.groups, managerPickerGroupId),
+    [dashboard?.groups, managerPickerGroupId]
+  );
+
+  const assignableUsers = useMemo(() => {
+    if (!dashboard || !memberPickerGroup) return [];
+    const memberIds = new Set(memberPickerGroup.members.map((entry) => entry.id));
+    return dashboard.users.filter((entry) => !memberIds.has(entry.id));
+  }, [dashboard, memberPickerGroup]);
+
+  const assignableCoaches = useMemo(() => {
+    if (!dashboard || !coachPickerGroup) return [];
+
+    const assignedCoachIds = new Set(coachPickerGroup.coaches.map((entry) => entry.id));
+    return dashboard.availableCoaches.filter((entry) => !assignedCoachIds.has(entry.id));
+  }, [coachPickerGroup, dashboard]);
+
+  const assignableManagers = useMemo(
+    () => managerPickerGroup?.coaches ?? [],
+    [managerPickerGroup]
+  );
+
+  const groupedUsers: CoachGroupedUserGroup[] = useMemo(() => {
+    if (!dashboard) return [];
+
+    return buildGroupedUsers({
+      groups: dashboard.groups,
+      users: dashboard.users,
+      normalizedSearch: deferredSearch.trim().toLowerCase(),
+      userFilter,
+    });
+  }, [dashboard, deferredSearch, userFilter]);
+
+  const recentActivity = useMemo(
+    () => buildCoachRecentActivity(dashboard?.users ?? []),
+    [dashboard?.users]
+  );
+
+  const importTargetUser = useMemo(
+    () => dashboard?.users.find((entry) => entry.id === importTargetUserId) ?? null,
+    [dashboard, importTargetUserId]
+  );
+
+  const promotableUsers = useMemo(
+    () => dashboard?.users.filter((entry) => entry.role === "user") ?? [],
+    [dashboard?.users]
+  );
+  const managedCoaches = useMemo(
+    () => dashboard?.users.filter((entry) => entry.role === "coach") ?? [],
+    [dashboard?.users]
+  );
+
+  const canEditSelectedUser = useMemo(() => {
+    if (!selectedUser || !user) return false;
+    if (user.role === "admin") return true;
+    return selectedUser.role === "user";
+  }, [selectedUser, user]);
+
+  const canManageSelectedUserApiKeys = useMemo(
+    () =>
+      user?.role === "admin" &&
+      Boolean(selectedUser) &&
+      (selectedUser?.role === "coach" || selectedUser?.role === "admin"),
+    [selectedUser, user?.role]
+  );
+
+  const totalApplications =
+    dashboard?.users.reduce((sum, entry) => sum + entry.applicationCount, 0) ?? 0;
+  const totalInterviews =
+    dashboard?.users.reduce((sum, entry) => sum + entry.interviewCount, 0) ?? 0;
+  const totalDue = dashboard?.users.reduce((sum, entry) => sum + entry.dueCount, 0) ?? 0;
+  const totalAccepted =
+    dashboard?.users.reduce((sum, entry) => sum + entry.acceptedCount, 0) ?? 0;
+  const totalRejected =
+    dashboard?.users.reduce((sum, entry) => sum + entry.rejectedCount, 0) ?? 0;
+
+  return {
+    selectedUser,
+    memberPickerGroup,
+    coachPickerGroup,
+    managerPickerGroup,
+    assignableUsers,
+    assignableCoaches,
+    assignableManagers,
+    groupedUsers,
+    recentActivity,
+    importTargetUser,
+    promotableUsers,
+    managedCoaches,
+    canEditSelectedUser,
+    canManageSelectedUserApiKeys,
+    totalApplications,
+    totalInterviews,
+    totalDue,
+    totalAccepted,
+    totalRejected,
+  };
+}

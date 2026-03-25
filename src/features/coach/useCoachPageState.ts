@@ -3,10 +3,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { buildCoachPrioritySections } from "@/features/coach/utils";
 import { useCoachDashboard } from "@/features/coach/useCoachDashboard";
+import { useManagedUserEditor } from "@/features/coach/useManagedUserEditor";
 
 export function useCoachPageState() {
   const coach = useCoachDashboard();
   const [activityTargetJobId, setActivityTargetJobId] = useState<string | null>(null);
+  const managedUserEditor = useManagedUserEditor({
+    onSubmit: coach.updateManagedUser,
+  });
 
   const followedUserCount = useMemo(
     () =>
@@ -43,18 +47,14 @@ export function useCoachPageState() {
   const openSelectedUserEditor = useCallback(() => {
     if (!coach.selectedUser) return;
 
-    coach.setEditTarget({
+    managedUserEditor.openManagedUserEditor({
       userId: coach.selectedUser.id,
       email: coach.selectedUser.email,
       firstName: coach.selectedUser.firstName,
       lastName: coach.selectedUser.lastName,
       role: coach.selectedUser.role,
     });
-    coach.setEditedFirstName(coach.selectedUser.firstName);
-    coach.setEditedLastName(coach.selectedUser.lastName);
-    coach.setNewPassword("");
-    coach.setConfirmNewPassword("");
-  }, [coach]);
+  }, [coach.selectedUser, managedUserEditor]);
 
   const openSelectedUserDeletion = useCallback(() => {
     if (!coach.selectedUser) return;
@@ -64,19 +64,6 @@ export function useCoachPageState() {
       email: coach.selectedUser.email,
     });
   }, [coach]);
-
-  const resetEditDialog = useCallback(
-    (open: boolean) => {
-      if (open) return;
-
-      coach.setEditTarget(null);
-      coach.setEditedFirstName("");
-      coach.setEditedLastName("");
-      coach.setNewPassword("");
-      coach.setConfirmNewPassword("");
-    },
-    [coach]
-  );
 
   const resetApiKeysDialog = useCallback(
     (open: boolean) => {
@@ -112,6 +99,7 @@ export function useCoachPageState() {
 
   return {
     ...coach,
+    ...managedUserEditor,
     activityTargetJobId,
     followedUserCount,
     prioritySections,
@@ -120,7 +108,6 @@ export function useCoachPageState() {
     openUserFromActivity,
     openSelectedUserEditor,
     openSelectedUserDeletion,
-    resetEditDialog,
     resetApiKeysDialog,
     requestRevokeApiKey,
     closeImportDialog,

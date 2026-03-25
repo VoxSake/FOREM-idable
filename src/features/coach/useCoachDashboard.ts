@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   CoachApplicationExportRow,
@@ -34,21 +34,15 @@ import {
   CoachApiKeysTarget,
   CoachCalendarRegenerationTarget,
   CoachDeleteUserTarget,
-  CoachEditTarget,
-  CoachGroupedUserGroup,
-  CoachMemberPickerGroup,
   CoachRemoveCoachTarget,
   CoachUserFilter,
   CoachRevokeApiKeyTarget,
   CoachRemoveGroupTarget,
   CoachRemoveMembershipTarget,
 } from "@/features/coach/types";
+import { useCoachDashboardDerivedState } from "@/features/coach/useCoachDashboardDerivedState";
 import {
-  buildCoachRecentActivity,
-  buildGroupedUsers,
   buildGroupExportRows,
-  buildManagerPickerGroup,
-  buildMemberPickerGroup,
   buildUserExportRows,
 } from "@/features/coach/utils";
 
@@ -83,7 +77,6 @@ export function useCoachDashboard() {
   const [removeMembership, setRemoveMembership] = useState<CoachRemoveMembershipTarget | null>(null);
   const [removeCoach, setRemoveCoach] = useState<CoachRemoveCoachTarget | null>(null);
   const [removeGroup, setRemoveGroup] = useState<CoachRemoveGroupTarget | null>(null);
-  const [editTarget, setEditTarget] = useState<CoachEditTarget | null>(null);
   const [apiKeysTarget, setApiKeysTarget] = useState<CoachApiKeysTarget | null>(null);
   const [importTargetUserId, setImportTargetUserId] = useState<number | null>(null);
   const [managedApiKeys, setManagedApiKeys] = useState<ApiKeySummary[]>([]);
@@ -96,13 +89,8 @@ export function useCoachDashboard() {
   const [calendarRegenerationTarget, setCalendarRegenerationTarget] =
     useState<CoachCalendarRegenerationTarget | null>(null);
   const [savingCoachNoteKey, setSavingCoachNoteKey] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [editedFirstName, setEditedFirstName] = useState("");
-  const [editedLastName, setEditedLastName] = useState("");
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
-  const deferredSearch = useDeferredValue(search);
 
   const applyApplicationUpdate = (userId: number, application: JobApplication) => {
     setDashboard((current) => {
@@ -240,86 +228,37 @@ export function useCoachDashboard() {
     void loadDashboard();
   }, [isAuthLoading, user]);
 
-  const selectedUser = useMemo(
-    () => dashboard?.users.find((entry) => entry.id === selectedUserId) ?? null,
-    [dashboard, selectedUserId]
-  );
-
-  const memberPickerGroup: CoachMemberPickerGroup | null = useMemo(
-    () => buildMemberPickerGroup(dashboard?.groups, memberPickerGroupId),
-    [dashboard?.groups, memberPickerGroupId]
-  );
-  const coachPickerGroup: CoachMemberPickerGroup | null = useMemo(
-    () => buildMemberPickerGroup(dashboard?.groups, coachPickerGroupId),
-    [dashboard?.groups, coachPickerGroupId]
-  );
-  const managerPickerGroup = useMemo(
-    () => buildManagerPickerGroup(dashboard?.groups, managerPickerGroupId),
-    [dashboard?.groups, managerPickerGroupId]
-  );
-
-  const assignableUsers = useMemo(() => {
-    if (!dashboard || !memberPickerGroup) return [];
-    const memberIds = new Set(memberPickerGroup.members.map((entry) => entry.id));
-    return dashboard.users.filter((entry) => !memberIds.has(entry.id));
-  }, [dashboard, memberPickerGroup]);
-
-  const assignableCoaches = useMemo(() => {
-    if (!dashboard || !coachPickerGroup) return [];
-
-    const assignedCoachIds = new Set(coachPickerGroup.coaches.map((entry) => entry.id));
-    return dashboard.availableCoaches.filter((entry) => !assignedCoachIds.has(entry.id));
-  }, [coachPickerGroup, dashboard]);
-
-  const assignableManagers = useMemo(
-    () => managerPickerGroup?.coaches ?? [],
-    [managerPickerGroup]
-  );
-
-  const groupedUsers: CoachGroupedUserGroup[] = useMemo(() => {
-    if (!dashboard) return [];
-
-    return buildGroupedUsers({
-      groups: dashboard.groups,
-      users: dashboard.users,
-      normalizedSearch: deferredSearch.trim().toLowerCase(),
-      userFilter,
-    });
-  }, [dashboard, deferredSearch, userFilter]);
-  const recentActivity = useMemo(
-    () => buildCoachRecentActivity(dashboard?.users ?? []),
-    [dashboard?.users]
-  );
-  const importTargetUser = useMemo(
-    () => dashboard?.users.find((entry) => entry.id === importTargetUserId) ?? null,
-    [dashboard, importTargetUserId]
-  );
-
-  const totalApplications = dashboard?.users.reduce((sum, entry) => sum + entry.applicationCount, 0) ?? 0;
-  const totalInterviews = dashboard?.users.reduce((sum, entry) => sum + entry.interviewCount, 0) ?? 0;
-  const totalDue = dashboard?.users.reduce((sum, entry) => sum + entry.dueCount, 0) ?? 0;
-  const totalAccepted = dashboard?.users.reduce((sum, entry) => sum + entry.acceptedCount, 0) ?? 0;
-  const totalRejected = dashboard?.users.reduce((sum, entry) => sum + entry.rejectedCount, 0) ?? 0;
-  const promotableUsers = useMemo(
-    () => dashboard?.users.filter((entry) => entry.role === "user") ?? [],
-    [dashboard?.users]
-  );
-  const managedCoaches = useMemo(
-    () => dashboard?.users.filter((entry) => entry.role === "coach") ?? [],
-    [dashboard?.users]
-  );
-  const canEditSelectedUser = useMemo(() => {
-    if (!selectedUser || !user) return false;
-    if (user.role === "admin") return true;
-    return selectedUser.role === "user";
-  }, [selectedUser, user]);
-  const canManageSelectedUserApiKeys = useMemo(
-    () =>
-      user?.role === "admin" &&
-      Boolean(selectedUser) &&
-      (selectedUser?.role === "coach" || selectedUser?.role === "admin"),
-    [selectedUser, user?.role]
-  );
+  const {
+    selectedUser,
+    memberPickerGroup,
+    coachPickerGroup,
+    managerPickerGroup,
+    assignableUsers,
+    assignableCoaches,
+    assignableManagers,
+    groupedUsers,
+    recentActivity,
+    importTargetUser,
+    promotableUsers,
+    managedCoaches,
+    canEditSelectedUser,
+    canManageSelectedUserApiKeys,
+    totalApplications,
+    totalInterviews,
+    totalDue,
+    totalAccepted,
+    totalRejected,
+  } = useCoachDashboardDerivedState({
+    dashboard,
+    user,
+    selectedUserId,
+    memberPickerGroupId,
+    coachPickerGroupId,
+    managerPickerGroupId,
+    importTargetUserId,
+    search,
+    userFilter,
+  });
 
   const createGroup = async () => {
     const trimmedGroupName = groupName.trim();
@@ -570,44 +509,38 @@ export function useCoachDashboard() {
     setFeedback("Groupe supprimé.");
   };
 
-  const updateManagedUser = async () => {
-    if (!editTarget || !editedFirstName.trim() || !editedLastName.trim()) {
+  const updateManagedUser = async (
+    target: { userId: number; email: string },
+    values: { firstName: string; lastName: string; password?: string }
+  ) => {
+    if (!values.firstName.trim() || !values.lastName.trim()) {
       setFeedback("Nom et prénom invalides.");
-      return;
+      return false;
     }
 
-    if ((newPassword.length > 0 || confirmNewPassword.length > 0) && (newPassword.length < 8 || newPassword !== confirmNewPassword)) {
-      setFeedback("Mot de passe invalide.");
-      return;
-    }
-
-    const response = await fetch(`/api/admin/users/${editTarget.userId}`, {
+    const response = await fetch(`/api/admin/users/${target.userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        firstName: editedFirstName,
-        lastName: editedLastName,
-        password: newPassword || undefined,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        password: values.password,
       }),
     });
 
     const data = (await response.json().catch(() => ({}))) as { error?: string };
     if (!response.ok) {
       setFeedback(data.error || "Mise à jour utilisateur impossible.");
-      return;
+      return false;
     }
 
-    updateManagedUserLocally(editTarget.userId, {
-      firstName: editedFirstName,
-      lastName: editedLastName,
+    updateManagedUserLocally(target.userId, {
+      firstName: values.firstName,
+      lastName: values.lastName,
     });
     setUndoAction(null);
-    setFeedback(`Utilisateur mis à jour: ${editTarget.email}.`);
-    setEditTarget(null);
-    setEditedFirstName("");
-    setEditedLastName("");
-    setNewPassword("");
-    setConfirmNewPassword("");
+    setFeedback(`Utilisateur mis à jour: ${target.email}.`);
+    return true;
   };
 
   const deleteUser = async () => {
@@ -1074,8 +1007,6 @@ export function useCoachDashboard() {
     setRemoveCoach,
     removeGroup,
     setRemoveGroup,
-    editTarget,
-    setEditTarget,
     apiKeysTarget,
     setApiKeysTarget,
     importTargetUser,
@@ -1093,14 +1024,6 @@ export function useCoachDashboard() {
     calendarRegenerationTarget,
     setCalendarRegenerationTarget,
     savingCoachNoteKey,
-    newPassword,
-    setNewPassword,
-    confirmNewPassword,
-    setConfirmNewPassword,
-    editedFirstName,
-    setEditedFirstName,
-    editedLastName,
-    setEditedLastName,
     search,
     setSearch,
     userFilter,

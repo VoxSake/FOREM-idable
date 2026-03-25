@@ -4,11 +4,7 @@ import { markCoachAction, requireAdminAccess } from "@/lib/server/coach";
 import { revokeApiKeyById } from "@/lib/server/apiKeys";
 import { logServerEvent } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
-
-function parseInteger(value: string) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) ? parsed : null;
-}
+import { parseIntegerParam } from "@/lib/server/requestSchemas";
 
 export async function DELETE(
   request: NextRequest,
@@ -24,7 +20,7 @@ export async function DELETE(
     }
 
     const { keyId: rawKeyId } = await context.params;
-    const keyId = parseInteger(rawKeyId);
+    const keyId = parseIntegerParam(rawKeyId);
     if (!keyId) {
       return NextResponse.json({ error: "Clé invalide." }, { status: 400 });
     }

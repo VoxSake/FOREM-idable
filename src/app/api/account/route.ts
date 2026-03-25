@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, updateUserProfile } from "@/lib/server/auth";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { profileUpdateSchema, readValidatedJson } from "@/lib/server/requestSchemas";
 
 export async function GET() {
   try {
@@ -25,14 +26,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
-    const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
-
-    if (!firstName || !lastName) {
-      return NextResponse.json({ error: "Nom et prénom requis." }, { status: 400 });
+    const parsed = await readValidatedJson(request, profileUpdateSchema);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
+    const { firstName, lastName } = parsed.data;
     await updateUserProfile(user.id, firstName, lastName);
     return NextResponse.json({
       user: {

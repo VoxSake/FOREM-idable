@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createApiKey, listApiKeysForUser } from "@/lib/server/apiKeys";
 import { getCurrentUser } from "@/lib/server/auth";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { apiKeyCreateRequestSchema, readValidatedJson } from "@/lib/server/requestSchemas";
 
 function canManageApiKeys(role: string) {
   return role === "coach" || role === "admin";
@@ -31,14 +32,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await request.json();
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    const expiresAt =
-      typeof body.expiresAt === "string" && body.expiresAt.trim() ? body.expiresAt.trim() : null;
-    if (!name) {
-      return NextResponse.json({ error: "Nom de clé requis." }, { status: 400 });
+    const parsed = await readValidatedJson(request, apiKeyCreateRequestSchema);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
+    const { name, expiresAt } = parsed.data;
     const result = await createApiKey(user.id, name, expiresAt);
     return NextResponse.json(result);
   } catch {

@@ -5,8 +5,10 @@ import {
   listApplicationsForUser,
 } from "@/lib/server/applications";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
-import { ApplicationStatus } from "@/types/application";
-import { Job } from "@/types/job";
+import {
+  readValidatedJson,
+  trackedApplicationCreateRequestSchema,
+} from "@/lib/server/requestSchemas";
 
 export async function GET() {
   try {
@@ -32,20 +34,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json()) as {
-      job?: Job;
-      appliedAt?: string;
-      status?: ApplicationStatus;
-      notes?: string;
-      proofs?: string;
-      interviewAt?: string;
-      interviewDetails?: string;
-    };
-
-    if (!body.job || typeof body.job.id !== "string") {
-      return NextResponse.json({ error: "Offre invalide." }, { status: 400 });
+    const parsed = await readValidatedJson(request, trackedApplicationCreateRequestSchema);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
+    const body = parsed.data;
     const application = await createTrackedApplicationForUser({
       userId: user.id,
       job: body.job,

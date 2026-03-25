@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resetPasswordWithToken } from "@/lib/server/auth";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { readValidatedJson, resetPasswordRequestSchema } from "@/lib/server/requestSchemas";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 import { isPasswordResetEnabled } from "@/lib/server/mail";
 
@@ -15,9 +16,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Fonction désactivée." }, { status: 404 });
       }
 
-      const body = await request.json();
-      const token = typeof body.token === "string" ? body.token.trim() : "";
-      const password = typeof body.password === "string" ? body.password : "";
+      const parsed = await readValidatedJson(request, resetPasswordRequestSchema);
+      const token = parsed.success ? parsed.data.token : "";
 
       const rateLimit = await checkRateLimit({
         scope: "auth-reset-password",
@@ -38,13 +38,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!token || password.length < 8) {
-        return NextResponse.json(
-          { error: "Lien invalide ou mot de passe trop court." },
-          { status: 400 }
-        );
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error }, { status: 400 });
       }
 
+      const { password } = parsed.data;
       const success = await resetPasswordWithToken(token, password);
       if (!success) {
         return NextResponse.json({ error: "Lien invalide ou expiré." }, { status: 400 });

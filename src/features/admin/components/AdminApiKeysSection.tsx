@@ -72,6 +72,77 @@ function getStatusBadge(entry: AdminApiKeySummary) {
   }
 }
 
+function ApiKeyMobileCard({
+  entry,
+  onRevokeRequest,
+}: {
+  entry: AdminApiKeySummary;
+  onRevokeRequest: (entry: AdminApiKeySummary) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-background/90 p-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium break-words">{getAdminApiKeyOwnerName(entry)}</p>
+              <Badge variant="outline" className="capitalize">
+                {entry.userRole}
+              </Badge>
+            </div>
+            <p className="mt-1 break-all text-xs text-muted-foreground">{entry.userEmail}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{entry.name}</p>
+          </div>
+          {getStatusBadge(entry)}
+        </div>
+
+        <div className="grid gap-3 text-sm sm:grid-cols-2">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Cle
+            </span>
+            <code className="break-all text-xs">
+              {entry.keyPrefix}...{entry.lastFour}
+            </code>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Creee le
+            </span>
+            <span>{formatCoachDate(entry.createdAt, true)}</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Dernier usage
+            </span>
+            <span>{entry.lastUsedAt ? formatCoachDate(entry.lastUsedAt, true) : "Jamais"}</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Expiration
+            </span>
+            <span>
+              {entry.expiresAt ? formatCoachDate(entry.expiresAt, true) : "Sans expiration"}
+            </span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="w-full text-destructive hover:text-destructive"
+          disabled={Boolean(entry.revokedAt)}
+          onClick={() => onRevokeRequest(entry)}
+        >
+          <ShieldBan data-icon="inline-start" />
+          Revoquer
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AdminApiKeysSection({
   apiKeys,
   isLoading,
@@ -214,7 +285,16 @@ export function AdminApiKeysSection({
                   </span>
                 ) : null}
               </div>
-              <div className="min-w-0 px-2 py-2 sm:px-3">
+              <div className="grid gap-3 px-3 py-3 md:hidden">
+                {filteredKeys.map((entry) => (
+                  <ApiKeyMobileCard
+                    key={entry.id}
+                    entry={entry}
+                    onRevokeRequest={onRevokeRequest}
+                  />
+                ))}
+              </div>
+              <div className="hidden min-w-0 px-2 py-2 md:block md:px-3">
                 <Table className="min-w-[760px]">
                   <TableCaption className="sr-only">
                     Inventaire des clés API générées côté administration.

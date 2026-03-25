@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
 import {
   ConversationDetail,
@@ -12,9 +10,21 @@ import {
   ConversationPreview,
   DirectMessageTarget,
 } from "@/types/messaging";
+import {
+  closeDirectMessageConversation,
+  createDirectMessageConversation,
+  createTrackedApplication,
+  fetchConversationDetail,
+  fetchConversations,
+  fetchMessageContacts,
+  fetchTrackedApplications,
+  postConversationMessage,
+  removeConversationMessage,
+} from "@/features/messages/messages.api";
+import { useMessagesDerivedState } from "@/features/messages/hooks/useMessagesDerivedState";
+import { useMessageThreadScroll } from "@/features/messages/hooks/useMessageThreadScroll";
 
 export function useMessagesPageState() {
-  const router = useRouter();
   const isMobileViewport = useIsMobile();
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
   const [hasMessagingAccess, setHasMessagingAccess] = useState<boolean | null>(null);
@@ -38,76 +48,24 @@ export function useMessagesPageState() {
   const [messagePendingDeletion, setMessagePendingDeletion] =
     useState<ConversationMessage | null>(null);
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
-  const mobileThreadBottomRef = useRef<HTMLDivElement | null>(null);
-  const mobileThreadScrollAreaRef = useRef<HTMLDivElement | null>(null);
-  const desktopThreadBottomRef = useRef<HTMLDivElement | null>(null);
-  const desktopThreadScrollAreaRef = useRef<HTMLDivElement | null>(null);
-
-  const selectedPreview = useMemo(
-    () => conversations.find((entry) => entry.id === selectedConversationId) ?? null,
-    [conversations, selectedConversationId]
-  );
-
-  const groupedConversations = useMemo(
-    () => ({
-      group: conversations.filter((entry) => entry.type === "group"),
-      direct: conversations.filter((entry) => entry.type === "direct"),
-    }),
-    [conversations]
-  );
-
-  const filteredContacts = useMemo(() => {
-    const normalizedQuery = contactQuery.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return contacts;
-    }
-
-    return contacts.filter((contact) =>
-      `${contact.firstName} ${contact.lastName} ${contact.email}`
-        .toLowerCase()
-        .includes(normalizedQuery)
-    );
-  }, [contactQuery, contacts]);
-
-  const unreadConversationCount = useMemo(
-    () => conversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
-    [conversations]
-  );
-
-  const scrollThreadToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const activeScrollAreaRef = isMobileViewport
-      ? mobileThreadScrollAreaRef
-      : desktopThreadScrollAreaRef;
-    const activeThreadBottomRef = isMobileViewport ? mobileThreadBottomRef : desktopThreadBottomRef;
-
-    const viewport = activeScrollAreaRef.current?.querySelector<HTMLElement>(
-      "[data-slot='scroll-area-viewport']"
-    );
-
-    if (viewport) {
-      viewport.scrollTo({
-        top: viewport.scrollHeight,
-        behavior,
-      });
-      return;
-    }
-
-    activeThreadBottomRef.current?.scrollIntoView({
-      behavior,
-      block: "end",
-    });
-  }, [isMobileViewport]);
-
-  const scheduleScrollThreadToBottom = useCallback(
-    (behavior: ScrollBehavior = "smooth") => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          scrollThreadToBottom(behavior);
-        });
-      });
-    },
-    [scrollThreadToBottom]
-  );
+  const {
+    desktopThreadBottomRef,
+    desktopThreadScrollAreaRef,
+    mobileThreadBottomRef,
+    mobileThreadScrollAreaRef,
+    scheduleScrollThreadToBottom,
+  } = useMessageThreadScroll(isMobileViewport);
+  const {
+    selectedPreview,
+    groupedConversations,
+    filteredContacts,
+    unreadConversationCount,
+  } = useMessagesDerivedState({
+    contactQuery,
+    contacts,
+    conversations,
+    selectedConversationId,
+  });
 
   const loadConversations = useCallback(
     async (preferredConversationId?: number | null, options?: { silent?: boolean }) => {
@@ -115,11 +73,7 @@ export function useMessagesPageState() {
         setError(null);
       }
 
-      const response = await fetch("/api/messages/conversations", { cache: "no-store" });
-      const data = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        conversations?: ConversationPreview[];
-      };
+      const { response, data } = await fetchConversations();
 
       if (!response.ok || !data.conversations) {
         throw new Error(data.error || "Chargement des conversations impossible.");
@@ -151,16 +105,9 @@ export function useMessagesPageState() {
       }
 
       try {
-        const response = await fetch(
-          `/api/messages/conversations/${conversationId}${
-            options?.markAsRead ? "?markAsRead=1" : ""
-          }`,
-          { cache: "no-store" }
-        );
-        const data = (await response.json().catch(() => ({}))) as {
-          error?: string;
-          conversation?: ConversationDetail;
-        };
+        const { response, data } = await fetchConversationDetail(conversationId, {
+          markAsRead: options?.markAsRead,
+        });
 
         if (!response.ok || !data.conversation) {
           throw new Error(data.error || "Chargement de la conversation impossible.");
@@ -205,14 +152,7 @@ export function useMessagesPageState() {
       }
 
       try {
-        const response = await fetch("/api/messages/contacts", {
-          cache: "no-store",
-          signal: options?.signal,
-        });
-        const data = (await response.json().catch(() => ({}))) as {
-          error?: string;
-          contacts?: DirectMessageTarget[];
-        };
+        const { response, data } = await fetchMessageContacts(options?.signal);
 
         if (!response.ok || !data.contacts) {
           throw new Error(data.error || "Chargement des contacts impossible.");
@@ -240,10 +180,7 @@ export function useMessagesPageState() {
 
   const loadTrackedApplications = useCallback(async () => {
     try {
-      const response = await fetch("/api/applications", { cache: "no-store" });
-      const data = (await response.json().catch(() => ({}))) as {
-        applications?: JobApplication[];
-      };
+      const { response, data } = await fetchTrackedApplications();
 
       if (!response.ok || !data.applications) {
         return;
@@ -326,19 +263,10 @@ export function useMessagesPageState() {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/messages/conversations/${selectedConversation.id}/messages`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: normalizedDraft }),
-        }
+      const { response, data } = await postConversationMessage(
+        selectedConversation.id,
+        normalizedDraft
       );
-      const data = (await response.json().catch(() => ({}))) as {
-        command?: "clean";
-        error?: string;
-        message?: ConversationMessage;
-      };
 
       if (!response.ok) {
         throw new Error(data.error || "Envoi du message impossible.");
@@ -407,12 +335,7 @@ export function useMessagesPageState() {
 
   const addSharedJobToApplications = useCallback(async (job: Job) => {
     try {
-      const response = await fetch("/api/applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ job }),
-      });
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      const { response, data } = await createTrackedApplication(job);
 
       if (!response.ok) {
         throw new Error(data.error || "Impossible d'ajouter la candidature.");
@@ -434,16 +357,10 @@ export function useMessagesPageState() {
 
     setIsDeletingMessage(true);
     try {
-      const response = await fetch(
-        `/api/messages/conversations/${selectedConversation.id}/messages/${messagePendingDeletion.id}`,
-        {
-          method: "DELETE",
-        }
+      const { response, data } = await removeConversationMessage(
+        selectedConversation.id,
+        messagePendingDeletion.id
       );
-      const data = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        message?: ConversationMessage;
-      };
 
       if (!response.ok) {
         throw new Error(data.error || "Suppression du message impossible.");
@@ -495,11 +412,7 @@ export function useMessagesPageState() {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/messages/conversations/${selectedConversationId}/close`,
-        { method: "POST" }
-      );
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      const { response, data } = await closeDirectMessageConversation(selectedConversationId);
 
       if (!response.ok) {
         throw new Error(data.error || "Fermeture du DM impossible.");
@@ -531,15 +444,7 @@ export function useMessagesPageState() {
       setIsDirectDialogOpen(false);
 
       try {
-        const response = await fetch("/api/messages/conversations/direct", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetUserId: contact.userId }),
-        });
-        const data = (await response.json().catch(() => ({}))) as {
-          error?: string;
-          conversation?: ConversationDetail;
-        };
+        const { response, data } = await createDirectMessageConversation(contact.userId);
 
         if (!response.ok || !data.conversation) {
           throw new Error(data.error || "Création du DM impossible.");
@@ -657,15 +562,6 @@ export function useMessagesPageState() {
       window.clearInterval(intervalId);
     };
   }, [loadConversationDetail, loadConversations, selectedConversationId]);
-
-  useEffect(() => {
-    if (isLoading || hasMessagingAccess !== false) {
-      return;
-    }
-
-    toast.error("La messagerie est réservée aux personnes rattachées à un groupe.");
-    router.replace("/");
-  }, [hasMessagingAccess, isLoading, router]);
 
   return {
     contacts,

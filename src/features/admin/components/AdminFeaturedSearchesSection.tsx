@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { LoaderCircle, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,99 +27,25 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CoachConfirmationDialog } from "@/features/coach/components/dialogs/CoachConfirmationDialog";
 import {
-  FeaturedSearchPayload,
-  featuredSearchPayloadSchema,
-  parseKeywordInput,
-} from "@/features/featured-searches/featuredSearchSchema";
+  createFeaturedSearchFormValues,
+  FeaturedSearchFormValues,
+  featuredSearchFormSchema,
+  toFeaturedSearchFormValues,
+  toFeaturedSearchPayload,
+} from "@/features/admin/featuredSearchForm";
+import { CoachConfirmationDialog } from "@/features/coach/components/dialogs/CoachConfirmationDialog";
+import { FeaturedSearchPayload } from "@/features/featured-searches/featuredSearchSchema";
 import { FeaturedSearch } from "@/types/featuredSearch";
-
-type FeaturedSearchFormState = {
-  title: string;
-  message: string;
-  ctaLabel: string;
-  keywordsInput: string;
-  booleanMode: "AND" | "OR";
-  isActive: boolean;
-  sortOrder: string;
-};
-
-type FormErrors = Partial<Record<keyof FeaturedSearchFormState, string>>;
-
-function createEmptyForm(): FeaturedSearchFormState {
-  return {
-    title: "",
-    message: "",
-    ctaLabel: "Consulter les offres",
-    keywordsInput: "",
-    booleanMode: "OR",
-    isActive: true,
-    sortOrder: "0",
-  };
-}
 
 function formatQueryPreview(item: FeaturedSearch) {
   return item.query.keywords.join(` ${item.query.booleanMode === "AND" ? "ET" : "OU"} `);
-}
-
-function toFormState(item: FeaturedSearch): FeaturedSearchFormState {
-  return {
-    title: item.title,
-    message: item.message,
-    ctaLabel: item.ctaLabel,
-    keywordsInput: item.query.keywords.join(", "),
-    booleanMode: item.query.booleanMode,
-    isActive: item.isActive,
-    sortOrder: String(item.sortOrder),
-  };
-}
-
-function validateForm(form: FeaturedSearchFormState) {
-  const payload = {
-    title: form.title.trim(),
-    message: form.message.trim(),
-    ctaLabel: form.ctaLabel.trim(),
-    query: {
-      keywords: parseKeywordInput(form.keywordsInput),
-      locations: [],
-      booleanMode: form.booleanMode,
-    },
-    isActive: form.isActive,
-    sortOrder: Number.parseInt(form.sortOrder || "0", 10),
-  };
-
-  const parsed = featuredSearchPayloadSchema.safeParse(payload);
-  if (parsed.success) {
-    return {
-      payload: parsed.data satisfies FeaturedSearchPayload,
-      errors: {} as FormErrors,
-    };
-  }
-
-  const fieldErrors: FormErrors = {};
-  for (const issue of parsed.error.issues) {
-    const key = issue.path[0];
-    if (key === "title" || key === "message" || key === "ctaLabel") {
-      fieldErrors[key] ??= issue.message;
-    }
-    if (key === "query") {
-      fieldErrors.keywordsInput ??= issue.message;
-    }
-    if (key === "sortOrder") {
-      fieldErrors.sortOrder ??= issue.message;
-    }
-  }
-
-  return {
-    payload: null,
-    errors: fieldErrors,
-  };
 }
 
 interface AdminFeaturedSearchesSectionProps {
@@ -143,11 +71,18 @@ export function AdminFeaturedSearchesSection({
   onUpdate,
   onDelete,
 }: AdminFeaturedSearchesSectionProps) {
-  const [form, setForm] = useState<FeaturedSearchFormState>(createEmptyForm);
-  const [errors, setErrors] = useState<FormErrors>({});
   const [editingItem, setEditingItem] = useState<FeaturedSearch | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FeaturedSearch | null>(null);
+  const form = useForm<FeaturedSearchFormValues>({
+    resolver: zodResolver(featuredSearchFormSchema),
+    mode: "onChange",
+    defaultValues: createFeaturedSearchFormValues(),
+  });
+  const [currentBooleanMode = "OR", currentIsActive = true] = useWatch({
+    control: form.control,
+    name: ["booleanMode", "isActive"],
+  });
 
   const dialogTitle = editingItem ? "Modifier la recherche" : "Nouvelle recherche";
   const dialogDescription = editingItem
@@ -161,35 +96,42 @@ export function AdminFeaturedSearchesSection({
     [featuredSearches]
   );
 
+  const resetForm = () => {
+    form.reset(createFeaturedSearchFormValues());
+  };
+
   const openCreateDialog = () => {
-    setForm(createEmptyForm());
-    setErrors({});
+    resetForm();
     setEditingItem(null);
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (item: FeaturedSearch) => {
-    setForm(toFormState(item));
-    setErrors({});
+    form.reset(toFeaturedSearchFormValues(item));
     setEditingItem(item);
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = async () => {
-    const result = validateForm(form);
-    setErrors(result.errors);
-    if (!result.payload) {
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const payload = toFeaturedSearchPayload(values);
+    const success = editingItem
+      ? await onUpdate(editingItem.id, payload)
+      : await onCreate(payload);
+
+    if (!success) {
       return;
     }
 
-    const success = editingItem
-      ? await onUpdate(editingItem.id, result.payload)
-      : await onCreate(result.payload);
+    setIsDialogOpen(false);
+    setEditingItem(null);
+    resetForm();
+  });
 
-    if (success) {
-      setIsDialogOpen(false);
-    }
-  };
+  const titleError = form.formState.errors.title?.message;
+  const ctaLabelError = form.formState.errors.ctaLabel?.message;
+  const messageError = form.formState.errors.message?.message;
+  const keywordsError = form.formState.errors.keywordsInput?.message;
+  const sortOrderError = form.formState.errors.sortOrder?.message;
 
   return (
     <Card className="gap-0 border-border/60 bg-card py-0">
@@ -256,7 +198,12 @@ export function AdminFeaturedSearchesSection({
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => openEditDialog(item)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(item)}
+                  >
                     <Pencil data-icon="inline-start" />
                     Modifier
                   </Button>
@@ -281,11 +228,12 @@ export function AdminFeaturedSearchesSection({
         open={isDialogOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open);
-          if (!open) {
-            setForm(createEmptyForm());
-            setErrors({});
-            setEditingItem(null);
+          if (open) {
+            return;
           }
+
+          setEditingItem(null);
+          resetForm();
         }}
       >
         <DialogContent className="sm:max-w-2xl">
@@ -294,129 +242,133 @@ export function AdminFeaturedSearchesSection({
             <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
 
-          <FieldGroup className="gap-5">
-            <FieldGroup className="grid gap-4 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="featured-search-title">Titre</FieldLabel>
-                <Input
-                  id="featured-search-title"
-                  value={form.title}
-                  onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                  placeholder="Salon de l'emploi à SPA"
-                />
-                {errors.title ? <FieldError>{errors.title}</FieldError> : null}
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="featured-search-cta">Label du bouton</FieldLabel>
-                <Input
-                  id="featured-search-cta"
-                  value={form.ctaLabel}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, ctaLabel: event.target.value }))
-                  }
-                  placeholder="Consulter les offres"
-                />
-                {errors.ctaLabel ? <FieldError>{errors.ctaLabel}</FieldError> : null}
-              </Field>
-            </FieldGroup>
-
-            <Field>
-              <FieldLabel htmlFor="featured-search-message">Message</FieldLabel>
-              <Textarea
-                id="featured-search-message"
-                value={form.message}
-                onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-                placeholder="Le salon aura lieu le 1er avril à SPA. Consultez les offres publiées pour l'événement."
-                rows={5}
-              />
-              <FieldDescription>
-                Texte affiché sur la carte. Restez direct et court.
-              </FieldDescription>
-              {errors.message ? <FieldError>{errors.message}</FieldError> : null}
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="featured-search-keywords">Mots-clés</FieldLabel>
-              <Textarea
-                id="featured-search-keywords"
-                value={form.keywordsInput}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, keywordsInput: event.target.value }))
-                }
-                placeholder="SALONSPA, forum emploi, jobday"
-                rows={3}
-              />
-              <FieldDescription>
-                Séparez les mots-clés par des virgules ou des retours à la ligne.
-              </FieldDescription>
-              {errors.keywordsInput ? <FieldError>{errors.keywordsInput}</FieldError> : null}
-            </Field>
-
-            <FieldGroup className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_160px_160px]">
-              <Field>
-                <FieldLabel htmlFor="featured-search-mode">Mode booléen</FieldLabel>
-                <Select
-                  value={form.booleanMode}
-                  onValueChange={(value) =>
-                    setForm((current) => ({ ...current, booleanMode: value as "AND" | "OR" }))
-                  }
-                >
-                  <SelectTrigger id="featured-search-mode" className="w-full">
-                    <SelectValue placeholder="Choisir un mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OR">OU</SelectItem>
-                    <SelectItem value="AND">ET</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="featured-search-order">Ordre</FieldLabel>
-                <Input
-                  id="featured-search-order"
-                  type="number"
-                  min="0"
-                  max="999"
-                  value={form.sortOrder}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, sortOrder: event.target.value }))
-                  }
-                />
-                {errors.sortOrder ? <FieldError>{errors.sortOrder}</FieldError> : null}
-              </Field>
-
-              <Field className="justify-end">
-                <FieldLabel htmlFor="featured-search-active">Statut</FieldLabel>
-                <label
-                  htmlFor="featured-search-active"
-                  className="flex min-h-9 items-center gap-3 rounded-md border border-border/60 px-3"
-                >
-                  <Checkbox
-                    id="featured-search-active"
-                    checked={form.isActive}
-                    onCheckedChange={(checked) =>
-                      setForm((current) => ({ ...current, isActive: checked === true }))
-                    }
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+            <FieldGroup className="gap-5">
+              <FieldGroup className="grid gap-4 sm:grid-cols-2">
+                <Field data-invalid={titleError ? "true" : undefined}>
+                  <FieldLabel htmlFor="featured-search-title">Titre</FieldLabel>
+                  <Input
+                    id="featured-search-title"
+                    placeholder="Salon de l'emploi à SPA"
+                    aria-invalid={titleError ? "true" : "false"}
+                    {...form.register("title")}
                   />
-                  <span className="text-sm">{form.isActive ? "Visible" : "Masquée"}</span>
-                </label>
-              </Field>
-            </FieldGroup>
-          </FieldGroup>
+                  {titleError ? <FieldError>{titleError}</FieldError> : null}
+                </Field>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button type="button" onClick={handleSubmit} disabled={isCurrentSavePending}>
-              {isCurrentSavePending ? (
-                <LoaderCircle data-icon="inline-start" className="animate-spin" />
-              ) : null}
-              {editingItem ? "Enregistrer" : "Créer la recherche"}
-            </Button>
-          </DialogFooter>
+                <Field data-invalid={ctaLabelError ? "true" : undefined}>
+                  <FieldLabel htmlFor="featured-search-cta">Label du bouton</FieldLabel>
+                  <Input
+                    id="featured-search-cta"
+                    placeholder="Consulter les offres"
+                    aria-invalid={ctaLabelError ? "true" : "false"}
+                    {...form.register("ctaLabel")}
+                  />
+                  {ctaLabelError ? <FieldError>{ctaLabelError}</FieldError> : null}
+                </Field>
+              </FieldGroup>
+
+              <Field data-invalid={messageError ? "true" : undefined}>
+                <FieldLabel htmlFor="featured-search-message">Message</FieldLabel>
+                <Textarea
+                  id="featured-search-message"
+                  placeholder="Le salon aura lieu le 1er avril à SPA. Consultez les offres publiées pour l'événement."
+                  rows={5}
+                  aria-invalid={messageError ? "true" : "false"}
+                  {...form.register("message")}
+                />
+                <FieldDescription>
+                  Texte affiché sur la carte. Restez direct et court.
+                </FieldDescription>
+                {messageError ? <FieldError>{messageError}</FieldError> : null}
+              </Field>
+
+              <Field data-invalid={keywordsError ? "true" : undefined}>
+                <FieldLabel htmlFor="featured-search-keywords">Mots-clés</FieldLabel>
+                <Textarea
+                  id="featured-search-keywords"
+                  placeholder="SALONSPA, forum emploi, jobday"
+                  rows={3}
+                  aria-invalid={keywordsError ? "true" : "false"}
+                  {...form.register("keywordsInput")}
+                />
+                <FieldDescription>
+                  Séparez les mots-clés par des virgules ou des retours à la ligne.
+                </FieldDescription>
+                {keywordsError ? <FieldError>{keywordsError}</FieldError> : null}
+              </Field>
+
+              <FieldGroup className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_160px_160px]">
+                <Field>
+                  <FieldLabel htmlFor="featured-search-mode">Mode booléen</FieldLabel>
+                  <Select
+                    value={currentBooleanMode}
+                    onValueChange={(value) =>
+                      form.setValue("booleanMode", value as "AND" | "OR", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="featured-search-mode" className="w-full">
+                      <SelectValue placeholder="Choisir un mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="OR">OU</SelectItem>
+                        <SelectItem value="AND">ET</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field data-invalid={sortOrderError ? "true" : undefined}>
+                  <FieldLabel htmlFor="featured-search-order">Ordre</FieldLabel>
+                  <Input
+                    id="featured-search-order"
+                    type="number"
+                    min="0"
+                    max="999"
+                    aria-invalid={sortOrderError ? "true" : "false"}
+                    {...form.register("sortOrder")}
+                  />
+                  {sortOrderError ? <FieldError>{sortOrderError}</FieldError> : null}
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="featured-search-active">Statut</FieldLabel>
+                  <label
+                    htmlFor="featured-search-active"
+                    className="flex min-h-9 items-center gap-3 rounded-md border border-border/60 px-3"
+                  >
+                    <Checkbox
+                      id="featured-search-active"
+                      checked={currentIsActive}
+                      onCheckedChange={(checked) =>
+                        form.setValue("isActive", checked === true, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                    />
+                    <span className="text-sm">{currentIsActive ? "Visible" : "Masquée"}</span>
+                  </label>
+                </Field>
+              </FieldGroup>
+            </FieldGroup>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isCurrentSavePending || !form.formState.isValid}>
+                {isCurrentSavePending ? (
+                  <LoaderCircle data-icon="inline-start" className="animate-spin" />
+                ) : null}
+                {editingItem ? "Enregistrer" : "Créer la recherche"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

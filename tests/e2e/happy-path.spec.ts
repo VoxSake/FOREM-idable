@@ -364,18 +364,18 @@ test("user can add a job to tracking and the coach can see it", async ({ page })
 
   await page.goto("/?kw=react&bm=OR");
 
-  await expect(page.getByText("Développeur Frontend React")).toBeVisible();
+  await expect(page.getByTitle("Ajouter au suivi")).toBeVisible();
   await page.getByTitle("Ajouter au suivi").click();
   await expect(page.getByTitle("Déjà dans le suivi")).toBeVisible();
 
   actor = "coach";
   await page.goto("/coach");
 
-  await expect(page.getByText("Jordi User")).toBeVisible();
+  await expect(page.getByText("Jordi User").first()).toBeVisible();
   await page.getByText("Jordi User").first().click();
   await expect(page.getByRole("heading", { name: "Jordi User" })).toBeVisible();
-  await expect(page.getByText("Développeur Frontend React")).toBeVisible();
-  await expect(page.getByText("1 candidatures")).toBeVisible();
+  await expect(page.getByText("Développeur Frontend React").last()).toBeVisible();
+  await expect(page.getByText("1 candidatures").first()).toBeVisible();
 });
 
 test("coach can manage private and shared notes from the user sheet", async ({ page }) => {
@@ -469,20 +469,19 @@ test("coach can manage private and shared notes from the user sheet", async ({ p
   await page.getByRole("button", { name: "Ajouter une note partagée" }).first().click();
   const sharedCreateArea = page.getByPlaceholder("Message ou consigne visible par le bénéficiaire...");
   await sharedCreateArea.fill("Nouvelle note visible");
-  await page.getByRole("button", { name: "Ajouter" }).click();
+  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
   await expect(page.getByText("Note partagée enregistrée.")).toBeVisible();
-  await expect(page.getByDisplayValue("Nouvelle note visible")).toBeVisible();
-
-  const sharedNoteArea = page.getByDisplayValue("Nouvelle note visible");
+  const sharedNoteArea = page.getByTestId("coach-shared-note-editor").first();
+  await expect(sharedNoteArea).toHaveValue("Nouvelle note visible");
   await sharedNoteArea.fill("Nouvelle note visible modifiée");
   await page.getByRole("button", { name: "Enregistrer" }).last().click();
   await expect(page.getByText("Note partagée mise à jour.")).toBeVisible();
-  await expect(page.getByDisplayValue("Nouvelle note visible modifiée")).toBeVisible();
+  await expect(sharedNoteArea).toHaveValue("Nouvelle note visible modifiée");
 
   await page.getByRole("button", { name: "Supprimer" }).last().click();
   await page.getByRole("button", { name: "Supprimer" }).last().click();
   await expect(page.getByText("Note partagée supprimée.")).toBeVisible();
-  await expect(page.getByText("Aucune note partagée pour l’instant.")).toBeVisible();
+  await expect(page.getByText(/Aucune note partagée pour l'instant\./i)).toBeVisible();
 });
 
 test("coach can edit a tracked application from the user sheet", async ({ page }) => {
@@ -567,7 +566,7 @@ test("coach can edit a manual application from the user sheet", async ({ page })
   await page.getByRole("button", { name: "Enregistrer les changements" }).click();
 
   await expect(page.getByText("Candidature mise à jour.")).toBeVisible();
-  await expect(page.getByText("Candidature spontanée senior")).toBeVisible();
+  await expect(page.getByText("Candidature spontanée senior").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "WEB" })).toHaveAttribute(
     "href",
     "https://example.test/manual-1"

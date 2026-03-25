@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPasswordResetToken } from "@/lib/server/auth";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { forgotPasswordRequestSchema, readValidatedJson } from "@/lib/server/requestSchemas";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 import { isPasswordResetEnabled, sendPasswordResetEmail } from "@/lib/server/mail";
 
@@ -18,8 +19,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Fonction désactivée." }, { status: 404 });
       }
 
-      const body = await request.json();
-      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+      const parsed = await readValidatedJson(request, forgotPasswordRequestSchema);
+      const email = parsed.success ? parsed.data.email : "";
 
       const rateLimit = await checkRateLimit({
         scope: "auth-forgot-password",
@@ -40,8 +41,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!email) {
-        return NextResponse.json({ error: "Adresse email requise." }, { status: 400 });
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error }, { status: 400 });
       }
 
       const resetData = await createPasswordResetToken(email);

@@ -73,6 +73,7 @@ export function CoachUserSharedNotesSection({
                 </div>
                 <Textarea
                   className="min-h-28"
+                  data-testid="coach-shared-note-editor"
                   value={draft}
                   onChange={(event) => onDraftChange(note.id, event.target.value)}
                 />
@@ -127,6 +128,7 @@ export function CoachUserSharedNotesSection({
           <p className="text-sm font-medium text-foreground">Nouvelle note partagée</p>
           <Textarea
             className="min-h-28"
+            data-testid="coach-shared-note-create"
             value={newDraft}
             onChange={(event) => onNewDraftChange(event.target.value)}
             placeholder="Message ou consigne visible par le bénéficiaire..."

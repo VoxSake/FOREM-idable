@@ -5,7 +5,7 @@ import {
   updateApplicationForUser,
 } from "@/lib/server/applications";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
-import { JobApplication } from "@/types/application";
+import { patchEnvelopeSchema, readValidatedJson } from "@/lib/server/requestSchemas";
 
 export async function PATCH(
   request: NextRequest,
@@ -21,32 +21,15 @@ export async function PATCH(
     }
 
     const { jobId } = await context.params;
-    const body = (await request.json()) as {
-      patch?: Partial<
-        Pick<
-          JobApplication,
-          | "status"
-          | "notes"
-          | "proofs"
-          | "interviewAt"
-          | "interviewDetails"
-          | "lastFollowUpAt"
-          | "followUpDueAt"
-          | "followUpEnabled"
-          | "appliedAt"
-          | "job"
-        >
-      >;
-    };
-
-    if (!body.patch || typeof body.patch !== "object") {
-      return NextResponse.json({ error: "Modification invalide." }, { status: 400 });
+    const parsed = await readValidatedJson(request, patchEnvelopeSchema);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
     const application = await updateApplicationForUser({
       userId: user.id,
       jobId,
-      patch: body.patch,
+      patch: parsed.data.patch,
     });
 
     return NextResponse.json({ application });

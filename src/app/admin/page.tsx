@@ -206,7 +206,7 @@ export default function AdminPage() {
         />
       </div>
 
-      <div id="coachs">
+      <div id="recherches">
         <AdminFeaturedSearchesSection
           featuredSearches={page.featuredSearches}
           isLoading={page.isFeaturedSearchesLoading}
@@ -220,7 +220,7 @@ export default function AdminPage() {
         />
       </div>
 
-      <div>
+      <div id="coachs">
         <CoachAdminSection
           coaches={page.managedCoaches}
           groups={page.dashboard?.groups ?? []}

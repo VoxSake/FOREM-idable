@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSession, createUser } from "@/lib/server/auth";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { readValidatedJson, registerRequestSchema } from "@/lib/server/requestSchemas";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 
 export async function POST(request: NextRequest) {
@@ -10,11 +11,8 @@ export async function POST(request: NextRequest) {
       const forbidden = rejectCrossOriginRequest(request);
       if (forbidden) return forbidden;
 
-      const body = await request.json();
-      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-      const password = typeof body.password === "string" ? body.password : "";
-      const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
-      const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
+      const parsed = await readValidatedJson(request, registerRequestSchema);
+      const email = parsed.success ? parsed.data.email : "";
 
       const rateLimit = await checkRateLimit({
         scope: "auth-register",
@@ -35,16 +33,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!email || !firstName || !lastName || !password || password.length < 8) {
-        return NextResponse.json(
-          {
-            error:
-              "Nom, prénom, adresse email et mot de passe valide requis (8 caractères minimum).",
-          },
-          { status: 400 }
-        );
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error }, { status: 400 });
       }
 
+      const { password, firstName, lastName } = parsed.data;
       const user = await createUser(email, password, firstName, lastName);
       await createSession(user.id);
 

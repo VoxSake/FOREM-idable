@@ -126,16 +126,9 @@ export function CoachDialogs({ page }: CoachDialogsProps) {
 
       <CoachEditUserDialog
         editTarget={page.editTarget}
-        editedFirstName={page.editedFirstName}
-        editedLastName={page.editedLastName}
-        newPassword={page.newPassword}
-        confirmNewPassword={page.confirmNewPassword}
-        onEditedFirstNameChange={page.setEditedFirstName}
-        onEditedLastNameChange={page.setEditedLastName}
-        onNewPasswordChange={page.setNewPassword}
-        onConfirmNewPasswordChange={page.setConfirmNewPassword}
-        onOpenChange={page.resetEditDialog}
-        onConfirm={() => void page.updateManagedUser()}
+        form={page.managedUserForm}
+        onOpenChange={page.handleManagedUserDialogChange}
+        onSubmit={page.submitManagedUserEdit}
       />
 
       <CoachApiKeysDialog

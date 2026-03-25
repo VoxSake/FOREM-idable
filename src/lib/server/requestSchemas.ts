@@ -10,6 +10,114 @@ export const applicationStatusSchema = z.enum([
 ]);
 
 export const jobSourceSchema = z.enum(["forem", "linkedin", "indeed", "adzuna"]);
+const emailSchema = z.string().trim().email("Adresse email invalide.");
+const trimmedNonEmptyStringSchema = z.string().trim().min(1, "Champ requis.");
+
+export const loginRequestSchema = z
+  .object({
+    email: emailSchema,
+    password: z.string().min(1, "Mot de passe requis."),
+  })
+  .strict()
+  .transform((value) => ({
+    ...value,
+    email: value.email.toLowerCase(),
+  }));
+
+export const registerRequestSchema = z
+  .object({
+    email: emailSchema,
+    password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
+    firstName: trimmedNonEmptyStringSchema,
+    lastName: trimmedNonEmptyStringSchema,
+  })
+  .strict()
+  .transform((value) => ({
+    ...value,
+    email: value.email.toLowerCase(),
+  }));
+
+export const forgotPasswordRequestSchema = z
+  .object({
+    email: emailSchema,
+  })
+  .strict()
+  .transform((value) => ({
+    email: value.email.toLowerCase(),
+  }));
+
+export const resetPasswordRequestSchema = z
+  .object({
+    token: trimmedNonEmptyStringSchema,
+    password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
+  })
+  .strict();
+
+export const profileUpdateSchema = z
+  .object({
+    firstName: trimmedNonEmptyStringSchema,
+    lastName: trimmedNonEmptyStringSchema,
+  })
+  .strict();
+
+export const passwordUpdateSchema = z
+  .object({
+    password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
+  })
+  .strict();
+
+export const apiKeyCreateRequestSchema = z
+  .object({
+    name: trimmedNonEmptyStringSchema,
+    expiresAt: z
+      .union([z.string().datetime({ offset: true }), z.null(), z.undefined()])
+      .optional(),
+  })
+  .strict();
+
+export const positiveIntegerBodySchema = z.object({
+  userId: z.coerce.number().int().positive("Identifiant invalide."),
+}).strict();
+
+export const positiveIntegerParamSchema = z.coerce.number().int().positive("Identifiant invalide.");
+
+const jobInputSchema = z
+  .object({
+    id: z.string().trim().min(1, "Identifiant d'offre requis."),
+    title: z.string().trim().min(1, "Intitulé requis."),
+    company: z.string().optional(),
+    location: z.string().trim().min(1, "Localisation requise."),
+    contractType: z.string().trim().min(1, "Type de contrat requis."),
+    publicationDate: z.string().trim().min(1, "Date de publication requise."),
+    url: z.string().trim().min(1, "Lien de l'offre requis."),
+    description: z.string().optional(),
+    source: jobSourceSchema,
+    pdfUrl: z.string().optional(),
+  })
+  .strict();
+
+export const trackedApplicationCreateRequestSchema = z
+  .object({
+    job: jobInputSchema,
+    appliedAt: z.string().optional(),
+    status: applicationStatusSchema.optional(),
+    notes: z.string().optional().nullable(),
+    proofs: z.string().optional().nullable(),
+    interviewAt: z.string().optional().nullable(),
+    interviewDetails: z.string().optional().nullable(),
+  })
+  .strict();
+
+export const managedUserUpdateSchema = z
+  .object({
+    firstName: trimmedNonEmptyStringSchema,
+    lastName: trimmedNonEmptyStringSchema,
+    password: z.preprocess(
+      (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+      z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères.").optional()
+    ),
+  })
+  .strict();
 
 export const applicationJobPatchSchema = z
   .object({
@@ -134,8 +242,40 @@ export const patchEnvelopeSchema = z
   .strict();
 
 export function parseIntegerParam(value: string) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) ? parsed : null;
+  const parsed = positiveIntegerParamSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+export async function readValidatedJson<TSchema extends z.ZodTypeAny>(
+  request: Request,
+  schema: TSchema
+): Promise<
+  | { success: true; data: z.infer<TSchema> }
+  | { success: false; error: string }
+> {
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return {
+      success: false,
+      error: "Corps JSON invalide.",
+    };
+  }
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Requête invalide.",
+    };
+  }
+
+  return {
+    success: true,
+    data: parsed.data,
+  };
 }
 
 export function normalizePatchedJob(jobId: string, job: z.infer<typeof applicationJobPatchSchema>): Job {

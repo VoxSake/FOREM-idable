@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { markCoachAction, requireAdminAccess } from "@/lib/server/coach";
 import { revokeApiKey } from "@/lib/server/apiKeys";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
-
-function parseInteger(value: string) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) ? parsed : null;
-}
+import { parseIntegerParam } from "@/lib/server/requestSchemas";
 
 export async function DELETE(
   request: NextRequest,
@@ -22,8 +18,8 @@ export async function DELETE(
     }
 
     const { userId: rawUserId, keyId: rawKeyId } = await context.params;
-    const userId = parseInteger(rawUserId);
-    const keyId = parseInteger(rawKeyId);
+    const userId = parseIntegerParam(rawUserId);
+    const keyId = parseIntegerParam(rawKeyId);
     if (!userId || !keyId) {
       return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
     }

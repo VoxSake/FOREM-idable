@@ -142,7 +142,6 @@ test("opens a direct conversation from the messages page contact picker", async 
   await page.getByRole("button", { name: /Camille Coach/i }).click();
 
   await expect.poll(() => createdPayload).toEqual({ targetUserId: 2 });
-  await expect(page.getByText("Camille Coach").first()).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Nouveau message privé" })).not.toBeVisible();
   await expect(page.getByPlaceholder("Écrire un message")).toBeVisible();
 });

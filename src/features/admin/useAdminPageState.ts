@@ -1,19 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useCoachDashboard } from "@/features/coach/useCoachDashboard";
+import {
+  createAdminFeaturedSearch,
+  deleteAdminFeaturedSearch,
+  fetchAdminApiKeys,
+  fetchAdminFeaturedSearches,
+  revokeAdminApiKey,
+  updateAdminFeaturedSearch,
+} from "@/features/admin/adminApi";
+import { useAdminDashboard } from "@/features/admin/useAdminDashboard";
 import { FeaturedSearchPayload } from "@/features/featured-searches/featuredSearchSchema";
 import { AdminApiKeySummary } from "@/types/externalApi";
 import { FeaturedSearch } from "@/types/featuredSearch";
 
-async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit) {
-  const response = await fetch(input, init);
-  const data = (await response.json().catch(() => ({}))) as T;
-  return { response, data };
-}
-
 export function useAdminPageState() {
-  const coach = useCoachDashboard();
+  const admin = useAdminDashboard();
   const [apiKeys, setApiKeys] = useState<AdminApiKeySummary[]>([]);
   const [apiKeysFeedback, setApiKeysFeedback] = useState<string | null>(null);
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
@@ -26,10 +28,8 @@ export function useAdminPageState() {
   const [savingFeaturedSearchId, setSavingFeaturedSearchId] = useState<number | null>(null);
   const [isDeletingFeaturedSearch, setIsDeletingFeaturedSearch] = useState(false);
 
-  const isAuthorized = coach.user?.role === "admin";
-
   const loadApiKeys = useCallback(async () => {
-    if (!isAuthorized) {
+    if (!admin.isAuthorized) {
       setApiKeys([]);
       return;
     }
@@ -38,10 +38,7 @@ export function useAdminPageState() {
     setApiKeysFeedback(null);
 
     try {
-      const { response, data } = await requestJson<{
-        error?: string;
-        apiKeys?: AdminApiKeySummary[];
-      }>("/api/admin/api-keys", { cache: "no-store" });
+      const { response, data } = await fetchAdminApiKeys();
 
       if (!response.ok || !data.apiKeys) {
         setApiKeysFeedback(data.error || "Chargement des clés API impossible.");
@@ -54,10 +51,10 @@ export function useAdminPageState() {
     } finally {
       setIsApiKeysLoading(false);
     }
-  }, [isAuthorized]);
+  }, [admin.isAuthorized]);
 
   const loadFeaturedSearches = useCallback(async () => {
-    if (!isAuthorized) {
+    if (!admin.isAuthorized) {
       setFeaturedSearches([]);
       return;
     }
@@ -66,10 +63,7 @@ export function useAdminPageState() {
     setFeaturedSearchesFeedback(null);
 
     try {
-      const { response, data } = await requestJson<{
-        error?: string;
-        featuredSearches?: FeaturedSearch[];
-      }>("/api/admin/featured-searches", { cache: "no-store" });
+      const { response, data } = await fetchAdminFeaturedSearches();
 
       if (!response.ok || !data.featuredSearches) {
         setFeaturedSearchesFeedback(data.error || "Chargement des recherches mises en avant impossible.");
@@ -82,24 +76,21 @@ export function useAdminPageState() {
     } finally {
       setIsFeaturedSearchesLoading(false);
     }
-  }, [isAuthorized]);
+  }, [admin.isAuthorized]);
 
   useEffect(() => {
-    if (coach.isAuthLoading) return;
-    if (!isAuthorized) return;
+    if (admin.isAuthLoading) return;
+    if (!admin.isAuthorized) return;
     void loadApiKeys();
     void loadFeaturedSearches();
-  }, [coach.isAuthLoading, isAuthorized, loadApiKeys, loadFeaturedSearches]);
+  }, [admin.isAuthLoading, admin.isAuthorized, loadApiKeys, loadFeaturedSearches]);
 
   const revokeApiKey = useCallback(async () => {
     if (!revokeTarget) return false;
 
     setIsRevokingApiKey(true);
     try {
-      const { response, data } = await requestJson<{ error?: string }>(
-        `/api/admin/api-keys/${revokeTarget.id}`,
-        { method: "DELETE" }
-      );
+      const { response, data } = await revokeAdminApiKey(revokeTarget.id);
 
       if (!response.ok) {
         setApiKeysFeedback(data.error || "Révocation impossible.");
@@ -133,14 +124,7 @@ export function useAdminPageState() {
     setSavingFeaturedSearchId(null);
 
     try {
-      const { response, data } = await requestJson<{
-        error?: string;
-        featuredSearch?: FeaturedSearch;
-      }>("/api/admin/featured-searches", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const { response, data } = await createAdminFeaturedSearch(payload);
 
       if (!response.ok || !data.featuredSearch) {
         setFeaturedSearchesFeedback(data.error || "Création impossible.");
@@ -166,14 +150,7 @@ export function useAdminPageState() {
     setSavingFeaturedSearchId(id);
 
     try {
-      const { response, data } = await requestJson<{
-        error?: string;
-        featuredSearch?: FeaturedSearch;
-      }>(`/api/admin/featured-searches/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const { response, data } = await updateAdminFeaturedSearch(id, payload);
 
       if (!response.ok || !data.featuredSearch) {
         setFeaturedSearchesFeedback(data.error || "Mise à jour impossible.");
@@ -201,10 +178,7 @@ export function useAdminPageState() {
 
     try {
       const target = featuredSearches.find((entry) => entry.id === id) ?? null;
-      const { response, data } = await requestJson<{ error?: string; ok?: boolean }>(
-        `/api/admin/featured-searches/${id}`,
-        { method: "DELETE" }
-      );
+      const { response, data } = await deleteAdminFeaturedSearch(id);
 
       if (!response.ok) {
         setFeaturedSearchesFeedback(data.error || "Suppression impossible.");
@@ -247,8 +221,7 @@ export function useAdminPageState() {
   }, [apiKeys]);
 
   return {
-    ...coach,
-    isAuthorized,
+    ...admin,
     apiKeys,
     apiKeysFeedback,
     isApiKeysLoading,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateUser, createSession } from "@/lib/server/auth";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { loginRequestSchema, readValidatedJson } from "@/lib/server/requestSchemas";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 
 export async function POST(request: NextRequest) {
@@ -10,9 +11,8 @@ export async function POST(request: NextRequest) {
       const forbidden = rejectCrossOriginRequest(request);
       if (forbidden) return forbidden;
 
-      const body = await request.json();
-      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-      const password = typeof body.password === "string" ? body.password : "";
+      const parsed = await readValidatedJson(request, loginRequestSchema);
+      const email = parsed.success ? parsed.data.email : "";
 
       const rateLimit = await checkRateLimit({
         scope: "auth-login",
@@ -35,6 +35,12 @@ export async function POST(request: NextRequest) {
           { status: 429 }
         );
       }
+
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error }, { status: 400 });
+      }
+
+      const { password } = parsed.data;
 
       const user = await authenticateUser(email, password);
       if (!user) {
