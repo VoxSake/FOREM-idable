@@ -52,6 +52,7 @@ export function useMessagesPageState() {
   const [messagePendingDeletion, setMessagePendingDeletion] =
     useState<ConversationMessage | null>(null);
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
+  const conversationsRef = useRef<ConversationPreview[]>([]);
   const selectedConversationIdRef = useRef<number | null>(null);
   const selectedConversationRef = useRef<ConversationDetail | null>(null);
   const {
@@ -72,6 +73,10 @@ export function useMessagesPageState() {
     conversations,
     selectedConversationId,
   });
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   useEffect(() => {
     selectedConversationIdRef.current = selectedConversationId;
@@ -207,7 +212,13 @@ export function useMessagesPageState() {
   }, []);
 
   const syncConversationListPreview = useCallback(
-    (message: { conversationId: number; createdAt: string; content: string | null }) => {
+    (message: {
+      conversationId: number;
+      createdAt: string;
+      content: string | null;
+      unreadDelta?: number;
+      unreadCount?: number;
+    }) => {
       setConversations((current) => {
         const next = current.map((entry) =>
           entry.id === message.conversationId
@@ -215,6 +226,10 @@ export function useMessagesPageState() {
                 ...entry,
                 lastMessageAt: message.createdAt,
                 lastMessagePreview: message.content,
+                unreadCount:
+                  typeof message.unreadCount === "number"
+                    ? Math.max(0, message.unreadCount)
+                    : Math.max(0, entry.unreadCount + (message.unreadDelta ?? 0)),
               }
             : entry
         );
@@ -529,17 +544,34 @@ export function useMessagesPageState() {
         selectedConversationRef.current?.id ?? selectedConversationIdRef.current;
 
       if (event.type === "conversation.message_created") {
+        const authorUserId = event.message.author?.userId ?? null;
+        const isOwnMessage =
+          user && authorUserId !== null ? authorUserId === user.id : event.message.isOwnMessage;
+        const conversationExists = conversationsRef.current.some(
+          (entry) => entry.id === event.conversationId
+        );
+
         syncConversationListPreview({
           conversationId: event.message.conversationId,
           createdAt: event.message.createdAt,
           content: event.message.content,
+          unreadCount: openConversationId === event.conversationId || isOwnMessage ? 0 : undefined,
+          unreadDelta:
+            openConversationId === event.conversationId || isOwnMessage ? 0 : 1,
         });
 
         if (openConversationId === event.conversationId) {
           appendMessageToSelectedConversation(event.message);
           markConversationPreviewAsRead(event.conversationId);
           scheduleScrollThreadToBottom("auto");
+          return;
         }
+
+        if (!conversationExists) {
+          void loadConversations(openConversationId ?? event.conversationId, { silent: true });
+        }
+
+        return;
       }
 
       void (async () => {
@@ -556,14 +588,7 @@ export function useMessagesPageState() {
             silent: true,
           });
 
-          if (event.type === "conversation.message_created") {
-            appendMessageToSelectedConversation(event.message);
-          }
-
-          if (
-            event.type === "conversation.message_created" ||
-            event.type === "conversation.cleared"
-          ) {
+          if (event.type === "conversation.cleared") {
             scheduleScrollThreadToBottom("auto");
           }
         }
@@ -576,6 +601,7 @@ export function useMessagesPageState() {
       markConversationPreviewAsRead,
       scheduleScrollThreadToBottom,
       syncConversationListPreview,
+      user,
     ]
   );
 
