@@ -60,6 +60,15 @@ function isDue(status: ApplicationStatus, dueAt: string, followUpEnabled?: boole
   );
 }
 
+function isInterviewScheduled(interviewAt?: string | null) {
+  if (!interviewAt) {
+    return false;
+  }
+
+  const interviewDate = new Date(interviewAt);
+  return !Number.isNaN(interviewDate.getTime());
+}
+
 function buildStats(
   users: Array<
     Pick<
@@ -163,6 +172,12 @@ function toApplicationRow(
     userRole: user.role,
     groupIds: user.groupIds,
     groupNames: user.groupNames,
+    isFollowUpDue: isDue(
+      record.application.status,
+      record.application.followUpDueAt,
+      record.application.followUpEnabled
+    ),
+    isInterviewScheduled: isInterviewScheduled(record.application.interviewAt),
     application: record.application,
   };
 }
@@ -276,6 +291,12 @@ async function getScopedApplicationRows(
         userRole: user.role,
         groupIds: user.groupIds,
         groupNames: user.groupNames,
+        isFollowUpDue: isDue(
+          application.status,
+          application.followUpDueAt,
+          application.followUpEnabled
+        ),
+        isInterviewScheduled: isInterviewScheduled(application.interviewAt),
         application,
       }))
     );
@@ -837,8 +858,10 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
     "Date relance",
     "Dernière relance",
     "Date entretien",
+    "Entretien planifié",
     "Détails entretien",
     "Statut",
+    "Relance due",
     "Notes bénéficiaire",
     "Preuves",
     "Note privée coach",
@@ -868,8 +891,10 @@ export function buildApplicationsCsv(applications: ExternalApiApplicationsRespon
     row.application.followUpDueAt,
     row.application.lastFollowUpAt || "",
     row.application.interviewAt || "",
+    row.isInterviewScheduled ? "oui" : "non",
     row.application.interviewDetails || "",
     row.application.status,
+    row.isFollowUpDue ? "oui" : "non",
     row.application.notes || "",
     row.application.proofs || "",
     row.application.privateCoachNote?.content || "",

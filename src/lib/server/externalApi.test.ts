@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  buildApplicationsCsv,
   buildGroupsCsv,
   getExternalApplications,
   getExternalGroupDetail,
@@ -256,5 +257,94 @@ describe("externalApi", () => {
 
     expect(usersResponse.users).toHaveLength(1);
     expect(applicationsResponse.applications).toHaveLength(0);
+  });
+
+  it("exposes derived follow-up and interview flags on external application rows", async () => {
+    mockedGetCoachDashboard.mockResolvedValueOnce({
+      ...dashboardFixture,
+      users: [
+        {
+          ...dashboardFixture.users[0],
+          applications: [
+            {
+              job: {
+                id: "job-1",
+                title: "Dev Full Stack",
+                company: "Forem",
+                location: "Paris",
+                contractType: "CDI",
+                publicationDate: "2026-03-10T08:00:00.000Z",
+                url: "https://example.com/jobs/1",
+                description: "Description",
+                source: "manual",
+              },
+              appliedAt: "2026-03-12T08:00:00.000Z",
+              followUpDueAt: "2026-03-15T08:00:00.000Z",
+              followUpEnabled: true,
+              lastFollowUpAt: null,
+              status: "in_progress",
+              interviewAt: "2026-03-20T14:00:00.000Z",
+              interviewDetails: "Visio",
+              updatedAt: "2026-03-18T10:00:00.000Z",
+            },
+          ],
+        },
+      ],
+    });
+
+    const response = await getExternalApplications(actor);
+
+    expect(response.applications).toHaveLength(1);
+    expect(response.applications[0]).toMatchObject({
+      isFollowUpDue: true,
+      isInterviewScheduled: true,
+      application: {
+        status: "in_progress",
+      },
+    });
+  });
+
+  it("exports derived follow-up and interview columns in application csv", () => {
+    const csv = buildApplicationsCsv([
+      {
+        applicationId: 1,
+        userId: 21,
+        userEmail: "alice@example.com",
+        userFirstName: "Alice",
+        userLastName: "Durand",
+        userRole: "user",
+        groupIds: [5],
+        groupNames: ["Promo A"],
+        isFollowUpDue: true,
+        isInterviewScheduled: true,
+        application: {
+          job: {
+            id: "job-1",
+            title: "Dev Full Stack",
+            company: "Forem",
+            location: "Paris",
+            contractType: "CDI",
+            publicationDate: "2026-03-10T08:00:00.000Z",
+            url: "https://example.com/jobs/1",
+            description: "Description",
+            source: "manual",
+          },
+          appliedAt: "2026-03-12T08:00:00.000Z",
+          followUpDueAt: "2026-03-15T08:00:00.000Z",
+          followUpEnabled: true,
+          lastFollowUpAt: null,
+          status: "in_progress",
+          notes: null,
+          proofs: null,
+          interviewAt: "2026-03-20T14:00:00.000Z",
+          interviewDetails: "Visio",
+          updatedAt: "2026-03-18T10:00:00.000Z",
+        },
+      },
+    ]);
+
+    expect(csv).toContain("Entretien planifié");
+    expect(csv).toContain("Relance due");
+    expect(csv).toContain("oui");
   });
 });

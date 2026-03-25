@@ -42,6 +42,8 @@ export interface ExternalApiApplicationRow {
   userRole: UserRole;
   groupIds: number[];
   groupNames: string[];
+  isFollowUpDue: boolean;
+  isInterviewScheduled: boolean;
   application: JobApplication;
 }
 
@@ -54,6 +56,8 @@ export interface ExternalApiApplicationDetail {
   userRole: UserRole;
   groupIds: number[];
   groupNames: string[];
+  isFollowUpDue: boolean;
+  isInterviewScheduled: boolean;
   application: JobApplication;
 }
 
