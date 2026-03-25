@@ -438,7 +438,7 @@ export async function findOrCreateDirectConversationId(actor: AuthUser, targetUs
     }
   }
 
-  const conversationId =
+  const rawConversationId =
     existing.rows[0]?.id ??
     (
       await db.query<{ id: number }>(
@@ -455,6 +455,8 @@ export async function findOrCreateDirectConversationId(actor: AuthUser, targetUs
         [userAId, userBId, actor.id]
       )
     ).rows[0]?.id;
+
+  const conversationId = toNumericId(rawConversationId);
 
   if (!conversationId) {
     throw new Error("ConversationCreateFailed");

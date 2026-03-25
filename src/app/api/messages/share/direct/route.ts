@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
-import { logMessagingDebug } from "@/lib/server/messagingDebug";
 import { publishMessageEvent } from "@/lib/server/messageEvents";
 import { shareTextInDirectConversation } from "@/lib/server/messaging";
 import { shareDirectMessageSchema } from "@/lib/server/messagingSchemas";
@@ -22,14 +21,6 @@ export async function POST(request: Request) {
       body.data.targetUserId,
       body.data.content
     );
-
-    logMessagingDebug("share-direct-created", {
-      actorUserId: user.id,
-      conversationId: result.conversationId,
-      messageId: result.message.id,
-      targetUserId: body.data.targetUserId,
-      type: result.message.type,
-    });
 
     await publishMessageEvent([user.id, body.data.targetUserId], {
       type: "conversation.message_created",

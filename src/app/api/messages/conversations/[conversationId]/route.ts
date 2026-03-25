@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
-import { logMessagingDebug } from "@/lib/server/messagingDebug";
 import { markConversationAsRead, getConversationDetail } from "@/lib/server/messaging";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
 
@@ -26,12 +25,6 @@ export async function GET(
     }
 
     const conversation = await getConversationDetail(user, conversationId);
-    logMessagingDebug("conversation-detail", {
-      conversationId,
-      markAsRead,
-      messageCount: conversation.messages.length,
-      userId: user.id,
-    });
     return NextResponse.json({ conversation });
   } catch (error) {
     if (error instanceof Error && error.message === "Forbidden") {

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthUser } from "@/types/auth";
 
-const { mockQuery, mockEnsureDatabase } = vi.hoisted(() => ({
+const { mockQuery, mockEnsureDatabase, mockGetUserSummary } = vi.hoisted(() => ({
   mockQuery: vi.fn(),
   mockEnsureDatabase: vi.fn(),
+  mockGetUserSummary: vi.fn(),
 }));
 
 vi.mock("@/lib/server/db", () => ({
@@ -13,7 +14,22 @@ vi.mock("@/lib/server/db", () => ({
   ensureDatabase: mockEnsureDatabase,
 }));
 
-import { canDirectMessage, canModerateGroupConversation } from "@/lib/server/messaging";
+vi.mock("@/lib/server/messaging.data", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/server/messaging.data")>(
+    "@/lib/server/messaging.data"
+  );
+
+  return {
+    ...actual,
+    getUserSummary: mockGetUserSummary,
+  };
+});
+
+import {
+  canDirectMessage,
+  canModerateGroupConversation,
+  findOrCreateDirectConversationId,
+} from "@/lib/server/messaging";
 
 const coachActor: AuthUser = {
   id: 11,
@@ -27,6 +43,7 @@ describe("messaging permissions", () => {
   beforeEach(() => {
     mockQuery.mockReset();
     mockEnsureDatabase.mockReset();
+    mockGetUserSummary.mockReset();
   });
 
   it("allows admins to message anyone without querying group scope", async () => {
@@ -94,5 +111,21 @@ describe("messaging permissions", () => {
     );
 
     expect(allowed).toBe(false);
+  });
+
+  it("normalizes direct conversation ids returned as strings", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: "2" }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+    mockGetUserSummary.mockResolvedValueOnce({
+      id: 42,
+      role: "user",
+    });
+
+    const conversationId = await findOrCreateDirectConversationId(coachActor, 42);
+
+    expect(conversationId).toBe(2);
+    expect(typeof conversationId).toBe("number");
   });
 });
