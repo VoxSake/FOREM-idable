@@ -195,12 +195,64 @@ export default function AboutPage() {
       </ContentSectionCard>
 
       <ContentSectionCard
+        title="Licences du code et des données"
+        description="Séparation entre la licence du logiciel et celle des contenus externes affichés."
+        contentClassName="flex flex-col gap-3 text-sm text-muted-foreground"
+      >
+          <p>
+            Le code de l&apos;application FOREM-idable est publié sous licence GNU Affero General
+            Public License v3.0.
+          </p>
+          <p>
+            Les données d&apos;offres issues du jeu de données ODWB / Le Forem sont publiées sous{" "}
+            <a
+              href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              CC BY-SA 4.0
+            </a>
+            .
+          </p>
+          <p>
+            Lorsqu&apos;une offre Forem est affichée, l&apos;application peut reformater ou structurer
+            certaines informations pour en faciliter la lecture. Les contenus sources restent
+            attribués à Le Forem / ODWB.
+          </p>
+          <p>
+            Source de référence du dataset:{" "}
+            <a
+              href="https://www.odwb.be/explore/dataset/offres-d-emploi-forem/information/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-all text-primary hover:underline"
+            >
+              offres-d-emploi-forem sur ODWB
+            </a>
+            .
+          </p>
+      </ContentSectionCard>
+
+      <ContentSectionCard
         title="Licence et confidentialité"
         description="Cadre légal du projet et informations de confidentialité."
         contentClassName="flex flex-col gap-2 text-sm text-muted-foreground"
       >
           <p>Copyright (c) 2026 Jordi Brisbois</p>
-          <p>Ce projet est distribué sous licence MIT.</p>
+          <p>Ce projet est distribué sous licence GNU Affero General Public License v3.0.</p>
+          <p>
+            Le code source correspondant est publié sur{" "}
+            <a
+              href="https://github.com/VoxSake/FOREM-idable"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              GitHub
+            </a>
+            .
+          </p>
           <p>
             La politique de confidentialité est disponible sur{" "}
             <Link href="/privacy" className="text-primary hover:underline">

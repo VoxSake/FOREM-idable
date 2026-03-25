@@ -171,10 +171,10 @@ export default function PrivacyPage() {
       >
           <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             <p>
-              FOREM-idable est un projet gratuit et open source, mis à disposition sous licence MIT.
-              L&apos;application permet de rechercher des offres d&apos;emploi, de suivre des
-              candidatures, et, si vous créez un compte, d&apos;enregistrer ces données dans votre
-              espace personnel.
+              FOREM-idable est un projet gratuit et open source, mis à disposition sous licence
+              GNU Affero General Public License v3.0. L&apos;application permet de rechercher des
+              offres d&apos;emploi, de suivre des candidatures, et, si vous créez un compte,
+              d&apos;enregistrer ces données dans votre espace personnel.
             </p>
             <p>
               La présente politique de confidentialité est rédigée en tenant compte du Règlement

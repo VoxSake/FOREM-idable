@@ -16,6 +16,7 @@ import { getForemOfferId, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { useOfferDetails } from "@/features/jobs/hooks/useOfferDetails";
 import { buildOfferMailtoLink } from "@/features/jobs/utils/shareOfferMail";
 import { JobDetailsActions } from "@/features/jobs/components/JobDetailsActions";
+import { ForemDataAttribution } from "@/features/jobs/components/ForemDataAttribution";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 
 
@@ -51,6 +52,17 @@ export function JobDetailsSheet({
 
   const pdfUrl = getJobPdfUrl(job);
   const description = details?.description || job.description;
+  const shouldShowForemAttribution = job.source === "forem";
+  const hasAdaptedForemContent =
+    shouldShowForemAttribution &&
+    Boolean(
+      details &&
+        (
+          (details.sections?.length ?? 0) > 0 ||
+          details.highlights.length > 0 ||
+          (details.description && details.description !== job.description)
+        )
+    );
   const publicationLabel = job.publicationDate
     ? format(new Date(job.publicationDate), "dd MMM yyyy", { locale: fr })
     : "N/A";
@@ -103,6 +115,12 @@ export function JobDetailsSheet({
               ))}
             </div>
           )}
+
+          {shouldShowForemAttribution ? (
+            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 p-4">
+              <ForemDataAttribution adapted={hasAdaptedForemContent} />
+            </div>
+          ) : null}
         </div>
 
         <SheetFooter className="border-t bg-background/95 p-4">

@@ -145,4 +145,7 @@ npm start
 ---
 
 ## 📄 Licence
-Ce projet est sous licence [MIT](LICENSE).
+Ce projet est sous licence [GNU AGPL v3.0](LICENSE) (`AGPL-3.0-only`).
+
+Le code source public du service est disponible sur GitHub :
+https://github.com/VoxSake/FOREM-idable

@@ -2,6 +2,7 @@
 
 import { Job } from "@/types/job";
 import { JobTable } from "@/components/jobs/JobTable";
+import { ForemDataAttribution } from "@/features/jobs/components/ForemDataAttribution";
 import { ResultsToolbar } from "@/features/jobs/components/ResultsToolbar";
 import { SelectionPanel } from "@/features/jobs/components/SelectionPanel";
 
@@ -64,6 +65,8 @@ export function HomeSearchResultsSection({
     return null;
   }
 
+  const hasForemJobs = jobs.some((job) => job.source === "forem");
+
   return (
     <section className="flex flex-col gap-4">
       <SelectionPanel
@@ -110,6 +113,12 @@ export function HomeSearchResultsSection({
             />
           )}
         </div>
+
+        {hasForemJobs ? (
+          <div className="border-t border-border/60 px-4 py-3 sm:px-5">
+            <ForemDataAttribution compact />
+          </div>
+        ) : null}
       </div>
     </section>
   );
