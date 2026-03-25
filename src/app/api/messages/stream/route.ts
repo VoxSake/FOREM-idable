@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/server/auth";
+import { logMessagingDebug } from "@/lib/server/messagingDebug";
 import { subscribeMessageEvents } from "@/lib/server/messageEvents";
 import { MessageStreamEvent } from "@/types/messaging";
 
@@ -15,6 +16,10 @@ export async function GET(request: Request) {
     return new Response("Forbidden", { status: 403 });
   }
 
+  logMessagingDebug("stream-open", {
+    userId: user.id,
+  });
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -29,6 +34,9 @@ export async function GET(request: Request) {
         closed = true;
         clearInterval(heartbeatId);
         unsubscribe();
+        logMessagingDebug("stream-close", {
+          userId: user.id,
+        });
         controller.close();
       };
 
@@ -36,6 +44,13 @@ export async function GET(request: Request) {
         if (closed) {
           return;
         }
+
+        logMessagingDebug("stream-send", {
+          userId: user.id,
+          type: event.type,
+          conversationId: "conversationId" in event ? event.conversationId : undefined,
+          messageId: "messageId" in event ? event.messageId : undefined,
+        });
 
         controller.enqueue(encoder.encode(encodeSseMessage(event)));
       };

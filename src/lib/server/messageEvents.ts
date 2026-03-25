@@ -1,5 +1,6 @@
 import { createClient } from "redis";
 import { db, ensureDatabase } from "@/lib/server/db";
+import { logMessagingDebug } from "@/lib/server/messagingDebug";
 import { loadActiveConversationParticipantIds } from "@/lib/server/messaging.data";
 import { logServerEvent } from "@/lib/server/observability";
 import { MessageStreamEvent } from "@/types/messaging";
@@ -192,6 +193,11 @@ export function subscribeMessageEvents(userId: number, listener: MessageEventLis
   listeners.add(listener);
   registry.set(userId, listeners);
 
+  logMessagingDebug("subscribe", {
+    userId,
+    localListenerCount: listeners.size,
+  });
+
   void ensureRedisSubscription(userId);
 
   return () => {
@@ -205,6 +211,11 @@ export function subscribeMessageEvents(userId: number, listener: MessageEventLis
       registry.delete(userId);
     }
 
+    logMessagingDebug("unsubscribe", {
+      userId,
+      localListenerCount: currentListeners.size,
+    });
+
     void releaseRedisSubscription(userId);
   };
 }
@@ -212,6 +223,14 @@ export function subscribeMessageEvents(userId: number, listener: MessageEventLis
 export async function publishMessageEvent(userIds: number[], event: MessageStreamEvent) {
   const targetUserIds = [...new Set(userIds)];
   const clients = await getRedisClients();
+
+  logMessagingDebug("publish", {
+    backend: clients ? "redis" : "memory",
+    conversationId: "conversationId" in event ? event.conversationId : undefined,
+    messageId: "messageId" in event ? event.messageId : undefined,
+    targetUserIds,
+    type: event.type,
+  });
 
   if (clients) {
     try {
