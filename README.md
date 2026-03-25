@@ -1,130 +1,162 @@
-# 🚀 FOREM-idable
+# FOREM-idable
 
-> **L'agrégateur d'offres d'emploi conçu pour la performance, le suivi pro et le coaching.**
+FOREM-idable est une application Next.js orientee recherche d'emploi, suivi de candidatures et accompagnement par coachs. Le projet cible un usage reel, mais aussi un niveau de code defendable en entretien: front coherent, contrats d'entree valides, persistance type-safe, erreurs gerees explicitement et couverture de test sur les flux critiques.
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=flat-square&logo=drizzle)](https://orm.drizzle.team/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+Version live:
+- https://forem.brisbois.dev
 
----
+## Produit
 
-### 🌐 [**Découvrir la version Live → https://forem.brisbois.dev**](https://forem.brisbois.dev)
+Le produit couvre six domaines principaux:
+- recherche d'offres avec moteur multi-source et historique
+- suivi des candidatures pour les beneficiaires
+- dashboard coach pour le pilotage par groupe
+- administration des coachs, recherches mises en avant et cles API
+- messagerie de groupe et messages prives
+- API externe JSON/CSV pour reporting et automatisation
 
----
+## Stack
 
-### ![Image](https://github.com/user-attachments/assets/8eb89a79-959b-44bf-b27b-7dceea50f1b4)
+- Next.js 16 App Router
+- React 19
+- TypeScript strict
+- PostgreSQL + Drizzle ORM
+- Zod pour la validation serveur
+- Tailwind CSS + composants shadcn/ui
+- Vitest pour l'unitaire
+- Playwright pour l'end-to-end
+- Redis optionnel pour rate limiting et diffusion d'evenements messages
 
-## 🌟 Pourquoi FOREM-idable ?
+Runtime cible:
+- Node 24
 
-L'interface standard du Forem est riche, mais peut s'avérer lourde pour un suivi intensif. **FOREM-idable** transforme l'expérience de recherche d'emploi en un outil de productivité "power-user" :
+## Architecture
 
-- **Vitesse & Efficacité :** Une interface compacte pensée pour scanner des dizaines d'offres en quelques secondes.
-- **Suivi de Bout en Bout :** Ne perdez plus le fil. Gérez vos candidatures, relances et entretiens directement dans l'outil.
-- **Écosystème Coach :** Une plateforme collaborative permettant aux coachs de suivre, importer et gérer les parcours de leurs bénéficiaires.
+Le code suit une organisation feature-first:
 
----
-
-## ✨ Fonctionnalités Clés
-
-### 🔍 Recherche & Analyse
-- **Moteur Booléen :** Recherche avancée par mots-clés (`OU` / `ET`).
-- **Filtres Géo Précis :** Multi-sélection intelligente (communes, arrondissements, provinces, régions).
-- **Comparateur d'offres :** Analysez plusieurs opportunités côte à côte pour faire le bon choix.
- **![Image](https://github.com/user-attachments/assets/5514fa84-ced7-4216-8696-77d5ccdaa324)**
-
-### 💼 Suivi Candidat & Coach
-- **Dashboard Coach Enrichi :** Sections `À traiter`, `Activité récente` et sidepanel de gestion rapide.
-- **Import CSV Intelligent :** Algorithme d'auto-détection de colonnes et mapping manuel pour migrer vos anciens suivis sans douleur.
-- **Synchronisation Calendrier :** Flux ICS dynamiques pour retrouver vos entretiens dans Google Calendar, Outlook ou Apple Calendar.
- **![Image](https://github.com/user-attachments/assets/5970f8cc-9b2d-4d41-b408-e64d244a75c1)**
-
-### 🛠️ Outils "Power User"
-- **Proxy PDF :** Accès direct aux offres en format PDF, même derrière des restrictions serveurs (CORS).
-- **API Externe Sécurisée :** Exportez vos données en JSON/CSV pour vos propres outils de reporting ou intégrations No-Code.
-
----
-
-## 🛠️ Stack Technique & Choix d'Architecture
-
-Le projet adopte une approche **SaaS de haut niveau**, privilégiant la résilience, la maintenabilité et une expérience utilisateur fluide :
-
-- **Architecture "Feature-First" :** Découpage modulaire par domaine métier (`src/features/`) pour isoler la logique, les composants et les hooks. Cette structure facilite le scaling et l'onboarding de nouveaux développeurs.
-- **Framework & Rendu :** [Next.js 16](https://nextjs.org/) (App Router) avec rendu hybride pour des performances SEO et UX optimales.
-- **Gestion d'État "Page-Level" :** Utilisation de hooks personnalisés (`usePageState`) pour orchestrer la complexité des pages (dialogues, filtrage, pagination) tout en maintenant le code des composants pur et lisible.
-- **Base de données & Type Safety :** [PostgreSQL](https://www.postgresql.org/) avec [Drizzle ORM](https://orm.drizzle.team/) pour un typage strict de bout en bout, de la base de données jusqu'au client.
-- **Résilience & Error Handling :** Implémentation de **Segment Error Boundaries** (`error.tsx`) sur chaque route majeure pour garantir que l'application reste utilisable même en cas d'échec d'un segment spécifique.
-- **Validation & Tests :** 
-  - **E2E (Playwright) :** Validation des flux critiques (Happy Path) via des tests end-to-end automatisés.
-  - **Unitaires (Vitest) :** Tests rigoureux de la logique métier et des utilitaires complexes.
-- **UX Polished :** Intégration de [Sonner](https://sonner.emilkowal.ski/) pour un système de toasts réactif et de [Tailwind CSS](https://tailwindcss.com/) pour une interface moderne, compacte et accessible.
-
----
-
-## 🚀 Installation & Scripts
-
-```bash
-# Installation
-npm install
-
-# Configuration
-cp env.example .env.local
-
-# Lancement (dev)
-npm run dev
-
-# Tests Unitaires
-npm test
-
-# Tests E2E (Playwright)
-npm run test:e2e
+```txt
+src/
+  app/                    routes Next.js et handlers API
+  features/               UI, hooks et logique de presentation par domaine
+  lib/server/             logique serveur, acces DB, services metier
+  components/ui/          primitives UI
+  types/                  contrats applicatifs partages
 ```
 
-> Note Playwright : selon l'environnement Linux, Chromium peut nécessiter des bibliothèques système supplémentaires avant exécution des tests E2E.
+Principes utilises dans le repo:
+- routes API minces: auth, validation, orchestration, mapping d'erreurs
+- logique metier serveur dans `src/lib/server`
+- etat de page concentre dans des hooks `use*PageState`
+- schemas Zod pour verrouiller les payloads d'entree
+- types partages pour garder le contrat front/server explicite
 
-<details>
-<summary>⚙️ <b>Variables d'environnement (Détails)</b></summary>
+## Choix techniques
 
-### Services Tiers
-- `ADZUNA_ENABLED` : Activer le provider secondaire Adzuna.
-- `UMAMI_ENABLED` : Monitoring analytique respectueux de la vie privée (RGPD).
-- `RESEND_API_KEY` : Gestion des emails pour la réinitialisation de mot de passe.
+### Validation
 
-### Optimisation & Debug
-- `SERVER_TIMING_LOGS` : Performance profiling côté serveur.
-- `SERVER_AUDIT_LOGS` : Sécurité et traçabilité des actions critiques.
-- `DB_SLOW_QUERY_MS` : Seuil de détection des requêtes lentes (défaut: 200ms).
+Les mutations critiques passent par Zod avant d'entrer dans la logique metier. L'objectif n'est pas seulement d'eviter des 500, mais de rendre les contrats defendables et homogenes.
 
-### Personnalisation RGPD
-- `PRIVACY_CONTROLLER_NAME`, `PRIVACY_CONTACT_EMAIL`, `PRIVACY_PROJECT_LABEL`, etc.
-</details>
+### Persistance
 
----
+Drizzle est utilise pour garder une base typée et evolutive, avec PostgreSQL comme source de verite. Une partie du domaine candidature repose sur une couche relationnelle explicite pour les operations coach, l'API externe et les exports.
 
-## 📖 API & Documentation
+### Messagerie
 
-FOREM-idable expose une API REST robuste (lecture seule) pour les besoins d'intégration des comptes `coach` et `admin`.
+La messagerie utilise HTTP pour les mutations et SSE pour les mises a jour live. Le bus d'evenements est hybride:
+- fallback memoire pour un runtime simple
+- Redis pub/sub si `REDIS_URL` est configure
 
-- **Scopes :** Permissions granulaires selon le groupe de bénéficiaires.
-- **Cas d'usage :** Power Query, Excel, reporting JSON/CSV.
-- **Auth :** Clés API via header `Authorization: Bearer ...`.
+Ce choix est volontairement plus simple qu'un WebSocket complet tout en restant defensable pour un produit interne ou un MVP enrichi.
 
-👉 [Consulter la documentation API complète](./DOCAPI.md)
+### Gestion d'erreurs
 
----
+Les pages majeures disposent d'error boundaries segmentaires (`error.tsx`) et les routes API renvoient des erreurs metier explicites plutot que de laisser remonter des erreurs non controlees.
 
-## 🌐 Sources API
+### Tests
 
-- **Forem Open Data (ODWB) :** Données brutes des offres.
-- **Nomenclature Localisations :** API officielle Le Forem.
-- **Adzuna (Optionnel) :** Provider secondaire international.
+Le projet couvre:
+- la logique pure et les helpers metier avec Vitest
+- les parcours critiques UI et metier avec Playwright
 
----
+La cible n'est pas le 100% coverage, mais une couverture utile des flux a risque:
+- auth
+- suivi candidatures
+- actions coach
+- admin mobile
+- messagerie
+- workspace de recherche
 
-## 📄 Licence
+## External API
 
-Distribué sous licence **MIT**.  
-Copyright (c) 2026 **Jordi Brisbois**
+L'API externe est reservee aux comptes `coach` et `admin`, via cles API.
 
----
-*Fait avec ❤️ pour simplifier la recherche d'emploi en Belgique.*
+Elle expose:
+- listes et details utilisateurs
+- listes et details groupes
+- listes, details et mutations de candidatures
+- exports CSV pour Excel / Power Query
+
+Points importants:
+- les filtres ne sont pas identiques sur tous les endpoints
+- les reponses applications exposent maintenant des champs derives:
+  - `isFollowUpDue`
+  - `isInterviewScheduled`
+- les exports CSV gardent des headers francais mais utilisent `yes/no` sur ces indicateurs derives
+
+Documentation detaillee:
+- [DOCAPI.md](/home/computebox/code/FOREM-idable/DOCAPI.md)
+
+## Scripts
+
+```bash
+npm install
+npm run dev
+npm run lint
+npm test
+npm run test:e2e
+npm run build
+```
+
+Drizzle:
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+## Installation locale
+
+```bash
+cp env.example .env.local
+npm install
+npm run dev
+```
+
+Variables importantes:
+- `DATABASE_URL`
+- `REDIS_URL` optionnel
+- `RESEND_API_KEY` pour le reset password
+- `ADZUNA_*` si le provider secondaire est active
+- `SERVER_TIMING_LOGS`, `SERVER_AUDIT_LOGS`, `DB_SLOW_QUERY_MS` pour l'observabilite
+
+## Conventions de code
+
+- validation d'entree via Zod sur les mutations
+- front compose par domaine avant de descendre au niveau composant
+- refactors prudents: extraction de modules serveurs sans casser les facades publiques
+- pas de logique metier lourde dans les composants de rendu
+- tests E2E axes sur les parcours critiques, pas sur le pixel perfect
+
+## Etat actuel
+
+Le repo vise un niveau "portfolio propre", pas une demo jetable:
+- lint
+- build production Next
+- tests unitaires
+- tests E2E Playwright
+
+Le codebase continue toutefois d'etre refactorise par tranches. Les zones encore les plus denses sont principalement dans le domaine coach et certains services serveur historiques.
+
+## Licence
+
+MIT

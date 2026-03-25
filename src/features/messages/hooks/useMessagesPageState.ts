@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Job } from "@/types/job";
 import {
@@ -27,6 +28,7 @@ import { useMessagesStream } from "@/features/messages/hooks/useMessagesStream";
 import { MessageStreamEvent } from "@/types/messaging";
 
 export function useMessagesPageState() {
+  const { user } = useAuth();
   const isMobileViewport = useIsMobile();
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
   const [hasMessagingAccess, setHasMessagingAccess] = useState<boolean | null>(null);
@@ -222,22 +224,33 @@ export function useMessagesPageState() {
     []
   );
 
-  const appendMessageToSelectedConversation = useCallback((message: ConversationMessage) => {
-    setSelectedConversation((current) => {
-      if (!current || current.id !== message.conversationId) {
-        return current;
-      }
+  const appendMessageToSelectedConversation = useCallback(
+    (message: ConversationMessage) => {
+      const normalizedMessage =
+        user && message.author?.userId !== null
+          ? {
+              ...message,
+              isOwnMessage: message.author?.userId === user.id,
+            }
+          : message;
 
-      if (current.messages.some((entry) => entry.id === message.id)) {
-        return current;
-      }
+      setSelectedConversation((current) => {
+        if (!current || current.id !== normalizedMessage.conversationId) {
+          return current;
+        }
 
-      return {
-        ...current,
-        messages: [...current.messages, message],
-      };
-    });
-  }, []);
+        if (current.messages.some((entry) => entry.id === normalizedMessage.id)) {
+          return current;
+        }
+
+        return {
+          ...current,
+          messages: [...current.messages, normalizedMessage],
+        };
+      });
+    },
+    [user]
+  );
 
   const openConversation = useCallback(
     (conversationId: number) => {
@@ -489,6 +502,8 @@ export function useMessagesPageState() {
         return;
       }
 
+      const openConversationId = selectedConversation?.id ?? selectedConversationId;
+
       if (event.type === "conversation.message_created") {
         syncConversationListPreview({
           conversationId: event.message.conversationId,
@@ -496,7 +511,7 @@ export function useMessagesPageState() {
           content: event.message.content,
         });
 
-        if (selectedConversationId === event.conversationId) {
+        if (openConversationId === event.conversationId) {
           appendMessageToSelectedConversation(event.message);
           scheduleScrollThreadToBottom("auto");
         }
@@ -504,13 +519,13 @@ export function useMessagesPageState() {
 
       void (async () => {
         const preferredConversationId =
-          selectedConversationId === event.conversationId
-            ? selectedConversationId
-            : selectedConversationId ?? event.conversationId;
+          openConversationId === event.conversationId
+            ? openConversationId
+            : openConversationId ?? event.conversationId;
 
         await loadConversations(preferredConversationId, { silent: true });
 
-        if (selectedConversationId === event.conversationId) {
+        if (openConversationId === event.conversationId) {
           await loadConversationDetail(event.conversationId, {
             markAsRead: true,
             silent: true,
@@ -530,6 +545,7 @@ export function useMessagesPageState() {
       loadConversationDetail,
       loadConversations,
       scheduleScrollThreadToBottom,
+      selectedConversation,
       selectedConversationId,
       syncConversationListPreview,
     ]

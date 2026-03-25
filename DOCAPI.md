@@ -1,15 +1,15 @@
-# DOCAPI
+# External API
 
-Documentation de l'API externe `FOREM-idable`.
+Documentation de l'API externe de FOREM-idable.
 
-Cette API est destinée aux comptes `coach` et `admin` pour:
-- consulter les bénéficiaires, groupes et candidatures visibles dans leur périmètre
-- exporter les données vers Excel / Power Query
-- modifier les candidatures et notes coach via JSON
+Cette API est reservee aux comptes `coach` et `admin` et sert a:
+- exporter des donnees vers Excel / Power Query / BI
+- lire les groupes, utilisateurs et candidatures visibles
+- piloter les candidatures et notes coach via JSON
 
-## Vue d'ensemble
+## Base URL et auth
 
-Base URL production:
+Production:
 
 ```txt
 https://forem.brisbois.dev
@@ -21,31 +21,49 @@ Authentification:
 Authorization: Bearer VOTRE_CLE_API
 ```
 
-Portée:
-- `admin`: accès global
-- `coach`: accès limité aux groupes où il est coach et aux bénéficiaires visibles dans ces groupes
+Portee:
+- `admin`: acces global
+- `coach`: acces limite aux groupes assignes et aux beneficiaires visibles dans ces groupes
 
 Formats:
-- `json` par défaut
-- `csv` sur les endpoints de liste via `?format=csv`
+- `json` par defaut
+- `csv` sur les endpoints de liste et certains endpoints de detail export
 
-Important:
-- les endpoints de détail et de mutation sont en `json` uniquement
-- les exports CSV neutralisent les cellules de type formule pour Excel
+## Modele de statut
+
+Important: l'API distingue bien:
+- le statut metier brut d'une candidature: `in_progress`, `follow_up`, `interview`, `accepted`, `rejected`
+- les indicateurs derives
+
+Sur les reponses `applications`, deux champs derives sont exposes:
+- `isFollowUpDue`
+- `isInterviewScheduled`
+
+CSV:
+- headers francais
+- valeurs derivees `yes/no`
+
+JSON:
+- booleens natifs `true/false`
 
 ## Endpoints
 
 ### `GET /api/external/me`
 
 Retourne:
-- l'identité du porteur de clé
-- les capacités disponibles
+- l'identite du porteur de cle
+- les capacites de l'API
+- les filtres supportes globalement et par endpoint
+
+Usage typique:
+- introspection pour un connecteur
+- verification des champs derives exposes
 
 ### `GET /api/external/applications`
 
-Liste les candidatures visibles.
+Liste les candidatures visibles dans le perimetre de la cle.
 
-Filtres supportés:
+Filtres supportes:
 - `search`
 - `userId`
 - `groupId`
@@ -67,49 +85,85 @@ Filtres supportés:
 - `format=json|csv`
 
 Recherche `search` sur:
-- prénom
+- prenom
 - nom
 - nom complet
 - email
 - nom de groupe
 - entreprise
-- intitulé
+- intitule
 - lieu
-- notes bénéficiaire
-- note privée coach
-- notes coach partagées
+- notes beneficiaire
+- note privee coach
+- notes coach partagees
 - auteurs / contributeurs
 
 Exemples:
 
 ```txt
 /api/external/applications
-/api/external/applications?search=durand
 /api/external/applications?groupId=5&status=in_progress
-/api/external/applications?dueOnly=1&format=csv
-/api/external/applications?includePrivateNote=1&includeSharedNotes=1
+/api/external/applications?dueOnly=1
+/api/external/applications?search=durand&includePrivateNote=1
+/api/external/applications?format=csv&includeSharedNotes=1&includeContributors=1
+```
+
+Exemple JSON:
+
+```json
+{
+  "applicationId": 123,
+  "userId": 21,
+  "userFirstName": "Alice",
+  "userLastName": "Durand",
+  "groupNames": ["Promo A"],
+  "isFollowUpDue": true,
+  "isInterviewScheduled": false,
+  "application": {
+    "status": "in_progress",
+    "followUpDueAt": "2026-03-20T09:00:00.000Z",
+    "interviewAt": null
+  }
+}
 ```
 
 Colonnes principales du CSV:
 - `Application ID`
 - `User ID`
 - `Job ID`
-- prénom / nom / email
-- groupes
-- entreprise / intitulé / lieu
-- statut
-- dates de suivi
-- notes bénéficiaire
-- note privée coach
-- notes partagées
-- contributeurs
-- date de mise à jour
+- `Prenom`
+- `Nom`
+- `Email`
+- `Role`
+- `Groupes`
+- `Entreprise`
+- `Intitule`
+- `Type`
+- `Lieu`
+- `Date envoyee`
+- `Date relance`
+- `Derniere relance`
+- `Date entretien`
+- `Entretien planifie`
+- `Details entretien`
+- `Statut`
+- `Relance due`
+- `Notes beneficiaire`
+- `Preuves`
+- `Note privee coach`
+- `Contributeurs note privee`
+- `Nombre notes partagees`
+- `Notes coach partagees`
+- `Contributeurs notes partagees`
+- `Lien`
+- `PDF`
+- `Mis a jour le`
 
 ### `PUT /api/external/applications`
 
-Upsert candidature par clé métier `userId + jobId`.
+Upsert de candidature par cle metier `userId + jobId`.
 
-Payload:
+Payload minimal:
 
 ```json
 {
@@ -120,9 +174,8 @@ Payload:
   "data": {
     "status": "in_progress",
     "appliedAt": "2026-03-23T10:00:00.000Z",
-    "notes": "Relancé par mail",
     "job": {
-      "title": "Développeur frontend",
+      "title": "Developpeur frontend",
       "company": "ACME",
       "location": "Namur",
       "contractType": "CDI",
@@ -133,22 +186,23 @@ Payload:
 }
 ```
 
-Réponse:
-- `201` si création
-- `200` si mise à jour
+Reponse:
+- `201` si creation
+- `200` si mise a jour
 
 ### `GET /api/external/applications/:applicationId`
 
-Retourne le détail complet d'une candidature:
-- identité bénéficiaire
+Retourne le detail complet d'une candidature visible:
+- identite beneficiaire
 - groupes
 - job
-- note privée
-- notes partagées
+- note privee
+- notes partagees
+- flags derives `isFollowUpDue` et `isInterviewScheduled`
 
 ### `PATCH /api/external/applications/:applicationId`
 
-Patch de candidature.
+Patch partiel de candidature.
 
 Champs usuels:
 - `status`
@@ -160,7 +214,7 @@ Champs usuels:
 - `followUpDueAt`
 - `followUpEnabled`
 - `appliedAt`
-- `job` pour les candidatures manuelles uniquement
+- `job` uniquement pour les candidatures manuelles
 
 Exemple:
 
@@ -176,11 +230,11 @@ Exemple:
 
 ### `DELETE /api/external/applications/:applicationId`
 
-Supprime une candidature visible par le porteur de clé.
+Supprime une candidature visible par le porteur de cle.
 
 ### `PUT /api/external/applications/:applicationId/private-note`
 
-Crée ou remplace la note coach privée commune.
+Cree ou remplace la note coach privee commune.
 
 Payload:
 
@@ -192,31 +246,31 @@ Payload:
 
 ### `POST /api/external/applications/:applicationId/shared-notes`
 
-Crée une note coach partagée.
+Cree une note coach partagee.
 
 Payload:
 
 ```json
 {
-  "content": "Point à revoir avec le bénéficiaire"
+  "content": "Point a revoir avec le beneficiaire"
 }
 ```
 
 ### `PATCH /api/external/applications/:applicationId/shared-notes/:noteId`
 
-Met à jour une note coach partagée.
+Met a jour une note coach partagee.
 
 ### `DELETE /api/external/applications/:applicationId/shared-notes/:noteId`
 
-Supprime une note coach partagée.
+Supprime une note coach partagee.
 
-## Endpoints utilisateurs et groupes
+## Utilisateurs
 
 ### `GET /api/external/users`
 
 Liste les utilisateurs visibles.
 
-Filtres principaux:
+Filtres supportes:
 - `search`
 - `groupId`
 - `role`
@@ -225,17 +279,24 @@ Filtres principaux:
 - `offset`
 - `format=json|csv`
 
+Important:
+- cet endpoint expose des agregats utilisateur comme `dueCount`
+- `dueCount` n'est pas un statut candidature
+- pour filtrer les candidatures dues, il faut utiliser `/api/external/applications?dueOnly=1`
+
 ### `GET /api/external/users/:userId`
 
-Détail d'un utilisateur visible.
+Retourne le detail d'un utilisateur visible.
 
 Si `format=csv`, exporte les candidatures visibles de cet utilisateur.
+
+## Groupes
 
 ### `GET /api/external/groups`
 
 Liste les groupes visibles.
 
-Filtres principaux:
+Filtres supportes:
 - `search`
 - `groupId`
 - `includeApplications`
@@ -245,13 +306,13 @@ Filtres principaux:
 
 ### `GET /api/external/groups/:groupId`
 
-Détail d'un groupe visible.
+Retourne le detail d'un groupe visible.
 
 Si `format=csv`, exporte les candidatures visibles du groupe.
 
-## Codes de réponse
+## Codes de reponse
 
-Réponses courantes:
+Codes courants:
 - `200 OK`
 - `201 Created`
 - `400 Bad Request`
@@ -260,13 +321,18 @@ Réponses courantes:
 - `404 Not Found`
 - `429 Too Many Requests`
 
-## Notes Excel / Power Query
+## Notes Power Query / Excel
 
-Recommandation:
+Recommandations:
 - utiliser `format=csv` pour les vues tabulaires
-- utiliser les endpoints `json` pour les mutations
+- utiliser `json` pour l'automatisation et les mutations
+- ne pas inferer `Relance due` depuis `Statut`
+
+Exemple:
+- `status=follow_up` cible le statut metier
+- `dueOnly=1` cible les candidatures effectivement dues
 
 Workflow typique:
 1. Power Query recharge `/api/external/applications?format=csv`
-2. Excel affiche et filtre les lignes
-3. macro / script appelle les endpoints JSON pour créer ou modifier candidatures et notes
+2. Excel filtre et transforme localement
+3. un script ou un connecteur appelle les endpoints JSON pour creer ou modifier candidatures et notes
