@@ -3,6 +3,24 @@ import { CoachDashboardData } from "@/types/coach";
 import { AdminApiKeySummary } from "@/types/externalApi";
 import { FeaturedSearch } from "@/types/featuredSearch";
 
+export type AdminAccountDeletionRequest = {
+  id: number;
+  status: "pending" | "approved" | "rejected" | "completed" | "cancelled";
+  reason: string | null;
+  requestedAt: string;
+  reviewedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  reviewNote: string | null;
+  user: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+};
+
 async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, init);
   const data = (await response.json().catch(() => ({}))) as T;
@@ -75,5 +93,29 @@ export function updateAdminFeaturedSearch(id: number, payload: FeaturedSearchPay
 export function deleteAdminFeaturedSearch(id: number) {
   return requestJson<{ error?: string; ok?: boolean }>(`/api/admin/featured-searches/${id}`, {
     method: "DELETE",
+  });
+}
+
+export function fetchAdminAccountDeletionRequests() {
+  return requestJson<{ error?: string; requests?: AdminAccountDeletionRequest[] }>(
+    "/api/admin/account-deletion-requests",
+    {
+      cache: "no-store",
+    }
+  );
+}
+
+export function reviewAdminAccountDeletionRequest(
+  id: number,
+  payload: { action: "approve" | "reject" | "complete"; reviewNote?: string }
+) {
+  return requestJson<{
+    error?: string;
+    request?: AdminAccountDeletionRequest | null;
+    deletedUserId?: number | null;
+  }>(`/api/admin/account-deletion-requests/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 }

@@ -3,6 +3,7 @@ import { AuthUser } from "@/types/auth";
 import { recordAuditEvent } from "@/lib/server/auditLog";
 import { db, ensureDatabase, orm } from "@/lib/server/db";
 import { logServerEvent } from "@/lib/server/observability";
+import { deleteUserAccount } from "@/lib/server/auth";
 import {
   accountDeletionRequests,
   dataExportRequests,
@@ -47,6 +48,16 @@ export type LegalHoldSummary = {
   reason: string;
   createdAt: string;
   releasedAt: string | null;
+};
+
+export type AdminAccountDeletionRequestSummary = AccountDeletionRequestSummary & {
+  user: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
 };
 
 function toIso(value: Date | string | null | undefined) {
@@ -462,6 +473,202 @@ export async function listAccountDeletionRequests(userId: number) {
     .limit(10);
 
   return result.map(mapDeletionRequestSummary);
+}
+
+export async function listAccountDeletionRequestsForAdmin(limit = 50) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const result = await db.query<{
+    id: number;
+    status: string;
+    reason: string | null;
+    requested_at: Date | string;
+    reviewed_at: Date | string | null;
+    completed_at: Date | string | null;
+    cancelled_at: Date | string | null;
+    review_note: string | null;
+    user_id: number;
+    user_email: string;
+    user_first_name: string;
+    user_last_name: string;
+    user_role: string;
+  }>(
+    `SELECT r.id, r.status, r.reason, r.requested_at, r.reviewed_at, r.completed_at,
+            r.cancelled_at, r.review_note,
+            u.id AS user_id, u.email AS user_email, u.first_name AS user_first_name,
+            u.last_name AS user_last_name, u.role AS user_role
+     FROM account_deletion_requests r
+     INNER JOIN users u ON u.id = r.user_id
+     ORDER BY r.requested_at DESC
+     LIMIT $1`,
+    [limit]
+  );
+
+  return result.rows.map((row) => ({
+    ...mapDeletionRequestSummary(row),
+    user: {
+      id: row.user_id,
+      email: row.user_email,
+      firstName: row.user_first_name,
+      lastName: row.user_last_name,
+      role: row.user_role,
+    },
+  }));
+}
+
+export async function reviewAccountDeletionRequest(input: {
+  requestId: number;
+  action: "approve" | "reject" | "complete";
+  reviewNote?: string;
+  actor: AuthUser;
+}) {
+  await ensureDatabase();
+  if (!orm) throw new Error("Database unavailable");
+
+  const [request] = await orm
+    .select({
+      id: accountDeletionRequests.id,
+      userId: accountDeletionRequests.userId,
+      status: accountDeletionRequests.status,
+      reason: accountDeletionRequests.reason,
+      requestedAt: accountDeletionRequests.requestedAt,
+      reviewedAt: accountDeletionRequests.reviewedAt,
+      completedAt: accountDeletionRequests.completedAt,
+      cancelledAt: accountDeletionRequests.cancelledAt,
+      reviewNote: accountDeletionRequests.reviewNote,
+    })
+    .from(accountDeletionRequests)
+    .where(eq(accountDeletionRequests.id, input.requestId))
+    .limit(1);
+
+  if (!request) {
+    const error = new Error("Demande introuvable.");
+    error.name = "DeletionRequestNotFoundError";
+    throw error;
+  }
+
+  const normalizedStatus = normalizeDeletionStatus(request.status);
+  const reviewNote = input.reviewNote?.trim() || null;
+
+  if (input.action === "approve") {
+    if (normalizedStatus !== "pending") {
+      const error = new Error("Seules les demandes en attente peuvent être approuvées.");
+      error.name = "DeletionRequestStatusError";
+      throw error;
+    }
+
+    const [updated] = await orm
+      .update(accountDeletionRequests)
+      .set({
+        status: "approved",
+        reviewedAt: new Date(),
+        reviewedByUserId: input.actor.id,
+        reviewNote,
+      })
+      .where(eq(accountDeletionRequests.id, request.id))
+      .returning({
+        id: accountDeletionRequests.id,
+        status: accountDeletionRequests.status,
+        reason: accountDeletionRequests.reason,
+        requested_at: accountDeletionRequests.requestedAt,
+        reviewed_at: accountDeletionRequests.reviewedAt,
+        completed_at: accountDeletionRequests.completedAt,
+        cancelled_at: accountDeletionRequests.cancelledAt,
+        review_note: accountDeletionRequests.reviewNote,
+      });
+
+    await recordAuditEvent({
+      actorUserId: input.actor.id,
+      action: "account_deletion_approved",
+      targetUserId: request.userId,
+      payload: {
+        requestId: request.id,
+      },
+    });
+
+    return {
+      request: mapDeletionRequestSummary(updated),
+      deletedUserId: null,
+    };
+  }
+
+  if (input.action === "reject") {
+    if (normalizedStatus !== "pending") {
+      const error = new Error("Seules les demandes en attente peuvent être refusées.");
+      error.name = "DeletionRequestStatusError";
+      throw error;
+    }
+
+    const [updated] = await orm
+      .update(accountDeletionRequests)
+      .set({
+        status: "rejected",
+        reviewedAt: new Date(),
+        reviewedByUserId: input.actor.id,
+        reviewNote,
+      })
+      .where(eq(accountDeletionRequests.id, request.id))
+      .returning({
+        id: accountDeletionRequests.id,
+        status: accountDeletionRequests.status,
+        reason: accountDeletionRequests.reason,
+        requested_at: accountDeletionRequests.requestedAt,
+        reviewed_at: accountDeletionRequests.reviewedAt,
+        completed_at: accountDeletionRequests.completedAt,
+        cancelled_at: accountDeletionRequests.cancelledAt,
+        review_note: accountDeletionRequests.reviewNote,
+      });
+
+    await recordAuditEvent({
+      actorUserId: input.actor.id,
+      action: "account_deletion_rejected",
+      targetUserId: request.userId,
+      payload: {
+        requestId: request.id,
+      },
+    });
+
+    return {
+      request: mapDeletionRequestSummary(updated),
+      deletedUserId: null,
+    };
+  }
+
+  if (normalizedStatus !== "approved") {
+    const error = new Error("Seules les demandes approuvées peuvent être finalisées.");
+    error.name = "DeletionRequestStatusError";
+    throw error;
+  }
+
+  await assertNoActiveUserLegalHold(request.userId);
+
+  await orm
+    .update(accountDeletionRequests)
+    .set({
+      status: "completed",
+      completedAt: new Date(),
+      reviewedAt: new Date(),
+      reviewedByUserId: input.actor.id,
+      reviewNote,
+    })
+    .where(eq(accountDeletionRequests.id, request.id));
+
+  await recordAuditEvent({
+    actorUserId: input.actor.id,
+    action: "account_deletion_completed",
+    targetUserId: request.userId,
+    payload: {
+      requestId: request.id,
+    },
+  });
+
+  await deleteUserAccount(request.userId);
+
+  return {
+    request: null,
+    deletedUserId: request.userId,
+  };
 }
 
 export async function getActiveLegalHold(targetType: LegalHoldTargetType, targetId: number) {

@@ -92,6 +92,13 @@ export const disclosureLogCreateSchema = z
   })
   .strict();
 
+export const accountDeletionReviewSchema = z
+  .object({
+    action: z.enum(["approve", "reject", "complete"]),
+    reviewNote: z.string().trim().max(2000, "Note trop longue.").optional(),
+  })
+  .strict();
+
 export const apiKeyCreateRequestSchema = z
   .object({
     name: trimmedNonEmptyStringSchema,

@@ -2,17 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  fetchAdminAccountDeletionRequests,
   createAdminFeaturedSearch,
   deleteAdminFeaturedSearch,
   fetchAdminApiKeys,
   fetchAdminFeaturedSearches,
   revokeAdminApiKey,
+  reviewAdminAccountDeletionRequest,
   updateAdminFeaturedSearch,
 } from "@/features/admin/adminApi";
 import { useAdminDashboard } from "@/features/admin/useAdminDashboard";
 import { FeaturedSearchPayload } from "@/features/featured-searches/featuredSearchSchema";
 import { AdminApiKeySummary } from "@/types/externalApi";
 import { FeaturedSearch } from "@/types/featuredSearch";
+import { AdminAccountDeletionRequest } from "./adminApi";
 
 export function useAdminPageState() {
   const admin = useAdminDashboard();
@@ -27,6 +30,10 @@ export function useAdminPageState() {
   const [isSavingFeaturedSearch, setIsSavingFeaturedSearch] = useState(false);
   const [savingFeaturedSearchId, setSavingFeaturedSearchId] = useState<number | null>(null);
   const [isDeletingFeaturedSearch, setIsDeletingFeaturedSearch] = useState(false);
+  const [deletionRequests, setDeletionRequests] = useState<AdminAccountDeletionRequest[]>([]);
+  const [deletionRequestsFeedback, setDeletionRequestsFeedback] = useState<string | null>(null);
+  const [isDeletionRequestsLoading, setIsDeletionRequestsLoading] = useState(false);
+  const [reviewingDeletionRequestId, setReviewingDeletionRequestId] = useState<number | null>(null);
 
   const loadApiKeys = useCallback(async () => {
     if (!admin.isAuthorized) {
@@ -78,12 +85,38 @@ export function useAdminPageState() {
     }
   }, [admin.isAuthorized]);
 
+  const loadDeletionRequests = useCallback(async () => {
+    if (!admin.isAuthorized) {
+      setDeletionRequests([]);
+      return;
+    }
+
+    setIsDeletionRequestsLoading(true);
+    setDeletionRequestsFeedback(null);
+
+    try {
+      const { response, data } = await fetchAdminAccountDeletionRequests();
+
+      if (!response.ok || !data.requests) {
+        setDeletionRequestsFeedback(data.error || "Chargement des demandes impossible.");
+        return;
+      }
+
+      setDeletionRequests(data.requests);
+    } catch {
+      setDeletionRequestsFeedback("Chargement des demandes impossible.");
+    } finally {
+      setIsDeletionRequestsLoading(false);
+    }
+  }, [admin.isAuthorized]);
+
   useEffect(() => {
     if (admin.isAuthLoading) return;
     if (!admin.isAuthorized) return;
     void loadApiKeys();
     void loadFeaturedSearches();
-  }, [admin.isAuthLoading, admin.isAuthorized, loadApiKeys, loadFeaturedSearches]);
+    void loadDeletionRequests();
+  }, [admin.isAuthLoading, admin.isAuthorized, loadApiKeys, loadFeaturedSearches, loadDeletionRequests]);
 
   const revokeApiKey = useCallback(async () => {
     if (!revokeTarget) return false;
@@ -200,6 +233,45 @@ export function useAdminPageState() {
     }
   }, [featuredSearches]);
 
+  const reviewDeletionRequest = useCallback(async (input: {
+    id: number;
+    action: "approve" | "reject" | "complete";
+    reviewNote?: string;
+  }) => {
+    setReviewingDeletionRequestId(input.id);
+
+    try {
+      const { response, data } = await reviewAdminAccountDeletionRequest(input.id, {
+        action: input.action,
+        reviewNote: input.reviewNote,
+      });
+
+      if (!response.ok) {
+        setDeletionRequestsFeedback(data.error || "Traitement impossible.");
+        return false;
+      }
+
+      if (input.action === "complete") {
+        setDeletionRequests((current) => current.filter((entry) => entry.id !== input.id));
+        setDeletionRequestsFeedback("Suppression finalisée.");
+      } else if (data.request) {
+        setDeletionRequests((current) =>
+          current.map((entry) => (entry.id === input.id ? data.request! : entry))
+        );
+        setDeletionRequestsFeedback(
+          input.action === "approve" ? "Demande approuvée." : "Demande refusée."
+        );
+      }
+
+      return true;
+    } catch {
+      setDeletionRequestsFeedback("Traitement impossible.");
+      return false;
+    } finally {
+      setReviewingDeletionRequestId(null);
+    }
+  }, []);
+
   const apiKeyStats = useMemo(() => {
     const now = Date.now();
 
@@ -232,15 +304,21 @@ export function useAdminPageState() {
     isSavingFeaturedSearch,
     savingFeaturedSearchId,
     isDeletingFeaturedSearch,
+    deletionRequests,
+    deletionRequestsFeedback,
+    isDeletionRequestsLoading,
+    reviewingDeletionRequestId,
     revokeTarget,
     setRevokeTarget,
     isRevokingApiKey,
     loadApiKeys,
     revokeApiKey,
     loadFeaturedSearches,
+    loadDeletionRequests,
     createFeaturedSearch,
     updateFeaturedSearch,
     deleteFeaturedSearch,
+    reviewDeletionRequest,
   };
 }
 

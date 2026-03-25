@@ -19,6 +19,9 @@ export type AuditAction =
   | "user_data_export_requested"
   | "account_deletion_requested"
   | "account_deletion_cancelled"
+  | "account_deletion_approved"
+  | "account_deletion_rejected"
+  | "account_deletion_completed"
   | "legal_hold_created"
   | "legal_hold_released"
   | "disclosure_logged";

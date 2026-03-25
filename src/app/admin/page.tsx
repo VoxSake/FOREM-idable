@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Users, KeyRound, ArrowRight } from "lucide-react";
+import { ShieldCheck, Users, KeyRound, ArrowRight, FileWarning } from "lucide-react";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { CoachAdminSection } from "@/features/coach/components/CoachAdminSection";
 import { useAdminPageState } from "@/features/admin/useAdminPageState";
+import { AdminAccountDeletionRequestsSection } from "@/features/admin/components/AdminAccountDeletionRequestsSection";
 import { AdminApiKeysSection } from "@/features/admin/components/AdminApiKeysSection";
 import { AdminFeaturedSearchesSection } from "@/features/admin/components/AdminFeaturedSearchesSection";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,7 @@ export default function AdminPage() {
   useToastFeedback(page.feedback, { title: "Administration" });
   useToastFeedback(page.apiKeysFeedback, { title: "Clés API admin" });
   useToastFeedback(page.featuredSearchesFeedback, { title: "Recherches mises en avant" });
+  useToastFeedback(page.deletionRequestsFeedback, { title: "Demandes de suppression" });
 
   if (isInitialPageLoading) {
     return <AdminPageSkeleton />;
@@ -145,7 +147,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[360px]">
+            <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3 lg:w-auto lg:min-w-[360px]">
               <Button asChild variant="outline" className="justify-between bg-card/80">
                 <a href="#coachs">
                   <span className="inline-flex items-center gap-2">
@@ -160,6 +162,15 @@ export default function AdminPage() {
                   <span className="inline-flex items-center gap-2">
                     <KeyRound data-icon="inline-start" />
                     Clés API
+                  </span>
+                  <ArrowRight data-icon="inline-end" />
+                </a>
+              </Button>
+              <Button asChild variant="outline" className="justify-between bg-card/80">
+                <a href="#suppression-comptes">
+                  <span className="inline-flex items-center gap-2">
+                    <FileWarning data-icon="inline-start" />
+                    Suppressions
                   </span>
                   <ArrowRight data-icon="inline-end" />
                 </a>
@@ -242,6 +253,16 @@ export default function AdminPage() {
         onRevokeConfirm={() => void page.revokeApiKey()}
         onRevokeDialogOpenChange={(open) => !open && page.setRevokeTarget(null)}
       />
+
+      <div id="suppression-comptes">
+        <AdminAccountDeletionRequestsSection
+          requests={page.deletionRequests}
+          isLoading={page.isDeletionRequestsLoading}
+          reviewingId={page.reviewingDeletionRequestId}
+          onRefresh={() => void page.loadDeletionRequests()}
+          onReview={(input) => page.reviewDeletionRequest(input)}
+        />
+      </div>
     </div>
   );
 }
