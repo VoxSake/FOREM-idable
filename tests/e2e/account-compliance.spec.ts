@@ -149,5 +149,5 @@ test("manages data export and account deletion requests from the account page", 
   await page.getByRole("button", { name: "Annuler la demande" }).click();
 
   await expect(page.getByText("Aucune demande enregistrée.")).not.toBeVisible();
-  await expect(page.getByText(/cancelled/i)).toBeVisible();
+  await expect(page.getByRole("main").getByText("Annulée", { exact: true })).toBeVisible();
 });

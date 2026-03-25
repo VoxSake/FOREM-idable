@@ -1,6 +1,6 @@
 # 🚀 FOREM-idable
 
-**FOREM-idable** est une plateforme moderne développée avec Next.js, dédiée à la recherche d'emploi, au suivi de candidatures et à l'accompagnement par coachs. 
+**FOREM-idable** est une plateforme moderne développée avec Next.js, dédiée à la recherche d'emploi, au suivi de candidatures et à l'accompagnement par coachs.
 
 Ce projet a été conçu avec une double exigence : répondre à un **usage réel** tout en maintenant un niveau de **clean code** exemplaire, idéal pour une revue technique ou une démonstration en entretien. L'accent est mis sur la cohérence du front-end, la validation stricte des contrats d'entrée, une persistance type-safe et une gestion explicite des erreurs.
 
@@ -13,13 +13,14 @@ Ce projet a été conçu avec une double exigence : répondre à un **usage rée
 
 ## 🎯 Fonctionnalités Clés
 
-Le produit couvre six domaines stratégiques :
+Le produit couvre désormais sept domaines stratégiques :
 *   🔍 **Recherche d'offres** : Moteur multi-source performant avec historique de recherche.
 *   📋 **Suivi de candidatures** : Gestion complète du tunnel de recrutement pour les bénéficiaires.
 *   👨‍🏫 **Dashboard Coach** : Pilotage et suivi par groupes pour un accompagnement personnalisé.
-*   ⚙️ **Administration** : Gestion des coachs, mises en avant (featured searches) et gestion des clés API.
+*   ⚙️ **Administration** : Gestion des coachs, mises en avant (featured searches), clés API et traitement des demandes de suppression.
 *   💬 **Messagerie temps réel** : Canaux de groupe et messages privés.
 *   📊 **API Externe** : Endpoints JSON/CSV pour le reporting et l'automatisation.
+*   🛡️ **Conformité & RGPD** : Export de données, demandes de suppression, legal holds, disclosure logs et purge de rétention.
 
 ---
 
@@ -27,7 +28,7 @@ Le produit couvre six domaines stratégiques :
 
 Le projet s'appuie sur les dernières versions stables de l'écosystème React/Next.js :
 
-*   **Framework** : [Next.js 15+](https://nextjs.org/) (App Router)
+*   **Framework** : [Next.js 16](https://nextjs.org/) (App Router)
 *   **Langage** : [TypeScript](https://www.typescriptlang.org/) (Strict Mode)
 *   **Runtime** : Node.js 24
 *   **Base de données** : PostgreSQL avec [Drizzle ORM](https://orm.drizzle.team/)
@@ -78,7 +79,15 @@ Utilisation systématique des `error.tsx` de Next.js pour des Error Boundaries s
 ### 🧪 Stratégie de Tests
 Le projet ne vise pas le 100% théorique, mais une **couverture pragmatique des flux critiques** :
 *   **Vitest** : Logique métier pure et helpers.
-*   **Playwright** : Parcours utilisateurs (Auth, Suivi, Messagerie, Admin).
+*   **Playwright** : Parcours utilisateurs (Auth, Suivi, Messagerie, Admin, Compliance).
+
+### 🔐 Conformité pragmatique
+Le projet inclut un premier pack conformité orienté usage réel :
+*   **Espace compte** : Export JSON des données personnelles et demande de suppression avec revue manuelle.
+*   **Administration** : Validation, rejet ou finalisation des demandes de suppression.
+*   **Garde-fous** : `legal holds` pour suspendre une suppression ou une purge si nécessaire.
+*   **Traçabilité** : `disclosure logs` pour journaliser une divulgation ciblée à une autorité.
+*   **Rétention** : purge scriptable des données temporaires et expirées.
 
 ---
 
@@ -115,6 +124,9 @@ npm run test:e2e    # End-to-end
 npm run db:generate
 npm run db:migrate
 
+# Maintenance
+npm run maintenance:purge
+
 # Production
 npm run build
 npm start
@@ -128,6 +140,7 @@ npm start
 *   **Composition de composants** : Logique métier extraite des composants de rendu.
 *   **Observabilité** : Logs de timing serveur et audit activables en environnement critique.
 *   **Refactoring continu** : Isolation progressive des services historiques vers des modules serveurs propres.
+*   **Conformité outillée** : Les droits utilisateurs et les revues admin passent par des workflows applicatifs plutôt que par des manipulations directes en base.
 
 ---
 

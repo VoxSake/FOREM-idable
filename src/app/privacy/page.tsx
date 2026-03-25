@@ -38,6 +38,10 @@ const DATA_CATEGORIES: TextItem[] = [
     text: "Pour les comptes coach et admin, l'application peut générer des clés API. Celles-ci sont stockées sous forme de hash, avec des métadonnées minimales comme le nom de la clé, sa date de création, sa dernière utilisation éventuelle, sa révocation et sa date d'expiration si vous en définissez une.",
   },
   {
+    title: "Demandes RGPD et journaux de conformité",
+    text: "Lorsque vous exportez vos données, demandez la suppression de votre compte, ou lorsqu'une divulgation ciblée doit être documentée, l'application conserve des métadonnées minimales de suivi afin de tracer la demande, son statut, sa date de traitement et, le cas échéant, les restrictions légales applicables.",
+  },
+  {
     title: "Statistiques optionnelles",
     text: "Des statistiques de fréquentation via Umami peuvent être activées uniquement si vous y consentez. Elles ne sont pas nécessaires à l'utilisation du service.",
   },
@@ -72,6 +76,10 @@ const LEGAL_BASIS: TextItem[] = [
     title: "Respect des obligations légales",
     text: "Certaines données peuvent être conservées si une obligation légale l'impose ou si cela est strictement nécessaire pour gérer un litige ou défendre des droits.",
   },
+  {
+    title: "Gestion des droits et demandes légales",
+    text: "Les demandes d'export, de suppression, de gel de conservation et les divulgations ciblées à une autorité font l'objet d'un traitement encadré, limité au strict nécessaire et journalisé lorsqu'une traçabilité est requise.",
+  },
 ];
 
 const ACCESS_AND_RETENTION = [
@@ -88,8 +96,9 @@ const ACCESS_AND_RETENTION = [
     title: "Durées de conservation",
     paragraphs: [
       "Les données locales restent dans votre navigateur jusqu'à leur suppression par vos soins, par effacement manuel du navigateur ou via les fonctions prévues dans l'application.",
-      "Les données associées à un compte connecté sont conservées tant que le compte reste actif ou jusqu'à demande de suppression, sous réserve des éléments strictement nécessaires à la sécurité, à la gestion d'un litige ou au respect d'une obligation légale.",
+      "Les données associées à un compte connecté sont conservées tant que le compte reste actif ou jusqu'à demande de suppression. Une demande de suppression peut nécessiter une revue manuelle avant traitement effectif et rester suspendue si une obligation légale, un litige ou un legal hold l'impose.",
       "Les sessions expirent automatiquement. Les clés API peuvent être révoquées à tout moment et peuvent aussi expirer automatiquement si une date d'expiration a été définie.",
+      "Les exports de données générés pour un utilisateur sont temporaires et supprimés après leur durée de disponibilité. Certaines données techniques ou de sécurité expirées peuvent également être purgées de manière périodique.",
       "Les flux calendrier reflètent l'état courant des entretiens enregistrés dans l'application. Lorsqu'un entretien est modifié ou supprimé, la source est mise à jour côté FOREM-idable, mais la disparition effective dans un agenda tiers dépend du délai de resynchronisation appliqué par ce service tiers.",
     ],
   },
@@ -97,7 +106,10 @@ const ACCESS_AND_RETENTION = [
 
 const RIGHTS = [
   "Vous pouvez demander l'accès à vos données, leur rectification, leur effacement, la limitation de certains traitements, leur portabilité lorsque c'est applicable, ou vous opposer à un traitement fondé sur l'intérêt légitime.",
+  "Depuis votre espace compte, vous pouvez initier un export JSON de vos données ainsi qu'une demande de suppression de compte. Ces demandes peuvent faire l'objet d'une revue manuelle avant leur traitement effectif.",
   "Lorsque le traitement repose sur votre consentement, vous pouvez le retirer à tout moment pour l'avenir, sans remettre en cause la licéité du traitement réalisé avant ce retrait.",
+  "Lorsqu'une conservation ciblée est légalement nécessaire, certaines données peuvent être temporairement gelées via un legal hold afin d'empêcher leur suppression ou leur purge anticipée.",
+  "Lorsqu'une divulgation ciblée est réalisée à la suite d'une demande d'autorité ou d'une contrainte légale, l'opération est journalisée afin d'en conserver la traçabilité.",
 ];
 
 function SectionList({
@@ -277,6 +289,16 @@ export default function PrivacyPage() {
                 >
                   DOCAPI.md
                 </a>
+                . Une note complémentaire sur l&apos;export de données, les demandes de suppression,
+                les legal holds et la purge de rétention est disponible dans{" "}
+                <a
+                  className="text-primary hover:underline"
+                  href="https://github.com/VoxSake/FOREM-idable/blob/main/COMPLIANCE.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  COMPLIANCE.md
+                </a>
                 .
               </p>
             </AlertDescription>
@@ -284,13 +306,13 @@ export default function PrivacyPage() {
 
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Mise à jour</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm leading-6 text-muted-foreground">
-              Dernière mise à jour: 16 mars 2026. Cette page peut être adaptée si les fonctionnalités,
+            <CardTitle>Mise à jour</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm leading-6 text-muted-foreground">
+              Dernière mise à jour: 25 mars 2026. Cette page peut être adaptée si les fonctionnalités,
               les traitements ou les obligations légales applicables évoluent.
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
         </div>
       </div>
     </div>

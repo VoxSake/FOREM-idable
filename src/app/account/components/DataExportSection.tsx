@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { formatDataExportStatus } from "@/lib/complianceLabels";
 import { DataExportRequestSummary } from "../account.schemas";
 import { formatDateTime } from "../account.utils";
 
@@ -98,7 +99,7 @@ export function DataExportSection({
                 className="flex flex-col gap-3 rounded-xl border bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="font-medium capitalize">{entry.status}</p>
+                  <p className="font-medium">{formatDataExportStatus(entry.status)}</p>
                   <p className="text-xs text-muted-foreground">
                     Créé le {formatDateTime(entry.createdAt)}
                     {entry.completedAt ? ` • Terminé le ${formatDateTime(entry.completedAt)}` : ""}

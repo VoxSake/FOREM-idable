@@ -256,7 +256,15 @@ export function useAdminPageState() {
         setDeletionRequestsFeedback("Suppression finalisée.");
       } else if (data.request) {
         setDeletionRequests((current) =>
-          current.map((entry) => (entry.id === input.id ? data.request! : entry))
+          current.map((entry) =>
+            entry.id === input.id
+              ? {
+                  ...entry,
+                  ...data.request!,
+                  user: data.request!.user ?? entry.user,
+                }
+              : entry
+          )
         );
         setDeletionRequestsFeedback(
           input.action === "approve" ? "Demande approuvée." : "Demande refusée."

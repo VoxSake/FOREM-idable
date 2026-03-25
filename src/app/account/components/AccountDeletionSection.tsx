@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { formatAccountDeletionStatus } from "@/lib/complianceLabels";
 import { AccountDeletionRequestSummary } from "../account.schemas";
 import { formatDateTime } from "../account.utils";
 
@@ -138,7 +139,9 @@ export function AccountDeletionSection({
                 key={entry.id}
                 className="rounded-xl border bg-background px-4 py-3 text-sm text-muted-foreground"
               >
-                <p className="font-medium capitalize text-foreground">{entry.status}</p>
+                <p className="font-medium text-foreground">
+                  {formatAccountDeletionStatus(entry.status)}
+                </p>
                 <p>Demandée le {formatDateTime(entry.requestedAt)}</p>
                 {entry.reason ? <p>Motif: {entry.reason}</p> : null}
                 {entry.reviewNote ? <p>Revue: {entry.reviewNote}</p> : null}

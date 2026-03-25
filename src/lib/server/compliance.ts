@@ -9,6 +9,7 @@ import {
   dataExportRequests,
   disclosureLogs,
   legalHolds,
+  users,
 } from "@/lib/server/schema";
 
 export type DataExportRequestStatus = "pending" | "completed" | "failed";
@@ -139,6 +140,33 @@ function mapLegalHoldSummary(row: {
     reason: row.reason,
     createdAt: toIso(row.created_at) ?? new Date().toISOString(),
     releasedAt: toIso(row.released_at),
+  };
+}
+
+function mapAdminDeletionRequestSummary(row: {
+  id: number;
+  status: string;
+  reason: string | null;
+  requested_at: Date | string;
+  reviewed_at: Date | string | null;
+  completed_at: Date | string | null;
+  cancelled_at: Date | string | null;
+  review_note: string | null;
+  user_id: number;
+  user_email: string;
+  user_first_name: string;
+  user_last_name: string;
+  user_role: string;
+}): AdminAccountDeletionRequestSummary {
+  return {
+    ...mapDeletionRequestSummary(row),
+    user: {
+      id: row.user_id,
+      email: row.user_email,
+      firstName: row.user_first_name,
+      lastName: row.user_last_name,
+      role: row.user_role,
+    },
   };
 }
 
@@ -505,16 +533,7 @@ export async function listAccountDeletionRequestsForAdmin(limit = 50) {
     [limit]
   );
 
-  return result.rows.map((row) => ({
-    ...mapDeletionRequestSummary(row),
-    user: {
-      id: row.user_id,
-      email: row.user_email,
-      firstName: row.user_first_name,
-      lastName: row.user_last_name,
-      role: row.user_role,
-    },
-  }));
+  return result.rows.map(mapAdminDeletionRequestSummary);
 }
 
 export async function reviewAccountDeletionRequest(input: {
@@ -537,8 +556,13 @@ export async function reviewAccountDeletionRequest(input: {
       completedAt: accountDeletionRequests.completedAt,
       cancelledAt: accountDeletionRequests.cancelledAt,
       reviewNote: accountDeletionRequests.reviewNote,
+      user_email: users.email,
+      user_first_name: users.firstName,
+      user_last_name: users.lastName,
+      user_role: users.role,
     })
     .from(accountDeletionRequests)
+    .innerJoin(users, eq(users.id, accountDeletionRequests.userId))
     .where(eq(accountDeletionRequests.id, input.requestId))
     .limit(1);
 
@@ -588,7 +612,14 @@ export async function reviewAccountDeletionRequest(input: {
     });
 
     return {
-      request: mapDeletionRequestSummary(updated),
+      request: mapAdminDeletionRequestSummary({
+        ...updated,
+        user_id: request.userId,
+        user_email: request.user_email,
+        user_first_name: request.user_first_name,
+        user_last_name: request.user_last_name,
+        user_role: request.user_role,
+      }),
       deletedUserId: null,
     };
   }
@@ -630,7 +661,14 @@ export async function reviewAccountDeletionRequest(input: {
     });
 
     return {
-      request: mapDeletionRequestSummary(updated),
+      request: mapAdminDeletionRequestSummary({
+        ...updated,
+        user_id: request.userId,
+        user_email: request.user_email,
+        user_first_name: request.user_first_name,
+        user_last_name: request.user_last_name,
+        user_role: request.user_role,
+      }),
       deletedUserId: null,
     };
   }
