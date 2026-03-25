@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -52,6 +52,8 @@ export function useMessagesPageState() {
   const [messagePendingDeletion, setMessagePendingDeletion] =
     useState<ConversationMessage | null>(null);
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
+  const selectedConversationIdRef = useRef<number | null>(null);
+  const selectedConversationRef = useRef<ConversationDetail | null>(null);
   const {
     desktopThreadBottomRef,
     desktopThreadScrollAreaRef,
@@ -70,6 +72,14 @@ export function useMessagesPageState() {
     conversations,
     selectedConversationId,
   });
+
+  useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
+
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
 
   const loadConversations = useCallback(
     async (preferredConversationId?: number | null, options?: { silent?: boolean }) => {
@@ -251,6 +261,19 @@ export function useMessagesPageState() {
     },
     [user]
   );
+
+  const markConversationPreviewAsRead = useCallback((conversationId: number) => {
+    setConversations((current) =>
+      current.map((entry) =>
+        entry.id === conversationId
+          ? {
+              ...entry,
+              unreadCount: 0,
+            }
+          : entry
+      )
+    );
+  }, []);
 
   const openConversation = useCallback(
     (conversationId: number) => {
@@ -502,7 +525,8 @@ export function useMessagesPageState() {
         return;
       }
 
-      const openConversationId = selectedConversation?.id ?? selectedConversationId;
+      const openConversationId =
+        selectedConversationRef.current?.id ?? selectedConversationIdRef.current;
 
       if (event.type === "conversation.message_created") {
         syncConversationListPreview({
@@ -513,6 +537,7 @@ export function useMessagesPageState() {
 
         if (openConversationId === event.conversationId) {
           appendMessageToSelectedConversation(event.message);
+          markConversationPreviewAsRead(event.conversationId);
           scheduleScrollThreadToBottom("auto");
         }
       }
@@ -544,9 +569,8 @@ export function useMessagesPageState() {
       appendMessageToSelectedConversation,
       loadConversationDetail,
       loadConversations,
+      markConversationPreviewAsRead,
       scheduleScrollThreadToBottom,
-      selectedConversation,
-      selectedConversationId,
       syncConversationListPreview,
     ]
   );
