@@ -22,6 +22,7 @@ const PRODUCT_UPDATES = [
   {
     month: "Mars 2026",
     items: [
+      "Le pack conformité est désormais outillé de bout en bout: export JSON des données utilisateur, demande de suppression avec revue admin, legal holds, disclosure logs, purge minimale planifiable et section admin dédiée avec sélecteurs assistés pour cibler utilisateurs, candidatures et conversations.",
       "Arrivée de la page `/messages` avec conversations de groupe et messages privés (DM) entre personnes autorisées, accès direct depuis la navigation principale et base de messagerie dédiée côté serveur.",
       "Messagerie enrichie avec parsing des liens d'offres FOREM dans le chat: un lien offre valide est transformé en carte lisible avec les informations utiles et une action directe pour ajouter l'offre au suivi des candidatures.",
       "UX mobile des messages retravaillée pour les démos: affichage plein écran du fil, suppression du footer parasite sur `/messages`, header DM resserré et comportement de scroll fiabilisé sur l'ouverture d'une conversation.",

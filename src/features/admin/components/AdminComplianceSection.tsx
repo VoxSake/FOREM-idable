@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { BookLock, Check, ChevronsUpDown, FilePlus2, Hand, ShieldAlert, ShieldCheck } from "lucide-react";
@@ -39,6 +39,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   AdminDisclosureLog,
   AdminLegalHold,
+  AdminLegalHoldTargetOption,
+  fetchAdminLegalHoldTargetOptions,
 } from "@/features/admin/adminApi";
 import {
   AdminDisclosureLogFormValues,
@@ -97,22 +99,42 @@ type AdminLegalHoldUserTarget = {
   role: string;
 };
 
+type AdminLegalHoldSelectableTarget = {
+  id: number;
+  label: string;
+  description: string | null;
+};
+
 function getUserTargetLabel(user: AdminLegalHoldUserTarget) {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
   return fullName || user.email;
 }
 
-function AdminLegalHoldUserCombobox({
-  users,
-  selectedUserId,
+function AdminLegalHoldTargetCombobox({
+  options,
+  selectedTargetId,
   onSelect,
+  placeholder,
+  searchPlaceholder,
+  emptyLabel,
+  isLoading = false,
+  shouldFilter = true,
+  searchValue,
+  onSearchValueChange,
 }: {
-  users: AdminLegalHoldUserTarget[];
-  selectedUserId: number | null;
-  onSelect: (userId: number) => void;
+  options: AdminLegalHoldSelectableTarget[];
+  selectedTargetId: number | null;
+  onSelect: (targetId: number) => void;
+  placeholder: string;
+  searchPlaceholder: string;
+  emptyLabel: string;
+  isLoading?: boolean;
+  shouldFilter?: boolean;
+  searchValue?: string;
+  onSearchValueChange?: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const selectedUser = users.find((entry) => entry.id === selectedUserId) ?? null;
+  const selectedOption = options.find((entry) => entry.id === selectedTargetId) ?? null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -124,35 +146,43 @@ function AdminLegalHoldUserCombobox({
           className="w-full justify-between font-normal"
         >
           <span className="truncate text-left">
-            {selectedUser
-              ? `${getUserTargetLabel(selectedUser)} · ${selectedUser.email}`
-              : "Sélectionner un utilisateur"}
+            {selectedOption
+              ? [selectedOption.label, selectedOption.description].filter(Boolean).join(" · ")
+              : placeholder}
           </span>
-          <ChevronsUpDown className="opacity-50" />
+          <ChevronsUpDown data-icon="inline-end" className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Rechercher un utilisateur..." />
+        <Command shouldFilter={shouldFilter}>
+          <CommandInput
+            placeholder={searchPlaceholder}
+            value={searchValue}
+            onValueChange={onSearchValueChange}
+          />
           <CommandList>
-            <CommandEmpty>Aucun utilisateur correspondant.</CommandEmpty>
-            <CommandGroup heading="Utilisateurs">
-              {users.map((user) => (
+            <CommandEmpty>
+              {isLoading ? "Chargement..." : emptyLabel}
+            </CommandEmpty>
+            <CommandGroup heading="Résultats">
+              {options.map((option) => (
                 <CommandItem
-                  key={user.id}
-                  value={`${getUserTargetLabel(user)} ${user.email} ${user.role}`}
+                  key={option.id}
+                  value={`${option.label} ${option.description ?? ""}`}
                   onSelect={() => {
-                    onSelect(user.id);
+                    onSelect(option.id);
                     setOpen(false);
                   }}
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate font-medium">{getUserTargetLabel(user)}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {user.email} · {user.role}
-                    </span>
+                    <span className="truncate font-medium">{option.label}</span>
+                    {option.description ? (
+                      <span className="truncate text-xs text-muted-foreground">
+                        {option.description}
+                      </span>
+                    ) : null}
                   </div>
-                  {selectedUserId === user.id ? <Check /> : null}
+                  {selectedTargetId === option.id ? <Check /> : null}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -161,6 +191,52 @@ function AdminLegalHoldUserCombobox({
       </PopoverContent>
     </Popover>
   );
+}
+
+function useAdminLegalHoldAsyncOptions(
+  targetType: "application" | "conversation",
+  open: boolean,
+  search: string
+) {
+  const deferredSearch = useDeferredValue(search);
+  const [options, setOptions] = useState<AdminLegalHoldTargetOption[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let active = true;
+    void (async () => {
+      setIsLoading(true);
+
+      try {
+        const { response, data } = await fetchAdminLegalHoldTargetOptions(targetType, deferredSearch);
+        if (!active) return;
+
+        if (!response.ok || !data.options) {
+          setOptions([]);
+          return;
+        }
+
+        setOptions(data.options);
+      } catch {
+        if (!active) return;
+        setOptions([]);
+      } finally {
+        if (!active) return;
+        setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [deferredSearch, open, targetType]);
+
+  return {
+    options,
+    isLoading,
+  };
 }
 
 type AdminComplianceSectionProps = {
@@ -218,6 +294,8 @@ export function AdminComplianceSection({
   const [isDisclosureDialogOpen, setIsDisclosureDialogOpen] = useState(false);
   const [legalHoldPage, setLegalHoldPage] = useState(1);
   const [disclosurePage, setDisclosurePage] = useState(1);
+  const [applicationSearch, setApplicationSearch] = useState("");
+  const [conversationSearch, setConversationSearch] = useState("");
   const legalHoldForm = useForm<AdminLegalHoldFormValues>({
     resolver: zodResolver(adminLegalHoldFormSchema),
     defaultValues: {
@@ -254,6 +332,31 @@ export function AdminComplianceSection({
     const parsed = Number(currentValue);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
   }, [legalHoldTargetId]);
+  const userOptions = useMemo<AdminLegalHoldSelectableTarget[]>(
+    () =>
+      userTargets.map((entry) => ({
+        id: entry.id,
+        label: getUserTargetLabel(entry),
+        description: `${entry.email} · ${entry.role}`,
+      })),
+    [userTargets]
+  );
+  const {
+    options: applicationOptions,
+    isLoading: isApplicationOptionsLoading,
+  } = useAdminLegalHoldAsyncOptions(
+    "application",
+    legalHoldDialogOpen && legalHoldTargetType === "application",
+    applicationSearch
+  );
+  const {
+    options: conversationOptions,
+    isLoading: isConversationOptionsLoading,
+  } = useAdminLegalHoldAsyncOptions(
+    "conversation",
+    legalHoldDialogOpen && legalHoldTargetType === "conversation",
+    conversationSearch
+  );
   const disclosureRequestType = useWatch({
     control: disclosureForm.control,
     name: "requestType",
@@ -549,9 +652,24 @@ export function AdminComplianceSection({
                 <FieldLabel htmlFor="legal-hold-target-type">Type de cible</FieldLabel>
                 <Select
                   value={legalHoldTargetType}
-                  onValueChange={(value) =>
-                    legalHoldForm.setValue("targetType", value as AdminLegalHoldFormValues["targetType"])
-                  }
+                  onValueChange={(value) => {
+                    legalHoldForm.setValue(
+                      "targetType",
+                      value as AdminLegalHoldFormValues["targetType"],
+                      {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      }
+                    );
+                    legalHoldForm.setValue("targetId", "", {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    });
+                    setApplicationSearch("");
+                    setConversationSearch("");
+                  }}
                 >
                   <SelectTrigger id="legal-hold-target-type">
                     <SelectValue placeholder="Type de cible" />
@@ -568,9 +686,9 @@ export function AdminComplianceSection({
               {legalHoldTargetType === "user" ? (
                 <Field data-invalid={legalHoldForm.formState.errors.targetId ? "true" : undefined}>
                   <FieldLabel>Utilisateur ciblé</FieldLabel>
-                  <AdminLegalHoldUserCombobox
-                    users={userTargets}
-                    selectedUserId={selectedLegalHoldTargetId}
+                  <AdminLegalHoldTargetCombobox
+                    options={userOptions}
+                    selectedTargetId={selectedLegalHoldTargetId}
                     onSelect={(userId) => {
                       legalHoldForm.setValue("targetId", String(userId), {
                         shouldDirty: true,
@@ -578,6 +696,59 @@ export function AdminComplianceSection({
                         shouldValidate: true,
                       });
                     }}
+                    placeholder="Sélectionner un utilisateur"
+                    searchPlaceholder="Rechercher un utilisateur..."
+                    emptyLabel="Aucun utilisateur correspondant."
+                  />
+                  {legalHoldForm.formState.errors.targetId ? (
+                    <FieldError>{legalHoldForm.formState.errors.targetId.message}</FieldError>
+                  ) : null}
+                </Field>
+              ) : legalHoldTargetType === "application" ? (
+                <Field data-invalid={legalHoldForm.formState.errors.targetId ? "true" : undefined}>
+                  <FieldLabel>Candidature ciblée</FieldLabel>
+                  <AdminLegalHoldTargetCombobox
+                    options={applicationOptions}
+                    selectedTargetId={selectedLegalHoldTargetId}
+                    onSelect={(applicationId) => {
+                      legalHoldForm.setValue("targetId", String(applicationId), {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                    placeholder="Sélectionner une candidature"
+                    searchPlaceholder="Rechercher une candidature..."
+                    emptyLabel="Aucune candidature correspondante."
+                    isLoading={isApplicationOptionsLoading}
+                    shouldFilter={false}
+                    searchValue={applicationSearch}
+                    onSearchValueChange={setApplicationSearch}
+                  />
+                  {legalHoldForm.formState.errors.targetId ? (
+                    <FieldError>{legalHoldForm.formState.errors.targetId.message}</FieldError>
+                  ) : null}
+                </Field>
+              ) : legalHoldTargetType === "conversation" ? (
+                <Field data-invalid={legalHoldForm.formState.errors.targetId ? "true" : undefined}>
+                  <FieldLabel>Conversation ciblée</FieldLabel>
+                  <AdminLegalHoldTargetCombobox
+                    options={conversationOptions}
+                    selectedTargetId={selectedLegalHoldTargetId}
+                    onSelect={(conversationId) => {
+                      legalHoldForm.setValue("targetId", String(conversationId), {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                    placeholder="Sélectionner une conversation"
+                    searchPlaceholder="Rechercher une conversation..."
+                    emptyLabel="Aucune conversation correspondante."
+                    isLoading={isConversationOptionsLoading}
+                    shouldFilter={false}
+                    searchValue={conversationSearch}
+                    onSearchValueChange={setConversationSearch}
                   />
                   {legalHoldForm.formState.errors.targetId ? (
                     <FieldError>{legalHoldForm.formState.errors.targetId.message}</FieldError>

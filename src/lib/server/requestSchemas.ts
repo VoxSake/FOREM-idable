@@ -80,6 +80,14 @@ export const legalHoldCreateSchema = z
   })
   .strict();
 
+export const legalHoldTargetLookupQuerySchema = z
+  .object({
+    targetType: z.enum(["conversation", "application"]),
+    q: z.string().trim().max(100, "Recherche trop longue.").optional(),
+    limit: z.coerce.number().int().min(1).max(25).optional(),
+  })
+  .strict();
+
 export const disclosureLogCreateSchema = z
   .object({
     requestType: z.enum(["authority_request", "litigation", "other"]).optional(),

@@ -30,4 +30,10 @@ export {
   listActiveLegalHolds,
 } from "@/lib/server/compliance/legalHolds";
 
+export {
+  listLegalHoldTargetOptions,
+  type LegalHoldTargetLookupOption,
+  type LegalHoldTargetLookupType,
+} from "@/lib/server/compliance/legalHoldTargets";
+
 export { createDisclosureLog, listDisclosureLogs } from "@/lib/server/compliance/disclosureLogs";

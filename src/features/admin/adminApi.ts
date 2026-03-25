@@ -43,6 +43,12 @@ export type AdminDisclosureLog = {
   createdAt: string;
 };
 
+export type AdminLegalHoldTargetOption = {
+  id: number;
+  label: string;
+  description: string | null;
+};
+
 async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, init);
   const data = (await response.json().catch(() => ({}))) as T;
@@ -146,6 +152,26 @@ export function fetchAdminLegalHolds() {
   return requestJson<{ error?: string; holds?: AdminLegalHold[] }>("/api/admin/legal-holds", {
     cache: "no-store",
   });
+}
+
+export function fetchAdminLegalHoldTargetOptions(
+  targetType: "conversation" | "application",
+  search?: string
+) {
+  const params = new URLSearchParams({
+    targetType,
+  });
+
+  if (search?.trim()) {
+    params.set("q", search.trim());
+  }
+
+  return requestJson<{ error?: string; options?: AdminLegalHoldTargetOption[] }>(
+    `/api/admin/legal-hold-targets?${params.toString()}`,
+    {
+      cache: "no-store",
+    }
+  );
 }
 
 export function createAdminLegalHold(payload: {
