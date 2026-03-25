@@ -27,10 +27,15 @@ export function AuthSettingsPanel() {
     setIsSubmitting(true);
 
     try {
+      const payload =
+        mode === "login"
+          ? { email, password }
+          : { email, password, firstName, lastName };
+
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, firstName, lastName }),
+        body: JSON.stringify(payload),
       });
       const data = (await response.json()) as {
         error?: string;
