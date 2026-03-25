@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       type: "conversation.message_created",
       conversationId: result.conversationId,
       messageId: result.message.id,
+      message: result.message,
     });
 
     return NextResponse.json(result);

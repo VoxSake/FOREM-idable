@@ -99,6 +99,18 @@ describe("messageEvents", () => {
       type: "conversation.message_created" as const,
       conversationId: 12,
       messageId: 99,
+      message: {
+        id: 99,
+        conversationId: 12,
+        type: "text" as const,
+        content: "Salut",
+        metadata: {},
+        createdAt: "2026-03-25T12:00:00.000Z",
+        editedAt: null,
+        deletedAt: null,
+        author: null,
+        isOwnMessage: false,
+      },
     };
 
     subscribeMessageEvents(11, listener);

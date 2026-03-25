@@ -80,6 +80,7 @@ export type MessageStreamEvent =
       type: "conversation.message_created";
       conversationId: number;
       messageId: number;
+      message: ConversationMessage;
     }
   | {
       type: "conversation.message_deleted";

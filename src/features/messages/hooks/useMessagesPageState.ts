@@ -222,6 +222,23 @@ export function useMessagesPageState() {
     []
   );
 
+  const appendMessageToSelectedConversation = useCallback((message: ConversationMessage) => {
+    setSelectedConversation((current) => {
+      if (!current || current.id !== message.conversationId) {
+        return current;
+      }
+
+      if (current.messages.some((entry) => entry.id === message.id)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        messages: [...current.messages, message],
+      };
+    });
+  }, []);
+
   const openConversation = useCallback(
     (conversationId: number) => {
       setSelectedConversationId(conversationId);
@@ -472,6 +489,19 @@ export function useMessagesPageState() {
         return;
       }
 
+      if (event.type === "conversation.message_created") {
+        syncConversationListPreview({
+          conversationId: event.message.conversationId,
+          createdAt: event.message.createdAt,
+          content: event.message.content,
+        });
+
+        if (selectedConversationId === event.conversationId) {
+          appendMessageToSelectedConversation(event.message);
+          scheduleScrollThreadToBottom("auto");
+        }
+      }
+
       void (async () => {
         const preferredConversationId =
           selectedConversationId === event.conversationId
@@ -496,10 +526,12 @@ export function useMessagesPageState() {
       })();
     },
     [
+      appendMessageToSelectedConversation,
       loadConversationDetail,
       loadConversations,
       scheduleScrollThreadToBottom,
       selectedConversationId,
+      syncConversationListPreview,
     ]
   );
 

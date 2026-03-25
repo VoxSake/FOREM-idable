@@ -345,6 +345,6 @@ describe("externalApi", () => {
 
     expect(csv).toContain("Entretien planifié");
     expect(csv).toContain("Relance due");
-    expect(csv).toContain("oui");
+    expect(csv).toContain("yes");
   });
 });
