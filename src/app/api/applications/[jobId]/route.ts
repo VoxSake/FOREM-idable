@@ -5,7 +5,11 @@ import {
   updateApplicationForUser,
 } from "@/lib/server/applications";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
-import { patchEnvelopeSchema, readValidatedJson } from "@/lib/server/requestSchemas";
+import {
+  normalizeApplicationPatch,
+  patchEnvelopeSchema,
+  readValidatedJson,
+} from "@/lib/server/requestSchemas";
 
 export async function PATCH(
   request: NextRequest,
@@ -29,7 +33,7 @@ export async function PATCH(
     const application = await updateApplicationForUser({
       userId: user.id,
       jobId,
-      patch: parsed.data.patch,
+      patch: normalizeApplicationPatch(jobId, parsed.data.patch),
     });
 
     return NextResponse.json({ application });

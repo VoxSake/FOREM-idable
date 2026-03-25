@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
       job: body.job,
       appliedAt: body.appliedAt,
       status: body.status,
-      notes: body.notes,
-      proofs: body.proofs,
-      interviewAt: body.interviewAt,
-      interviewDetails: body.interviewDetails,
+      notes: body.notes ?? undefined,
+      proofs: body.proofs ?? undefined,
+      interviewAt: body.interviewAt ?? undefined,
+      interviewDetails: body.interviewDetails ?? undefined,
     });
 
     return NextResponse.json({ application });
