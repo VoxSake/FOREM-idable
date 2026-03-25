@@ -89,6 +89,7 @@ Réservée aux comptes `coach` et `admin` via clés API.
 *   **Reporting** : Exports CSV avec indicateurs calculés (`isFollowUpDue`, `isInterviewScheduled`).
 
 📖 [Consulter la documentation API détaillée](DOCAPI.md)
+📖 [Consulter la note conformité](COMPLIANCE.md)
 
 ---
 

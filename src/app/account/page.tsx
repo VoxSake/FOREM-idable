@@ -15,7 +15,9 @@ import { useAccountApiKeys } from "@/hooks/useAccountApiKeys";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { AuthUser } from "@/types/auth";
 import {
+  AccountDeletionRequestSummary,
   ApiKeyFormValues,
+  DataExportRequestSummary,
   FeedbackState,
   PasswordFormValues,
   ProfileFormValues,
@@ -23,7 +25,9 @@ import {
   passwordSchema,
   profileSchema,
 } from "./account.schemas";
+import { AccountDeletionSection } from "./components/AccountDeletionSection";
 import { ApiKeysSection } from "./components/ApiKeysSection";
+import { DataExportSection } from "./components/DataExportSection";
 import { PasswordSection } from "./components/PasswordSection";
 import { ProfileSection } from "./components/ProfileSection";
 import { SearchPreferencesSection } from "./components/SearchPreferencesSection";
@@ -71,8 +75,16 @@ export default function AccountPage() {
   const { settings, updateSettings, isLoaded: isSettingsLoaded } = useSettings();
   const [profileFeedback, setProfileFeedback] = useState<FeedbackState | null>(null);
   const [passwordFeedback, setPasswordFeedback] = useState<FeedbackState | null>(null);
+  const [dataExportFeedback, setDataExportFeedback] = useState<FeedbackState | null>(null);
+  const [deletionFeedback, setDeletionFeedback] = useState<FeedbackState | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isLoadingExports, setIsLoadingExports] = useState(false);
+  const [isLoadingDeletionRequests, setIsLoadingDeletionRequests] = useState(false);
+  const [isGeneratingExport, setIsGeneratingExport] = useState(false);
+  const [isSubmittingDeletionRequest, setIsSubmittingDeletionRequest] = useState(false);
+  const [dataExportRequests, setDataExportRequests] = useState<DataExportRequestSummary[]>([]);
+  const [deletionRequests, setDeletionRequests] = useState<AccountDeletionRequestSummary[]>([]);
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -129,6 +141,8 @@ export default function AccountPage() {
   useToastFeedback(profileFeedback, { title: "Mise à jour du profil" });
   useToastFeedback(passwordFeedback, { title: "Mot de passe" });
   useToastFeedback(apiKeys.feedback, { title: "Clés API" });
+  useToastFeedback(dataExportFeedback, { title: "Export de données" });
+  useToastFeedback(deletionFeedback, { title: "Suppression du compte" });
 
   const isProfileUnchanged = useMemo(
     () =>
@@ -147,6 +161,75 @@ export default function AccountPage() {
     !apiKeys.isCreating &&
     currentApiKeyName.trim().length > 0 &&
     apiKeyForm.formState.isValid;
+
+  const loadDataExportRequests = useCallback(async () => {
+    setIsLoadingExports(true);
+
+    try {
+      const response = await fetch("/api/account/data-export");
+      const data = (await response.json()) as {
+        error?: string;
+        requests?: DataExportRequestSummary[];
+      };
+
+      if (!response.ok || !data.requests) {
+        setDataExportFeedback({
+          type: "error",
+          message: data.error || "Chargement des exports impossible.",
+        });
+        return;
+      }
+
+      setDataExportRequests(data.requests);
+    } catch {
+      setDataExportFeedback({
+        type: "error",
+        message: "Chargement des exports impossible.",
+      });
+    } finally {
+      setIsLoadingExports(false);
+    }
+  }, []);
+
+  const loadDeletionRequests = useCallback(async () => {
+    setIsLoadingDeletionRequests(true);
+
+    try {
+      const response = await fetch("/api/account/deletion-request");
+      const data = (await response.json()) as {
+        error?: string;
+        requests?: AccountDeletionRequestSummary[];
+      };
+
+      if (!response.ok || !data.requests) {
+        setDeletionFeedback({
+          type: "error",
+          message: data.error || "Chargement des demandes impossible.",
+        });
+        return;
+      }
+
+      setDeletionRequests(data.requests);
+    } catch {
+      setDeletionFeedback({
+        type: "error",
+        message: "Chargement des demandes impossible.",
+      });
+    } finally {
+      setIsLoadingDeletionRequests(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setDataExportRequests([]);
+      setDeletionRequests([]);
+      return;
+    }
+
+    void loadDataExportRequests();
+    void loadDeletionRequests();
+  }, [loadDataExportRequests, loadDeletionRequests, user]);
 
   const saveProfile = useCallback(async (values: ProfileFormValues) => {
     setIsSavingProfile(true);
@@ -234,6 +317,120 @@ export default function AccountPage() {
       expiry: "none",
     });
   }, [apiKeyForm, apiKeys]);
+
+  const generateDataExport = useCallback(async () => {
+    setIsGeneratingExport(true);
+    setDataExportFeedback(null);
+
+    try {
+      const response = await fetch("/api/account/data-export", {
+        method: "POST",
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        request?: DataExportRequestSummary;
+      };
+
+      if (!response.ok || !data.request) {
+        setDataExportFeedback({
+          type: "error",
+          message: data.error || "Export impossible.",
+        });
+        return;
+      }
+
+      await loadDataExportRequests();
+      setDataExportFeedback({
+        type: "success",
+        message: "Export généré. Vous pouvez maintenant le télécharger.",
+      });
+    } catch {
+      setDataExportFeedback({
+        type: "error",
+        message: "Export impossible.",
+      });
+    } finally {
+      setIsGeneratingExport(false);
+    }
+  }, [loadDataExportRequests]);
+
+  const downloadDataExport = useCallback((requestId: number) => {
+    window.location.href = `/api/account/data-export/${requestId}`;
+  }, []);
+
+  const submitDeletionRequest = useCallback(async (reason: string) => {
+    setIsSubmittingDeletionRequest(true);
+    setDeletionFeedback(null);
+
+    try {
+      const response = await fetch("/api/account/deletion-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason.trim() || undefined }),
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        request?: AccountDeletionRequestSummary;
+      };
+
+      if (!response.ok || !data.request) {
+        setDeletionFeedback({
+          type: "error",
+          message: data.error || "Demande impossible.",
+        });
+        return;
+      }
+
+      await loadDeletionRequests();
+      setDeletionFeedback({
+        type: "success",
+        message: "Demande de suppression enregistrée.",
+      });
+    } catch {
+      setDeletionFeedback({
+        type: "error",
+        message: "Demande impossible.",
+      });
+    } finally {
+      setIsSubmittingDeletionRequest(false);
+    }
+  }, [loadDeletionRequests]);
+
+  const cancelDeletionRequest = useCallback(async () => {
+    setIsSubmittingDeletionRequest(true);
+    setDeletionFeedback(null);
+
+    try {
+      const response = await fetch("/api/account/deletion-request", {
+        method: "DELETE",
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        request?: AccountDeletionRequestSummary;
+      };
+
+      if (!response.ok || !data.request) {
+        setDeletionFeedback({
+          type: "error",
+          message: data.error || "Annulation impossible.",
+        });
+        return;
+      }
+
+      await loadDeletionRequests();
+      setDeletionFeedback({
+        type: "success",
+        message: "Demande de suppression annulée.",
+      });
+    } catch {
+      setDeletionFeedback({
+        type: "error",
+        message: "Annulation impossible.",
+      });
+    } finally {
+      setIsSubmittingDeletionRequest(false);
+    }
+  }, [loadDeletionRequests]);
 
   const handleSearchModeChange = useCallback(
     (value: "AND" | "OR") => {
@@ -328,6 +525,23 @@ export default function AccountPage() {
             onRevoke={apiKeys.revokeApiKey}
           />
         ) : null}
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <DataExportSection
+            requests={dataExportRequests}
+            isLoading={isLoadingExports}
+            isExporting={isGeneratingExport}
+            onCreate={generateDataExport}
+            onDownload={downloadDataExport}
+          />
+          <AccountDeletionSection
+            requests={deletionRequests}
+            isLoading={isLoadingDeletionRequests}
+            isSubmitting={isSubmittingDeletionRequest}
+            onSubmit={submitDeletionRequest}
+            onCancel={cancelDeletionRequest}
+          />
+        </div>
       </div>
     </div>
   );

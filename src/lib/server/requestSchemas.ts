@@ -66,6 +66,32 @@ export const passwordUpdateSchema = z
   })
   .strict();
 
+export const accountDeletionRequestSchema = z
+  .object({
+    reason: z.string().trim().max(2000, "Motif trop long.").optional(),
+  })
+  .strict();
+
+export const legalHoldCreateSchema = z
+  .object({
+    targetType: z.enum(["user", "conversation", "application"]),
+    targetId: z.coerce.number().int().positive("Cible invalide."),
+    reason: z.string().trim().min(1, "Motif requis.").max(2000, "Motif trop long."),
+  })
+  .strict();
+
+export const disclosureLogCreateSchema = z
+  .object({
+    requestType: z.enum(["authority_request", "litigation", "other"]).optional(),
+    authorityName: z.string().trim().min(1, "Autorité requise.").max(255, "Autorité trop longue."),
+    legalBasis: z.string().trim().max(500, "Base légale trop longue.").optional(),
+    targetType: z.enum(["user", "conversation", "application", "export", "other"]),
+    targetId: z.coerce.number().int().positive("Cible invalide.").optional(),
+    scopeSummary: z.string().trim().min(1, "Périmètre requis.").max(4000, "Périmètre trop long."),
+    exportReference: z.string().trim().max(255, "Référence trop longue.").optional(),
+  })
+  .strict();
+
 export const apiKeyCreateRequestSchema = z
   .object({
     name: trimmedNonEmptyStringSchema,

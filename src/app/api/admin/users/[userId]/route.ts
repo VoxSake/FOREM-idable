@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { recordAuditEvent } from "@/lib/server/auditLog";
+import { assertNoActiveUserLegalHold } from "@/lib/server/compliance";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { deleteUserAccount, setUserPassword, updateUserProfile } from "@/lib/server/auth";
 import { markCoachAction, requireAdminAccess, requireCoachAccess } from "@/lib/server/coach";
@@ -139,6 +140,8 @@ export async function DELETE(
         return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
       }
 
+      await assertNoActiveUserLegalHold(userId);
+
       await deleteUserAccount(userId);
       await markCoachAction(admin.id);
       await recordAuditEvent({
@@ -161,7 +164,11 @@ export async function DELETE(
         },
       });
       return NextResponse.json({ ok: true });
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.name === "ActiveLegalHoldError") {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
+
       return NextResponse.json({ error: "Suppression utilisateur impossible." }, { status: 500 });
     }
   });

@@ -15,7 +15,13 @@ export type AuditAction =
   | "group_coach_assigned"
   | "group_coach_removed"
   | "group_manager_changed"
-  | "coach_csv_import_completed";
+  | "coach_csv_import_completed"
+  | "user_data_export_requested"
+  | "account_deletion_requested"
+  | "account_deletion_cancelled"
+  | "legal_hold_created"
+  | "legal_hold_released"
+  | "disclosure_logged";
 
 export async function recordAuditEvent(input: {
   actorUserId: number;

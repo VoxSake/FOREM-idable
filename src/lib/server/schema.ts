@@ -561,3 +561,98 @@ export const auditLogs = pgTable(
     actionIdx: index("audit_logs_action_idx").on(table.action, table.createdAt),
   })
 );
+
+export const dataExportRequests = pgTable(
+  "data_export_requests",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
+    format: text("format").notNull().default("json"),
+    payload: jsonb("payload"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+  },
+  (table) => ({
+    userCreatedIdx: index("data_export_requests_user_created_idx").on(table.userId, table.createdAt),
+    userStatusIdx: index("data_export_requests_user_status_idx").on(table.userId, table.status),
+    expiresAtIdx: index("data_export_requests_expires_at_idx").on(table.expiresAt),
+  })
+);
+
+export const accountDeletionRequests = pgTable(
+  "account_deletion_requests",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
+    reason: text("reason"),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewedByUserId: bigint("reviewed_by_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    reviewNote: text("review_note"),
+  },
+  (table) => ({
+    userRequestedIdx: index("account_deletion_requests_user_requested_idx").on(
+      table.userId,
+      table.requestedAt
+    ),
+    userStatusIdx: index("account_deletion_requests_user_status_idx").on(table.userId, table.status),
+  })
+);
+
+export const legalHolds = pgTable(
+  "legal_holds",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    targetType: text("target_type").notNull(),
+    targetId: bigint("target_id", { mode: "number" }).notNull(),
+    reason: text("reason").notNull(),
+    createdByUserId: bigint("created_by_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    releasedAt: timestamp("released_at", { withTimezone: true }),
+  },
+  (table) => ({
+    targetIdx: index("legal_holds_target_idx").on(table.targetType, table.targetId, table.releasedAt),
+    createdByIdx: index("legal_holds_created_by_idx").on(table.createdByUserId),
+  })
+);
+
+export const disclosureLogs = pgTable(
+  "disclosure_logs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    requestType: text("request_type").notNull().default("authority_request"),
+    authorityName: text("authority_name").notNull(),
+    legalBasis: text("legal_basis"),
+    targetType: text("target_type").notNull(),
+    targetId: bigint("target_id", { mode: "number" }),
+    scopeSummary: text("scope_summary").notNull(),
+    exportReference: text("export_reference"),
+    payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    createdByUserId: bigint("created_by_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    requestTypeCreatedIdx: index("disclosure_logs_request_type_created_idx").on(
+      table.requestType,
+      table.createdAt
+    ),
+    targetIdx: index("disclosure_logs_target_idx").on(table.targetType, table.targetId),
+    createdByIdx: index("disclosure_logs_created_by_idx").on(table.createdByUserId),
+  })
+);

@@ -46,6 +46,21 @@ describe("AccountPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    vi.spyOn(global, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method ?? "GET";
+
+      if (url === "/api/account/data-export" && method === "GET") {
+        return new Response(JSON.stringify({ requests: [] }), { status: 200 });
+      }
+
+      if (url === "/api/account/deletion-request" && method === "GET") {
+        return new Response(JSON.stringify({ requests: [] }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ error: "Unhandled fetch in test" }), { status: 500 });
+    });
+
     mockUseAuth.mockReturnValue({
       user: {
         id: 1,
@@ -71,20 +86,35 @@ describe("AccountPage", () => {
   });
 
   it("submits the profile form with validated values", async () => {
-    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          user: {
-            id: 1,
-            email: "user@example.com",
-            firstName: "Jordan",
-            lastName: "Brisbois",
-            role: "user",
-          },
-        }),
-        { status: 200 }
-      )
-    );
+    const fetchMock = vi.mocked(global.fetch).mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method ?? "GET";
+
+      if (url === "/api/account/data-export" && method === "GET") {
+        return new Response(JSON.stringify({ requests: [] }), { status: 200 });
+      }
+
+      if (url === "/api/account/deletion-request" && method === "GET") {
+        return new Response(JSON.stringify({ requests: [] }), { status: 200 });
+      }
+
+      if (url === "/api/account" && method === "PATCH") {
+        return new Response(
+          JSON.stringify({
+            user: {
+              id: 1,
+              email: "user@example.com",
+              firstName: "Jordan",
+              lastName: "Brisbois",
+              role: "user",
+            },
+          }),
+          { status: 200 }
+        );
+      }
+
+      return new Response(JSON.stringify({ error: "Unhandled fetch in test" }), { status: 500 });
+    });
 
     render(<AccountPage />);
 

@@ -29,6 +29,27 @@ export type FeedbackState = {
   message: string;
 };
 
+export type DataExportRequestSummary = {
+  id: number;
+  status: "pending" | "completed" | "failed";
+  format: string;
+  createdAt: string;
+  completedAt: string | null;
+  expiresAt: string | null;
+  error: string | null;
+};
+
+export type AccountDeletionRequestSummary = {
+  id: number;
+  status: "pending" | "approved" | "rejected" | "completed" | "cancelled";
+  reason: string | null;
+  requestedAt: string;
+  reviewedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  reviewNote: string | null;
+};
+
 export const API_KEY_EXPIRY_OPTIONS: Array<{ value: ApiKeyFormValues["expiry"]; label: string }> =
   [
     { value: "none", label: "Sans expiration" },

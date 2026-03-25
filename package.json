@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "maintenance:purge": "node scripts/purge-retention.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
