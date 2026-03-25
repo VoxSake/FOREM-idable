@@ -149,3 +149,16 @@ Ce projet est sous licence [GNU AGPL v3.0](LICENSE) (`AGPL-3.0-only`).
 
 Le code source public du service est disponible sur GitHub :
 https://github.com/VoxSake/FOREM-idable
+
+## 📚 Licence Des Données
+
+Le code de l'application est distribué sous `AGPL-3.0-only`, mais les données d'offres issues du
+jeu de données **Le Forem / ODWB** relèvent d'une licence distincte.
+
+*   **Code de l'application** : `AGPL-3.0-only`
+*   **Données d'offres Forem / ODWB** : [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr)
+*   **Source du dataset** : [ODWB - offres-d-emploi-forem](https://www.odwb.be/explore/dataset/offres-d-emploi-forem/information/)
+
+Lorsqu'une offre Forem est affichée, l'application peut reformater ou structurer certaines
+informations pour en faciliter la lecture. Les contenus sources restent attribués à Le Forem /
+ODWB, conformément à la licence du dataset.
