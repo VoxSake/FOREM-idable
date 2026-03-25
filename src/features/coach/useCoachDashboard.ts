@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
-  CoachApplicationExportRow,
-  exportCoachApplicationsToCSV,
-} from "@/lib/exportCoachApplicationsCsv";
-import {
   fetchCoachDashboard,
-  requestCalendarSubscription as requestCalendarSubscriptionApi,
 } from "@/features/coach/coachDashboardApi";
 import {
   addMembershipToDashboard,
@@ -26,7 +21,6 @@ import {
 } from "@/features/coach/dashboardState";
 import { ApiKeySummary } from "@/types/externalApi";
 import { JobApplication } from "@/types/application";
-import { CalendarSubscriptionSummary } from "@/types/calendar";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import {
   CoachApiKeysTarget,
@@ -43,10 +37,7 @@ import { useCoachDashboardDerivedState } from "@/features/coach/useCoachDashboar
 import { useCoachApplicationActions } from "@/features/coach/useCoachApplicationActions";
 import { useCoachAdminActions } from "@/features/coach/useCoachAdminActions";
 import { useCoachGroupActions } from "@/features/coach/useCoachGroupActions";
-import {
-  buildGroupExportRows,
-  buildUserExportRows,
-} from "@/features/coach/utils";
+import { useCoachUtilities } from "@/features/coach/useCoachUtilities";
 
 export function useCoachDashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -302,113 +293,12 @@ export function useCoachDashboard() {
     updateUserRoleLocally,
   });
 
-  const exportRows = (filenamePrefix: string, rows: CoachApplicationExportRow[]) => {
-    exportCoachApplicationsToCSV({
-      filenamePrefix,
-      rows,
-    });
-  };
-
-  const buildAbsoluteCalendarUrl = (subscription: CalendarSubscriptionSummary) => {
-    if (typeof window === "undefined") {
-      return subscription.path;
-    }
-
-    return `${window.location.origin}${subscription.path}`;
-  };
-
-  const writeCalendarUrl = async (
-    subscription: CalendarSubscriptionSummary,
-    label: string,
-    actionLabel: string
-  ) => {
-    const absoluteUrl = buildAbsoluteCalendarUrl(subscription);
-
-    try {
-      await navigator.clipboard.writeText(absoluteUrl);
-      setFeedback(`${actionLabel} : ${label}.`);
-      return true;
-    } catch {
-      setFeedback(`Calendrier prêt, mais copie impossible: ${label}.`);
-      return false;
-    }
-  };
-
-  const requestCalendarSubscription = async (input: {
-    scope: "group" | "all_groups";
-    groupId?: number | null;
-    regenerate?: boolean;
-    label: string;
-  }) => {
-    const { response, data } = await requestCalendarSubscriptionApi({
-      scope: input.scope,
-      groupId: input.groupId,
-      regenerate: input.regenerate,
-    });
-
-    if (!response.ok || !data.subscription) {
-      setFeedback(data.error || "Calendrier indisponible.");
-      return false;
-    }
-
-    await writeCalendarUrl(
-      data.subscription,
-      input.label,
-      input.regenerate ? "Nouvelle URL calendrier régénérée et copiée" : "Nouvelle URL calendrier copiée"
-    );
-    return true;
-  };
-
-  const exportUserApplications = () => {
-    if (!selectedUser) return;
-
-    const rows = buildUserExportRows(selectedUser);
-    exportRows(
-      `candidatures-${selectedUser.email.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
-      rows
-    );
-
-    if (selectedUser.applications.length === 0) {
-      setFeedback("Export généré avec une ligne vide: aucune candidature pour cet utilisateur.");
-    }
-  };
-
-  const exportGroupApplications = (groupName: string, members: CoachUserSummary[]) => {
-    const rows = buildGroupExportRows(groupName, members);
-    exportRows(`groupe-${groupName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`, rows);
-
-    if (members.every((entry) => entry.applications.length === 0)) {
-      setFeedback("Export généré avec des lignes vides: aucune candidature dans ce groupe.");
-    }
-  };
-
-  const copyGroupCalendarUrl = async (groupId: number, groupName: string) =>
-    requestCalendarSubscription({
-      scope: "group",
-      groupId,
-      label: `groupe ${groupName}`,
-    });
-
-  const copyAllGroupsCalendarUrl = async () =>
-    requestCalendarSubscription({
-      scope: "all_groups",
-      label: "tous les groupes bénéficiaires",
-    });
-
-  const regenerateCalendarUrl = async () => {
-    if (!calendarRegenerationTarget) return;
-
-    const success = await requestCalendarSubscription({
-      scope: calendarRegenerationTarget.scope,
-      groupId: calendarRegenerationTarget.groupId,
-      regenerate: true,
-      label: calendarRegenerationTarget.label,
-    });
-
-    if (success) {
-      setCalendarRegenerationTarget(null);
-    }
-  };
+  const coachUtilities = useCoachUtilities({
+    calendarRegenerationTarget,
+    selectedUser,
+    setCalendarRegenerationTarget,
+    setFeedback,
+  });
 
   const undoLastAction = async () => {
     if (!undoAction) return;
@@ -508,11 +398,11 @@ export function useCoachDashboard() {
     createSharedCoachNote: coachApplicationActions.createSharedCoachNote,
     updateSharedCoachNote: coachApplicationActions.updateSharedCoachNote,
     deleteSharedCoachNote: coachApplicationActions.deleteSharedCoachNote,
-    exportUserApplications,
-    exportGroupApplications,
-    copyGroupCalendarUrl,
-    copyAllGroupsCalendarUrl,
-    regenerateCalendarUrl,
+    exportUserApplications: coachUtilities.exportUserApplications,
+    exportGroupApplications: coachUtilities.exportGroupApplications,
+    copyGroupCalendarUrl: coachUtilities.copyGroupCalendarUrl,
+    copyAllGroupsCalendarUrl: coachUtilities.copyAllGroupsCalendarUrl,
+    regenerateCalendarUrl: coachUtilities.regenerateCalendarUrl,
     undoLastAction,
     importApplicationsForUser: coachApplicationActions.importApplicationsForUser,
     updateManagedApplication: coachApplicationActions.updateManagedApplication,
