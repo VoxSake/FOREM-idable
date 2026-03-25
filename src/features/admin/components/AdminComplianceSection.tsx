@@ -1,12 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
-import { BookLock, FilePlus2, Hand, ShieldAlert, ShieldCheck } from "lucide-react";
+import { BookLock, Check, ChevronsUpDown, FilePlus2, Hand, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +26,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/u
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { LocalPagination } from "@/components/ui/local-pagination";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -80,9 +89,90 @@ function formatDisclosureTargetType(type: AdminDisclosureLog["targetType"]) {
   }
 }
 
+type AdminLegalHoldUserTarget = {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+};
+
+function getUserTargetLabel(user: AdminLegalHoldUserTarget) {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+  return fullName || user.email;
+}
+
+function AdminLegalHoldUserCombobox({
+  users,
+  selectedUserId,
+  onSelect,
+}: {
+  users: AdminLegalHoldUserTarget[];
+  selectedUserId: number | null;
+  onSelect: (userId: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedUser = users.find((entry) => entry.id === selectedUserId) ?? null;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate text-left">
+            {selectedUser
+              ? `${getUserTargetLabel(selectedUser)} · ${selectedUser.email}`
+              : "Sélectionner un utilisateur"}
+          </span>
+          <ChevronsUpDown className="opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Rechercher un utilisateur..." />
+          <CommandList>
+            <CommandEmpty>Aucun utilisateur correspondant.</CommandEmpty>
+            <CommandGroup heading="Utilisateurs">
+              {users.map((user) => (
+                <CommandItem
+                  key={user.id}
+                  value={`${getUserTargetLabel(user)} ${user.email} ${user.role}`}
+                  onSelect={() => {
+                    onSelect(user.id);
+                    setOpen(false);
+                  }}
+                >
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate font-medium">{getUserTargetLabel(user)}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {user.email} · {user.role}
+                    </span>
+                  </div>
+                  {selectedUserId === user.id ? <Check /> : null}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 type AdminComplianceSectionProps = {
+  userTargets: AdminLegalHoldUserTarget[];
   legalHolds: AdminLegalHold[];
   disclosureLogs: AdminDisclosureLog[];
+  legalHoldDialogOpen: boolean;
+  onLegalHoldDialogOpenChange: (open: boolean) => void;
+  legalHoldDraft: {
+    targetType: "user" | "conversation" | "application";
+    targetId: number | null;
+  } | null;
   isLegalHoldsLoading: boolean;
   isDisclosureLogsLoading: boolean;
   isCreatingLegalHold: boolean;
@@ -108,8 +198,12 @@ type AdminComplianceSectionProps = {
 };
 
 export function AdminComplianceSection({
+  userTargets,
   legalHolds,
   disclosureLogs,
+  legalHoldDialogOpen,
+  onLegalHoldDialogOpenChange,
+  legalHoldDraft,
   isLegalHoldsLoading,
   isDisclosureLogsLoading,
   isCreatingLegalHold,
@@ -121,7 +215,6 @@ export function AdminComplianceSection({
   onReleaseLegalHold,
   onCreateDisclosureLog,
 }: AdminComplianceSectionProps) {
-  const [isLegalHoldDialogOpen, setIsLegalHoldDialogOpen] = useState(false);
   const [isDisclosureDialogOpen, setIsDisclosureDialogOpen] = useState(false);
   const [legalHoldPage, setLegalHoldPage] = useState(1);
   const [disclosurePage, setDisclosurePage] = useState(1);
@@ -152,6 +245,15 @@ export function AdminComplianceSection({
     control: legalHoldForm.control,
     name: "targetType",
   });
+  const legalHoldTargetId = useWatch({
+    control: legalHoldForm.control,
+    name: "targetId",
+  });
+  const selectedLegalHoldTargetId = useMemo(() => {
+    const currentValue = legalHoldTargetId;
+    const parsed = Number(currentValue);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }, [legalHoldTargetId]);
   const disclosureRequestType = useWatch({
     control: disclosureForm.control,
     name: "requestType",
@@ -194,9 +296,29 @@ export function AdminComplianceSection({
       targetId: "",
       reason: "",
     });
-    setIsLegalHoldDialogOpen(false);
+    onLegalHoldDialogOpenChange(false);
     setLegalHoldPage(1);
   });
+
+  useEffect(() => {
+    if (!legalHoldDialogOpen) {
+      legalHoldForm.reset({
+        targetType: "user",
+        targetId: "",
+        reason: "",
+      });
+      return;
+    }
+
+    legalHoldForm.reset({
+      targetType: legalHoldDraft?.targetType ?? "user",
+      targetId:
+        legalHoldDraft?.targetId && Number.isInteger(legalHoldDraft.targetId)
+          ? String(legalHoldDraft.targetId)
+          : "",
+      reason: "",
+    });
+  }, [legalHoldDialogOpen, legalHoldDraft, legalHoldForm]);
 
   const submitDisclosureLog = disclosureForm.handleSubmit(async (values) => {
     const parsedTargetId =
@@ -263,10 +385,10 @@ export function AdminComplianceSection({
                     Geler une suppression ou une purge ciblée tant qu&apos;une contrainte s&apos;applique.
                   </CardDescription>
                 </div>
-                <Button type="button" onClick={() => setIsLegalHoldDialogOpen(true)}>
-                  <ShieldAlert data-icon="inline-start" />
-                  Ajouter
-                </Button>
+                  <Button type="button" onClick={() => onLegalHoldDialogOpenChange(true)}>
+                    <ShieldAlert data-icon="inline-start" />
+                    Ajouter
+                  </Button>
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-4 px-5 py-5">
@@ -413,7 +535,7 @@ export function AdminComplianceSection({
         </CardContent>
       </Card>
 
-      <Dialog open={isLegalHoldDialogOpen} onOpenChange={setIsLegalHoldDialogOpen}>
+      <Dialog open={legalHoldDialogOpen} onOpenChange={onLegalHoldDialogOpenChange}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Créer un legal hold</DialogTitle>
@@ -443,18 +565,38 @@ export function AdminComplianceSection({
                   </SelectContent>
                 </Select>
               </Field>
-              <Field data-invalid={legalHoldForm.formState.errors.targetId ? "true" : undefined}>
-                <FieldLabel htmlFor="legal-hold-target-id">Identifiant cible</FieldLabel>
-                <Input
-                  id="legal-hold-target-id"
-                  type="number"
-                  aria-invalid={legalHoldForm.formState.errors.targetId ? "true" : "false"}
-                  {...legalHoldForm.register("targetId")}
-                />
-                {legalHoldForm.formState.errors.targetId ? (
-                  <FieldError>{legalHoldForm.formState.errors.targetId.message}</FieldError>
-                ) : null}
-              </Field>
+              {legalHoldTargetType === "user" ? (
+                <Field data-invalid={legalHoldForm.formState.errors.targetId ? "true" : undefined}>
+                  <FieldLabel>Utilisateur ciblé</FieldLabel>
+                  <AdminLegalHoldUserCombobox
+                    users={userTargets}
+                    selectedUserId={selectedLegalHoldTargetId}
+                    onSelect={(userId) => {
+                      legalHoldForm.setValue("targetId", String(userId), {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                  />
+                  {legalHoldForm.formState.errors.targetId ? (
+                    <FieldError>{legalHoldForm.formState.errors.targetId.message}</FieldError>
+                  ) : null}
+                </Field>
+              ) : (
+                <Field data-invalid={legalHoldForm.formState.errors.targetId ? "true" : undefined}>
+                  <FieldLabel htmlFor="legal-hold-target-id">Identifiant cible</FieldLabel>
+                  <Input
+                    id="legal-hold-target-id"
+                    type="number"
+                    aria-invalid={legalHoldForm.formState.errors.targetId ? "true" : "false"}
+                    {...legalHoldForm.register("targetId")}
+                  />
+                  {legalHoldForm.formState.errors.targetId ? (
+                    <FieldError>{legalHoldForm.formState.errors.targetId.message}</FieldError>
+                  ) : null}
+                </Field>
+              )}
               <Field data-invalid={legalHoldForm.formState.errors.reason ? "true" : undefined}>
                 <FieldLabel htmlFor="legal-hold-reason">Motif</FieldLabel>
                 <Textarea
@@ -468,7 +610,7 @@ export function AdminComplianceSection({
               </Field>
             </FieldGroup>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsLegalHoldDialogOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => onLegalHoldDialogOpenChange(false)}>
                 Annuler
               </Button>
               <Button type="submit" disabled={isCreatingLegalHold}>

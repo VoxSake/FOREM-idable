@@ -71,6 +71,7 @@ type AdminAccountDeletionRequestsSectionProps = {
   isLoading: boolean;
   reviewingId: number | null;
   onRefresh: () => void;
+  onRequestLegalHold: (user: AdminAccountDeletionRequest["user"]) => void;
   onReview: (input: {
     id: number;
     action: "approve" | "reject" | "complete";
@@ -83,6 +84,7 @@ export function AdminAccountDeletionRequestsSection({
   isLoading,
   reviewingId,
   onRefresh,
+  onRequestLegalHold,
   onReview,
 }: AdminAccountDeletionRequestsSectionProps) {
   const [noteById, setNoteById] = useState<Record<number, string>>({});
@@ -229,44 +231,51 @@ export function AdminAccountDeletionRequestsSection({
                       </div>
                     </div>
 
-                    {(canApproveOrReject || canComplete) && (
-                      <div className="flex flex-wrap gap-2">
-                        {canApproveOrReject ? (
-                          <>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={isPending || Boolean(noteError)}
-                              onClick={() => void onReview({ id: request.id, action: "approve", reviewNote: note })}
-                            >
-                              Approuver
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={isPending || Boolean(noteError)}
-                              onClick={() => void onReview({ id: request.id, action: "reject", reviewNote: note })}
-                            >
-                              Refuser
-                            </Button>
-                          </>
-                        ) : null}
-                        {canComplete ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onRequestLegalHold(request.user)}
+                      >
+                        <ShieldAlert data-icon="inline-start" />
+                        Legal hold
+                      </Button>
+                      {canApproveOrReject ? (
+                        <>
                           <Button
                             type="button"
                             size="sm"
-                            variant="destructive"
+                            variant="outline"
                             disabled={isPending || Boolean(noteError)}
-                            onClick={() => setCompleteTarget(request)}
+                            onClick={() => void onReview({ id: request.id, action: "approve", reviewNote: note })}
                           >
-                            <ShieldAlert data-icon="inline-start" />
-                            Finaliser
+                            Approuver
                           </Button>
-                        ) : null}
-                      </div>
-                    )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={isPending || Boolean(noteError)}
+                            onClick={() => void onReview({ id: request.id, action: "reject", reviewNote: note })}
+                          >
+                            Refuser
+                          </Button>
+                        </>
+                      ) : null}
+                      {canComplete ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          disabled={isPending || Boolean(noteError)}
+                          onClick={() => setCompleteTarget(request)}
+                        >
+                          <ShieldAlert data-icon="inline-start" />
+                          Finaliser
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
 
                   <FieldGroup className="gap-3">

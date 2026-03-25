@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -117,7 +118,39 @@ function AdminPageSkeleton() {
 
 export default function AdminPage() {
   const page = useAdminPageState();
+  const [isLegalHoldDialogOpen, setIsLegalHoldDialogOpen] = useState(false);
+  const [legalHoldDraft, setLegalHoldDraft] = useState<{
+    targetType: "user" | "conversation" | "application";
+    targetId: number | null;
+  } | null>(null);
   const isInitialPageLoading = page.isAuthLoading || (page.isLoading && !page.dashboard);
+
+  const legalHoldUserTargets = useMemo(
+    () =>
+      (page.dashboard?.users ?? []).map((entry) => ({
+        id: entry.id,
+        email: entry.email,
+        firstName: entry.firstName,
+        lastName: entry.lastName,
+        role: entry.role,
+      })),
+    [page.dashboard?.users]
+  );
+
+  const handleLegalHoldDialogOpenChange = useCallback((open: boolean) => {
+    setIsLegalHoldDialogOpen(open);
+    if (!open) {
+      setLegalHoldDraft(null);
+    }
+  }, []);
+
+  const openUserLegalHoldDialog = useCallback((userId: number) => {
+    setLegalHoldDraft({
+      targetType: "user",
+      targetId: userId,
+    });
+    setIsLegalHoldDialogOpen(true);
+  }, []);
 
   useToastFeedback(page.feedback, { title: "Administration" });
   useToastFeedback(page.apiKeysFeedback, { title: "Clés API admin" });
@@ -263,14 +296,19 @@ export default function AdminPage() {
           isLoading={page.isDeletionRequestsLoading}
           reviewingId={page.reviewingDeletionRequestId}
           onRefresh={() => void page.loadDeletionRequests()}
+          onRequestLegalHold={(user) => openUserLegalHoldDialog(user.id)}
           onReview={(input) => page.reviewDeletionRequest(input)}
         />
       </div>
 
       <div id="conformite">
         <AdminComplianceSection
+          userTargets={legalHoldUserTargets}
           legalHolds={page.legalHolds}
           disclosureLogs={page.disclosureLogs}
+          legalHoldDialogOpen={isLegalHoldDialogOpen}
+          onLegalHoldDialogOpenChange={handleLegalHoldDialogOpenChange}
+          legalHoldDraft={legalHoldDraft}
           isLegalHoldsLoading={page.isLegalHoldsLoading}
           isDisclosureLogsLoading={page.isDisclosureLogsLoading}
           isCreatingLegalHold={page.isCreatingLegalHold}
