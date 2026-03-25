@@ -1,12 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Users, KeyRound, ArrowRight, FileWarning } from "lucide-react";
+import {
+  ArrowRight,
+  BookLock,
+  FileWarning,
+  KeyRound,
+  Search,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { CoachAdminSection } from "@/features/coach/components/CoachAdminSection";
 import { useAdminPageState } from "@/features/admin/useAdminPageState";
 import { AdminAccountDeletionRequestsSection } from "@/features/admin/components/AdminAccountDeletionRequestsSection";
 import { AdminApiKeysSection } from "@/features/admin/components/AdminApiKeysSection";
+import { AdminComplianceSection } from "@/features/admin/components/AdminComplianceSection";
 import { AdminFeaturedSearchesSection } from "@/features/admin/components/AdminFeaturedSearchesSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +50,14 @@ function SummaryCard({
     </Card>
   );
 }
+
+const ADMIN_SECTIONS = [
+  { id: "coachs", label: "Coachs", icon: Users },
+  { id: "recherches", label: "Recherches", icon: Search },
+  { id: "cles-api", label: "Clés API", icon: KeyRound },
+  { id: "suppression-comptes", label: "Suppressions", icon: FileWarning },
+  { id: "conformite", label: "Conformité", icon: BookLock },
+] as const;
 
 function AdminPageSkeleton() {
   return (
@@ -106,6 +123,8 @@ export default function AdminPage() {
   useToastFeedback(page.apiKeysFeedback, { title: "Clés API admin" });
   useToastFeedback(page.featuredSearchesFeedback, { title: "Recherches mises en avant" });
   useToastFeedback(page.deletionRequestsFeedback, { title: "Demandes de suppression" });
+  useToastFeedback(page.legalHoldsFeedback, { title: "Legal holds" });
+  useToastFeedback(page.disclosureLogsFeedback, { title: "Disclosure logs" });
 
   if (isInitialPageLoading) {
     return <AdminPageSkeleton />;
@@ -147,34 +166,18 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3 lg:w-auto lg:min-w-[360px]">
-              <Button asChild variant="outline" className="justify-between bg-card/80">
-                <a href="#coachs">
-                  <span className="inline-flex items-center gap-2">
-                    <Users data-icon="inline-start" />
-                    Coachs
-                  </span>
-                  <ArrowRight data-icon="inline-end" />
-                </a>
-              </Button>
-              <Button asChild variant="outline" className="justify-between bg-card/80">
-                <a href="#cles-api">
-                  <span className="inline-flex items-center gap-2">
-                    <KeyRound data-icon="inline-start" />
-                    Clés API
-                  </span>
-                  <ArrowRight data-icon="inline-end" />
-                </a>
-              </Button>
-              <Button asChild variant="outline" className="justify-between bg-card/80">
-                <a href="#suppression-comptes">
-                  <span className="inline-flex items-center gap-2">
-                    <FileWarning data-icon="inline-start" />
-                    Suppressions
-                  </span>
-                  <ArrowRight data-icon="inline-end" />
-                </a>
-              </Button>
+            <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3 lg:w-auto lg:min-w-[420px]">
+              {ADMIN_SECTIONS.map(({ id, label, icon: Icon }) => (
+                <Button key={id} asChild variant="outline" className="justify-between bg-card/80">
+                  <a href={`#${id}`}>
+                    <span className="inline-flex items-center gap-2">
+                      <Icon data-icon="inline-start" />
+                      {label}
+                    </span>
+                    <ArrowRight data-icon="inline-end" />
+                  </a>
+                </Button>
+              ))}
             </div>
           </div>
         </CardHeader>
@@ -198,10 +201,10 @@ export default function AdminPage() {
           icon={Users}
         />
         <SummaryCard
-          title="Groupes"
-          value={page.dashboard?.groups.length ?? 0}
-          description="Groupes actuellement configurés dans l'espace coach."
-          icon={ShieldCheck}
+          title="Suppressions en attente"
+          value={page.deletionRequests.filter((entry) => entry.status === "pending").length}
+          description="Demandes nécessitant encore une décision admin."
+          icon={FileWarning}
         />
         <SummaryCard
           title="Clés actives"
@@ -210,9 +213,9 @@ export default function AdminPage() {
           icon={KeyRound}
         />
         <SummaryCard
-          title="Expirent bientôt"
-          value={page.apiKeyStats.expiringSoon}
-          description="Clés arrivant à échéance dans les 14 prochains jours."
+          title="Legal holds"
+          value={page.legalHolds.length}
+          description="Gels actifs bloquant une suppression ou une purge."
           icon={ShieldCheck}
         />
       </div>
@@ -261,6 +264,23 @@ export default function AdminPage() {
           reviewingId={page.reviewingDeletionRequestId}
           onRefresh={() => void page.loadDeletionRequests()}
           onReview={(input) => page.reviewDeletionRequest(input)}
+        />
+      </div>
+
+      <div id="conformite">
+        <AdminComplianceSection
+          legalHolds={page.legalHolds}
+          disclosureLogs={page.disclosureLogs}
+          isLegalHoldsLoading={page.isLegalHoldsLoading}
+          isDisclosureLogsLoading={page.isDisclosureLogsLoading}
+          isCreatingLegalHold={page.isCreatingLegalHold}
+          isReleasingLegalHold={page.isReleasingLegalHold}
+          isCreatingDisclosureLog={page.isCreatingDisclosureLog}
+          onRefreshLegalHolds={() => void page.loadLegalHolds()}
+          onRefreshDisclosureLogs={() => void page.loadDisclosureLogs()}
+          onCreateLegalHold={(payload) => page.createLegalHold(payload)}
+          onReleaseLegalHold={(id) => page.releaseLegalHold(id)}
+          onCreateDisclosureLog={(payload) => page.createDisclosureLog(payload)}
         />
       </div>
     </div>

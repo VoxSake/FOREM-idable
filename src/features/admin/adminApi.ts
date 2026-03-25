@@ -21,6 +21,28 @@ export type AdminAccountDeletionRequest = {
   };
 };
 
+export type AdminLegalHold = {
+  id: number;
+  targetType: "user" | "conversation" | "application";
+  targetId: number;
+  reason: string;
+  createdAt: string;
+  releasedAt: string | null;
+};
+
+export type AdminDisclosureLog = {
+  id: number;
+  requestType: "authority_request" | "litigation" | "other";
+  authorityName: string;
+  legalBasis: string | null;
+  targetType: "user" | "conversation" | "application" | "export" | "other";
+  targetId: number | null;
+  scopeSummary: string;
+  exportReference: string | null;
+  createdByUserId: number | null;
+  createdAt: string;
+};
+
 async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, init);
   const data = (await response.json().catch(() => ({}))) as T;
@@ -115,6 +137,58 @@ export function reviewAdminAccountDeletionRequest(
     deletedUserId?: number | null;
   }>(`/api/admin/account-deletion-requests/${id}`, {
     method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchAdminLegalHolds() {
+  return requestJson<{ error?: string; holds?: AdminLegalHold[] }>("/api/admin/legal-holds", {
+    cache: "no-store",
+  });
+}
+
+export function createAdminLegalHold(payload: {
+  targetType: "user" | "conversation" | "application";
+  targetId: number;
+  reason: string;
+}) {
+  return requestJson<{ error?: string; hold?: AdminLegalHold }>("/api/admin/legal-holds", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function releaseAdminLegalHold(id: number) {
+  return requestJson<{ error?: string; hold?: AdminLegalHold }>(`/api/admin/legal-holds/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function fetchAdminDisclosureLogs() {
+  return requestJson<{ error?: string; logs?: AdminDisclosureLog[] }>(
+    "/api/admin/disclosure-logs",
+    {
+      cache: "no-store",
+    }
+  );
+}
+
+export function createAdminDisclosureLog(payload: {
+  requestType?: "authority_request" | "litigation" | "other";
+  authorityName: string;
+  legalBasis?: string;
+  targetType: "user" | "conversation" | "application" | "export" | "other";
+  targetId?: number;
+  scopeSummary: string;
+  exportReference?: string;
+}) {
+  return requestJson<{
+    error?: string;
+    log?: { id: number; createdAt: string };
+  }>("/api/admin/disclosure-logs", {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { LocalPagination } from "@/components/ui/local-pagination";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatAccountDeletionStatus } from "@/lib/complianceLabels";
 import { Textarea } from "@/components/ui/textarea";
@@ -87,6 +88,7 @@ export function AdminAccountDeletionRequestsSection({
   const [noteById, setNoteById] = useState<Record<number, string>>({});
   const [completeTarget, setCompleteTarget] = useState<AdminAccountDeletionRequest | null>(null);
   const [filter, setFilter] = useState<RequestFilter>("active");
+  const [page, setPage] = useState(1);
 
   const sortedRequests = useMemo(
     () => [...requests].sort((left, right) => left.requestedAt.localeCompare(right.requestedAt)).reverse(),
@@ -95,6 +97,13 @@ export function AdminAccountDeletionRequestsSection({
   const filteredRequests = useMemo(
     () => sortedRequests.filter((request) => matchesFilter(filter, request.status)),
     [filter, sortedRequests]
+  );
+  const pageSize = 6;
+  const pageCount = Math.max(1, Math.ceil(filteredRequests.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const visibleRequests = useMemo(
+    () => filteredRequests.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filteredRequests, safePage]
   );
   const filterCounts = useMemo(
     () => ({
@@ -156,6 +165,7 @@ export function AdminAccountDeletionRequestsSection({
                 onValueChange={(value) => {
                   if (value) {
                     setFilter(value as RequestFilter);
+                    setPage(1);
                   }
                 }}
                 className="flex flex-wrap justify-start gap-2"
@@ -184,7 +194,7 @@ export function AdminAccountDeletionRequestsSection({
               </div>
             ) : null}
 
-            {filteredRequests.map((request) => {
+            {visibleRequests.map((request) => {
               const isPending = reviewingId === request.id;
               const note = getNote(request.id);
               const canApproveOrReject = request.status === "pending";
@@ -280,6 +290,18 @@ export function AdminAccountDeletionRequestsSection({
                 </div>
               );
             })}
+
+            {filteredRequests.length > 0 ? (
+              <LocalPagination
+                currentPage={safePage}
+                pageCount={pageCount}
+                totalCount={filteredRequests.length}
+                pageSize={pageSize}
+                itemLabel="demandes"
+                compact
+                onPageChange={setPage}
+              />
+            ) : null}
           </div>
         )}
       </CardContent>

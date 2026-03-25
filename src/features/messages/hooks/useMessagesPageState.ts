@@ -1,31 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Job } from "@/types/job";
 import {
   ConversationDetail,
   ConversationMessage,
   ConversationPreview,
   DirectMessageTarget,
 } from "@/types/messaging";
-import {
-  closeDirectMessageConversation,
-  createDirectMessageConversation,
-  createTrackedApplication,
-  fetchConversationDetail,
-  fetchConversations,
-  fetchMessageContacts,
-  fetchTrackedApplications,
-  postConversationMessage,
-  removeConversationMessage,
-} from "@/features/messages/messages.api";
+import { patchConversationPreview, appendMessageToConversation, markConversationPreviewAsRead as markPreviewRead } from "@/features/messages/messages.state";
+import { useMessagesDataLoader } from "@/features/messages/hooks/useMessagesDataLoader";
 import { useMessagesDerivedState } from "@/features/messages/hooks/useMessagesDerivedState";
+import { useMessagesActions } from "@/features/messages/hooks/useMessagesActions";
 import { useMessageThreadScroll } from "@/features/messages/hooks/useMessageThreadScroll";
 import { useMessagesStream } from "@/features/messages/hooks/useMessagesStream";
-import { MessageStreamEvent } from "@/types/messaging";
+import { useMessagesStreamHandler } from "@/features/messages/hooks/useMessagesStreamHandler";
 
 export function useMessagesPageState() {
   const { user } = useAuth();
@@ -86,130 +76,23 @@ export function useMessagesPageState() {
     selectedConversationRef.current = selectedConversation;
   }, [selectedConversation]);
 
-  const loadConversations = useCallback(
-    async (preferredConversationId?: number | null, options?: { silent?: boolean }) => {
-      if (!options?.silent) {
-        setError(null);
-      }
-
-      const { response, data } = await fetchConversations();
-
-      if (!response.ok || !data.conversations) {
-        throw new Error(data.error || "Chargement des conversations impossible.");
-      }
-
-      setConversations(data.conversations);
-      setHasMessagingAccess(data.conversations.some((entry) => entry.type === "group"));
-
-      const nextConversationId =
-        preferredConversationId &&
-        data.conversations.some((entry) => entry.id === preferredConversationId)
-          ? preferredConversationId
-          : data.conversations[0]?.id ?? null;
-
-      setSelectedConversationId(nextConversationId);
-      return nextConversationId;
-    },
-    []
-  );
-
-  const loadConversationDetail = useCallback(
-    async (
-      conversationId: number,
-      options?: { markAsRead?: boolean; silent?: boolean }
-    ) => {
-      if (!options?.silent) {
-        setIsConversationLoading(true);
-        setError(null);
-      }
-
-      try {
-        const { response, data } = await fetchConversationDetail(conversationId, {
-          markAsRead: options?.markAsRead,
-        });
-
-        if (!response.ok || !data.conversation) {
-          throw new Error(data.error || "Chargement de la conversation impossible.");
-        }
-
-        setSelectedConversation(data.conversation);
-        if (options?.markAsRead) {
-          setConversations((current) =>
-            current.map((entry) =>
-              entry.id === conversationId
-                ? {
-                    ...entry,
-                    unreadCount: 0,
-                  }
-                : entry
-            )
-          );
-        }
-      } catch (conversationError) {
-        if (!options?.silent) {
-          setSelectedConversation(null);
-          setError(
-            conversationError instanceof Error
-              ? conversationError.message
-              : "Chargement de la conversation impossible."
-          );
-        }
-      } finally {
-        if (!options?.silent) {
-          setIsConversationLoading(false);
-        }
-      }
-    },
-    []
-  );
-
-  const loadContacts = useCallback(
-    async (options?: { silent?: boolean; signal?: AbortSignal }) => {
-      setIsContactsLoading(true);
-      if (!options?.silent) {
-        setContactsError(null);
-      }
-
-      try {
-        const { response, data } = await fetchMessageContacts(options?.signal);
-
-        if (!response.ok || !data.contacts) {
-          throw new Error(data.error || "Chargement des contacts impossible.");
-        }
-
-        setContacts(data.contacts);
-      } catch (contactsLoadError) {
-        if (contactsLoadError instanceof Error && contactsLoadError.name === "AbortError") {
-          return;
-        }
-
-        if (!options?.silent) {
-          setContactsError(
-            contactsLoadError instanceof Error
-              ? contactsLoadError.message
-              : "Chargement des contacts impossible."
-          );
-        }
-      } finally {
-        setIsContactsLoading(false);
-      }
-    },
-    []
-  );
-
-  const loadTrackedApplications = useCallback(async () => {
-    try {
-      const { response, data } = await fetchTrackedApplications();
-
-      if (!response.ok || !data.applications) {
-        return;
-      }
-
-      setTrackedJobIds(data.applications.map((application) => application.job.id));
-    } catch {
-      // Best effort only.
-    }
-  }, []);
+  const {
+    loadConversations,
+    loadConversationDetail,
+    loadContacts,
+    loadTrackedApplications,
+  } = useMessagesDataLoader({
+    setConversations,
+    setHasMessagingAccess,
+    setSelectedConversationId,
+    setSelectedConversation,
+    setTrackedJobIds,
+    setContacts,
+    setError,
+    setContactsError,
+    setIsConversationLoading,
+    setIsContactsLoading,
+  });
 
   const syncConversationListPreview = useCallback(
     (message: {
@@ -219,75 +102,20 @@ export function useMessagesPageState() {
       unreadDelta?: number;
       unreadCount?: number;
     }) => {
-      setConversations((current) => {
-        const next = current.map((entry) =>
-          entry.id === message.conversationId
-            ? {
-                ...entry,
-                lastMessageAt: message.createdAt,
-                lastMessagePreview: message.content,
-                unreadCount:
-                  typeof message.unreadCount === "number"
-                    ? Math.max(0, message.unreadCount)
-                    : Math.max(0, entry.unreadCount + (message.unreadDelta ?? 0)),
-              }
-            : entry
-        );
-
-        return [...next].sort((left, right) => {
-          if (left.type !== right.type) {
-            return left.type === "group" ? -1 : 1;
-          }
-
-          return (
-            new Date(right.lastMessageAt).getTime() -
-            new Date(left.lastMessageAt).getTime()
-          );
-        });
-      });
+      setConversations((current) => patchConversationPreview(current, message));
     },
     []
   );
 
   const appendMessageToSelectedConversation = useCallback(
     (message: ConversationMessage) => {
-      const normalizedMessage =
-        user && message.author?.userId !== null
-          ? {
-              ...message,
-              isOwnMessage: message.author?.userId === user.id,
-            }
-          : message;
-
-      setSelectedConversation((current) => {
-        if (!current || current.id !== normalizedMessage.conversationId) {
-          return current;
-        }
-
-        if (current.messages.some((entry) => entry.id === normalizedMessage.id)) {
-          return current;
-        }
-
-        return {
-          ...current,
-          messages: [...current.messages, normalizedMessage],
-        };
-      });
+      setSelectedConversation((current) => appendMessageToConversation(current, message, user?.id));
     },
     [user]
   );
 
   const markConversationPreviewAsRead = useCallback((conversationId: number) => {
-    setConversations((current) =>
-      current.map((entry) =>
-        entry.id === conversationId
-          ? {
-              ...entry,
-              unreadCount: 0,
-            }
-          : entry
-      )
-    );
+    setConversations((current) => markPreviewRead(current, conversationId));
   }, []);
 
   const openConversation = useCallback(
@@ -313,297 +141,49 @@ export function useMessagesPageState() {
     [loadConversationDetail, loadConversations, scheduleScrollThreadToBottom]
   );
 
-  const sendCurrentMessage = useCallback(async () => {
-    if (!selectedConversation || !draft.trim()) return;
-
-    const normalizedDraft = draft.trim();
-    if (normalizedDraft === "/clean") {
-      if (selectedConversation.type !== "group") {
-        toast.error("`/clean` est réservé aux conversations de groupe.");
-        return;
-      }
-
-      if (!selectedConversation.canModerateMessages) {
-        toast.error("Tu n'as pas les droits pour nettoyer cette conversation.");
-        return;
-      }
-    }
-
-    setIsSending(true);
-    setError(null);
-
-    try {
-      const { response, data } = await postConversationMessage(
-        selectedConversation.id,
-        normalizedDraft
-      );
-
-      if (!response.ok) {
-        throw new Error(data.error || "Envoi du message impossible.");
-      }
-
-      if (data.command === "clean") {
-        setDraft("");
-        setSelectedConversation((current) =>
-          current && current.id === selectedConversation.id
-            ? {
-                ...current,
-                messages: [],
-              }
-            : current
-        );
-        setConversations((current) =>
-          current.map((entry) =>
-            entry.id === selectedConversation.id
-              ? {
-                  ...entry,
-                  lastMessagePreview: null,
-                }
-              : entry
-          )
-        );
-        toast.success("Conversation nettoyée.");
-        return;
-      }
-
-      if (!data.message) {
-        throw new Error("Envoi du message impossible.");
-      }
-
-      setDraft("");
-      setSelectedConversation((current) =>
-        current && current.id === data.message?.conversationId
-          ? {
-              ...current,
-              messages: [...current.messages, data.message],
-            }
-          : current
-      );
-      syncConversationListPreview({
-        conversationId: data.message.conversationId,
-        createdAt: data.message.createdAt,
-        content: data.message.content,
-      });
-      scheduleScrollThreadToBottom();
-    } catch (sendError) {
-      const message =
-        sendError instanceof Error ? sendError.message : "Envoi du message impossible.";
-      if (normalizedDraft === "/clean") {
-        toast.error(message);
-      } else {
-        setError(message);
-      }
-    } finally {
-      setIsSending(false);
-    }
-  }, [
-    draft,
-    scheduleScrollThreadToBottom,
+  const {
+    sendCurrentMessage,
+    addSharedJobToApplications,
+    deleteSelectedMessage,
+    closeSelectedDirectConversation,
+    createDirectConversation,
+  } = useMessagesActions({
+    conversations,
     selectedConversation,
+    selectedConversationId,
+    draft,
+    messagePendingDeletion,
+    scheduleScrollThreadToBottom,
+    loadConversationDetail,
+    loadConversations,
     syncConversationListPreview,
-  ]);
+    setConversations,
+    setSelectedConversation,
+    setSelectedConversationId,
+    setTrackedJobIds,
+    setDraft,
+    setError,
+    setContactsError,
+    setIsDirectDialogOpen,
+    setIsMobileConversationOpen,
+    setMessagePendingDeletion,
+    setIsSending,
+    setIsDeletingMessage,
+    setIsClosingDirectConversation,
+  });
 
-  const addSharedJobToApplications = useCallback(async (job: Job) => {
-    try {
-      const { response, data } = await createTrackedApplication(job);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Impossible d'ajouter la candidature.");
-      }
-
-      setTrackedJobIds((current) => (current.includes(job.id) ? current : [...current, job.id]));
-      toast.success("Offre ajoutée au suivi.");
-    } catch (trackedJobError) {
-      toast.error(
-        trackedJobError instanceof Error
-          ? trackedJobError.message
-          : "Impossible d'ajouter la candidature."
-      );
-    }
-  }, []);
-
-  const deleteSelectedMessage = useCallback(async () => {
-    if (!selectedConversation || !messagePendingDeletion) return;
-
-    setIsDeletingMessage(true);
-    try {
-      const { response, data } = await removeConversationMessage(
-        selectedConversation.id,
-        messagePendingDeletion.id
-      );
-
-      if (!response.ok) {
-        throw new Error(data.error || "Suppression du message impossible.");
-      }
-
-      if (data.message) {
-        setSelectedConversation((current) =>
-          current && current.id === selectedConversation.id
-            ? {
-                ...current,
-                messages: current.messages.map((message) =>
-                  message.id === data.message?.id ? data.message : message
-                ),
-              }
-            : current
-        );
-      } else {
-        setSelectedConversation((current) =>
-          current && current.id === selectedConversation.id
-            ? {
-                ...current,
-                messages: current.messages.filter(
-                  (message) => message.id !== messagePendingDeletion.id
-                ),
-              }
-            : current
-        );
-      }
-      setMessagePendingDeletion(null);
-      await loadConversations(selectedConversation.id, { silent: true });
-      toast.success("Message supprimé.");
-    } catch (deleteError) {
-      toast.error(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Suppression du message impossible."
-      );
-    } finally {
-      setIsDeletingMessage(false);
-    }
-  }, [loadConversations, messagePendingDeletion, selectedConversation]);
-
-  const closeSelectedDirectConversation = useCallback(async () => {
-    if (!selectedConversationId) {
-      return;
-    }
-
-    setIsClosingDirectConversation(true);
-    setError(null);
-
-    try {
-      const { response, data } = await closeDirectMessageConversation(selectedConversationId);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Fermeture du DM impossible.");
-      }
-
-      const remaining = conversations.filter((entry) => entry.id !== selectedConversationId);
-      const nextConversationId = remaining[0]?.id ?? null;
-
-      setConversations(remaining);
-      setSelectedConversationId(nextConversationId);
-      setSelectedConversation(null);
-      setIsMobileConversationOpen(false);
-
-      if (nextConversationId) {
-        await loadConversationDetail(nextConversationId, { markAsRead: true });
-      }
-    } catch (closeError) {
-      setError(
-        closeError instanceof Error ? closeError.message : "Fermeture du DM impossible."
-      );
-    } finally {
-      setIsClosingDirectConversation(false);
-    }
-  }, [conversations, loadConversationDetail, selectedConversationId]);
-
-  const createDirectConversation = useCallback(
-    async (contact: DirectMessageTarget) => {
-      setContactsError(null);
-      setIsDirectDialogOpen(false);
-
-      try {
-        const { response, data } = await createDirectMessageConversation(contact.userId);
-
-        if (!response.ok || !data.conversation) {
-          throw new Error(data.error || "Création du DM impossible.");
-        }
-
-        setSelectedConversation(data.conversation);
-        setSelectedConversationId(data.conversation.id);
-        await loadConversations(data.conversation.id, { silent: true });
-        setIsMobileConversationOpen(true);
-      } catch (directError) {
-        setIsDirectDialogOpen(true);
-        setContactsError(
-          directError instanceof Error ? directError.message : "Création du DM impossible."
-        );
-      }
-    },
-    [loadConversations]
-  );
-
-  const handleStreamEvent = useCallback(
-    (event: MessageStreamEvent) => {
-      if (event.type === "stream.connected") {
-        return;
-      }
-
-      const openConversationId =
-        selectedConversationRef.current?.id ?? selectedConversationIdRef.current;
-
-      if (event.type === "conversation.message_created") {
-        const authorUserId = event.message.author?.userId ?? null;
-        const isOwnMessage =
-          user && authorUserId !== null ? authorUserId === user.id : event.message.isOwnMessage;
-        const conversationExists = conversationsRef.current.some(
-          (entry) => entry.id === event.conversationId
-        );
-
-        syncConversationListPreview({
-          conversationId: event.message.conversationId,
-          createdAt: event.message.createdAt,
-          content: event.message.content,
-          unreadCount: openConversationId === event.conversationId || isOwnMessage ? 0 : undefined,
-          unreadDelta:
-            openConversationId === event.conversationId || isOwnMessage ? 0 : 1,
-        });
-
-        if (openConversationId === event.conversationId) {
-          appendMessageToSelectedConversation(event.message);
-          markConversationPreviewAsRead(event.conversationId);
-          scheduleScrollThreadToBottom("auto");
-          return;
-        }
-
-        if (!conversationExists) {
-          void loadConversations(openConversationId ?? event.conversationId, { silent: true });
-        }
-
-        return;
-      }
-
-      void (async () => {
-        const preferredConversationId =
-          openConversationId === event.conversationId
-            ? openConversationId
-            : openConversationId ?? event.conversationId;
-
-        await loadConversations(preferredConversationId, { silent: true });
-
-        if (openConversationId === event.conversationId) {
-          await loadConversationDetail(event.conversationId, {
-            markAsRead: true,
-            silent: true,
-          });
-
-          if (event.type === "conversation.cleared") {
-            scheduleScrollThreadToBottom("auto");
-          }
-        }
-      })();
-    },
-    [
-      appendMessageToSelectedConversation,
-      loadConversationDetail,
-      loadConversations,
-      markConversationPreviewAsRead,
-      scheduleScrollThreadToBottom,
-      syncConversationListPreview,
-      user,
-    ]
-  );
+  const handleStreamEvent = useMessagesStreamHandler({
+    userId: user?.id,
+    conversationsRef,
+    selectedConversationIdRef,
+    selectedConversationRef,
+    loadConversations,
+    loadConversationDetail,
+    syncConversationListPreview,
+    appendMessageToSelectedConversation,
+    markConversationPreviewAsRead,
+    scheduleScrollThreadToBottom,
+  });
 
   useMessagesStream({
     enabled: !isLoading && hasMessagingAccess !== false,

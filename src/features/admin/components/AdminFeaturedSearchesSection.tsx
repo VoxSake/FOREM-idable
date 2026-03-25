@@ -24,6 +24,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { LocalPagination } from "@/components/ui/local-pagination";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   createFeaturedSearchFormValues,
   FeaturedSearchFormValues,
@@ -74,6 +76,8 @@ export function AdminFeaturedSearchesSection({
   const [editingItem, setEditingItem] = useState<FeaturedSearch | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FeaturedSearch | null>(null);
+  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+  const [page, setPage] = useState(1);
   const form = useForm<FeaturedSearchFormValues>({
     resolver: zodResolver(featuredSearchFormSchema),
     mode: "onChange",
@@ -91,9 +95,22 @@ export function AdminFeaturedSearchesSection({
   const isCurrentSavePending =
     isSaving && (editingItem ? savingId === editingItem.id : savingId === null);
 
-  const sortedItems = useMemo(
-    () => [...featuredSearches].sort((left, right) => left.sortOrder - right.sortOrder),
-    [featuredSearches]
+  const sortedItems = useMemo(() => {
+    const filtered = [...featuredSearches]
+      .sort((left, right) => left.sortOrder - right.sortOrder)
+      .filter((item) => {
+        if (filter === "all") return true;
+        return filter === "active" ? item.isActive : !item.isActive;
+      });
+
+    return filtered;
+  }, [featuredSearches, filter]);
+  const pageSize = 6;
+  const pageCount = Math.max(1, Math.ceil(sortedItems.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const visibleItems = useMemo(
+    () => sortedItems.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [safePage, sortedItems]
   );
 
   const resetForm = () => {
@@ -157,6 +174,34 @@ export function AdminFeaturedSearchesSection({
       </CardHeader>
 
       <CardContent className="px-5 py-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <ToggleGroup
+            type="single"
+            value={filter}
+            onValueChange={(value) => {
+              if (value) {
+                setFilter(value as "all" | "active" | "inactive");
+                setPage(1);
+              }
+            }}
+            className="flex flex-wrap justify-start gap-2"
+          >
+            <ToggleGroupItem value="all" size="sm" className="rounded-full px-3">
+              Toutes ({featuredSearches.length})
+            </ToggleGroupItem>
+            <ToggleGroupItem value="active" size="sm" className="rounded-full px-3">
+              Actives ({featuredSearches.filter((item) => item.isActive).length})
+            </ToggleGroupItem>
+            <ToggleGroupItem value="inactive" size="sm" className="rounded-full px-3">
+              Inactives ({featuredSearches.filter((item) => !item.isActive).length})
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <p className="text-sm text-muted-foreground">
+            {sortedItems.length} recherche{sortedItems.length > 1 ? "s" : ""} affichée
+            {sortedItems.length > 1 ? "s" : ""}
+          </p>
+        </div>
+
         {isLoading ? (
           <div className="rounded-xl border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
             Chargement des recherches mises en avant...
@@ -167,7 +212,7 @@ export function AdminFeaturedSearchesSection({
           </div>
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
-            {sortedItems.map((item) => (
+            {visibleItems.map((item) => (
               <div
                 key={item.id}
                 className="flex h-full flex-col justify-between gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 transition-colors hover:border-primary/25 hover:bg-muted/30"
@@ -222,6 +267,20 @@ export function AdminFeaturedSearchesSection({
             ))}
           </div>
         )}
+
+        {sortedItems.length > 0 ? (
+          <div className="mt-4">
+              <LocalPagination
+                currentPage={safePage}
+                pageCount={pageCount}
+                totalCount={sortedItems.length}
+                pageSize={pageSize}
+              itemLabel="recherches"
+              compact
+              onPageChange={setPage}
+            />
+          </div>
+        ) : null}
       </CardContent>
 
       <Dialog

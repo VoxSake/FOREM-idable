@@ -13,14 +13,7 @@ import {
 } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { LocalPagination } from "@/components/ui/local-pagination";
 import {
   Table,
   TableBody,
@@ -30,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CoachConfirmationDialog } from "@/features/coach/components/dialogs/CoachConfirmationDialog";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
 import { cn } from "@/lib/utils";
@@ -164,6 +158,7 @@ export function AdminApiKeysSection({
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<ApiKeyStatusFilter>("all");
+  const [page, setPage] = useState(1);
   const deferredSearch = useDeferredValue(search);
 
   const filteredKeys = useMemo(() => {
@@ -194,6 +189,13 @@ export function AdminApiKeysSection({
         .includes(normalizedSearch);
     });
   }, [apiKeys, deferredSearch, status]);
+  const pageSize = 8;
+  const pageCount = Math.max(1, Math.ceil(filteredKeys.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const visibleKeys = useMemo(
+    () => filteredKeys.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filteredKeys, safePage]
+  );
   const hasKeys = filteredKeys.length > 0;
   const isInitialLoading = isLoading && apiKeys.length === 0;
 
@@ -221,32 +223,48 @@ export function AdminApiKeysSection({
             </Button>
           </div>
 
-          <FieldGroup className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+          <FieldGroup className="gap-4">
             <Field>
               <FieldLabel htmlFor="admin-api-key-search">Recherche</FieldLabel>
               <Input
                 id="admin-api-key-search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
                 placeholder="Nom, email, rôle, préfixe..."
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="admin-api-key-status">Statut</FieldLabel>
-              <Select value={status} onValueChange={(value) => setStatus(value as ApiKeyStatusFilter)}>
-                <SelectTrigger id="admin-api-key-status" className="w-full">
-                  <SelectValue placeholder="Statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="all">Toutes</SelectItem>
-                    <SelectItem value="active">Actives</SelectItem>
-                    <SelectItem value="expiring">Expirent bientôt</SelectItem>
-                    <SelectItem value="expired">Expirées</SelectItem>
-                    <SelectItem value="revoked">Révoquées</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <FieldLabel>Statut</FieldLabel>
+              <ToggleGroup
+                type="single"
+                value={status}
+                onValueChange={(value) => {
+                  if (value) {
+                    setStatus(value as ApiKeyStatusFilter);
+                    setPage(1);
+                  }
+                }}
+                className="flex flex-wrap justify-start gap-2"
+              >
+                <ToggleGroupItem value="all" size="sm" className="rounded-full px-3">
+                  Toutes
+                </ToggleGroupItem>
+                <ToggleGroupItem value="active" size="sm" className="rounded-full px-3">
+                  Actives
+                </ToggleGroupItem>
+                <ToggleGroupItem value="expiring" size="sm" className="rounded-full px-3">
+                  Expirent bientôt
+                </ToggleGroupItem>
+                <ToggleGroupItem value="expired" size="sm" className="rounded-full px-3">
+                  Expirées
+                </ToggleGroupItem>
+                <ToggleGroupItem value="revoked" size="sm" className="rounded-full px-3">
+                  Révoquées
+                </ToggleGroupItem>
+              </ToggleGroup>
             </Field>
           </FieldGroup>
         </CardHeader>
@@ -286,7 +304,7 @@ export function AdminApiKeysSection({
                 ) : null}
               </div>
               <div className="grid gap-3 px-3 py-3 md:hidden">
-                {filteredKeys.map((entry) => (
+                {visibleKeys.map((entry) => (
                   <ApiKeyMobileCard
                     key={entry.id}
                     entry={entry}
@@ -311,7 +329,7 @@ export function AdminApiKeysSection({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredKeys.map((entry) => (
+                    {visibleKeys.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell className="align-top">
                           <div className="flex min-w-44 flex-col gap-1">
@@ -362,6 +380,20 @@ export function AdminApiKeysSection({
               </div>
             </div>
           )}
+
+          {hasKeys ? (
+            <div className="mt-4">
+              <LocalPagination
+                currentPage={safePage}
+                pageCount={pageCount}
+                totalCount={filteredKeys.length}
+                pageSize={pageSize}
+                itemLabel="clés"
+                compact
+                onPageChange={setPage}
+              />
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

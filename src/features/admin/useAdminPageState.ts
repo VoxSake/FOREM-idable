@@ -2,11 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  createAdminDisclosureLog,
+  createAdminLegalHold,
   fetchAdminAccountDeletionRequests,
+  fetchAdminDisclosureLogs,
+  fetchAdminLegalHolds,
   createAdminFeaturedSearch,
   deleteAdminFeaturedSearch,
   fetchAdminApiKeys,
   fetchAdminFeaturedSearches,
+  releaseAdminLegalHold,
   revokeAdminApiKey,
   reviewAdminAccountDeletionRequest,
   updateAdminFeaturedSearch,
@@ -15,7 +20,7 @@ import { useAdminDashboard } from "@/features/admin/useAdminDashboard";
 import { FeaturedSearchPayload } from "@/features/featured-searches/featuredSearchSchema";
 import { AdminApiKeySummary } from "@/types/externalApi";
 import { FeaturedSearch } from "@/types/featuredSearch";
-import { AdminAccountDeletionRequest } from "./adminApi";
+import { AdminAccountDeletionRequest, AdminDisclosureLog, AdminLegalHold } from "./adminApi";
 
 export function useAdminPageState() {
   const admin = useAdminDashboard();
@@ -34,6 +39,15 @@ export function useAdminPageState() {
   const [deletionRequestsFeedback, setDeletionRequestsFeedback] = useState<string | null>(null);
   const [isDeletionRequestsLoading, setIsDeletionRequestsLoading] = useState(false);
   const [reviewingDeletionRequestId, setReviewingDeletionRequestId] = useState<number | null>(null);
+  const [legalHolds, setLegalHolds] = useState<AdminLegalHold[]>([]);
+  const [legalHoldsFeedback, setLegalHoldsFeedback] = useState<string | null>(null);
+  const [isLegalHoldsLoading, setIsLegalHoldsLoading] = useState(false);
+  const [isCreatingLegalHold, setIsCreatingLegalHold] = useState(false);
+  const [isReleasingLegalHold, setIsReleasingLegalHold] = useState(false);
+  const [disclosureLogs, setDisclosureLogs] = useState<AdminDisclosureLog[]>([]);
+  const [disclosureLogsFeedback, setDisclosureLogsFeedback] = useState<string | null>(null);
+  const [isDisclosureLogsLoading, setIsDisclosureLogsLoading] = useState(false);
+  const [isCreatingDisclosureLog, setIsCreatingDisclosureLog] = useState(false);
 
   const loadApiKeys = useCallback(async () => {
     if (!admin.isAuthorized) {
@@ -110,13 +124,73 @@ export function useAdminPageState() {
     }
   }, [admin.isAuthorized]);
 
+  const loadLegalHolds = useCallback(async () => {
+    if (!admin.isAuthorized) {
+      setLegalHolds([]);
+      return;
+    }
+
+    setIsLegalHoldsLoading(true);
+    setLegalHoldsFeedback(null);
+
+    try {
+      const { response, data } = await fetchAdminLegalHolds();
+
+      if (!response.ok || !data.holds) {
+        setLegalHoldsFeedback(data.error || "Chargement des legal holds impossible.");
+        return;
+      }
+
+      setLegalHolds(data.holds);
+    } catch {
+      setLegalHoldsFeedback("Chargement des legal holds impossible.");
+    } finally {
+      setIsLegalHoldsLoading(false);
+    }
+  }, [admin.isAuthorized]);
+
+  const loadDisclosureLogs = useCallback(async () => {
+    if (!admin.isAuthorized) {
+      setDisclosureLogs([]);
+      return;
+    }
+
+    setIsDisclosureLogsLoading(true);
+    setDisclosureLogsFeedback(null);
+
+    try {
+      const { response, data } = await fetchAdminDisclosureLogs();
+
+      if (!response.ok || !data.logs) {
+        setDisclosureLogsFeedback(data.error || "Chargement des disclosure logs impossible.");
+        return;
+      }
+
+      setDisclosureLogs(data.logs);
+    } catch {
+      setDisclosureLogsFeedback("Chargement des disclosure logs impossible.");
+    } finally {
+      setIsDisclosureLogsLoading(false);
+    }
+  }, [admin.isAuthorized]);
+
   useEffect(() => {
     if (admin.isAuthLoading) return;
     if (!admin.isAuthorized) return;
     void loadApiKeys();
     void loadFeaturedSearches();
     void loadDeletionRequests();
-  }, [admin.isAuthLoading, admin.isAuthorized, loadApiKeys, loadFeaturedSearches, loadDeletionRequests]);
+    void loadLegalHolds();
+    void loadDisclosureLogs();
+  }, [
+    admin.isAuthLoading,
+    admin.isAuthorized,
+    loadApiKeys,
+    loadFeaturedSearches,
+    loadDeletionRequests,
+    loadLegalHolds,
+    loadDisclosureLogs,
+  ]);
 
   const revokeApiKey = useCallback(async () => {
     if (!revokeTarget) return false;
@@ -280,6 +354,84 @@ export function useAdminPageState() {
     }
   }, []);
 
+  const createLegalHold = useCallback(async (payload: {
+    targetType: "user" | "conversation" | "application";
+    targetId: number;
+    reason: string;
+  }) => {
+    setIsCreatingLegalHold(true);
+
+    try {
+      const { response, data } = await createAdminLegalHold(payload);
+
+      if (!response.ok || !data.hold) {
+        setLegalHoldsFeedback(data.error || "Création du legal hold impossible.");
+        return false;
+      }
+
+      setLegalHolds((current) => [data.hold!, ...current.filter((entry) => entry.id !== data.hold!.id)]);
+      setLegalHoldsFeedback("Legal hold créé.");
+      return true;
+    } catch {
+      setLegalHoldsFeedback("Création du legal hold impossible.");
+      return false;
+    } finally {
+      setIsCreatingLegalHold(false);
+    }
+  }, []);
+
+  const releaseLegalHold = useCallback(async (id: number) => {
+    setIsReleasingLegalHold(true);
+
+    try {
+      const { response, data } = await releaseAdminLegalHold(id);
+
+      if (!response.ok) {
+        setLegalHoldsFeedback(data.error || "Libération du legal hold impossible.");
+        return false;
+      }
+
+      setLegalHolds((current) => current.filter((entry) => entry.id !== id));
+      setLegalHoldsFeedback("Legal hold libéré.");
+      return true;
+    } catch {
+      setLegalHoldsFeedback("Libération du legal hold impossible.");
+      return false;
+    } finally {
+      setIsReleasingLegalHold(false);
+    }
+  }, []);
+
+  const createDisclosureLog = useCallback(async (payload: {
+    requestType?: "authority_request" | "litigation" | "other";
+    authorityName: string;
+    legalBasis?: string;
+    targetType: "user" | "conversation" | "application" | "export" | "other";
+    targetId?: number;
+    scopeSummary: string;
+    exportReference?: string;
+  }) => {
+    setIsCreatingDisclosureLog(true);
+
+    try {
+      const { response, data } = await createAdminDisclosureLog(payload);
+
+      if (!response.ok || !data.log) {
+        setDisclosureLogsFeedback(data.error || "Journalisation impossible.");
+        return false;
+      }
+
+      await loadDisclosureLogs();
+      setDisclosureLogsFeedback("Disclosure log ajouté.");
+      return true;
+    } catch {
+      setDisclosureLogsFeedback("Journalisation impossible.");
+      return false;
+    } finally {
+      setIsCreatingDisclosureLog(false);
+    }
+  }, [loadDisclosureLogs]);
+
   const apiKeyStats = useMemo(() => {
     const now = Date.now();
 
@@ -316,6 +468,15 @@ export function useAdminPageState() {
     deletionRequestsFeedback,
     isDeletionRequestsLoading,
     reviewingDeletionRequestId,
+    legalHolds,
+    legalHoldsFeedback,
+    isLegalHoldsLoading,
+    isCreatingLegalHold,
+    isReleasingLegalHold,
+    disclosureLogs,
+    disclosureLogsFeedback,
+    isDisclosureLogsLoading,
+    isCreatingDisclosureLog,
     revokeTarget,
     setRevokeTarget,
     isRevokingApiKey,
@@ -323,10 +484,15 @@ export function useAdminPageState() {
     revokeApiKey,
     loadFeaturedSearches,
     loadDeletionRequests,
+    loadLegalHolds,
+    loadDisclosureLogs,
     createFeaturedSearch,
     updateFeaturedSearch,
     deleteFeaturedSearch,
     reviewDeletionRequest,
+    createLegalHold,
+    releaseLegalHold,
+    createDisclosureLog,
   };
 }
 

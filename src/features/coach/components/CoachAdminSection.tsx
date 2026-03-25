@@ -6,6 +6,9 @@ import { UserPickerDialog } from "@/components/coach/UserPickerDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { LocalPagination } from "@/components/ui/local-pagination";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +40,8 @@ export function CoachAdminSection({
   onDemoteCoach,
 }: CoachAdminSectionProps) {
   const [demotionTargetId, setDemotionTargetId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const demotionTarget = coaches.find((entry) => entry.id === demotionTargetId) ?? null;
   const demotionSummary = useMemo(() => {
     if (!demotionTarget) return null;
@@ -53,6 +58,21 @@ export function CoachAdminSection({
       managedGroups,
     };
   }, [demotionTarget, groups]);
+  const filteredCoaches = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    if (!normalizedSearch) return coaches;
+
+    return coaches.filter((entry) =>
+      [entry.firstName, entry.lastName, entry.email].join(" ").toLowerCase().includes(normalizedSearch)
+    );
+  }, [coaches, search]);
+  const pageSize = 8;
+  const pageCount = Math.max(1, Math.ceil(filteredCoaches.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const visibleCoaches = useMemo(
+    () => filteredCoaches.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filteredCoaches, safePage]
+  );
 
   return (
     <Card className="gap-4 border-border/60 bg-card py-0">
@@ -72,9 +92,23 @@ export function CoachAdminSection({
       </CardHeader>
 
       <CardContent className="px-5 pb-5">
+        <FieldGroup className="mb-4 gap-3">
+          <Field>
+            <FieldLabel htmlFor="admin-coach-search">Recherche</FieldLabel>
+            <Input
+              id="admin-coach-search"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Nom ou email..."
+            />
+          </Field>
+        </FieldGroup>
         <div className="grid gap-3 lg:grid-cols-2">
-          {coaches.length > 0 ? (
-            coaches.map((entry) => {
+          {filteredCoaches.length > 0 ? (
+            visibleCoaches.map((entry) => {
               const coachedGroups = groups
                 .filter((group) => group.coaches.some((coach) => coach.id === entry.id))
                 .map((group) => group.name);
@@ -138,6 +172,20 @@ export function CoachAdminSection({
             </div>
           )}
         </div>
+
+        {filteredCoaches.length > 0 ? (
+          <div className="mt-4">
+              <LocalPagination
+              currentPage={safePage}
+              pageCount={pageCount}
+              totalCount={filteredCoaches.length}
+              pageSize={pageSize}
+              itemLabel="coachs"
+              compact
+              onPageChange={setPage}
+            />
+          </div>
+        ) : null}
       </CardContent>
 
       <UserPickerDialog
