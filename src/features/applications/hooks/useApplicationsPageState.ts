@@ -259,24 +259,28 @@ export function useApplicationsPageState() {
     });
   }, []);
 
-  const submitInterview = useCallback(() => {
+  const submitInterview = useCallback(async () => {
     if (!interviewApplication || !interviewForm.interviewAt) return;
 
     const interviewAt = new Date(interviewForm.interviewAt);
     if (Number.isNaN(interviewAt.getTime())) return;
 
-    void scheduleInterview(
+    const saved = await scheduleInterview(
       interviewApplication.job.id,
       interviewAt.toISOString(),
       interviewForm.interviewDetails.trim()
     );
-    resetInterviewDialog();
+    if (saved) {
+      resetInterviewDialog();
+    }
   }, [interviewApplication, interviewForm, resetInterviewDialog, scheduleInterview]);
 
-  const removeInterview = useCallback(() => {
+  const removeInterview = useCallback(async () => {
     if (!interviewApplication) return;
-    void clearInterview(interviewApplication.job.id);
-    resetInterviewDialog();
+    const cleared = await clearInterview(interviewApplication.job.id);
+    if (cleared) {
+      resetInterviewDialog();
+    }
   }, [clearInterview, interviewApplication, resetInterviewDialog]);
 
   const saveSelectedNotes = useCallback(async () => {

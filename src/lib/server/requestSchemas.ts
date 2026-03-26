@@ -335,14 +335,17 @@ export function normalizePatchedJob(jobId: string, job: z.infer<typeof applicati
 }
 
 export function normalizeApplicationPatch(jobId: string, patch: ApplicationPatchInput) {
+  const hasField = <TKey extends keyof ApplicationPatchInput>(key: TKey) =>
+    Object.prototype.hasOwnProperty.call(patch, key);
+
   return {
     status: patch.status,
     notes: patch.notes,
     proofs: patch.proofs,
-    interviewAt: patch.interviewAt ?? undefined,
-    interviewDetails: patch.interviewDetails ?? undefined,
-    lastFollowUpAt: patch.lastFollowUpAt ?? undefined,
-    followUpDueAt: patch.followUpDueAt ?? undefined,
+    interviewAt: hasField("interviewAt") ? patch.interviewAt : undefined,
+    interviewDetails: hasField("interviewDetails") ? patch.interviewDetails : undefined,
+    lastFollowUpAt: hasField("lastFollowUpAt") ? patch.lastFollowUpAt : undefined,
+    followUpDueAt: hasField("followUpDueAt") ? patch.followUpDueAt : undefined,
     followUpEnabled: patch.followUpEnabled,
     appliedAt: patch.appliedAt,
     job: patch.job ? normalizePatchedJob(jobId, patch.job) : undefined,
