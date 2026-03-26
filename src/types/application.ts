@@ -52,3 +52,20 @@ export interface JobApplication {
   interviewDetails?: string | null;
   updatedAt: string;
 }
+
+export type JobApplicationPatch = Partial<
+  Pick<
+    JobApplication,
+    | "status"
+    | "notes"
+    | "proofs"
+    | "interviewAt"
+    | "interviewDetails"
+    | "lastFollowUpAt"
+    | "followUpDueAt"
+    | "followUpEnabled"
+    | "appliedAt"
+  >
+> & {
+  job?: Partial<Omit<Job, "id">>;
+};

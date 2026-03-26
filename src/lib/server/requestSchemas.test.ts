@@ -15,18 +15,25 @@ describe("requestSchemas", () => {
       interviewAt: null,
       interviewDetails: null,
       lastFollowUpAt: null,
-      followUpDueAt: undefined,
     });
+    expect(Object.prototype.hasOwnProperty.call(patch, "followUpDueAt")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "job")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "appliedAt")).toBe(false);
   });
 
-  it("leaves omitted nullable fields undefined", () => {
+  it("omits fields that are not present in the incoming patch", () => {
     const patch = normalizeApplicationPatch("job-1", {
       status: "interview",
     });
 
-    expect(patch.interviewAt).toBeUndefined();
-    expect(patch.interviewDetails).toBeUndefined();
-    expect(patch.lastFollowUpAt).toBeUndefined();
-    expect(patch.followUpDueAt).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(patch, "interviewAt")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "interviewDetails")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "lastFollowUpAt")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "followUpDueAt")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "notes")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "proofs")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "followUpEnabled")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "appliedAt")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(patch, "job")).toBe(false);
   });
 });

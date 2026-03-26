@@ -12,7 +12,7 @@ import { CoachUserSheetHeader } from "@/features/coach/components/CoachUserSheet
 import { useCoachUserSheetState } from "@/features/coach/components/useCoachUserSheetState";
 import { isManualApplication } from "@/features/applications/utils";
 import { CoachUserSummary } from "@/types/coach";
-import { JobApplication } from "@/types/application";
+import { JobApplication, JobApplicationPatch } from "@/types/application";
 
 interface CoachUserSheetProps {
   currentUserId: number | undefined;
@@ -41,7 +41,7 @@ interface CoachUserSheetProps {
   onUpdateApplication: (
     userId: number,
     jobId: string,
-    patch: Partial<JobApplication>
+    patch: JobApplicationPatch
   ) => Promise<boolean>;
   onDeleteApplication: (userId: number, jobId: string) => Promise<boolean>;
 }

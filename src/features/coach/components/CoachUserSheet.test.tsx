@@ -236,5 +236,8 @@ describe("CoachUserSheet", () => {
         })
       );
     });
+
+    const patch = vi.mocked(props.onUpdateApplication).mock.calls[0]?.[2];
+    expect(patch?.job).not.toHaveProperty("id");
   });
 });

@@ -279,6 +279,62 @@ async function mockCoachSession(
   };
 }
 
+async function mockUserApplicationsSession(
+  page: Parameters<typeof test>[0]["page"],
+  options: {
+    applications: Application[];
+    onApplicationPatch?: (payload: {
+      jobId: string;
+      patch: Partial<Application> & { job?: Partial<Job> };
+    }) => Application;
+  }
+) {
+  await page.route("**/api/auth/me", async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 1,
+          email: "user@example.com",
+          firstName: "Jordi",
+          lastName: "User",
+          role: "user",
+        },
+      },
+    });
+  });
+
+  await page.route("**/api/applications", async (route) => {
+    const request = route.request();
+
+    if (request.method() === "GET") {
+      await route.fulfill({ json: { applications: options.applications } });
+      return;
+    }
+
+    await route.fallback();
+  });
+
+  await page.route("**/api/applications/*", async (route) => {
+    const request = route.request();
+    const jobId = request.url().split("/").pop() ?? "";
+
+    if (request.method() !== "PATCH" || !options.onApplicationPatch) {
+      await route.fallback();
+      return;
+    }
+
+    const body = request.postDataJSON() as {
+      patch: Partial<Application> & { job?: Partial<Job> };
+    };
+    const updated = options.onApplicationPatch({
+      jobId,
+      patch: body.patch,
+    });
+
+    await route.fulfill({ json: { application: updated } });
+  });
+}
+
 test("user can add a job to tracking and the coach can see it", async ({ page }) => {
   let actor: Actor = "user";
   let applications: Application[] = [];
@@ -571,4 +627,116 @@ test("coach can edit a manual application from the user sheet", async ({ page })
     "href",
     "https://example.test/manual-1"
   );
+});
+
+test("user can manage follow-up and interview from the applications page", async ({ page }) => {
+  const applications: Application[] = [
+    {
+      ...createApplication(searchJob),
+      notes: "CV envoyé",
+    },
+  ];
+
+  await mockUserApplicationsSession(page, {
+    applications,
+    onApplicationPatch: ({ jobId, patch }) => {
+      const application = applications.find((entry) => entry.job.id === jobId);
+      if (!application) {
+        throw new Error(`Application ${jobId} not found`);
+      }
+
+      Object.assign(application, patch, {
+        updatedAt: "2026-03-23T17:00:00.000Z",
+      });
+
+      return structuredClone(application);
+    },
+  });
+
+  await page.goto("/applications");
+
+  await page.getByRole("button", { name: "Relancer" }).first().click();
+  await expect
+    .poll(() => applications[0]?.lastFollowUpAt ?? null)
+    .not.toBeNull();
+
+  await page.getByRole("button", { name: "Détails" }).first().click();
+
+  const followUpInput = page.getByLabel("Relance active");
+  await followUpInput.fill("2026-04-01");
+  await page.getByRole("button", { name: "Mettre à jour la relance" }).click();
+  await expect
+    .poll(() => applications[0]?.followUpDueAt ?? "")
+    .toBe("2026-04-01");
+
+  await page.getByRole("button", { name: "Désactiver la relance" }).click();
+  await expect
+    .poll(() => applications[0]?.followUpEnabled)
+    .toBe(false);
+  await expect(page.getByText("Relance désactivée pour cette candidature.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Activer la relance" }).click();
+  await expect
+    .poll(() => applications[0]?.followUpEnabled)
+    .toBe(true);
+
+  await page.getByRole("button", { name: "Entretien" }).last().click();
+  const interviewDialog = page.getByRole("dialog");
+  await interviewDialog.getByLabel("Date et heure").fill("2026-04-03T14:30");
+  await interviewDialog
+    .getByLabel("Informations pratiques")
+    .fill("Visio RH avec partage d'écran");
+  await interviewDialog.getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect
+    .poll(() => applications[0]?.interviewDetails ?? "")
+    .toBe("Visio RH avec partage d'écran");
+  await expect(page.getByText("Visio RH avec partage d'écran")).toBeVisible();
+});
+
+test("user can edit a manual application from the applications page", async ({ page }) => {
+  const manualApplication: Application = {
+    ...createApplication({
+      id: "manual-2",
+      title: "Candidature spontanée",
+      company: "ACME",
+      location: "Namur",
+      contractType: "CDD",
+      publicationDate: "2026-03-20T09:00:00.000Z",
+      url: "#",
+      source: "forem",
+    }),
+    sourceType: "manual" as const,
+    notes: "Premier contact établi",
+  };
+
+  const applications: Application[] = [manualApplication];
+
+  await mockUserApplicationsSession(page, {
+    applications,
+    onApplicationPatch: ({ jobId, patch }) => {
+      const application = applications.find((entry) => entry.job.id === jobId);
+      if (!application) {
+        throw new Error(`Application ${jobId} not found`);
+      }
+
+      Object.assign(application, patch, {
+        job: patch.job ? { ...application.job, ...patch.job } : application.job,
+        updatedAt: "2026-03-23T17:10:00.000Z",
+      });
+
+      return structuredClone(application);
+    },
+  });
+
+  await page.goto("/applications");
+  await page.getByRole("button", { name: "Détails" }).first().click();
+
+  await page.getByRole("button", { name: "Éditer" }).click();
+  await page.getByLabel("Intitulé").fill("Candidature spontanée senior");
+  await page.getByLabel("Lien de l'offre").fill("https://example.test/manual-2");
+  await page.getByRole("button", { name: /^Enregistrer$/ }).first().click();
+
+  await expect(page.getByText("Candidature spontanée senior").first()).toBeVisible();
+  await expect(page.getByText("Lien: https://example.test/manual-2")).toBeVisible();
 });

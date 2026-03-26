@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { requestCoachApplicationNote } from "@/features/coach/coachDashboardApi";
-import { JobApplication } from "@/types/application";
+import { JobApplication, JobApplicationPatch } from "@/types/application";
 
 export function useCoachApplicationActions(input: {
   applyApplicationUpdate: (userId: number, application: JobApplication) => void;
@@ -172,25 +172,7 @@ export function useCoachApplicationActions(input: {
   );
 
   const updateManagedApplication = useCallback(
-    async (
-      userId: number,
-      jobId: string,
-      patch: Partial<
-        Pick<
-          JobApplication,
-          | "status"
-          | "notes"
-          | "proofs"
-          | "interviewAt"
-          | "interviewDetails"
-          | "lastFollowUpAt"
-          | "followUpDueAt"
-          | "followUpEnabled"
-          | "appliedAt"
-          | "job"
-        >
-      >
-    ) => {
+    async (userId: number, jobId: string, patch: JobApplicationPatch) => {
       const response = await fetch(`/api/coach/users/${userId}/applications/${jobId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

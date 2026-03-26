@@ -12,7 +12,7 @@ import {
   toIsoDateTime,
 } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
-import { JobApplication } from "@/types/application";
+import { JobApplication, JobApplicationPatch } from "@/types/application";
 
 interface UseCoachUserSheetStateInput {
   user: CoachUserSummary;
@@ -20,7 +20,7 @@ interface UseCoachUserSheetStateInput {
   onUpdateApplication: (
     userId: number,
     jobId: string,
-    patch: Partial<JobApplication>
+    patch: JobApplicationPatch
   ) => Promise<boolean>;
 }
 
@@ -131,12 +131,15 @@ export function useCoachUserSheetState({
       ...(isManual
         ? {
             job: {
-              ...application.job,
-              company: draft.company,
               title: draft.title,
+              company: draft.company,
               contractType: draft.contractType,
               location: draft.location,
               url: draft.url,
+              publicationDate: application.job.publicationDate,
+              source: application.job.source,
+              description: application.job.description,
+              pdfUrl: application.job.pdfUrl,
             },
           }
         : {}),

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { addDays } from "date-fns";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { sortApplicationsByMostRecent } from "@/features/applications/utils";
-import { ApplicationStatus, JobApplication } from "@/types/application";
+import { ApplicationStatus, JobApplication, JobApplicationPatch } from "@/types/application";
 import { Job } from "@/types/job";
 
 function buildManualJob(input: {
@@ -103,24 +103,7 @@ export function useApplications() {
   );
 
   const patchApplication = useCallback(
-    async (
-      jobId: string,
-      patch: Partial<
-        Pick<
-          JobApplication,
-          | "status"
-          | "notes"
-          | "proofs"
-          | "interviewAt"
-        | "interviewDetails"
-        | "lastFollowUpAt"
-        | "followUpDueAt"
-        | "followUpEnabled"
-        | "appliedAt"
-        | "job"
-      >
-      >
-    ) => {
+    async (jobId: string, patch: JobApplicationPatch) => {
       if (!user) return false;
 
       const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
@@ -241,12 +224,15 @@ export function useApplications() {
   ) =>
     patchApplication(jobId, {
       job: {
-        ...currentJob,
-        company: patch.company.trim(),
         title: patch.title.trim(),
+        company: patch.company.trim(),
         contractType: patch.contractType.trim() || "Non précisé",
         location: patch.location.trim() || "Non précisé",
         url: patch.url.trim() || "#",
+        publicationDate: currentJob.publicationDate,
+        source: currentJob.source,
+        description: currentJob.description,
+        pdfUrl: currentJob.pdfUrl,
       },
     });
 

@@ -338,16 +338,29 @@ export function normalizeApplicationPatch(jobId: string, patch: ApplicationPatch
   const hasField = <TKey extends keyof ApplicationPatchInput>(key: TKey) =>
     Object.prototype.hasOwnProperty.call(patch, key);
 
-  return {
-    status: patch.status,
-    notes: patch.notes,
-    proofs: patch.proofs,
-    interviewAt: hasField("interviewAt") ? patch.interviewAt : undefined,
-    interviewDetails: hasField("interviewDetails") ? patch.interviewDetails : undefined,
-    lastFollowUpAt: hasField("lastFollowUpAt") ? patch.lastFollowUpAt : undefined,
-    followUpDueAt: hasField("followUpDueAt") ? patch.followUpDueAt : undefined,
-    followUpEnabled: patch.followUpEnabled,
-    appliedAt: patch.appliedAt,
-    job: patch.job ? normalizePatchedJob(jobId, patch.job) : undefined,
-  };
+  const normalizedPatch: {
+    status?: ApplicationPatchInput["status"];
+    notes?: ApplicationPatchInput["notes"];
+    proofs?: ApplicationPatchInput["proofs"];
+    interviewAt?: ApplicationPatchInput["interviewAt"];
+    interviewDetails?: ApplicationPatchInput["interviewDetails"];
+    lastFollowUpAt?: ApplicationPatchInput["lastFollowUpAt"];
+    followUpDueAt?: ApplicationPatchInput["followUpDueAt"];
+    followUpEnabled?: ApplicationPatchInput["followUpEnabled"];
+    appliedAt?: ApplicationPatchInput["appliedAt"];
+    job?: Job;
+  } = {};
+
+  if (hasField("status")) normalizedPatch.status = patch.status;
+  if (hasField("notes")) normalizedPatch.notes = patch.notes;
+  if (hasField("proofs")) normalizedPatch.proofs = patch.proofs;
+  if (hasField("interviewAt")) normalizedPatch.interviewAt = patch.interviewAt;
+  if (hasField("interviewDetails")) normalizedPatch.interviewDetails = patch.interviewDetails;
+  if (hasField("lastFollowUpAt")) normalizedPatch.lastFollowUpAt = patch.lastFollowUpAt;
+  if (hasField("followUpDueAt")) normalizedPatch.followUpDueAt = patch.followUpDueAt;
+  if (hasField("followUpEnabled")) normalizedPatch.followUpEnabled = patch.followUpEnabled;
+  if (hasField("appliedAt")) normalizedPatch.appliedAt = patch.appliedAt;
+  if (hasField("job") && patch.job) normalizedPatch.job = normalizePatchedJob(jobId, patch.job);
+
+  return normalizedPatch;
 }
