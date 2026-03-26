@@ -8,7 +8,6 @@ describe("requestSchemas", () => {
       interviewAt: null,
       interviewDetails: null,
       lastFollowUpAt: null,
-      followUpDueAt: null,
     });
 
     expect(patch).toMatchObject({
@@ -16,7 +15,7 @@ describe("requestSchemas", () => {
       interviewAt: null,
       interviewDetails: null,
       lastFollowUpAt: null,
-      followUpDueAt: null,
+      followUpDueAt: undefined,
     });
   });
 

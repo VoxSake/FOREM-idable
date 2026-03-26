@@ -182,7 +182,7 @@ export const applicationPatchSchema = z
     interviewAt: z.string().optional().nullable(),
     interviewDetails: z.string().optional().nullable(),
     lastFollowUpAt: z.string().optional().nullable(),
-    followUpDueAt: z.string().optional().nullable(),
+    followUpDueAt: z.string().optional(),
     followUpEnabled: z.boolean().optional(),
     appliedAt: z.string().optional(),
     job: applicationJobPatchSchema.optional(),
@@ -207,7 +207,7 @@ export const externalApplicationUpsertSchema = z
         interviewAt: z.string().optional().nullable(),
         interviewDetails: z.string().optional().nullable(),
         lastFollowUpAt: z.string().optional().nullable(),
-        followUpDueAt: z.string().optional().nullable(),
+        followUpDueAt: z.string().optional(),
         followUpEnabled: z.boolean().optional(),
         appliedAt: z.string().optional(),
         job: applicationJobPatchSchema.extend({

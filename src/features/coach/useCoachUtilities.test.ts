@@ -62,6 +62,7 @@ describe("useCoachUtilities", () => {
               },
               status: "in_progress",
               appliedAt: "2026-03-25T10:00:00.000Z",
+              followUpDueAt: "2026-04-01T10:00:00.000Z",
               updatedAt: "2026-03-25T10:00:00.000Z",
             },
           ],
