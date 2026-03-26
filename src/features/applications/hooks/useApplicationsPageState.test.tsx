@@ -6,6 +6,7 @@ import { JobApplication } from "@/types/application";
 const mockUseAuth = vi.fn();
 const mockUseApplications = vi.fn();
 const mockUseCoachNoteViews = vi.fn();
+const mockToastError = vi.fn();
 
 vi.mock("@/components/auth/AuthProvider", () => ({
   useAuth: () => mockUseAuth(),
@@ -26,6 +27,12 @@ vi.mock("@/lib/exportApplicationsCsv", () => ({
 
 vi.mock("@/lib/exportApplicationsIcs", () => ({
   exportInterviewsToICS: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    error: (...args: unknown[]) => mockToastError(...args),
+  },
 }));
 
 const application: JobApplication = {
@@ -111,6 +118,10 @@ describe("useApplicationsPageState", () => {
       "job-1",
       "2026-03-29T14:30:00.000Z",
       "Visio RH"
+    );
+    expect(mockToastError).toHaveBeenCalledWith(
+      "Impossible d'enregistrer l'entretien.",
+      { description: "Candidatures" }
     );
     await waitFor(() => {
       expect(result.current.interviewApplication?.job.id).toBe("job-1");

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useApplications } from "@/hooks/useApplications";
 import {
@@ -55,16 +56,16 @@ export function useApplicationsPageState() {
   const {
     applications,
     addManualApplication,
-    markAsInProgress,
-    markAsAccepted,
-    markAsRejected,
-    markAsFollowUp,
-    scheduleInterview,
-    clearInterview,
+    markAsInProgress: persistInProgress,
+    markAsAccepted: persistAccepted,
+    markAsRejected: persistRejected,
+    markAsFollowUp: persistFollowUp,
+    scheduleInterview: persistInterview,
+    clearInterview: persistInterviewClear,
     saveNotes,
     saveProofs,
     updateManualApplicationDetails,
-    markFollowUpDone,
+    markFollowUpDone: persistFollowUpDone,
     updateFollowUpSettings,
     removeApplication,
     isLoaded,
@@ -155,6 +156,10 @@ export function useApplicationsPageState() {
     setInterviewForm(createEmptyInterviewForm());
   }, []);
 
+  const notifyActionError = useCallback((message: string) => {
+    toast.error(message, { description: "Candidatures" });
+  }, []);
+
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
     setCurrentPage(1);
@@ -182,34 +187,53 @@ export function useApplicationsPageState() {
   }, [applications, markCoachUpdateSeen]);
 
   const applyStatus = useCallback((jobId: string, status: ApplicationStatus) => {
-    if (status === "accepted") {
-      void markAsAccepted(jobId);
-      return;
-    }
-    if (status === "rejected") {
-      void markAsRejected(jobId);
-      return;
-    }
-    if (status === "follow_up") {
-      void markAsFollowUp(jobId);
-      return;
-    }
-    if (status === "interview") {
-      const existing = applications.find((entry) => entry.job.id === jobId);
-      if (existing?.interviewAt) {
-        void scheduleInterview(jobId, existing.interviewAt, existing.interviewDetails ?? undefined);
-      } else {
-        setInterviewJobId(jobId);
-        setInterviewForm({
-          interviewAt: "",
-          interviewDetails: existing?.interviewDetails ?? "",
-        });
+    void (async () => {
+      if (status === "accepted") {
+        const saved = await persistAccepted(jobId);
+        if (!saved) notifyActionError("Impossible de passer la candidature en acceptée.");
+        return;
       }
-      return;
-    }
+      if (status === "rejected") {
+        const saved = await persistRejected(jobId);
+        if (!saved) notifyActionError("Impossible de passer la candidature en refusée.");
+        return;
+      }
+      if (status === "follow_up") {
+        const saved = await persistFollowUp(jobId);
+        if (!saved) notifyActionError("Impossible de marquer la candidature en relance.");
+        return;
+      }
+      if (status === "interview") {
+        const existing = applications.find((entry) => entry.job.id === jobId);
+        if (existing?.interviewAt) {
+          const saved = await persistInterview(
+            jobId,
+            existing.interviewAt,
+            existing.interviewDetails ?? undefined
+          );
+          if (!saved) notifyActionError("Impossible de mettre à jour l'entretien.");
+        } else {
+          setInterviewJobId(jobId);
+          setInterviewForm({
+            interviewAt: "",
+            interviewDetails: existing?.interviewDetails ?? "",
+          });
+        }
+        return;
+      }
 
-    void markAsInProgress(jobId);
-  }, [applications, markAsAccepted, markAsFollowUp, markAsInProgress, markAsRejected, scheduleInterview]);
+      const saved = await persistInProgress(jobId);
+      if (!saved) notifyActionError("Impossible de repasser la candidature en cours.");
+    })();
+  }, [
+    applications,
+    notifyActionError,
+    persistAccepted,
+    persistFollowUp,
+    persistInProgress,
+    persistInterview,
+    persistRejected,
+  ]);
 
   const toggleSelection = useCallback((jobId: string) => {
     setSelectedJobIds((current) => {
@@ -241,11 +265,14 @@ export function useApplicationsPageState() {
       proofs: manualForm.proofs.trim(),
       url: manualForm.url.trim(),
     });
-    if (!saved) return;
+    if (!saved) {
+      notifyActionError("Impossible d'ajouter la candidature manuelle.");
+      return;
+    }
 
     resetManualForm();
     setIsCreateOpen(false);
-  }, [addManualApplication, manualForm, resetManualForm]);
+  }, [addManualApplication, manualForm, notifyActionError, resetManualForm]);
 
   const openInterviewModal = useCallback((application: JobApplication) => {
     const date = application.interviewAt ? new Date(application.interviewAt) : null;
@@ -265,52 +292,78 @@ export function useApplicationsPageState() {
     const interviewAt = new Date(interviewForm.interviewAt);
     if (Number.isNaN(interviewAt.getTime())) return;
 
-    const saved = await scheduleInterview(
+    const saved = await persistInterview(
       interviewApplication.job.id,
       interviewAt.toISOString(),
       interviewForm.interviewDetails.trim()
     );
     if (saved) {
       resetInterviewDialog();
+      return;
     }
-  }, [interviewApplication, interviewForm, resetInterviewDialog, scheduleInterview]);
+    notifyActionError("Impossible d'enregistrer l'entretien.");
+  }, [interviewApplication, interviewForm, notifyActionError, persistInterview, resetInterviewDialog]);
 
   const removeInterview = useCallback(async () => {
     if (!interviewApplication) return;
-    const cleared = await clearInterview(interviewApplication.job.id);
+    const cleared = await persistInterviewClear(interviewApplication.job.id);
     if (cleared) {
       resetInterviewDialog();
+      return;
     }
-  }, [clearInterview, interviewApplication, resetInterviewDialog]);
+    notifyActionError("Impossible de supprimer l'entretien.");
+  }, [interviewApplication, notifyActionError, persistInterviewClear, resetInterviewDialog]);
 
   const saveSelectedNotes = useCallback(async () => {
     if (!selectedApplication) return;
     const saved = await saveNotes(selectedApplication.job.id, currentNotesDraft);
-    if (!saved) return;
+    if (!saved) {
+      notifyActionError("Impossible d'enregistrer les notes.");
+      return;
+    }
     setNotesDrafts((current) => {
       const next = { ...current };
       delete next[selectedApplication.job.id];
       return next;
     });
-  }, [currentNotesDraft, saveNotes, selectedApplication]);
+  }, [currentNotesDraft, notifyActionError, saveNotes, selectedApplication]);
 
   const saveSelectedProofs = useCallback(async () => {
     if (!selectedApplication) return;
     const saved = await saveProofs(selectedApplication.job.id, currentProofsDraft);
-    if (!saved) return;
+    if (!saved) {
+      notifyActionError("Impossible d'enregistrer les preuves.");
+      return;
+    }
     setProofsDrafts((current) => {
       const next = { ...current };
       delete next[selectedApplication.job.id];
       return next;
     });
-  }, [currentProofsDraft, saveProofs, selectedApplication]);
+  }, [currentProofsDraft, notifyActionError, saveProofs, selectedApplication]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteApplication) return;
-    void removeApplication(deleteApplication.job.id);
-    if (detailsJobId === deleteApplication.job.id) setDetailsJobId(null);
-    setDeleteJobId(null);
-  }, [deleteApplication, detailsJobId, removeApplication]);
+    void (async () => {
+      const deleted = await removeApplication(deleteApplication.job.id);
+      if (!deleted) {
+        notifyActionError("Impossible de supprimer la candidature.");
+        return;
+      }
+
+      if (detailsJobId === deleteApplication.job.id) setDetailsJobId(null);
+      setDeleteJobId(null);
+    })();
+  }, [deleteApplication, detailsJobId, notifyActionError, removeApplication]);
+
+  const markFollowUpDone = useCallback((jobId: string) => {
+    void (async () => {
+      const saved = await persistFollowUpDone(jobId);
+      if (!saved) {
+        notifyActionError("Impossible d'enregistrer la relance.");
+      }
+    })();
+  }, [notifyActionError, persistFollowUpDone]);
 
   return {
     user,
