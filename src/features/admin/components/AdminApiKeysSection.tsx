@@ -12,6 +12,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FilterToggleGroup } from "@/components/ui/filter-toggle-group";
 import { Input } from "@/components/ui/input";
 import { LocalPagination } from "@/components/ui/local-pagination";
 import {
@@ -23,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CoachConfirmationDialog } from "@/features/coach/components/dialogs/CoachConfirmationDialog";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
 import { cn } from "@/lib/utils";
@@ -196,6 +196,23 @@ export function AdminApiKeysSection({
     () => filteredKeys.slice((safePage - 1) * pageSize, safePage * pageSize),
     [filteredKeys, safePage]
   );
+  const statusCounts = useMemo(
+    () => ({
+      all: apiKeys.length,
+      active: apiKeys.filter((entry) => getApiKeyStatus(entry) === "active").length,
+      expiring: apiKeys.filter((entry) => getApiKeyStatus(entry) === "expiring").length,
+      expired: apiKeys.filter((entry) => getApiKeyStatus(entry) === "expired").length,
+      revoked: apiKeys.filter((entry) => getApiKeyStatus(entry) === "revoked").length,
+    }),
+    [apiKeys]
+  );
+  const statusOptions = [
+    { value: "all" as const, label: `Toutes (${statusCounts.all})` },
+    { value: "active" as const, label: `Actives (${statusCounts.active})` },
+    { value: "expiring" as const, label: `Expirent bientôt (${statusCounts.expiring})` },
+    { value: "expired" as const, label: `Expirées (${statusCounts.expired})` },
+    { value: "revoked" as const, label: `Révoquées (${statusCounts.revoked})` },
+  ];
   const hasKeys = filteredKeys.length > 0;
   const isInitialLoading = isLoading && apiKeys.length === 0;
 
@@ -238,33 +255,17 @@ export function AdminApiKeysSection({
             </Field>
             <Field>
               <FieldLabel>Statut</FieldLabel>
-              <ToggleGroup
-                type="single"
+              <FilterToggleGroup
+                options={statusOptions}
                 value={status}
                 onValueChange={(value) => {
-                  if (value) {
-                    setStatus(value as ApiKeyStatusFilter);
-                    setPage(1);
-                  }
+                  setStatus(value as ApiKeyStatusFilter);
+                  setPage(1);
                 }}
-                className="flex flex-wrap justify-start gap-2"
-              >
-                <ToggleGroupItem value="all" size="sm" className="rounded-full px-3">
-                  Toutes
-                </ToggleGroupItem>
-                <ToggleGroupItem value="active" size="sm" className="rounded-full px-3">
-                  Actives
-                </ToggleGroupItem>
-                <ToggleGroupItem value="expiring" size="sm" className="rounded-full px-3">
-                  Expirent bientôt
-                </ToggleGroupItem>
-                <ToggleGroupItem value="expired" size="sm" className="rounded-full px-3">
-                  Expirées
-                </ToggleGroupItem>
-                <ToggleGroupItem value="revoked" size="sm" className="rounded-full px-3">
-                  Révoquées
-                </ToggleGroupItem>
-              </ToggleGroup>
+                renderIcon={(option) =>
+                  option.value === "all" ? <KeyRound data-icon="inline-start" /> : null
+                }
+              />
             </Field>
           </FieldGroup>
         </CardHeader>

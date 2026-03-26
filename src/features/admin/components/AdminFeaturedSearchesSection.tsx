@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FilterToggleGroup } from "@/components/ui/filter-toggle-group";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +35,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   createFeaturedSearchFormValues,
   FeaturedSearchFormValues,
@@ -108,6 +108,17 @@ export function AdminFeaturedSearchesSection({
   const pageSize = 6;
   const pageCount = Math.max(1, Math.ceil(sortedItems.length / pageSize));
   const safePage = Math.min(page, pageCount);
+  const filterOptions = [
+    { value: "all" as const, label: `Toutes (${featuredSearches.length})` },
+    {
+      value: "active" as const,
+      label: `Actives (${featuredSearches.filter((item) => item.isActive).length})`,
+    },
+    {
+      value: "inactive" as const,
+      label: `Inactives (${featuredSearches.filter((item) => !item.isActive).length})`,
+    },
+  ];
   const visibleItems = useMemo(
     () => sortedItems.slice((safePage - 1) * pageSize, safePage * pageSize),
     [safePage, sortedItems]
@@ -175,27 +186,19 @@ export function AdminFeaturedSearchesSection({
 
       <CardContent className="px-5 py-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <ToggleGroup
-            type="single"
-            value={filter}
-            onValueChange={(value) => {
-              if (value) {
-                setFilter(value as "all" | "active" | "inactive");
+          <div className="w-full max-w-3xl">
+            <FilterToggleGroup
+              options={filterOptions}
+              value={filter}
+              onValueChange={(value) => {
+                setFilter(value);
                 setPage(1);
+              }}
+              renderIcon={(option) =>
+                option.value === "all" ? <Search data-icon="inline-start" /> : null
               }
-            }}
-            className="flex flex-wrap justify-start gap-2"
-          >
-            <ToggleGroupItem value="all" size="sm" className="rounded-full px-3">
-              Toutes ({featuredSearches.length})
-            </ToggleGroupItem>
-            <ToggleGroupItem value="active" size="sm" className="rounded-full px-3">
-              Actives ({featuredSearches.filter((item) => item.isActive).length})
-            </ToggleGroupItem>
-            <ToggleGroupItem value="inactive" size="sm" className="rounded-full px-3">
-              Inactives ({featuredSearches.filter((item) => !item.isActive).length})
-            </ToggleGroupItem>
-          </ToggleGroup>
+            />
+          </div>
           <p className="text-sm text-muted-foreground">
             {sortedItems.length} recherche{sortedItems.length > 1 ? "s" : ""} affichée
             {sortedItems.length > 1 ? "s" : ""}
