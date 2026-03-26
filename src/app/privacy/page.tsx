@@ -151,7 +151,13 @@ function TextCardGrid({ items }: { items: TextItem[] }) {
 }
 
 export default function PrivacyPage() {
-  const { controllerName, contactEmail, projectLabel, sourceUrl } = runtimeConfig.privacy;
+  const { controllerName, contactEmail, projectLabel, sourceUrl, lastUpdatedLabel } = runtimeConfig.privacy;
+  const sourceRootUrl = sourceUrl.replace(/\/+$/, "");
+  const isGitHubSourceRoot = /^https:\/\/github\.com\/[^/]+\/[^/]+$/i.test(sourceRootUrl);
+  const docsUrl = isGitHubSourceRoot ? `${sourceRootUrl}/blob/main/DOCAPI.md` : sourceRootUrl;
+  const complianceUrl = isGitHubSourceRoot
+    ? `${sourceRootUrl}/blob/main/COMPLIANCE.md`
+    : sourceRootUrl;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
@@ -161,7 +167,7 @@ export default function PrivacyPage() {
           { label: "Transparence", variant: "secondary" },
         ]}
         title="Confidentialité"
-        description="Cette page explique quelles données peuvent être traitées par FOREM-idable, pourquoi, sur quelle base et comment exercer vos droits."
+        description={`Cette page explique quelles données peuvent être traitées par ${projectLabel}, pourquoi, sur quelle base et comment exercer vos droits.`}
       />
 
       <ContentSectionCard
@@ -171,7 +177,7 @@ export default function PrivacyPage() {
       >
           <div className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
             <p>
-              FOREM-idable est un projet gratuit et open source, mis à disposition sous licence
+              {projectLabel} est un projet gratuit et open source, mis à disposition sous licence
               GNU Affero General Public License v3.0. L&apos;application permet de rechercher des
               offres d&apos;emploi, de suivre des candidatures, et, si vous créez un compte,
               d&apos;enregistrer ces données dans votre espace personnel.
@@ -226,7 +232,7 @@ export default function PrivacyPage() {
               <div key={section.title} className="flex flex-col gap-3">
                 <p className="font-semibold text-foreground">{section.title}</p>
                 {section.paragraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
+                  <p key={paragraph}>{paragraph.replaceAll("FOREM-idable", projectLabel)}</p>
                 ))}
               </div>
             ))}
@@ -276,14 +282,14 @@ export default function PrivacyPage() {
             <AlertTitle>Transparence technique</AlertTitle>
             <AlertDescription className="flex flex-col gap-3 text-sm leading-6">
               <p>
-                FOREM-idable est open source. Si vous préférez garder un contrôle complet sur
+                {projectLabel} est open source. Si vous préférez garder un contrôle complet sur
                 l&apos;hébergement, le code peut être audité, adapté ou auto-hébergé.
               </p>
               <p>
                 Une documentation dédiée à l&apos;API externe est disponible dans{" "}
                 <a
                   className="text-primary hover:underline"
-                  href="https://github.com/VoxSake/FOREM-idable/blob/main/DOCAPI.md"
+                  href={docsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -293,7 +299,7 @@ export default function PrivacyPage() {
                 les legal holds et la purge de rétention est disponible dans{" "}
                 <a
                   className="text-primary hover:underline"
-                  href="https://github.com/VoxSake/FOREM-idable/blob/main/COMPLIANCE.md"
+                  href={complianceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -309,7 +315,7 @@ export default function PrivacyPage() {
             <CardTitle>Mise à jour</CardTitle>
           </CardHeader>
           <CardContent className="text-sm leading-6 text-muted-foreground">
-              Dernière mise à jour: 25 mars 2026. Cette page peut être adaptée si les fonctionnalités,
+              Dernière mise à jour: {lastUpdatedLabel}. Cette page peut être adaptée si les fonctionnalités,
               les traitements ou les obligations légales applicables évoluent.
           </CardContent>
         </Card>

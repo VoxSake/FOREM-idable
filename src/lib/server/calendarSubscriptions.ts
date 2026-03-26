@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "crypto";
+import { runtimeConfig } from "@/config/runtime";
 import { buildCalendarIcsFeed } from "@/lib/calendarIcs";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { listApplicationRecordsFromRelationalStoreByUsers } from "@/lib/server/applicationStore";
@@ -293,7 +294,7 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
   });
 
   return {
-    calendarName: `FOREM-idable - Groupe ${target.groupName}`,
+    calendarName: `${runtimeConfig.privacy.projectLabel} - Groupe ${target.groupName}`,
     rows,
   };
 }
@@ -344,7 +345,7 @@ export async function listCalendarFeedRowsForAllGroups(actorId: number): Promise
   const actorScope = await resolveCalendarActorScope(actorId);
   if (actorScope.managedGroupIds && actorScope.managedGroupIds.length === 0) {
     return {
-      calendarName: "FOREM-idable - Mes groupes beneficiaires",
+      calendarName: `${runtimeConfig.privacy.projectLabel} - Mes groupes beneficiaires`,
       rows: [],
     };
   }
@@ -393,8 +394,8 @@ export async function listCalendarFeedRowsForAllGroups(actorId: number): Promise
   return {
     calendarName:
       actorScope.role === "admin"
-        ? "FOREM-idable - Tous les groupes beneficiaires"
-        : "FOREM-idable - Mes groupes beneficiaires",
+        ? `${runtimeConfig.privacy.projectLabel} - Tous les groupes beneficiaires`
+        : `${runtimeConfig.privacy.projectLabel} - Mes groupes beneficiaires`,
     rows,
   };
 }

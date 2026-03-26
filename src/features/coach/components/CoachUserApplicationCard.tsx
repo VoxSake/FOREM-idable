@@ -31,7 +31,7 @@ import {
   formatCoachDate,
   isApplicationDue,
 } from "@/features/coach/utils";
-import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { getJobExternalUrl, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { CoachUserSummary } from "@/types/coach";
 import { JobApplication } from "@/types/application";
 import { cn } from "@/lib/utils";
@@ -97,6 +97,7 @@ export function CoachUserApplicationCard({
 }: CoachUserApplicationCardProps) {
   const isDue = isApplicationDue(application);
   const isManual = isManualApplication(application);
+  const jobUrl = getJobExternalUrl(application.job);
   const privateCoachNote = application.privateCoachNote;
   const displayStatus = getDisplayApplicationStatus(application);
 
@@ -223,7 +224,7 @@ export function CoachUserApplicationCard({
             <div className="flex flex-wrap gap-2">
               {application.job.url && application.job.url !== "#" ? (
                 <Button type="button" size="sm" asChild>
-                  <a href={application.job.url} target="_blank" rel="noopener noreferrer">
+                  <a href={jobUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="mr-2 h-4 w-4" />
                     WEB
                   </a>

@@ -12,7 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getForemOfferId, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { getForemOfferId, getJobExternalUrl, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { useOfferDetails } from "@/features/jobs/hooks/useOfferDetails";
 import { buildOfferMailtoLink } from "@/features/jobs/utils/shareOfferMail";
 import { JobDetailsActions } from "@/features/jobs/components/JobDetailsActions";
@@ -51,6 +51,7 @@ export function JobDetailsSheet({
   if (!job) return null;
 
   const pdfUrl = getJobPdfUrl(job);
+  const jobUrl = getJobExternalUrl(job);
   const description = details?.description || job.description;
   const shouldShowForemAttribution = job.source === "forem";
   const hasAdaptedForemContent =
@@ -128,7 +129,7 @@ export function JobDetailsSheet({
             job={job}
             mailtoHref={mailtoHref}
             pdfUrl={pdfUrl}
-            jobUrl={job.url}
+            jobUrl={jobUrl}
             applied={applied}
             isAuthenticated={isAuthenticated}
             isApplicationsLoaded={isApplicationsLoaded}

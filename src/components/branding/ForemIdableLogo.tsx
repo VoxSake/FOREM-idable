@@ -1,3 +1,4 @@
+import { runtimeConfig } from "@/config/runtime";
 import { cn } from "@/lib/utils";
 
 interface ForemIdableLogoProps {
@@ -5,6 +6,10 @@ interface ForemIdableLogoProps {
 }
 
 export function ForemIdableLogo({ className }: ForemIdableLogoProps) {
+  const projectLabel = runtimeConfig.privacy.projectLabel;
+  const [, leadingSegment = projectLabel, trailingSegment = ""] =
+    projectLabel.match(/^(.*?)(-.+)$/) ?? [];
+
   return (
     <div className={cn("inline-flex h-full items-center gap-2.5", className)}>
       <svg
@@ -19,11 +24,13 @@ export function ForemIdableLogo({ className }: ForemIdableLogoProps) {
       </svg>
       <span className="flex items-end leading-none">
         <span className="[font-family:var(--font-logo)] text-[1.32rem] font-bold tracking-[-0.065em] text-foreground">
-          FOREM
+          {leadingSegment}
         </span>
-        <span className="[font-family:var(--font-logo)] ml-[0.05em] text-[1.02rem] font-semibold tracking-[-0.06em] text-primary">
-          -idable
-        </span>
+        {trailingSegment ? (
+          <span className="[font-family:var(--font-logo)] ml-[0.05em] text-[1.02rem] font-semibold tracking-[-0.06em] text-primary">
+            {trailingSegment}
+          </span>
+        ) : null}
       </span>
     </div>
   );

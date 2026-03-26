@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
+import { getJobExternalUrl } from "@/features/jobs/utils/jobLinks";
 import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
 import {
   applicationStatusLabel,
@@ -382,6 +383,11 @@ function OfferDetailsSection({
   onCancelEdit: () => void;
   onSave: () => Promise<void>;
 }) {
+  const jobUrl =
+    application.job.url && application.job.url !== "#"
+      ? getJobExternalUrl(application.job)
+      : null;
+
   if (isManual && isEditingManualDetails) {
     return (
       <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
@@ -477,7 +483,7 @@ function OfferDetailsSection({
       <p>{application.job.location || "Non précisé"}</p>
       <p>Type: {application.job.contractType || "Non précisé"}</p>
       <p className="break-all">
-        Lien: {application.job.url && application.job.url !== "#" ? application.job.url : "Aucun"}
+        Lien: {jobUrl || "Aucun"}
       </p>
     </div>
   );

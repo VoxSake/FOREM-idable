@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { runtimeConfig } from "@/config/runtime";
 import { buildCalendarSubscriptionIcs } from "@/lib/server/calendarSubscriptions";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 
@@ -30,7 +31,7 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "text/calendar; charset=utf-8",
-        "Content-Disposition": 'inline; filename="forem-idable-calendar.ics"',
+        "Content-Disposition": `inline; filename="${runtimeConfig.app.exportFilenamePrefix}-calendar.ics"`,
         "Cache-Control": "private, no-store, max-age=0",
         "X-Robots-Tag": "noindex, nofollow, noarchive",
       },

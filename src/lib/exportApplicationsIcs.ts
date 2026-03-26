@@ -1,5 +1,7 @@
 import { format } from "date-fns";
+import { runtimeConfig } from "@/config/runtime";
 import { isManualApplication } from "@/lib/applications/sourceType";
+import { appendForemTrackingParam } from "@/lib/forem";
 import { JobApplication } from "@/types/application";
 
 function escapeIcsText(value: string) {
@@ -31,14 +33,17 @@ export function exportInterviewsToICS(applications: JobApplication[]) {
       const title = escapeIcsText(
         `Entretien - ${entry.job.company || "Entreprise"} - ${entry.job.title}`
       );
-      const offerUrl = entry.job.url && !isManualApplication(entry) ? entry.job.url : "";
+      const offerUrl =
+        entry.job.url && !isManualApplication(entry)
+          ? appendForemTrackingParam(entry.job.url)
+          : "";
       const description = escapeIcsText(
         [entry.job.location, entry.interviewDetails || "", offerUrl]
           .filter(Boolean)
           .join("\n")
       );
       const location = escapeIcsText(entry.job.location || "");
-      const uid = `${entry.job.id}-interview@forem-idable`;
+      const uid = `${entry.job.id}-interview@${runtimeConfig.app.calendarUidDomain}`;
 
       return [
         "BEGIN:VEVENT",
@@ -61,7 +66,7 @@ export function exportInterviewsToICS(applications: JobApplication[]) {
   const content = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//FOREM-idable//Interviews//FR",
+    `PRODID:-//${runtimeConfig.privacy.projectLabel}//Interviews//FR`,
     "CALSCALE:GREGORIAN",
     ...events,
     "END:VCALENDAR",
@@ -71,7 +76,7 @@ export function exportInterviewsToICS(applications: JobApplication[]) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `entretiens-foremidable-${format(new Date(), "yyyy-MM-dd")}.ics`;
+  link.download = `entretiens-${runtimeConfig.app.exportFilenamePrefix}-${format(new Date(), "yyyy-MM-dd")}.ics`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

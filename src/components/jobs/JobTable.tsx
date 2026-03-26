@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Job } from "@/types/job";
 import { CalendarDays, ExternalLink, FileText, MapPin, MessagesSquare, Send } from "lucide-react";
-import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { getJobExternalUrl, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
 import { cn } from "@/lib/utils";
 import { ShareOfferDialog } from "@/features/jobs/components/ShareOfferDialog";
@@ -462,6 +462,7 @@ function JobActions({
     onOpenDetails?: (job: Job) => void;
     onShareJob?: (job: Job) => void;
 }) {
+    const jobUrl = getJobExternalUrl(job);
     const pdfUrl = getJobPdfUrl(job);
 
     const handleTrackApplication = async () => {
@@ -514,7 +515,7 @@ function JobActions({
                     ) : null}
 
                     <Button type="button" className="h-10 w-full" asChild>
-                        <a href={job.url} target="_blank" rel="noopener noreferrer">
+                        <a href={jobUrl} target="_blank" rel="noopener noreferrer">
                             <ExternalLink data-icon="inline-start" />
                             WEB
                         </a>
@@ -611,7 +612,7 @@ function JobActions({
                     className="rounded-md"
                 >
                     <a
-                      href={job.url}
+                      href={jobUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Ouvrir l'offre sur le site"

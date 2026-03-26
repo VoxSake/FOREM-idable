@@ -1,4 +1,6 @@
+import { runtimeConfig } from "@/config/runtime";
 import { Job } from "@/types/job";
+import { getJobExternalUrl } from "@/features/jobs/utils/jobLinks";
 import { escapeCsvCell } from "@/lib/csv";
 
 export type ExportColumnKey =
@@ -30,7 +32,7 @@ interface ExportCsvOptions {
 
 export function exportJobsToCSV(jobs: Job[], options: ExportCsvOptions = {}) {
     if (!jobs || !jobs.length) return;
-    const filename = options.filename || "offres-foremidable.csv";
+    const filename = options.filename || `offres-${runtimeConfig.app.exportFilenamePrefix}.csv`;
     const columns = options.columns && options.columns.length > 0
         ? options.columns
         : (Object.keys(EXPORT_COLUMNS) as ExportColumnKey[]);
@@ -52,7 +54,7 @@ export function exportJobsToCSV(jobs: Job[], options: ExportCsvOptions = {}) {
             case "source":
                 return job.source;
             case "url":
-                return job.url;
+                return getJobExternalUrl(job);
             case "description":
                 return job.description ? `${job.description.substring(0, 150)}...` : "";
             default:

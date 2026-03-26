@@ -28,8 +28,8 @@ const logoFont = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "FOREM-idable - Indexeur d'offres",
-  description: "Recherche d'offres d'emploi du Forem, simplifiée et décomplexée.",
+  title: `${runtimeConfig.privacy.projectLabel} - ${runtimeConfig.app.titleSuffix}`,
+  description: runtimeConfig.app.metaDescription,
 };
 
 export default function RootLayout({

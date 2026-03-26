@@ -1,10 +1,14 @@
+import { runtimeConfig } from "@/config/runtime";
+
+const storageNamespace = runtimeConfig.app.storageNamespace;
+
 export const STORAGE_KEYS = {
-  favorites: "forem_idable_favorites",
-  applications: "forem_idable_applications_v1",
-  settings: "forem_idable_settings",
-  searchHistory: "forem_idable_search_history_v1",
-  analyticsConsent: "forem_idable_analytics_consent_v1",
-  locationsCache: "forem_idable_locations_cache_v1",
+  favorites: `${storageNamespace}_favorites`,
+  applications: `${storageNamespace}_applications_v1`,
+  settings: `${storageNamespace}_settings`,
+  searchHistory: `${storageNamespace}_search_history_v1`,
+  analyticsConsent: `${storageNamespace}_analytics_consent_v1`,
+  locationsCache: `${storageNamespace}_locations_cache_v1`,
   theme: "theme",
 } as const;
 

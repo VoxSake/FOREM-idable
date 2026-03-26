@@ -1,11 +1,13 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { STORAGE_KEYS } from "@/lib/storageKeys";
+import { runtimeConfig } from "@/config/runtime";
 
 export type AnalyticsConsentChoice = "accepted" | "rejected" | null;
 
-const CONSENT_STORAGE_KEY = "forem_idable_analytics_consent_v1";
-const CONSENT_CHANGE_EVENT = "forem-idable:analytics-consent-change";
+const CONSENT_STORAGE_KEY = STORAGE_KEYS.analyticsConsent;
+const CONSENT_CHANGE_EVENT = `${runtimeConfig.app.storageNamespace.replaceAll("_", "-")}:analytics-consent-change`;
 
 function readChoiceFromStorage(): AnalyticsConsentChoice {
   if (typeof window === "undefined") return null;

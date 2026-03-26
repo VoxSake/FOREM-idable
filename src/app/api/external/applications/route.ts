@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { runtimeConfig } from "@/config/runtime";
 import {
   buildApplicationsCsv,
   getExternalApplications,
@@ -19,7 +20,10 @@ export async function GET(request: NextRequest) {
 
     const response = await getExternalApplications(actor, parseExternalFilters(request));
     if (getRequestedFormat(request) === "csv") {
-      return csvResponse("forem-applications.csv", buildApplicationsCsv(response.applications));
+      return csvResponse(
+        `${runtimeConfig.app.exportFilenamePrefix}-applications.csv`,
+        buildApplicationsCsv(response.applications)
+      );
     }
 
     return NextResponse.json(response);

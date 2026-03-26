@@ -1,3 +1,4 @@
+import { runtimeConfig } from "@/config/runtime";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { and, eq, gt, isNotNull, or, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -5,7 +6,7 @@ import { ensureDatabase, orm } from "@/lib/server/db";
 import { passwordResetTokens, sessions, users } from "@/lib/server/schema";
 import { AuthUser } from "@/types/auth";
 
-const SESSION_COOKIE = "forem_idable_session";
+const SESSION_COOKIE = runtimeConfig.app.sessionCookieName;
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
 const PASSWORD_RESET_DURATION_MS = 1000 * 60 * 60;
 

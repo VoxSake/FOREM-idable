@@ -6,7 +6,7 @@ export function SiteFooter() {
     <footer className="border-t bg-background/95 lg:hidden">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 text-sm text-muted-foreground lg:px-8">
         <p>
-          {runtimeConfig.brand.copyrightName} · {runtimeConfig.privacy.projectLabel} · 2026
+          {runtimeConfig.brand.copyrightName} · {runtimeConfig.privacy.projectLabel} · {runtimeConfig.app.currentYear}
         </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link href="/privacy" className="underline-offset-4 hover:text-foreground hover:underline">
@@ -21,7 +21,7 @@ export function SiteFooter() {
             rel="noopener noreferrer"
             className="underline-offset-4 hover:text-foreground hover:underline"
           >
-            Code source AGPLv3
+            {runtimeConfig.app.sourceLinkLabel}
           </a>
         </div>
       </div>

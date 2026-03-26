@@ -46,7 +46,7 @@ function AppSidebarBrand() {
         <ForemIdableLogo className="h-8" />
       </div>
       <p className="mt-1 text-xs font-medium italic text-muted-foreground">
-        L&apos;indexeur d&apos;offres décomplexé
+        {runtimeConfig.app.tagline}
       </p>
     </SidebarHeader>
   );
@@ -307,9 +307,9 @@ export function AppSidebar() {
             rel="noopener noreferrer"
             className="underline-offset-4 hover:text-foreground hover:underline"
           >
-            FOREM-idable
+            {runtimeConfig.privacy.projectLabel}
           </a>{" "}
-          · 2026
+          · {runtimeConfig.app.currentYear}
         </p>
       </SidebarFooter>
 

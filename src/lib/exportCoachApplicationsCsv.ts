@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { appendForemTrackingParam } from "@/lib/forem";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
 import { escapeCsvCell } from "@/lib/csv";
@@ -113,7 +114,7 @@ export function exportCoachApplicationsToCSV(input: {
         (application.sharedCoachNotes ?? [])
           .map((note) => summarizeCoachContributors(note.contributors))
           .join(" | "),
-        application.job.url || "",
+        appendForemTrackingParam(application.job.url || ""),
       ]
         .map(escapeCsvCell)
         .join(",");

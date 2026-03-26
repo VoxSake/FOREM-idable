@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { runtimeConfig } from "@/config/runtime";
 import { Job } from "@/types/job";
 import { ExportColumnKey, exportJobsToCSV } from "@/lib/exportCsv";
 import { SearchQuery } from "@/types/search";
@@ -51,7 +52,7 @@ export function useExportJobs() {
     });
 
     exportJobsToCSV(exportJobs, {
-      filename: "offres-foremidable.csv",
+      filename: `offres-${runtimeConfig.app.exportFilenamePrefix}.csv`,
       columns: selectedExportColumns,
       metadata,
     });

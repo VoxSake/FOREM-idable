@@ -41,7 +41,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ContractTypeBadge } from "@/components/jobs/ContractTypeBadge";
-import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { getJobExternalUrl, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { ConversationAvatar, ParticipantStack } from "@/features/messages/components/MessagesPrimitives";
 import { getDisplayName, getInitials } from "@/features/messages/messages.utils";
 import { cn } from "@/lib/utils";
@@ -59,6 +59,7 @@ function SharedJobCard({
   onTrack: (job: Job) => void;
 }) {
   const pdfUrl = getJobPdfUrl(job);
+  const jobUrl = getJobExternalUrl(job);
 
   return (
     <div className="mt-4 rounded-2xl border border-border/70 bg-background/95 p-4 shadow-sm">
@@ -93,7 +94,7 @@ function SharedJobCard({
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button size="sm" asChild>
-            <a href={job.url} target="_blank" rel="noopener noreferrer">
+            <a href={jobUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink data-icon="inline-start" />
               Ouvrir l&apos;offre
             </a>

@@ -1,3 +1,4 @@
+import { appendForemTrackingParam } from "@/lib/forem";
 import { Job } from "@/types/job";
 
 export function getForemOfferId(job: Job): string | null {
@@ -12,4 +13,8 @@ export function getJobPdfUrl(job: Job): string | null {
   if (job.pdfUrl) return job.pdfUrl;
   const offerId = getForemOfferId(job);
   return offerId ? `/api/pdf/${offerId}` : null;
+}
+
+export function getJobExternalUrl(job: Pick<Job, "url">): string {
+  return appendForemTrackingParam(job.url);
 }

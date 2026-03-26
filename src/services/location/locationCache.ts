@@ -1,3 +1,5 @@
+import { STORAGE_KEYS } from "@/lib/storageKeys";
+
 export type LocationCategory = 'Pays' | 'Régions' | 'Provinces' | 'Arrondissements' | 'Communes' | 'Localités';
 
 export interface LocationEntry {
@@ -32,7 +34,7 @@ export const CATEGORIES_ORDER: LocationCategory[] = [
 ];
 
 let memoryCache: LocationEntry[] | null = null;
-const CACHE_KEY = "forem_idable_locations_cache_v1";
+const CACHE_KEY = STORAGE_KEYS.locationsCache;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function saveToLocalStorage(entries: LocationEntry[]) {

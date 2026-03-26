@@ -1,6 +1,7 @@
+import { STORAGE_KEYS } from "@/lib/storageKeys";
 import { useState, useEffect } from 'react';
 
-const SETTINGS_KEY = 'forem_idable_settings';
+const SETTINGS_KEY = STORAGE_KEYS.settings;
 
 export interface UserSettings {
     theme: 'light' | 'dark' | 'system';

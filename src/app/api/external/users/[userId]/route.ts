@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { runtimeConfig } from "@/config/runtime";
 import { buildApplicationsCsv, getExternalApplications } from "@/lib/server/externalApi";
 import {
   csvResponse,
@@ -40,7 +41,7 @@ export async function GET(
         limit: 500,
       });
       return csvResponse(
-        `forem-user-${userId}.csv`,
+        `${runtimeConfig.app.exportFilenamePrefix}-user-${userId}.csv`,
         buildApplicationsCsv(applicationsResponse.applications)
       );
     }

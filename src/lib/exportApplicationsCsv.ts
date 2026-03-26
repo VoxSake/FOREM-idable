@@ -1,5 +1,7 @@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { runtimeConfig } from "@/config/runtime";
+import { appendForemTrackingParam } from "@/lib/forem";
 import { JobApplication, ApplicationStatus } from "@/types/application";
 import { formatCoachAuthorName } from "@/lib/coachNotes";
 import { escapeCsvCell } from "@/lib/csv";
@@ -52,7 +54,7 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
       (entry.sharedCoachNotes ?? [])
         .map((note) => `${formatCoachAuthorName(note.createdBy)}: ${note.content}`)
         .join(" | "),
-      entry.job.url,
+      appendForemTrackingParam(entry.job.url),
     ]
       .map(escapeCsvCell)
       .join(",")
@@ -66,7 +68,7 @@ export function exportApplicationsToCSV(applications: JobApplication[]) {
   link.setAttribute("href", url);
   link.setAttribute(
     "download",
-    `candidatures-foremidable-${format(new Date(), "yyyy-MM-dd")}.csv`
+    `candidatures-${runtimeConfig.app.exportFilenamePrefix}-${format(new Date(), "yyyy-MM-dd")}.csv`
   );
   link.style.visibility = "hidden";
   document.body.appendChild(link);

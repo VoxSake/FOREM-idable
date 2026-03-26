@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { runtimeConfig } from "@/config/runtime";
 import {
   ContentPageHeader,
   ContentSectionCard,
@@ -99,6 +100,12 @@ const APIS = [
 ];
 
 export default function AboutPage() {
+  const { projectLabel, sourceUrl } = runtimeConfig.privacy;
+  const sourceRootUrl = sourceUrl.replace(/\/+$/, "");
+  const isGitHubSourceRoot = /^https:\/\/github\.com\/[^/]+\/[^/]+$/i.test(sourceRootUrl);
+  const sourceDocsUrl = isGitHubSourceRoot ? `${sourceRootUrl}/blob/main/DOCAPI.md` : sourceRootUrl;
+  const sourceCommitsUrl = isGitHubSourceRoot ? `${sourceRootUrl}/commits/main/` : sourceRootUrl;
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       <ContentPageHeader
@@ -107,7 +114,7 @@ export default function AboutPage() {
           { label: "Data-driven", variant: "secondary" },
         ]}
         title="À propos"
-        description="FOREM-idable est un agrégateur orienté recherche d'emploi, pensé pour rendre la recherche plus lisible, le filtrage plus utile et le suivi des candidatures plus concret."
+        description={`${projectLabel} est un agrégateur orienté recherche d'emploi, pensé pour rendre la recherche plus lisible, le filtrage plus utile et le suivi des candidatures plus concret.`}
       />
 
       <ContentSectionCard
@@ -116,7 +123,7 @@ export default function AboutPage() {
         contentClassName="flex flex-col gap-4"
       >
           <p className="text-sm leading-6 text-muted-foreground">
-            FOREM-idable centralise la recherche d&apos;offres, fiabilise le filtrage géographique
+            {projectLabel} centralise la recherche d&apos;offres, fiabilise le filtrage géographique
             et transforme une navigation brute en parcours de suivi plus exploitable. Le produit
             réunit dans un même espace la consultation des offres, l&apos;accès aux PDF disponibles,
             le suivi des candidatures et une lecture plus claire des prochaines relances.
@@ -184,7 +191,7 @@ export default function AboutPage() {
           <div className="text-sm text-muted-foreground">
             Historique complet:{" "}
             <a
-              href="https://github.com/VoxSake/FOREM-idable/commits/main/"
+              href={sourceCommitsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
@@ -200,7 +207,7 @@ export default function AboutPage() {
         contentClassName="flex flex-col gap-3 text-sm text-muted-foreground"
       >
           <p>
-            Le code de l&apos;application FOREM-idable est publié sous licence GNU Affero General
+            Le code de l&apos;application {projectLabel} est publié sous licence GNU Affero General
             Public License v3.0.
           </p>
           <p>
@@ -239,17 +246,29 @@ export default function AboutPage() {
         description="Cadre légal du projet et informations de confidentialité."
         contentClassName="flex flex-col gap-2 text-sm text-muted-foreground"
       >
-          <p>Copyright (c) 2026 Jordi Brisbois</p>
+          <p>Copyright (c) {runtimeConfig.app.currentYear} {runtimeConfig.brand.copyrightName}</p>
           <p>Ce projet est distribué sous licence GNU Affero General Public License v3.0.</p>
           <p>
             Le code source correspondant est publié sur{" "}
             <a
-              href="https://github.com/VoxSake/FOREM-idable"
+              href={sourceRootUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              GitHub
+              le dépôt source
+            </a>
+            .
+          </p>
+          <p>
+            Documentation technique:{" "}
+            <a
+              href={sourceDocsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              DOCAPI.md
             </a>
             .
           </p>

@@ -1,6 +1,9 @@
+import { runtimeConfig } from "@/config/runtime";
+import { getJobExternalUrl } from "@/features/jobs/utils/jobLinks";
 import { Job } from "@/types/job";
 
 export function buildOfferMailtoLink(job: Job, publicationLabel: string): string {
+  const jobUrl = getJobExternalUrl(job);
   const emailSubject = `Offre à découvrir: ${job.title}`;
   const emailBody = [
     "Bonjour,",
@@ -13,9 +16,9 @@ export function buildOfferMailtoLink(job: Job, publicationLabel: string): string
     `Contrat: ${job.contractType}`,
     `Publication: ${publicationLabel}`,
     "",
-    `Lien de l'offre: ${job.url}`,
+    `Lien de l'offre: ${jobUrl}`,
     "",
-    "Envoyé depuis FOREM-idable",
+    `Envoyé depuis ${runtimeConfig.privacy.projectLabel}`,
   ].join("\n");
 
   return `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;

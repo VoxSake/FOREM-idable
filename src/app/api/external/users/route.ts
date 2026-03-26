@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { runtimeConfig } from "@/config/runtime";
 import { buildUsersCsv, getExternalUsers } from "@/lib/server/externalApi";
 import {
   csvResponse,
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
 
     const response = await getExternalUsers(actor, parseExternalFilters(request));
     if (getRequestedFormat(request) === "csv") {
-      return csvResponse("forem-users.csv", buildUsersCsv(response.users));
+      return csvResponse(
+        `${runtimeConfig.app.exportFilenamePrefix}-users.csv`,
+        buildUsersCsv(response.users)
+      );
     }
 
     return NextResponse.json(response);

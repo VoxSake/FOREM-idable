@@ -1,3 +1,5 @@
+import { runtimeConfig } from "@/config/runtime";
+import { appendForemTrackingParam } from "@/lib/forem";
 import { isManualApplication } from "@/lib/applications/sourceType";
 import { CalendarFeedApplicationRow } from "@/types/calendar";
 
@@ -17,6 +19,10 @@ function toIcsDateTime(value: string) {
 
 function buildEventDescription(row: CalendarFeedApplicationRow) {
   const application = row.application;
+  const offerUrl =
+    application.job.url && !isManualApplication(application)
+      ? appendForemTrackingParam(application.job.url)
+      : "";
 
   return [
     `Beneficiaire: ${[row.userFirstName, row.userLastName].join(" ").trim() || row.userEmail}`,
@@ -26,7 +32,7 @@ function buildEventDescription(row: CalendarFeedApplicationRow) {
     `Poste: ${application.job.title}`,
     application.job.location ? `Lieu: ${application.job.location}` : "",
     application.interviewDetails ? `Details: ${application.interviewDetails}` : "",
-    application.job.url && !isManualApplication(application) ? `Offre: ${application.job.url}` : "",
+    offerUrl ? `Offre: ${offerUrl}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -51,7 +57,7 @@ export function buildCalendarIcsFeed(input: {
       );
       const description = escapeIcsText(buildEventDescription(row));
       const location = escapeIcsText(row.application.job.location || "");
-      const uid = `${row.userId}-${row.application.job.id}-interview@forem-idable`;
+      const uid = `${row.userId}-${row.application.job.id}-interview@${runtimeConfig.app.calendarUidDomain}`;
 
       return [
         "BEGIN:VEVENT",
@@ -74,7 +80,7 @@ export function buildCalendarIcsFeed(input: {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//FOREM-idable//Coach Calendar//FR",
+    `PRODID:-//${runtimeConfig.privacy.projectLabel}//Coach Calendar//FR`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeIcsText(input.calendarName)}`,

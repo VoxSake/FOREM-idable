@@ -2,7 +2,7 @@
 
 import { ExternalLink, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import { getJobExternalUrl, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { isManualApplication } from "@/lib/applications/sourceType";
 import { JobApplication } from "@/types/application";
 
@@ -16,6 +16,7 @@ export function ApplicationsOfferButtons({
   layout = "card",
 }: ApplicationsOfferButtonsProps) {
   const pdfUrl = getJobPdfUrl(application.job);
+  const jobUrl = getJobExternalUrl(application.job);
   const isSheet = layout === "sheet";
   const hasWebLink = Boolean(application.job.url) && !isManualApplication(application);
 
@@ -30,7 +31,7 @@ export function ApplicationsOfferButtons({
           asChild
           className={`h-8 gap-1 whitespace-nowrap ${isSheet ? "px-3" : "w-full"}`}
         >
-          <a href={application.job.url} target="_blank" rel="noopener noreferrer">
+          <a href={jobUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="h-3 w-3" />
             WEB
           </a>

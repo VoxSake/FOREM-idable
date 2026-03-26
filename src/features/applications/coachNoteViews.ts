@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
+import { runtimeConfig } from "@/config/runtime";
 
-const CHANGE_EVENT = "forem-idable:coach-note-views-change";
+const storageNamespace = runtimeConfig.app.storageNamespace;
+const CHANGE_EVENT = `${storageNamespace.replaceAll("_", "-")}:coach-note-views-change`;
 
 function getStorageKey(userId: number) {
-  return `forem_idable_coach_note_views_v1:${userId}`;
+  return `${storageNamespace}_coach_note_views_v1:${userId}`;
 }
 
 function readViewsSnapshot(userId?: number) {
@@ -25,7 +27,7 @@ function subscribe(onStoreChange: () => void) {
   }
 
   const handleStorage = (event: StorageEvent) => {
-    if (event.key?.startsWith("forem_idable_coach_note_views_v1:")) {
+    if (event.key?.startsWith(`${storageNamespace}_coach_note_views_v1:`)) {
       onStoreChange();
     }
   };

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { runtimeConfig } from "@/config/runtime";
 import { buildGroupsCsv, getExternalGroups } from "@/lib/server/externalApi";
 import {
   csvResponse,
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
 
     const response = await getExternalGroups(actor, parseExternalFilters(request));
     if (getRequestedFormat(request) === "csv") {
-      return csvResponse("forem-groups.csv", buildGroupsCsv(response.groups));
+      return csvResponse(
+        `${runtimeConfig.app.exportFilenamePrefix}-groups.csv`,
+        buildGroupsCsv(response.groups)
+      );
     }
 
     return NextResponse.json(response);

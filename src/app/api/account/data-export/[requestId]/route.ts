@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { runtimeConfig } from "@/config/runtime";
 import { getCurrentUser } from "@/lib/server/auth";
 import { getUserDataExportPayload } from "@/lib/server/compliance";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
@@ -36,7 +37,7 @@ export async function GET(
     return new NextResponse(JSON.stringify(exportRequest.payload, null, 2), {
       headers: {
         "content-type": "application/json; charset=utf-8",
-        "content-disposition": `attachment; filename="forem-idable-export-${requestId}.json"`,
+        "content-disposition": `attachment; filename="${runtimeConfig.app.exportFilenamePrefix}-export-${requestId}.json"`,
         "cache-control": "no-store, private",
         pragma: "no-cache",
         expires: "0",

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { appendForemTrackingParam } from "@/lib/forem";
 import { Job } from '@/types/job';
 import { LocationEntry, locationCache } from '@/services/location/locationCache';
 
@@ -305,7 +306,9 @@ function mapForemJobToStandard(record: z.infer<typeof foremRecordSchema>): Job {
         typeof record.numerooffreforem === "number"
             ? String(record.numerooffreforem)
             : record.numerooffreforem;
-    const url = record.url || `https://www.leforem.be/recherche-offres/offre-detail/${offerId ?? ""}`;
+    const url = appendForemTrackingParam(
+        record.url || `https://www.leforem.be/recherche-offres/offre-detail/${offerId ?? ""}`
+    );
     const title = record.titreoffre || 'Poste non spécifié';
     const company = record.nomemployeur ?? undefined;
     const fallbackId = buildStableForemFallbackId({

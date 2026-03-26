@@ -12,6 +12,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
+import { getJobExternalUrl } from "@/features/jobs/utils/jobLinks";
 import { Job } from "@/types/job";
 import { ConversationPreview, DirectMessageTarget } from "@/types/messaging";
 import { getDisplayName } from "@/features/messages/messages.utils";
@@ -116,12 +117,13 @@ export function ShareOfferDialog({
   const sendToConversation = async (conversationId: number) => {
     if (!job || isSharing) return;
 
+    const shareUrl = getJobExternalUrl(job);
     setIsSharing(true);
     try {
       const response = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: job.url }),
+        body: JSON.stringify({ content: shareUrl }),
       });
 
       if (!response.ok) {
@@ -141,12 +143,13 @@ export function ShareOfferDialog({
   const sendAsDirectMessage = async (targetUserId: number) => {
     if (!job || isSharing) return;
 
+    const shareUrl = getJobExternalUrl(job);
     setIsSharing(true);
     try {
       const response = await fetch("/api/messages/share/direct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId, content: job.url }),
+        body: JSON.stringify({ targetUserId, content: shareUrl }),
       });
 
       if (!response.ok) {

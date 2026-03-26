@@ -32,6 +32,7 @@ import {
   CoachRemoveMembershipTarget,
   CoachUserFilter,
 } from "@/features/coach/types";
+import { runtimeConfig } from "@/config/runtime";
 import { CoachUserSummary } from "@/types/coach";
 
 interface CoachGroupsSectionProps {
@@ -481,7 +482,7 @@ export function CoachGroupsSection({
             </p>
             <p>
               Le calendrier se met ensuite a jour quand un entretien est ajoute, modifie ou
-              supprime dans FOREM-idable.
+              supprime dans {runtimeConfig.privacy.projectLabel}.
             </p>
             <p>
               La synchronisation n&apos;est pas immediate: Google choisit lui-meme la frequence de
