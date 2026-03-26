@@ -5,8 +5,10 @@ export function SiteFooter() {
   return (
     <footer className="border-t bg-background/95 lg:hidden">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 text-sm text-muted-foreground lg:px-8">
+        <p>
+          {runtimeConfig.brand.copyrightName} · {runtimeConfig.privacy.projectLabel} · 2026
+        </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <p>{runtimeConfig.brand.copyrightName} · FOREM-idable · 2026 · Licence AGPLv3</p>
           <Link href="/privacy" className="underline-offset-4 hover:text-foreground hover:underline">
             Confidentialité
           </Link>
@@ -19,7 +21,7 @@ export function SiteFooter() {
             rel="noopener noreferrer"
             className="underline-offset-4 hover:text-foreground hover:underline"
           >
-            Code source (AGPLv3)
+            Code source AGPLv3
           </a>
         </div>
       </div>
