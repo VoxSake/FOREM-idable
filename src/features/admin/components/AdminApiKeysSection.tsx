@@ -157,7 +157,7 @@ export function AdminApiKeysSection({
   onRevokeDialogOpenChange: (open: boolean) => void;
 }) {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<ApiKeyStatusFilter>("all");
+  const [status, setStatus] = useState<ApiKeyStatusFilter>("active");
   const [page, setPage] = useState(1);
   const deferredSearch = useDeferredValue(search);
 
@@ -207,8 +207,8 @@ export function AdminApiKeysSection({
     [apiKeys]
   );
   const statusOptions = [
-    { value: "all" as const, label: `Toutes (${statusCounts.all})` },
     { value: "active" as const, label: `Actives (${statusCounts.active})` },
+    { value: "all" as const, label: `Toutes (${statusCounts.all})` },
     { value: "expiring" as const, label: `Expirent bientôt (${statusCounts.expiring})` },
     { value: "expired" as const, label: `Expirées (${statusCounts.expired})` },
     { value: "revoked" as const, label: `Révoquées (${statusCounts.revoked})` },
