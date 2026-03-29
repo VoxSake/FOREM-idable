@@ -71,7 +71,7 @@ export function ResetPasswordContent() {
       <div className="space-y-2">
         <h1 className="text-3xl font-black tracking-tight">Choisir un nouveau mot de passe</h1>
         <p className="text-lg text-muted-foreground">
-          Définissez un nouveau mot de passe pour votre compte {runtimeConfig.privacy.projectLabel}.
+          Définissez un nouveau mot de passe pour votre compte {runtimeConfig.app.name}.
         </p>
       </div>
 

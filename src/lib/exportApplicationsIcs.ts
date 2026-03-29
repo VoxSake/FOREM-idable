@@ -66,7 +66,7 @@ export function exportInterviewsToICS(applications: JobApplication[]) {
   const content = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    `PRODID:-//${runtimeConfig.privacy.projectLabel}//Interviews//FR`,
+    `PRODID:-//${runtimeConfig.app.name}//Interviews//FR`,
     "CALSCALE:GREGORIAN",
     ...events,
     "END:VCALENDAR",

@@ -482,7 +482,7 @@ export function CoachGroupsSection({
             </p>
             <p>
               Le calendrier se met ensuite a jour quand un entretien est ajoute, modifie ou
-              supprime dans {runtimeConfig.privacy.projectLabel}.
+              supprime dans {runtimeConfig.app.name}.
             </p>
             <p>
               La synchronisation n&apos;est pas immediate: Google choisit lui-meme la frequence de

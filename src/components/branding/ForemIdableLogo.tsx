@@ -6,9 +6,9 @@ interface ForemIdableLogoProps {
 }
 
 export function ForemIdableLogo({ className }: ForemIdableLogoProps) {
-  const projectLabel = runtimeConfig.privacy.projectLabel;
-  const [, leadingSegment = projectLabel, trailingSegment = ""] =
-    projectLabel.match(/^(.*?)(-.+)$/) ?? [];
+  const appName = runtimeConfig.app.name;
+  const [, leadingSegment = appName, trailingSegment = ""] =
+    appName.match(/^(.*?)(-.+)$/) ?? [];
 
   return (
     <div className={cn("inline-flex h-full items-center gap-2.5", className)}>

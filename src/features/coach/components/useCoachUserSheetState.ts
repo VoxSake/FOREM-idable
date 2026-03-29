@@ -12,7 +12,7 @@ import {
   toIsoDateTime,
 } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
-import { JobApplication, JobApplicationPatch } from "@/types/application";
+import { JobApplicationPatch } from "@/types/application";
 
 interface UseCoachUserSheetStateInput {
   user: CoachUserSummary;

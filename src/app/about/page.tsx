@@ -100,7 +100,8 @@ const APIS = [
 ];
 
 export default function AboutPage() {
-  const { projectLabel, sourceUrl } = runtimeConfig.privacy;
+  const { sourceUrl } = runtimeConfig.privacy;
+  const projectLabel = runtimeConfig.app.name;
   const sourceRootUrl = sourceUrl.replace(/\/+$/, "");
   const isGitHubSourceRoot = /^https:\/\/github\.com\/[^/]+\/[^/]+$/i.test(sourceRootUrl);
   const sourceDocsUrl = isGitHubSourceRoot ? `${sourceRootUrl}/blob/main/DOCAPI.md` : sourceRootUrl;

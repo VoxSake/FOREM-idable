@@ -28,7 +28,7 @@ const logoFont = Sora({
 });
 
 export const metadata: Metadata = {
-  title: `${runtimeConfig.privacy.projectLabel} - ${runtimeConfig.app.titleSuffix}`,
+  title: runtimeConfig.app.title,
   description: runtimeConfig.app.metaDescription,
 };
 

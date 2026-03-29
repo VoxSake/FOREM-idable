@@ -18,7 +18,7 @@ export function buildOfferMailtoLink(job: Job, publicationLabel: string): string
     "",
     `Lien de l'offre: ${jobUrl}`,
     "",
-    `Envoyé depuis ${runtimeConfig.privacy.projectLabel}`,
+    `Envoyé depuis ${runtimeConfig.app.name}`,
   ].join("\n");
 
   return `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;

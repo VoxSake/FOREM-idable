@@ -307,7 +307,7 @@ export function AppSidebar() {
             rel="noopener noreferrer"
             className="underline-offset-4 hover:text-foreground hover:underline"
           >
-            {runtimeConfig.privacy.projectLabel}
+            {runtimeConfig.app.name}
           </a>{" "}
           · {runtimeConfig.app.currentYear}
         </p>

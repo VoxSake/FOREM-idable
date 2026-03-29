@@ -294,7 +294,7 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
   });
 
   return {
-    calendarName: `${runtimeConfig.privacy.projectLabel} - Groupe ${target.groupName}`,
+    calendarName: `${runtimeConfig.app.name} - Groupe ${target.groupName}`,
     rows,
   };
 }
@@ -345,7 +345,7 @@ export async function listCalendarFeedRowsForAllGroups(actorId: number): Promise
   const actorScope = await resolveCalendarActorScope(actorId);
   if (actorScope.managedGroupIds && actorScope.managedGroupIds.length === 0) {
     return {
-      calendarName: `${runtimeConfig.privacy.projectLabel} - Mes groupes beneficiaires`,
+      calendarName: `${runtimeConfig.app.name} - Mes groupes beneficiaires`,
       rows: [],
     };
   }
@@ -394,8 +394,8 @@ export async function listCalendarFeedRowsForAllGroups(actorId: number): Promise
   return {
     calendarName:
       actorScope.role === "admin"
-        ? `${runtimeConfig.privacy.projectLabel} - Tous les groupes beneficiaires`
-        : `${runtimeConfig.privacy.projectLabel} - Mes groupes beneficiaires`,
+        ? `${runtimeConfig.app.name} - Tous les groupes beneficiaires`
+        : `${runtimeConfig.app.name} - Mes groupes beneficiaires`,
     rows,
   };
 }

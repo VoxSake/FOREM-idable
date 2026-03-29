@@ -80,7 +80,7 @@ export function buildCalendarIcsFeed(input: {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    `PRODID:-//${runtimeConfig.privacy.projectLabel}//Coach Calendar//FR`,
+    `PRODID:-//${runtimeConfig.app.name}//Coach Calendar//FR`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeIcsText(input.calendarName)}`,

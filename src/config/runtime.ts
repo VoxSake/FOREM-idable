@@ -18,9 +18,12 @@ function sanitizeUnderscoreSlug(value: string) {
     .replace(/_{2,}/g, "_");
 }
 
-const projectLabel = process.env.PRIVACY_PROJECT_LABEL?.trim() || "FOREM-idable";
+// Legacy fallback kept for existing deployments that still define PRIVACY_PROJECT_LABEL.
+const appName =
+  process.env.APP_NAME?.trim() || process.env.PRIVACY_PROJECT_LABEL?.trim() || "FOREM-idable";
+const titleSuffix = process.env.APP_TITLE_SUFFIX?.trim() || "Indexeur d'offres";
 const exportFilenamePrefix =
-  process.env.APP_EXPORT_FILENAME_PREFIX?.trim() || sanitizeHyphenSlug(projectLabel) || "app";
+  process.env.APP_EXPORT_FILENAME_PREFIX?.trim() || sanitizeHyphenSlug(appName) || "app";
 const storageNamespace =
   process.env.APP_STORAGE_NAMESPACE?.trim() ||
   sanitizeUnderscoreSlug(exportFilenamePrefix) ||
@@ -29,8 +32,10 @@ const currentYear = new Date().getFullYear();
 
 export const runtimeConfig = {
   app: {
+    name: appName,
     baseUrl: process.env.APP_BASE_URL?.trim() || process.env.COOLIFY_URL?.trim() || "",
-    titleSuffix: process.env.APP_TITLE_SUFFIX?.trim() || "Indexeur d'offres",
+    title: process.env.APP_TITLE?.trim() || `${appName} - ${titleSuffix}`,
+    titleSuffix,
     metaDescription:
       process.env.APP_META_DESCRIPTION?.trim() ||
       "Recherche d'offres d'emploi du Forem, simplifiée et décomplexée.",
@@ -67,7 +72,6 @@ export const runtimeConfig = {
   privacy: {
     controllerName: process.env.PRIVACY_CONTROLLER_NAME?.trim() || "Jordi Brisbois",
     contactEmail: process.env.PRIVACY_CONTACT_EMAIL?.trim() || "RGPD@brisbois.dev",
-    projectLabel,
     sourceUrl:
       process.env.PRIVACY_SOURCE_URL?.trim() || "https://github.com/VoxSake/FOREM-idable",
     lastUpdatedLabel: process.env.PRIVACY_LAST_UPDATED_LABEL?.trim() || "25 mars 2026",

@@ -63,7 +63,7 @@ export function AnalyticsConsent({
         >
           <div className="space-y-2">
             <p className="text-sm leading-relaxed text-card-foreground">
-              {runtimeConfig.privacy.projectLabel} stocke localement les donn&eacute;es n&eacute;cessaires &agrave; son
+              {runtimeConfig.app.name} stocke localement les donn&eacute;es n&eacute;cessaires &agrave; son
               fonctionnement, comme vos pr&eacute;f&eacute;rences d&apos;interface et votre choix de consentement.
               Si vous vous connectez, vos candidatures et votre historique de recherche sont alors
               enregistr&eacute;s dans votre compte.

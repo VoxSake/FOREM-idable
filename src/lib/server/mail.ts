@@ -1,5 +1,7 @@
+import { runtimeConfig } from "@/config/runtime";
+
 function getProjectLabel() {
-  return process.env.PRIVACY_PROJECT_LABEL?.trim() || "FOREM-idable";
+  return runtimeConfig.app.name;
 }
 
 export function isPasswordResetEnabled() {

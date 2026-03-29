@@ -151,7 +151,8 @@ function TextCardGrid({ items }: { items: TextItem[] }) {
 }
 
 export default function PrivacyPage() {
-  const { controllerName, contactEmail, projectLabel, sourceUrl, lastUpdatedLabel } = runtimeConfig.privacy;
+  const { controllerName, contactEmail, sourceUrl, lastUpdatedLabel } = runtimeConfig.privacy;
+  const projectLabel = runtimeConfig.app.name;
   const sourceRootUrl = sourceUrl.replace(/\/+$/, "");
   const isGitHubSourceRoot = /^https:\/\/github\.com\/[^/]+\/[^/]+$/i.test(sourceRootUrl);
   const docsUrl = isGitHubSourceRoot ? `${sourceRootUrl}/blob/main/DOCAPI.md` : sourceRootUrl;
