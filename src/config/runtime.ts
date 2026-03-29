@@ -1,5 +1,9 @@
 import { sanitizeUmamiScriptUrl } from "@/lib/analytics";
 
+function sanitizeDisplayText(value?: string) {
+  return value?.trim().replace(/\\(['"])/g, "$1") || "";
+}
+
 function sanitizeHyphenSlug(value: string) {
   return value
     .trim()
@@ -20,8 +24,10 @@ function sanitizeUnderscoreSlug(value: string) {
 
 // Legacy fallback kept for existing deployments that still define PRIVACY_PROJECT_LABEL.
 const appName =
-  process.env.APP_NAME?.trim() || process.env.PRIVACY_PROJECT_LABEL?.trim() || "FOREM-idable";
-const titleSuffix = process.env.APP_TITLE_SUFFIX?.trim() || "Indexeur d'offres";
+  sanitizeDisplayText(process.env.APP_NAME) ||
+  sanitizeDisplayText(process.env.PRIVACY_PROJECT_LABEL) ||
+  "FOREM-idable";
+const titleSuffix = sanitizeDisplayText(process.env.APP_TITLE_SUFFIX) || "Indexeur d'offres";
 const exportFilenamePrefix =
   process.env.APP_EXPORT_FILENAME_PREFIX?.trim() || sanitizeHyphenSlug(appName) || "app";
 const storageNamespace =
@@ -34,13 +40,13 @@ export const runtimeConfig = {
   app: {
     name: appName,
     baseUrl: process.env.APP_BASE_URL?.trim() || process.env.COOLIFY_URL?.trim() || "",
-    title: process.env.APP_TITLE?.trim() || `${appName} - ${titleSuffix}`,
+    title: sanitizeDisplayText(process.env.APP_TITLE) || `${appName} - ${titleSuffix}`,
     titleSuffix,
-    metaDescription:
-      process.env.APP_META_DESCRIPTION?.trim() ||
-      "Recherche d'offres d'emploi du Forem, simplifiée et décomplexée.",
-    tagline: process.env.APP_TAGLINE?.trim() || "L'indexeur d'offres décomplexé",
-    sourceLinkLabel: process.env.APP_SOURCE_LINK_LABEL?.trim() || "Code source AGPLv3",
+    metaDescription: sanitizeDisplayText(process.env.APP_META_DESCRIPTION)
+      || "Recherche d'offres d'emploi du Forem, simplifiée et décomplexée.",
+    tagline: sanitizeDisplayText(process.env.APP_TAGLINE) || "L'indexeur d'offres décomplexé",
+    sourceLinkLabel:
+      sanitizeDisplayText(process.env.APP_SOURCE_LINK_LABEL) || "Code source AGPLv3",
     exportFilenamePrefix,
     storageNamespace,
     sessionCookieName:
@@ -51,8 +57,8 @@ export const runtimeConfig = {
   },
   brand: {
     copyrightName:
-      process.env.COPYRIGHT_NAME?.trim() ||
-      process.env.PRIVACY_CONTROLLER_NAME?.trim() ||
+      sanitizeDisplayText(process.env.COPYRIGHT_NAME) ||
+      sanitizeDisplayText(process.env.PRIVACY_CONTROLLER_NAME) ||
       "Jordi Brisbois",
   },
   auth: {
@@ -70,10 +76,10 @@ export const runtimeConfig = {
     scriptUrl: sanitizeUmamiScriptUrl(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL),
   },
   privacy: {
-    controllerName: process.env.PRIVACY_CONTROLLER_NAME?.trim() || "Jordi Brisbois",
+    controllerName: sanitizeDisplayText(process.env.PRIVACY_CONTROLLER_NAME) || "Jordi Brisbois",
     contactEmail: process.env.PRIVACY_CONTACT_EMAIL?.trim() || "RGPD@brisbois.dev",
     sourceUrl:
       process.env.PRIVACY_SOURCE_URL?.trim() || "https://github.com/VoxSake/FOREM-idable",
-    lastUpdatedLabel: process.env.PRIVACY_LAST_UPDATED_LABEL?.trim() || "25 mars 2026",
+    lastUpdatedLabel: sanitizeDisplayText(process.env.PRIVACY_LAST_UPDATED_LABEL) || "25 mars 2026",
   },
 };
