@@ -16,7 +16,7 @@ import { useApplicationsPageState } from "@/features/applications/hooks/useAppli
 
 function ApplicationsPageSkeleton() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6">
       <section className="rounded-2xl border bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-3">
           <Skeleton className="h-5 w-36" />
@@ -92,7 +92,7 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       <ApplicationsPageIntro />
 
       <ApplicationsHeaderControls

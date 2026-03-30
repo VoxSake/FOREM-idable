@@ -24,7 +24,7 @@ export function ApplicationsEmptyState({
   onResetFilters,
 }: ApplicationsEmptyStateProps) {
   return (
-    <Empty className="mt-8 min-h-96 bg-card">
+    <Empty className="mt-8 min-h-96 w-full bg-card">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <BriefcaseBusiness />
