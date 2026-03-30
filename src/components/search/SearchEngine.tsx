@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent, RefObject } from "react";
+import { useRef, useState, KeyboardEvent, RefObject } from "react";
 import { ArrowRight, History, Search, Sparkles, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,9 @@ export function SearchEngine({
 }: SearchEngineProps) {
     const [keywords, setKeywords] = useState<string[]>(initialState?.keywords || []);
     const [inputValue, setInputValue] = useState("");
-    const [selectedLocations, setSelectedLocations] = useState<LocationEntry[]>(initialState?.locations || []);
+    const [selectedLocations, setSelectedLocations] = useState<LocationEntry[]>(
+        initialState?.locations || []
+    );
     const [booleanMode, setBooleanMode] = useState<BooleanMode>(initialState?.booleanMode || "OR");
     const inputRef = useRef<HTMLInputElement>(null);
 

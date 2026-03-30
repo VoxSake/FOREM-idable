@@ -98,6 +98,8 @@ function DashboardPageContent() {
 
   const featuredSearches = page.featuredSearches ?? [];
   const availableFeaturedSearches = !page.isFeaturedSearchesLoading ? featuredSearches : [];
+  const searchFormInitialState = page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode };
+  const searchFormKey = JSON.stringify(searchFormInitialState);
 
   const authPanel = !page.user ? (
     <Alert className="bg-card">
@@ -134,8 +136,9 @@ function DashboardPageContent() {
               </h1>
             </div>
             <SearchEngine
+              key={searchFormKey}
               onSearch={(state: SearchState) => page.handleSearch(state)}
-              initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
+              initialState={searchFormInitialState}
               featuredSearches={availableFeaturedSearches}
               onRunFeaturedSearch={(item) => {
                 void page.runFeaturedSearch(item);
@@ -193,8 +196,9 @@ function DashboardPageContent() {
           <HomePageHero />
 
           <SearchEngine
+            key={searchFormKey}
             onSearch={(state: SearchState) => page.handleSearch(state)}
-            initialState={page.urlQuery ?? { booleanMode: page.settings.defaultSearchMode }}
+            initialState={searchFormInitialState}
             featuredSearches={availableFeaturedSearches}
             onRunFeaturedSearch={(item) => {
               void page.runFeaturedSearch(item);

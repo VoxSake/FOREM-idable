@@ -2,7 +2,14 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { SearchEngine } from "./SearchEngine";
 
 vi.mock("./LocationAutocomplete", () => ({
-  LocationAutocomplete: () => <div>location-autocomplete</div>,
+  LocationAutocomplete: ({ values }: { values: Array<{ name: string }> }) => (
+    <div>
+      location-autocomplete
+      {values.map((value) => (
+        <span key={value.name}>{value.name}</span>
+      ))}
+    </div>
+  ),
 }));
 
 describe("SearchEngine", () => {
@@ -46,5 +53,42 @@ describe("SearchEngine", () => {
     expect(onOpenHistory).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("developpeur")).not.toBeInTheDocument();
     expect((input as HTMLInputElement).value).toBe("developpeur");
+  });
+
+  it("reinitializes the form when remounted with a different search state", () => {
+    const onSearch = vi.fn();
+
+    const { rerender } = render(
+      <SearchEngine
+        key="search-dev"
+        onSearch={onSearch}
+        initialState={{
+          keywords: ["dev"],
+          locations: [{ id: "loc1", name: "4000 Liege", type: "Localites" }],
+          booleanMode: "OR",
+        }}
+      />
+    );
+
+    expect(screen.getByText("dev")).toBeInTheDocument();
+    expect(screen.getByText("4000 Liege")).toBeInTheDocument();
+
+    rerender(
+      <SearchEngine
+        key="search-designer"
+        onSearch={onSearch}
+        initialState={{
+          keywords: ["designer", "ux"],
+          locations: [{ id: "loc2", name: "Bruxelles", type: "Localites" }],
+          booleanMode: "AND",
+        }}
+      />
+    );
+
+    expect(screen.queryByText("dev")).not.toBeInTheDocument();
+    expect(screen.getByText("designer")).toBeInTheDocument();
+    expect(screen.getByText("ux")).toBeInTheDocument();
+    expect(screen.queryByText("4000 Liege")).not.toBeInTheDocument();
+    expect(screen.getByText("Bruxelles")).toBeInTheDocument();
   });
 });
