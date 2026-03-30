@@ -1,4 +1,5 @@
 import { db, ensureDatabase } from "@/lib/server/db";
+import { toIso } from "@/lib/server/compliance/shared";
 
 export type AuditAction =
   | "admin_role_changed"
@@ -26,6 +27,31 @@ export type AuditAction =
   | "legal_hold_released"
   | "disclosure_logged";
 
+export type AdminAuditLogSummary = {
+  id: number;
+  action: string;
+  createdAt: string;
+  payload: Record<string, unknown>;
+  actor: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+  targetUser: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+  group: {
+    id: number;
+    name: string;
+  } | null;
+};
+
 export async function recordAuditEvent(input: {
   actorUserId: number;
   action: AuditAction;
@@ -47,4 +73,71 @@ export async function recordAuditEvent(input: {
       JSON.stringify(input.payload ?? {}),
     ]
   );
+}
+
+export async function listAdminAuditLogs(limit = 200): Promise<AdminAuditLogSummary[]> {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const safeLimit = Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 500) : 200;
+  const result = await db.query(
+    `SELECT
+       logs.id,
+       logs.action,
+       logs.payload,
+       logs.created_at,
+       actor.id AS actor_id,
+       actor.email AS actor_email,
+       actor.first_name AS actor_first_name,
+       actor.last_name AS actor_last_name,
+       actor.role AS actor_role,
+       target_user.id AS target_user_id,
+       target_user.email AS target_user_email,
+       target_user.first_name AS target_user_first_name,
+       target_user.last_name AS target_user_last_name,
+       target_user.role AS target_user_role,
+       groups.id AS group_id,
+       groups.name AS group_name
+     FROM audit_logs logs
+     LEFT JOIN users actor ON actor.id = logs.actor_user_id
+     LEFT JOIN users target_user ON target_user.id = logs.target_user_id
+     LEFT JOIN coach_groups groups ON groups.id = logs.group_id
+     ORDER BY logs.created_at DESC
+     LIMIT $1`,
+    [safeLimit]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    action: row.action,
+    createdAt: toIso(row.created_at) ?? new Date().toISOString(),
+    payload:
+      row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+        ? (row.payload as Record<string, unknown>)
+        : {},
+    actor: row.actor_id
+      ? {
+          id: row.actor_id,
+          email: row.actor_email,
+          firstName: row.actor_first_name,
+          lastName: row.actor_last_name,
+          role: row.actor_role,
+        }
+      : null,
+    targetUser: row.target_user_id
+      ? {
+          id: row.target_user_id,
+          email: row.target_user_email,
+          firstName: row.target_user_first_name,
+          lastName: row.target_user_last_name,
+          role: row.target_user_role,
+        }
+      : null,
+    group: row.group_id
+      ? {
+          id: row.group_id,
+          name: row.group_name,
+        }
+      : null,
+  }));
 }

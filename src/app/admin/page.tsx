@@ -6,6 +6,7 @@ import {
   ArrowRight,
   BookLock,
   FileWarning,
+  History,
   KeyRound,
   Search,
   ShieldCheck,
@@ -18,6 +19,7 @@ import { AdminAccountDeletionRequestsSection } from "@/features/admin/components
 import { AdminApiKeysSection } from "@/features/admin/components/AdminApiKeysSection";
 import { AdminComplianceSection } from "@/features/admin/components/AdminComplianceSection";
 import { AdminFeaturedSearchesSection } from "@/features/admin/components/AdminFeaturedSearchesSection";
+import { AdminAuditLogsSection } from "@/features/admin/components/AdminAuditLogsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +60,7 @@ const ADMIN_SECTIONS = [
   { id: "cles-api", label: "Clés API", icon: KeyRound },
   { id: "suppression-comptes", label: "Suppressions", icon: FileWarning },
   { id: "conformite", label: "Conformité", icon: BookLock },
+  { id: "audit", label: "Audit", icon: History },
 ] as const;
 
 function AdminPageSkeleton() {
@@ -158,6 +161,7 @@ export default function AdminPage() {
   useToastFeedback(page.deletionRequestsFeedback, { title: "Demandes de suppression" });
   useToastFeedback(page.legalHoldsFeedback, { title: "Legal holds" });
   useToastFeedback(page.disclosureLogsFeedback, { title: "Disclosure logs" });
+  useToastFeedback(page.auditLogsFeedback, { title: "Audit logs" });
 
   if (isInitialPageLoading) {
     return <AdminPageSkeleton />;
@@ -321,6 +325,12 @@ export default function AdminPage() {
           onCreateDisclosureLog={(payload) => page.createDisclosureLog(payload)}
         />
       </div>
+
+      <AdminAuditLogsSection
+        auditLogs={page.auditLogs}
+        isLoading={page.isAuditLogsLoading}
+        onRefresh={() => void page.loadAuditLogs()}
+      />
     </div>
   );
 }

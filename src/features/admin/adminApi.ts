@@ -43,6 +43,31 @@ export type AdminDisclosureLog = {
   createdAt: string;
 };
 
+export type AdminAuditLog = {
+  id: number;
+  action: string;
+  createdAt: string;
+  payload: Record<string, unknown>;
+  actor: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+  targetUser: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+  group: {
+    id: number;
+    name: string;
+  } | null;
+};
+
 export type AdminLegalHoldTargetOption = {
   id: number;
   label: string;
@@ -195,6 +220,15 @@ export function releaseAdminLegalHold(id: number) {
 export function fetchAdminDisclosureLogs() {
   return requestJson<{ error?: string; logs?: AdminDisclosureLog[] }>(
     "/api/admin/disclosure-logs",
+    {
+      cache: "no-store",
+    }
+  );
+}
+
+export function fetchAdminAuditLogs(limit = 200) {
+  return requestJson<{ error?: string; logs?: AdminAuditLog[] }>(
+    `/api/admin/audit-logs?limit=${encodeURIComponent(String(limit))}`,
     {
       cache: "no-store",
     }

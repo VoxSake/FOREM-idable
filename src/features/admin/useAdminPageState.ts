@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  fetchAdminAuditLogs,
   createAdminDisclosureLog,
   createAdminLegalHold,
   fetchAdminAccountDeletionRequests,
@@ -20,7 +21,7 @@ import { useAdminDashboard } from "@/features/admin/useAdminDashboard";
 import { FeaturedSearchPayload } from "@/features/featured-searches/featuredSearchSchema";
 import { AdminApiKeySummary } from "@/types/externalApi";
 import { FeaturedSearch } from "@/types/featuredSearch";
-import { AdminAccountDeletionRequest, AdminDisclosureLog, AdminLegalHold } from "./adminApi";
+import { AdminAccountDeletionRequest, AdminAuditLog, AdminDisclosureLog, AdminLegalHold } from "./adminApi";
 
 export function useAdminPageState() {
   const admin = useAdminDashboard();
@@ -48,6 +49,9 @@ export function useAdminPageState() {
   const [disclosureLogsFeedback, setDisclosureLogsFeedback] = useState<string | null>(null);
   const [isDisclosureLogsLoading, setIsDisclosureLogsLoading] = useState(false);
   const [isCreatingDisclosureLog, setIsCreatingDisclosureLog] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
+  const [auditLogsFeedback, setAuditLogsFeedback] = useState<string | null>(null);
+  const [isAuditLogsLoading, setIsAuditLogsLoading] = useState(false);
 
   const loadApiKeys = useCallback(async () => {
     if (!admin.isAuthorized) {
@@ -174,6 +178,31 @@ export function useAdminPageState() {
     }
   }, [admin.isAuthorized]);
 
+  const loadAuditLogs = useCallback(async () => {
+    if (!admin.isAuthorized) {
+      setAuditLogs([]);
+      return;
+    }
+
+    setIsAuditLogsLoading(true);
+    setAuditLogsFeedback(null);
+
+    try {
+      const { response, data } = await fetchAdminAuditLogs();
+
+      if (!response.ok || !data.logs) {
+        setAuditLogsFeedback(data.error || "Chargement des audit logs impossible.");
+        return;
+      }
+
+      setAuditLogs(data.logs);
+    } catch {
+      setAuditLogsFeedback("Chargement des audit logs impossible.");
+    } finally {
+      setIsAuditLogsLoading(false);
+    }
+  }, [admin.isAuthorized]);
+
   useEffect(() => {
     if (admin.isAuthLoading) return;
     if (!admin.isAuthorized) return;
@@ -182,6 +211,7 @@ export function useAdminPageState() {
     void loadDeletionRequests();
     void loadLegalHolds();
     void loadDisclosureLogs();
+    void loadAuditLogs();
   }, [
     admin.isAuthLoading,
     admin.isAuthorized,
@@ -190,6 +220,7 @@ export function useAdminPageState() {
     loadDeletionRequests,
     loadLegalHolds,
     loadDisclosureLogs,
+    loadAuditLogs,
   ]);
 
   const revokeApiKey = useCallback(async () => {
@@ -477,6 +508,9 @@ export function useAdminPageState() {
     disclosureLogsFeedback,
     isDisclosureLogsLoading,
     isCreatingDisclosureLog,
+    auditLogs,
+    auditLogsFeedback,
+    isAuditLogsLoading,
     revokeTarget,
     setRevokeTarget,
     isRevokingApiKey,
@@ -486,6 +520,7 @@ export function useAdminPageState() {
     loadDeletionRequests,
     loadLegalHolds,
     loadDisclosureLogs,
+    loadAuditLogs,
     createFeaturedSearch,
     updateFeaturedSearch,
     deleteFeaturedSearch,
