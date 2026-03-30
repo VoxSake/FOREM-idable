@@ -52,6 +52,29 @@ function getAuditUserLabel(user: AdminAuditLog["actor"] | AdminAuditLog["targetU
   return getCoachUserDisplayName(user);
 }
 
+function formatAuditDateTime(value?: string | null) {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(date);
+
+  const day = parts.find((part) => part.type === "day")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const year = parts.find((part) => part.type === "year")?.value;
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  const minute = parts.find((part) => part.type === "minute")?.value;
+
+  if (!day || !month || !year || !hour || !minute) return "N/A";
+  return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
 function truncateGroupName(name: string, maxLength = 14) {
   if (name.length <= maxLength) return name;
   return `${name.slice(0, maxLength - 1)}…`;
@@ -67,8 +90,8 @@ function AuditLogMobileCard({ entry }: { entry: AdminAuditLog }) {
               <p className="font-medium capitalize">{formatAuditAction(entry.action)}</p>
               <Badge variant="outline">#{entry.id}</Badge>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {formatCoachDate(entry.createdAt, true)}
+            <p className="mt-1 text-xs text-muted-foreground" title={formatCoachDate(entry.createdAt, true)}>
+              {formatAuditDateTime(entry.createdAt)}
             </p>
           </div>
           {entry.actor ? <Badge variant="secondary">{entry.actor.role}</Badge> : null}
@@ -293,8 +316,11 @@ export function AdminAuditLogsSection({
                 <TableBody>
                   {visibleLogs.map((entry) => (
                     <TableRow key={entry.id}>
-                      <TableCell className="align-top text-sm text-muted-foreground">
-                        {formatCoachDate(entry.createdAt, true)}
+                      <TableCell
+                        className="align-top text-sm text-muted-foreground"
+                        title={formatCoachDate(entry.createdAt, true)}
+                      >
+                        {formatAuditDateTime(entry.createdAt)}
                       </TableCell>
                       <TableCell className="align-top">
                         <div className="flex min-w-44 flex-col gap-2">
