@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
 import { AdminAuditLog } from "@/features/admin/adminApi";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,11 @@ function formatAuditPayload(payload: Record<string, unknown>) {
 function getAuditUserLabel(user: AdminAuditLog["actor"] | AdminAuditLog["targetUser"]) {
   if (!user) return "N/A";
   return getCoachUserDisplayName(user);
+}
+
+function truncateGroupName(name: string, maxLength = 14) {
+  if (name.length <= maxLength) return name;
+  return `${name.slice(0, maxLength - 1)}…`;
 }
 
 function AuditLogMobileCard({ entry }: { entry: AdminAuditLog }) {
@@ -85,7 +91,9 @@ function AuditLogMobileCard({ entry }: { entry: AdminAuditLog }) {
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Groupe
             </span>
-            <span>{entry.group ? `${entry.group.name} (#${entry.group.id})` : "N/A"}</span>
+            <span title={entry.group?.name}>
+              {entry.group ? `${truncateGroupName(entry.group.name)} (#${entry.group.id})` : "N/A"}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -329,7 +337,16 @@ export function AdminAuditLogsSection({
                       <TableCell className="align-top whitespace-normal">
                         {entry.group ? (
                           <div className="flex min-w-40 flex-col gap-1">
-                            <span className="font-medium">{entry.group.name}</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="max-w-[14ch] truncate font-medium">
+                                  {truncateGroupName(entry.group.name)}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" sideOffset={8}>
+                                {entry.group.name}
+                              </TooltipContent>
+                            </Tooltip>
                             <span className="text-xs text-muted-foreground">#{entry.group.id}</span>
                           </div>
                         ) : (

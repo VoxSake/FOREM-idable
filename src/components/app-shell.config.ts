@@ -50,6 +50,7 @@ const ADMIN_NAV_ITEM: AppSidebarNavItem = {
     { title: "Clés API", url: "/admin#cles-api" },
     { title: "Suppressions", url: "/admin#suppression-comptes" },
     { title: "Conformité", url: "/admin#conformite" },
+    { title: "Audit", url: "/admin#audit" },
   ],
 };
 
