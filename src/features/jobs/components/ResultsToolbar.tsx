@@ -51,43 +51,40 @@ export function ResultsToolbar({
         </div>
 
         {!isSearching && jobsCount > 0 ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full sm:w-auto"
-            onClick={onExportAll}
-          >
-            <Download data-icon="inline-start" />
-            Exporter en CSV
-          </Button>
-        ) : null}
-      </div>
-
-      {!isSearching && jobsCount > 0 ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full sm:w-auto"
-            onClick={handleCopy}
-            disabled={!canCopySearchLink}
-          >
-            {copied ? <Check data-icon="inline-start" /> : <Link2 data-icon="inline-start" />}
-            {copied ? "Lien copié" : "Copier la recherche"}
-          </Button>
-          {selectedCount > 0 ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             <Button
               variant="outline"
               size="sm"
               className="rounded-full sm:w-auto"
-              onClick={onExportSelected}
+              onClick={onExportAll}
             >
-              <CheckSquare data-icon="inline-start" />
-              Exporter la sélection
+              <Download data-icon="inline-start" />
+              Exporter en CSV
             </Button>
-          ) : null}
-        </div>
-      ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full sm:w-auto"
+              onClick={handleCopy}
+              disabled={!canCopySearchLink}
+            >
+              {copied ? <Check data-icon="inline-start" /> : <Link2 data-icon="inline-start" />}
+              {copied ? "Lien copié" : "Copier la recherche"}
+            </Button>
+            {selectedCount > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full sm:w-auto"
+                onClick={onExportSelected}
+              >
+                <CheckSquare data-icon="inline-start" />
+                Exporter la sélection
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
