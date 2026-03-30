@@ -28,7 +28,7 @@ import { useHomePageState } from "@/features/jobs/hooks/useHomePageState";
 
 function DashboardPageSkeleton() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6">
       <section className="grid gap-4 rounded-3xl border bg-card/70 p-6 shadow-sm lg:grid-cols-[minmax(0,1.3fr)_320px]">
         <div className="flex flex-col gap-4">
           <Skeleton className="h-5 w-32" />
@@ -121,7 +121,7 @@ function DashboardPageContent() {
   };
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       {page.hasSearched ? (
         <>
           <section className="flex flex-col gap-4 rounded-[28px] border border-border/60 bg-card/70 p-4 shadow-sm sm:p-5">
@@ -209,7 +209,7 @@ function DashboardPageContent() {
 
           {authPanel}
 
-          <Empty className="mt-8 min-h-64 bg-card/50">
+          <Empty className="mt-8 min-h-64 w-full bg-card/50">
             <EmptyHeader>
               <EmptyTitle>Effectuez une recherche pour commencer.</EmptyTitle>
               <EmptyDescription>
