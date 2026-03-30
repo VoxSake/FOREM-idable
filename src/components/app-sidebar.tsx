@@ -34,7 +34,6 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { ConversationPreview } from "@/types/messaging";
@@ -273,15 +272,6 @@ export function AppSidebar() {
 
       <SidebarContent className="overflow-x-hidden">
         <SidebarGroup>
-          <SidebarGroupLabel>Compte</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <AuthSidebarPanel />
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-        <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <AppSidebarNavigation
@@ -295,9 +285,12 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t p-3">
-        <div className="flex items-center gap-2">
-          <AppSidebarFooterLinks pathname={pathname} />
-          <ThemeToggleButton />
+        <div className="flex flex-col gap-3">
+          <AuthSidebarPanel />
+          <div className="flex items-center gap-2">
+            <AppSidebarFooterLinks pathname={pathname} />
+            <ThemeToggleButton />
+          </div>
         </div>
         <p className="mt-2 px-2 text-[11px] leading-4 text-muted-foreground">
           {runtimeConfig.brand.copyrightName} ·{" "}

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, LogOut, UserPlus } from "lucide-react";
+import { ChevronsUpDown, LogIn, LogOut, UserPlus, UserRound } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { runtimeConfig } from "@/config/runtime";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
@@ -23,6 +35,31 @@ type AuthMode = "login" | "register";
 
 function getDisplayName(firstName: string, lastName: string) {
   return `${firstName} ${lastName}`.trim();
+}
+
+function getUserInitials(firstName: string, lastName: string, email: string) {
+  const fullName = getDisplayName(firstName, lastName);
+  if (fullName) {
+    return fullName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((value) => value[0]?.toUpperCase() ?? "")
+      .join("");
+  }
+
+  return email.slice(0, 2).toUpperCase();
+}
+
+function getRoleLabel(role: "user" | "coach" | "admin") {
+  switch (role) {
+    case "admin":
+      return "Admin";
+    case "coach":
+      return "Coach";
+    default:
+      return "Utilisateur";
+  }
 }
 
 export function AuthSidebarPanel() {
@@ -117,75 +154,124 @@ export function AuthSidebarPanel() {
 
   return (
     <>
-      <div className="space-y-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
-        <div className="space-y-1">
-          {user ? (
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 space-y-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {getDisplayName(user.firstName, user.lastName) || user.email}
-                </p>
-                <p className="break-all text-xs text-muted-foreground">{user.email}</p>
-                <Badge variant="secondary" className="w-fit capitalize">
-                  {user.role}
-                </Badge>
-                <Link
-                  href="/account"
-                  className="inline-flex text-xs font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300"
+      {user ? (
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="h-auto min-h-12"
+                  aria-label="Ouvrir le menu du compte"
                 >
-                  Mon compte
-                </Link>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={handleLogout}
-                disabled={isSubmitting || isLoading}
-                title="Déconnexion"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Connectez-vous pour suivre vos candidatures et retrouver votre historique.
-            </p>
-          )}
-        </div>
+                  <Avatar>
+                    <AvatarFallback>
+                      {getUserInitials(user.firstName, user.lastName, user.email)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid min-w-0 flex-1 text-left leading-tight">
+                    <span className="truncate font-medium">
+                      {getDisplayName(user.firstName, user.lastName) || user.email}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto text-muted-foreground" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64" side="top" align="end" sideOffset={8}>
+                <DropdownMenuLabel className="flex flex-col gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback>
+                        {getUserInitials(user.firstName, user.lastName, user.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid min-w-0 flex-1 gap-0.5">
+                      <span className="truncate font-medium">
+                        {getDisplayName(user.firstName, user.lastName) || user.email}
+                      </span>
+                      <span className="truncate text-xs font-normal text-muted-foreground">
+                        {user.email}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="w-fit">
+                    {getRoleLabel(user.role)}
+                  </Badge>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">
+                      <UserRound />
+                      Mon compte
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={isSubmitting || isLoading}
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      void handleLogout();
+                    }}
+                  >
+                    <LogOut />
+                    Déconnexion
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      ) : null}
 
-        {!user && !isLoading ? (
-          <div className="grid gap-2">
-            <Button
-              type="button"
-              size="sm"
-              className="w-full justify-start"
-              onClick={() => openDialog("login")}
-            >
-              <LogIn className="mr-2 h-4 w-4" />
+      {!user && !isLoading ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-background/70 p-3">
+          <div className="flex items-center gap-3">
+            <Avatar>
+              <AvatarFallback>?</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">Compte</p>
+              <p className="text-xs text-muted-foreground">
+                Connectez-vous ou créez un compte pour retrouver vos recherches.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button type="button" size="sm" className="flex-1" onClick={() => openDialog("login")}>
+              <LogIn data-icon="inline-start" />
               Connexion
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-full justify-start"
+              className="flex-1"
               onClick={() => openDialog("register")}
             >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Créer un compte
+              <UserPlus data-icon="inline-start" />
+              Inscription
             </Button>
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        {!user && isLoading ? (
-          <div className="space-y-2">
-            <div className="h-8 rounded-md bg-muted/60" />
-            <div className="h-8 rounded-md bg-muted/40" />
+      {!user && isLoading ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-background/70 p-3">
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-8 rounded-full" />
+            <div className="flex flex-1 flex-col gap-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-40" />
+            </div>
           </div>
-        ) : null}
-      </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-8 flex-1" />
+            <Skeleton className="h-8 flex-1" />
+          </div>
+        </div>
+      ) : null}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
