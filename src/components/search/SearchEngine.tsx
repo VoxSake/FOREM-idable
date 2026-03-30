@@ -4,6 +4,12 @@ import { useState, useRef, KeyboardEvent, RefObject } from "react";
 import { ArrowRight, History, Search, Sparkles, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { LocationAutocomplete } from "./LocationAutocomplete";
 import { LocationEntry } from "@/services/location/locationCache";
 import { cn } from "@/lib/utils";
@@ -139,6 +145,8 @@ export function SearchEngine({
           inputValue={inputValue}
           booleanMode={booleanMode}
           inputRef={inputRef}
+          historyCount={historyCount}
+          onOpenHistory={onOpenHistory}
           onInputValueChange={handleInputValueChange}
           onInputKeyDown={handleKeyDown}
           onInputBlur={() => {
@@ -167,8 +175,6 @@ export function SearchEngine({
         selectedLocationsLabel={selectedLocationsLabel}
         featuredSearches={featuredSearches}
         onRunFeaturedSearch={onRunFeaturedSearch}
-        historyCount={historyCount}
-        onOpenHistory={onOpenHistory}
       />
     </div>
   );
@@ -179,6 +185,8 @@ function KeywordComposer({
     inputValue,
     booleanMode,
     inputRef,
+    historyCount,
+    onOpenHistory,
     onInputValueChange,
     onInputKeyDown,
     onInputBlur,
@@ -189,6 +197,8 @@ function KeywordComposer({
     inputValue: string;
     booleanMode: BooleanMode;
     inputRef: RefObject<HTMLInputElement | null>;
+    historyCount: number;
+    onOpenHistory?: () => void;
     onInputValueChange: (value: string) => void;
     onInputKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
     onInputBlur: () => void;
@@ -238,6 +248,35 @@ function KeywordComposer({
                         : "Ajouter un mot-clé..."
                 }
             />
+
+            {historyCount > 0 && onOpenHistory ? (
+                <TooltipProvider delayDuration={120}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon-sm"
+                                className="rounded-full"
+                                aria-label={`Ouvrir l'historique (${historyCount})`}
+                                onPointerDown={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                }}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onOpenHistory();
+                                }}
+                            >
+                                <History />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" sideOffset={8}>
+                            Historique ({historyCount})
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            ) : null}
         </div>
     );
 }
@@ -306,14 +345,10 @@ function SearchHints({
   selectedLocationsLabel,
   featuredSearches,
   onRunFeaturedSearch,
-  historyCount,
-  onOpenHistory,
 }: {
   selectedLocationsLabel: string | null;
   featuredSearches: FeaturedSearch[];
   onRunFeaturedSearch?: (item: FeaturedSearch) => void;
-  historyCount: number;
-  onOpenHistory?: () => void;
 }) {
   const visibleFeaturedSearches = featuredSearches.slice(0, 3);
   const primaryFeaturedSearch = visibleFeaturedSearches[0];
@@ -341,12 +376,6 @@ function SearchHints({
           <Badge variant="outline" className="rounded-full border-border/70">
             Filtre lieu: {selectedLocationsLabel}
           </Badge>
-        ) : null}
-        {historyCount > 0 && onOpenHistory ? (
-          <Button type="button" variant="outline" size="sm" onClick={onOpenHistory}>
-            <History data-icon="inline-start" />
-            Historique ({historyCount})
-          </Button>
         ) : null}
       </div>
 

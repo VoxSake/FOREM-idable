@@ -29,4 +29,22 @@ describe("SearchEngine", () => {
     expect(screen.getByText("developpeur")).toBeInTheDocument();
     expect((input as HTMLInputElement).value).toBe("compt");
   });
+
+  it("opens history without committing the pending input value", () => {
+    const onSearch = vi.fn();
+    const onOpenHistory = vi.fn();
+
+    render(<SearchEngine onSearch={onSearch} historyCount={3} onOpenHistory={onOpenHistory} />);
+
+    const input = screen.getByPlaceholderText("Ex: Développeur, Comptable...");
+    fireEvent.change(input, { target: { value: "developpeur" } });
+
+    const historyButton = screen.getByRole("button", { name: "Ouvrir l'historique (3)" });
+    fireEvent.pointerDown(historyButton);
+    fireEvent.click(historyButton);
+
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("developpeur")).not.toBeInTheDocument();
+    expect((input as HTMLInputElement).value).toBe("developpeur");
+  });
 });
