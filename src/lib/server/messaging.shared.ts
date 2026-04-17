@@ -35,8 +35,8 @@ export function normalizeConversationPreview(row: ConversationSummaryRow): Conve
         : getDisplayName({
             firstName: row.other_user_first_name || "",
             lastName: row.other_user_last_name || "",
-            email: row.other_user_email || "Message privé",
-          }),
+            email: row.other_user_email || "",
+          }) || "Correspondant",
     subtitle:
       row.type === "group"
         ? `${row.participant_count} participant${row.participant_count > 1 ? "s" : ""}`
