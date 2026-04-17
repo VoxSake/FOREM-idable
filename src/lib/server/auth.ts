@@ -1,4 +1,4 @@
-import { runtimeConfig } from "@/config/runtime";
+import { serverConfig } from "@/config/runtime.server";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { and, eq, gt, isNotNull, or, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -6,7 +6,7 @@ import { ensureDatabase, orm } from "@/lib/server/db";
 import { passwordResetTokens, sessions, users } from "@/lib/server/schema";
 import { AuthUser } from "@/types/auth";
 
-const SESSION_COOKIE = runtimeConfig.app.sessionCookieName;
+const SESSION_COOKIE = serverConfig.app.sessionCookieName;
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
 const PASSWORD_RESET_DURATION_MS = 1000 * 60 * 60;
 
@@ -15,7 +15,7 @@ function hashPassword(password: string, salt = randomBytes(16).toString("hex")) 
   return `${salt}:${derived}`;
 }
 
-function verifyPassword(password: string, storedHash: string) {
+export function verifyPassword(password: string, storedHash: string) {
   const [salt, expectedHash] = storedHash.split(":");
   if (!salt || !expectedHash) return false;
 
@@ -35,6 +35,19 @@ function normalizeEmail(email: string) {
 
 function normalizeProfileValue(value: string) {
   return value.trim();
+}
+
+export async function getUserPasswordHash(userId: number): Promise<string | null> {
+  await ensureDatabase();
+  if (!orm) throw new Error("Database unavailable");
+
+  const [row] = await orm
+    .select({ passwordHash: users.passwordHash })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return row?.passwordHash ?? null;
 }
 
 export async function createUser(

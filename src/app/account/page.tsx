@@ -98,6 +98,7 @@ export default function AccountPage() {
     resolver: zodResolver(passwordSchema),
     mode: "onChange",
     defaultValues: {
+      currentPassword: "",
       password: "",
       confirmPassword: "",
     },
@@ -115,9 +116,9 @@ export default function AccountPage() {
     control: profileForm.control,
     name: ["firstName", "lastName"],
   });
-  const [currentPassword = "", currentPasswordConfirmation = ""] = useWatch({
+  const [currentOldPassword = "", newPassword = "", newPasswordConfirmation = ""] = useWatch({
     control: passwordForm.control,
-    name: ["password", "confirmPassword"],
+    name: ["currentPassword", "password", "confirmPassword"],
   });
   const [currentApiKeyName = "", currentApiKeyExpiry = "none"] = useWatch({
     control: apiKeyForm.control,
@@ -151,7 +152,7 @@ export default function AccountPage() {
         currentLastName.trim() === user.lastName.trim()),
     [currentFirstName, currentLastName, user]
   );
-  const isPasswordEmpty = currentPassword.length === 0 && currentPasswordConfirmation.length === 0;
+  const isPasswordEmpty = currentOldPassword.length === 0 && newPassword.length === 0 && newPasswordConfirmation.length === 0;
 
   const canSubmitProfile =
     !isSavingProfile && !isProfileUnchanged && profileForm.formState.isValid;
@@ -279,7 +280,7 @@ export default function AccountPage() {
       const response = await fetch("/api/account/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: values.password }),
+        body: JSON.stringify({ currentPassword: values.currentPassword, password: values.password }),
       });
       const data = (await response.json()) as { error?: string };
 

@@ -3,7 +3,9 @@ import { z } from "zod";
 import { Job } from "@/types/job";
 import { ForemSearchParams } from "@/services/api/foremClient";
 import { LocationEntry } from "@/services/location/locationCache";
-import { runtimeConfig } from "@/config/runtime";
+import { serverConfig } from "@/config/runtime.server";
+import { checkRateLimit } from "@/lib/server/rateLimit";
+import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 
 const ADZUNA_BASE_URL = "https://api.adzuna.com/v1/api/jobs";
 const ADZUNA_RESULTS_PER_PAGE = 50;
@@ -154,7 +156,7 @@ async function fetchAdzunaPage(options: {
   page: number;
 }): Promise<z.infer<typeof adzunaApiResponseSchema>> {
   const searchUrl = new URL(
-    `${ADZUNA_BASE_URL}/${runtimeConfig.adzuna.country}/search/${options.page}`
+    `${ADZUNA_BASE_URL}/${serverConfig.adzuna.country}/search/${options.page}`
   );
   searchUrl.searchParams.set("app_id", options.appId);
   searchUrl.searchParams.set("app_key", options.appKey);
@@ -189,10 +191,25 @@ async function fetchAdzunaPage(options: {
 
 export async function POST(request: NextRequest) {
   try {
-    const appId = runtimeConfig.adzuna.appId;
-    const appKey = runtimeConfig.adzuna.appKey;
+    const forbidden = rejectCrossOriginRequest(request);
+    if (forbidden) return forbidden;
 
-    if (!runtimeConfig.adzuna.enabled || !appId || !appKey) {
+    const rateLimit = await checkRateLimit({
+      scope: "adzuna-search",
+      limit: 10,
+      windowMs: 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Trop de requêtes. Réessayez dans quelques instants." },
+        { status: 429 }
+      );
+    }
+
+    const appId = serverConfig.adzuna.appId;
+    const appKey = serverConfig.adzuna.appKey;
+
+    if (!serverConfig.adzuna.enabled || !appId || !appKey) {
       return NextResponse.json({ jobs: [], total: 0, enabled: false });
     }
 

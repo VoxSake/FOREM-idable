@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { isValidForemOfferId } from "@/lib/forem";
 import { fetchForemJobByOfferId } from "@/services/api/foremClient";
 import { Job } from "@/types/job";
@@ -101,6 +103,32 @@ function extractForemOfferIdFromText(content: string): { offerId: string; url: s
   };
 }
 
+const sharedJobMetadataSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("text"),
+    metadata: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    type: z.literal("job_share"),
+    metadata: z.object({
+      sharedJob: z.object({
+        id: z.string(),
+        title: z.string(),
+        company: z.string().optional(),
+        location: z.string(),
+        contractType: z.string(),
+        publicationDate: z.string(),
+        url: z.string(),
+        description: z.string().optional(),
+        source: z.enum(["forem", "linkedin", "indeed", "adzuna"]),
+        pdfUrl: z.string().optional(),
+      }),
+      sharedOfferId: z.string(),
+      sharedUrl: z.string(),
+    }),
+  }),
+]);
+
 export async function resolveSharedJobMetadata(content: string): Promise<{
   type: ConversationMessage["type"];
   metadata: Record<string, unknown> & {
@@ -111,34 +139,34 @@ export async function resolveSharedJobMetadata(content: string): Promise<{
 }> {
   const extracted = extractForemOfferIdFromText(content);
   if (!extracted) {
-    return {
+    return sharedJobMetadataSchema.parse({
       type: "text",
       metadata: {},
-    };
+    });
   }
 
   try {
     const sharedJob = await fetchForemJobByOfferId(extracted.offerId);
     if (!sharedJob) {
-      return {
+      return sharedJobMetadataSchema.parse({
         type: "text",
         metadata: {},
-      };
+      });
     }
 
-    return {
+    return sharedJobMetadataSchema.parse({
       type: "job_share",
       metadata: {
         sharedJob,
         sharedOfferId: extracted.offerId,
         sharedUrl: extracted.url,
       },
-    };
+    });
   } catch (error) {
     console.error("Unable to resolve Forem offer preview for messaging", error);
-    return {
+    return sharedJobMetadataSchema.parse({
       type: "text",
       metadata: {},
-    };
+    });
   }
 }

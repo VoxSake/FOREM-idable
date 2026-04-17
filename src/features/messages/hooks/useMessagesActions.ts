@@ -104,7 +104,7 @@ export function useMessagesActions({
         throw new Error(data.error || "Envoi du message impossible.");
       }
 
-      if (data.command === "clean") {
+      if (data.cleared) {
         setDraft("");
         setSelectedConversation((current) =>
           current && current.id === selectedConversation.id

@@ -7,6 +7,7 @@ export const profileSchema = z.object({
 
 export const passwordSchema = z
   .object({
+    currentPassword: z.string().min(1, "Le mot de passe actuel est requis."),
     password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
     confirmPassword: z.string().min(8, "La confirmation doit contenir au moins 8 caractères."),
   })

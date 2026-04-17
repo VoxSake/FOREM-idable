@@ -197,20 +197,26 @@ async function buildUserDataExport(userId: number) {
       : Promise.resolve({ rows: [] }),
     conversationIds.length
       ? db.query(
-          `SELECT *
+          `SELECT conversation_id,
+                  CASE WHEN user_id = $2 THEN joined_at ELSE NULL END AS joined_at,
+                  CASE WHEN user_id = $2 THEN left_at ELSE NULL END AS left_at,
+                  user_id
            FROM conversation_participants
            WHERE conversation_id = ANY($1::bigint[])
            ORDER BY joined_at ASC`,
-          [conversationIds]
+          [conversationIds, userId]
         )
       : Promise.resolve({ rows: [] }),
     conversationIds.length
       ? db.query(
-          `SELECT *
+          `SELECT id, conversation_id, type,
+                  CASE WHEN author_user_id IS NULL OR author_user_id = $2 THEN content ELSE '[message d\'un autre participant]' END AS content,
+                  CASE WHEN author_user_id IS NULL OR author_user_id = $2 THEN metadata ELSE '{}'::jsonb END AS metadata,
+                  created_at, edited_at, deleted_at, author_user_id
            FROM conversation_messages
            WHERE conversation_id = ANY($1::bigint[])
            ORDER BY created_at ASC, id ASC`,
-          [conversationIds]
+          [conversationIds, userId]
         )
       : Promise.resolve({ rows: [] }),
     conversationIds.length

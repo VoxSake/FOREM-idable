@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser, setUserPassword } from "@/lib/server/auth";
+import { getCurrentUser, getUserPasswordHash, setUserPassword, verifyPassword } from "@/lib/server/auth";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { passwordUpdateSchema, readValidatedJson } from "@/lib/server/requestSchemas";
@@ -20,7 +20,16 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: parsed.error }, { status: 400 });
       }
 
-      const { password } = parsed.data;
+      const { currentPassword, password } = parsed.data;
+
+      const storedHash = await getUserPasswordHash(user.id);
+      if (!storedHash || !verifyPassword(currentPassword, storedHash)) {
+        return NextResponse.json(
+          { error: "Mot de passe actuel incorrect." },
+          { status: 400 }
+        );
+      }
+
       await setUserPassword(user.id, password);
       return NextResponse.json({ ok: true });
     } catch (error) {

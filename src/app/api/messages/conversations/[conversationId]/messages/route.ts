@@ -31,12 +31,12 @@ export async function POST(
     }
 
     const result = await sendTextMessage(user, conversationId, body.data.content);
-    if ("command" in result) {
+    if ("cleared" in result) {
       await publishConversationEvent(conversationId, {
         type: "conversation.cleared",
         conversationId,
       });
-      return NextResponse.json({ command: result.command });
+      return NextResponse.json({ cleared: true });
     }
 
     await publishConversationEvent(conversationId, {

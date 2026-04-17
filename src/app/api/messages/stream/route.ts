@@ -1,3 +1,4 @@
+import { checkRateLimit } from "@/lib/server/rateLimit";
 import { getCurrentUser } from "@/lib/server/auth";
 import { subscribeMessageEvents } from "@/lib/server/messageEvents";
 import { MessageStreamEvent } from "@/types/messaging";
@@ -10,6 +11,15 @@ function encodeSseMessage(event: MessageStreamEvent) {
 }
 
 export async function GET(request: Request) {
+  const rateLimit = await checkRateLimit({
+    scope: "message-stream",
+    limit: 5,
+    windowMs: 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return new Response("Too Many Requests", { status: 429 });
+  }
+
   const user = await getCurrentUser();
   if (!user) {
     return new Response("Forbidden", { status: 403 });

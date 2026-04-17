@@ -29,6 +29,20 @@ function shouldEmitEvent(level: ObservabilityLevel) {
   return raw !== "false";
 }
 
+const SENSITIVE_VALUE_PATTERNS = [
+  /^eyJ[A-Za-z0-9_-]{10,}/, // JWT-like tokens
+  /^frm_live_/,               // API key prefixes
+  /^Bearer /i,               // Auth headers
+];
+
+function redactValue(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  for (const pattern of SENSITIVE_VALUE_PATTERNS) {
+    if (pattern.test(value)) return "[redacted]";
+  }
+  return value;
+}
+
 function redactKey(key: string, value: unknown) {
   const normalizedKey = key.toLowerCase();
   const sensitive =
@@ -44,7 +58,7 @@ function redactKey(key: string, value: unknown) {
     return "[redacted]";
   }
 
-  return value;
+  return redactValue(value);
 }
 
 function sanitizeMeta(meta: Record<string, unknown> | undefined) {

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       const isDuplicate = message.includes("duplicate") || message.includes("unique");
 
       return NextResponse.json(
-        { error: isDuplicate ? "Inscription impossible." : "Inscription impossible." },
+        { error: isDuplicate ? "Un compte existe déjà avec cette adresse email." : "Inscription impossible. Veuillez réessayer." },
         { status: isDuplicate ? 409 : 500 }
       );
     }

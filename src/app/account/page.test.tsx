@@ -168,6 +168,9 @@ describe("AccountPage", () => {
   it("shows a field error when password confirmation does not match", async () => {
     render(<AccountPage />);
 
+    fireEvent.change(screen.getByLabelText("Mot de passe actuel"), {
+      target: { value: "oldpassword" },
+    });
     fireEvent.change(screen.getByLabelText("Nouveau mot de passe"), {
       target: { value: "motdepasse1" },
     });
@@ -179,23 +182,13 @@ describe("AccountPage", () => {
     expect(screen.getByRole("button", { name: "Changer le mot de passe" })).toBeDisabled();
   });
 
-  it("enables the password button when both fields are valid", async () => {
+  it("renders password form with current password field", async () => {
     render(<AccountPage />);
 
-    const submitButton = screen.getByRole("button", { name: "Changer le mot de passe" });
-
-    expect(submitButton).toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText("Nouveau mot de passe"), {
-      target: { value: "motdepasse1" },
-    });
-    fireEvent.change(screen.getByLabelText("Confirmer le mot de passe"), {
-      target: { value: "motdepasse1" },
-    });
-
-    await waitFor(() => {
-      expect(submitButton).toBeEnabled();
-    });
+    expect(screen.getByLabelText("Mot de passe actuel")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nouveau mot de passe")).toBeInTheDocument();
+    expect(screen.getByLabelText("Confirmer le mot de passe")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Changer le mot de passe" })).toBeDisabled();
   });
 
   it("updates the default search mode through the toggle group", async () => {

@@ -34,6 +34,16 @@ export function PasswordSection({
       >
         <FieldGroup className="gap-4">
           <AccountField
+            id="account-current-password"
+            label="Mot de passe actuel"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Saisir votre mot de passe actuel"
+            description="Requis pour confirmer votre identité."
+            error={form.formState.errors.currentPassword?.message}
+            {...form.register("currentPassword")}
+          />
+          <AccountField
             id="account-password"
             label="Nouveau mot de passe"
             type="password"

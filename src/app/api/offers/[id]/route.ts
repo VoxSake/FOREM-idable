@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isValidForemOfferId } from "@/lib/forem";
+import { checkRateLimit } from "@/lib/server/rateLimit";
 
 interface OfferHighlight {
   label: string;
@@ -219,10 +220,21 @@ function normalizeOdwbPayload(
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rateLimit = await checkRateLimit({
+      scope: "offer-detail",
+      limit: 30,
+      windowMs: 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Trop de requêtes. Réessayez dans quelques instants." },
+        { status: 429 }
+      );
+    }
     const { id } = await context.params;
     if (!id) return new NextResponse("Missing offer id", { status: 400 });
     if (!isValidForemOfferId(id)) {

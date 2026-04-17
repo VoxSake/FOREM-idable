@@ -62,6 +62,7 @@ export const profileUpdateSchema = z
 
 export const passwordUpdateSchema = z
   .object({
+    currentPassword: z.string().min(1, "Le mot de passe actuel est requis."),
     password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
   })
   .strict();
@@ -272,7 +273,7 @@ export const coachImportRowSchema = z
 export const coachImportRequestSchema = z
   .object({
     dateFormat: z.enum(["dmy", "mdy"]).optional(),
-    rows: z.array(coachImportRowSchema).min(1),
+    rows: z.array(coachImportRowSchema).min(1).max(500, "Impossible d'importer plus de 500 lignes à la fois."),
   })
   .strict();
 

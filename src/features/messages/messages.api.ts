@@ -73,7 +73,7 @@ export async function postConversationMessage(conversationId: number, content: s
     body: JSON.stringify({ content }),
   });
   const data = await readJson<{
-    command?: "clean";
+    cleared?: boolean;
     error?: string;
     message?: ConversationMessage;
   }>(response);

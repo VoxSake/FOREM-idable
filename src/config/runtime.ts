@@ -1,10 +1,10 @@
 import { sanitizeUmamiScriptUrl } from "@/lib/analytics";
 
-function sanitizeDisplayText(value?: string) {
+export function sanitizeDisplayText(value?: string) {
   return value?.trim().replace(/\\(['"])/g, "$1") || "";
 }
 
-function sanitizeHyphenSlug(value: string) {
+export function sanitizeHyphenSlug(value: string) {
   return value
     .trim()
     .toLowerCase()
@@ -13,7 +13,7 @@ function sanitizeHyphenSlug(value: string) {
     .replace(/-{2,}/g, "-");
 }
 
-function sanitizeUnderscoreSlug(value: string) {
+export function sanitizeUnderscoreSlug(value: string) {
   return value
     .trim()
     .toLowerCase()
@@ -49,8 +49,6 @@ export const runtimeConfig = {
       sanitizeDisplayText(process.env.APP_SOURCE_LINK_LABEL) || "Code source AGPLv3",
     exportFilenamePrefix,
     storageNamespace,
-    sessionCookieName:
-      process.env.APP_SESSION_COOKIE_NAME?.trim() || `${storageNamespace}_session`,
     calendarUidDomain:
       process.env.APP_CALENDAR_UID_DOMAIN?.trim() || exportFilenamePrefix || "app",
     currentYear,
@@ -63,12 +61,6 @@ export const runtimeConfig = {
   },
   auth: {
     passwordResetEnabled: process.env.NEXT_PUBLIC_PASSWORD_RESET_ENABLED === "true",
-  },
-  adzuna: {
-    enabled: process.env.ADZUNA_ENABLED === "true",
-    appId: process.env.ADZUNA_APP_ID?.trim() || "",
-    appKey: process.env.ADZUNA_APP_KEY?.trim() || "",
-    country: process.env.ADZUNA_COUNTRY?.trim() || "be",
   },
   umami: {
     enabled: process.env.UMAMI_ENABLED === "true",

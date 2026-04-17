@@ -152,7 +152,7 @@ export async function sendTextMessage(
   actor: AuthUser,
   conversationId: number,
   content: string
-): Promise<ConversationMessage | { command: "clean" }> {
+): Promise<ConversationMessage | { ok: true; cleared: true }> {
   await ensureDatabase();
   if (!db) throw new Error("Database unavailable");
 
@@ -175,8 +175,12 @@ export async function sendTextMessage(
     }
 
     await db.query(
-      `DELETE FROM conversation_messages
-       WHERE conversation_id = $1`,
+      `UPDATE conversation_messages
+       SET content = NULL,
+           metadata = '{}'::jsonb,
+           deleted_at = NOW()
+       WHERE conversation_id = $1
+         AND deleted_at IS NULL`,
       [conversationId]
     );
 
@@ -193,7 +197,7 @@ export async function sendTextMessage(
       [conversationId]
     );
 
-    return { command: "clean" };
+    return { ok: true, cleared: true };
   }
 
   const messagePayload = await resolveSharedJobMetadata(normalizedContent);

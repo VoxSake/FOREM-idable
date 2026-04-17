@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/server/rateLimit";
 
 type LocationCategory =
   | "Pays"
@@ -191,11 +192,30 @@ function mapOdwbFallback(data: OdwbResponse): LocationEntry[] {
   return dedupeAndSort(entries);
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const rateLimit = await checkRateLimit({
+      scope: "locations",
+      limit: 30,
+      windowMs: 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Trop de requêtes. Réessayez dans quelques instants." },
+        { status: 429 }
+      );
+    }
+
+    const url = request.nextUrl;
+    const limitParam = Math.min(Math.max(Number(url.searchParams.get("limit")) || 200, 1), 200);
+    const offsetParam = Math.max(Number(url.searchParams.get("offset")) || 0, 0);
+
     if (serverCache && Date.now() - serverCache.ts < SERVER_CACHE_TTL_MS) {
+      const total = serverCache.entries.length;
+      const paginated = serverCache.entries.slice(offsetParam, offsetParam + limitParam);
       return NextResponse.json({
-        entries: serverCache.entries,
+        entries: paginated,
+        total,
         source: `${serverCache.source}-memory-cache`,
       });
     }
@@ -211,7 +231,9 @@ export async function GET() {
       const entries = mapForemNomenclature(raw);
       if (entries.length > 0) {
         serverCache = { ts: Date.now(), entries, source: "forem-nomenclature" };
-        return NextResponse.json({ entries, source: "forem-nomenclature" });
+        const total = entries.length;
+        const paginated = entries.slice(offsetParam, offsetParam + limitParam);
+        return NextResponse.json({ entries: paginated, total, source: "forem-nomenclature" });
       }
     }
 
@@ -224,15 +246,17 @@ export async function GET() {
     if (odwbResponse.ok) {
       const data = await odwbResponse.json();
       const entries = mapOdwbFallback(data);
+      const total = entries.length;
       if (entries.length > 0) {
         serverCache = { ts: Date.now(), entries, source: "odwb-fallback" };
       }
-      return NextResponse.json({ entries, source: "odwb-fallback" });
+      const paginated = entries.slice(offsetParam, offsetParam + limitParam);
+      return NextResponse.json({ entries: paginated, total, source: "odwb-fallback" });
     }
 
-    return NextResponse.json({ entries: [], source: "none" }, { status: 502 });
+    return NextResponse.json({ entries: [], total: 0, source: "none" }, { status: 502 });
   } catch (error) {
     console.error("Locations API error:", error);
-    return NextResponse.json({ entries: [], source: "error" }, { status: 500 });
+    return NextResponse.json({ entries: [], total: 0, source: "error" }, { status: 500 });
   }
 }
