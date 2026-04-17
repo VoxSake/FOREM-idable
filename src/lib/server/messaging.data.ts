@@ -182,31 +182,43 @@ export async function loadConversationSummaries(
       AND unread_messages.deleted_at IS NULL
       AND unread_messages.author_user_id IS DISTINCT FROM $1
       AND unread_messages.id > COALESCE(conversation_reads.last_read_message_id, 0)
-     LEFT JOIN LATERAL (
-       SELECT users.first_name,
-              users.last_name,
-              users.email
-       FROM conversation_participants
-       INNER JOIN users ON users.id = conversation_participants.user_id
-       WHERE conversation_participants.conversation_id = conversations.id
-         AND conversation_participants.user_id <> $1
-         AND conversation_participants.left_at IS NULL
-       ORDER BY conversation_participants.joined_at ASC
-       LIMIT 1
-     ) other_user ON TRUE
-     WHERE (
-       conversations.type = 'group'
-       AND conversations.group_id = ANY($2::bigint[])
-     ) OR (
-       conversations.type = 'direct'
-       AND EXISTS (
-         SELECT 1
-         FROM conversation_participants
-         WHERE conversation_participants.conversation_id = conversations.id
-           AND conversation_participants.user_id = $1
-           AND conversation_participants.left_at IS NULL
-       )
-     )
+      LEFT JOIN LATERAL (
+        SELECT users.first_name,
+               users.last_name,
+               users.email
+        FROM (
+          SELECT CASE
+            WHEN conversations.type = 'direct' THEN
+              CASE
+                WHEN conversations.direct_user_a_id = $1 THEN conversations.direct_user_b_id
+                ELSE conversations.direct_user_a_id
+              END
+            ELSE (
+              SELECT cp.user_id
+              FROM conversation_participants cp
+              WHERE cp.conversation_id = conversations.id
+                AND cp.user_id <> $1
+                AND cp.left_at IS NULL
+              ORDER BY cp.joined_at ASC
+              LIMIT 1
+            )
+          END AS user_id
+        ) other_user_id
+        LEFT JOIN users ON users.id = other_user_id.user_id
+      ) other_user ON TRUE
+      WHERE (
+        conversations.type = 'group'
+        AND conversations.group_id = ANY($2::bigint[])
+      ) OR (
+        conversations.type = 'direct'
+        AND EXISTS (
+          SELECT 1
+          FROM conversation_participants
+          WHERE conversation_participants.conversation_id = conversations.id
+            AND conversation_participants.user_id = $1
+            AND conversation_participants.left_at IS NULL
+        )
+      )
      GROUP BY conversations.id,
               conversations.type,
               conversations.group_id,
@@ -286,20 +298,20 @@ export async function loadDirectConversationPreview(
       AND unread_messages.deleted_at IS NULL
       AND unread_messages.author_user_id IS DISTINCT FROM $1
       AND unread_messages.id > COALESCE(conversation_reads.last_read_message_id, 0)
-     LEFT JOIN LATERAL (
-       SELECT users.first_name,
-              users.last_name,
-              users.email
-       FROM conversation_participants
-       INNER JOIN users ON users.id = conversation_participants.user_id
-       WHERE conversation_participants.conversation_id = conversations.id
-         AND conversation_participants.user_id <> $1
-         AND conversation_participants.left_at IS NULL
-       ORDER BY conversation_participants.joined_at ASC
-       LIMIT 1
-     ) other_user ON TRUE
-     WHERE conversations.id = $2
-       AND conversations.type = 'direct'
+      LEFT JOIN LATERAL (
+        SELECT users.first_name,
+               users.last_name,
+               users.email
+        FROM (
+          SELECT CASE
+            WHEN conversations.direct_user_a_id = $1 THEN conversations.direct_user_b_id
+            ELSE conversations.direct_user_a_id
+          END AS user_id
+        ) other_user_id
+        LEFT JOIN users ON users.id = other_user_id.user_id
+      ) other_user ON TRUE
+      WHERE conversations.id = $2
+        AND conversations.type = 'direct'
        AND EXISTS (
          SELECT 1
          FROM conversation_participants
