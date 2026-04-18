@@ -20,8 +20,8 @@ const dataExportRetentionDays = days(process.env.DATA_EXPORT_RETENTION_DAYS, 7);
 const messageRetentionMonths = days(process.env.MESSAGE_RETENTION_MONTHS, 18);
 const auditLogRetentionMonths = days(process.env.AUDIT_LOG_RETENTION_MONTHS, 24);
 
-async function deleteCount(query, params = [], client = null) {
-  const result = await (client || pool).query(query, params);
+async function deleteCount(client, query, params = []) {
+  const result = await client.query(query, params);
   return result.rowCount ?? 0;
 }
 
