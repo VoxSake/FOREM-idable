@@ -13,6 +13,8 @@ import {
   getApplicationsDueSummary,
   getLatestSharedCoachNoteAt,
   isApplicationFollowUpDue,
+  isFollowUpEnabled,
+  shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
 import {
   markCoachNoteView,
@@ -29,6 +31,8 @@ import {
 } from "@/features/applications/components/ManualApplicationDialog";
 
 const APPLICATIONS_PAGE_SIZE = 20;
+
+type BulkDialogAction = "delete-selected" | "disable-followup-selected" | null;
 
 function createManualForm(): ManualApplicationFormState {
   return {
@@ -71,6 +75,7 @@ export function useApplicationsPageState() {
     isLoaded,
   } = useApplications();
   const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
+  const [bulkDialogAction, setBulkDialogAction] = useState<BulkDialogAction>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
@@ -245,11 +250,46 @@ export function useApplicationsPageState() {
   }, []);
 
   const removeSelected = useCallback(() => {
+    setBulkDialogAction("delete-selected");
+  }, []);
+
+  const confirmBulkDeleteSelected = useCallback(() => {
     for (const jobId of selectedJobIds) {
       void removeApplication(jobId);
     }
     setSelectedJobIds(new Set());
+    setBulkDialogAction(null);
   }, [removeApplication, selectedJobIds]);
+
+  const openDisableFollowUpDialog = useCallback(() => {
+    setBulkDialogAction("disable-followup-selected");
+  }, []);
+
+  const disableFollowUpForSelected = useCallback(() => {
+    const applicationsToDisable = applications.filter(
+      (app) =>
+        selectedJobIds.has(app.job.id) &&
+        isFollowUpEnabled(app) &&
+        shouldShowFollowUpDetails(app.status)
+    );
+
+    for (const app of applicationsToDisable) {
+      void updateFollowUpSettings(app.job.id, {
+        enabled: false,
+        dueAt: app.followUpDueAt,
+        status: app.status,
+      });
+    }
+
+    toast.success(
+      applicationsToDisable.length > 0
+        ? `Relance désactivée pour ${applicationsToDisable.length} candidature${applicationsToDisable.length > 1 ? "s" : ""}.`
+        : "Aucune candidature avec relance active dans la sélection."
+    );
+
+    setSelectedJobIds(new Set());
+    setBulkDialogAction(null);
+  }, [applications, selectedJobIds, updateFollowUpSettings]);
 
   const submitManualForm = useCallback(async () => {
     if (!manualForm.company.trim() || !manualForm.title.trim()) return;
@@ -373,6 +413,7 @@ export function useApplicationsPageState() {
     filteredApplications,
     paginatedApplications,
     selectedJobIds,
+    bulkDialogAction,
     isCreateOpen,
     detailsJobId,
     deleteJobId,
@@ -398,9 +439,16 @@ export function useApplicationsPageState() {
     currentNotesDraft,
     currentProofsDraft,
     hasUnreadCoachUpdate,
+    selectedFollowUpCount: applications.filter(
+      (app) =>
+        selectedJobIds.has(app.job.id) &&
+        isFollowUpEnabled(app) &&
+        shouldShowFollowUpDetails(app.status)
+    ).length,
     setIsCreateOpen,
     setDetailsJobId,
     setDeleteJobId,
+    setBulkDialogAction,
     setInterviewForm,
     setManualForm,
     setCurrentPage,
@@ -413,6 +461,9 @@ export function useApplicationsPageState() {
     applyStatus,
     toggleSelection,
     removeSelected,
+    confirmBulkDeleteSelected,
+    openDisableFollowUpDialog,
+    disableFollowUpForSelected,
     submitManualForm,
     openInterviewModal,
     submitInterview,

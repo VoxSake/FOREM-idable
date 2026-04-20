@@ -9,6 +9,7 @@ import { ApplicationsEmptyState } from "@/features/applications/components/Appli
 import { ApplicationsHeaderControls } from "@/features/applications/components/ApplicationsHeaderControls";
 import { ApplicationsInsights } from "@/features/applications/components/ApplicationsInsights";
 import { ApplicationsPageIntro } from "@/features/applications/components/ApplicationsPageIntro";
+import { BulkActionsDialog } from "@/features/applications/components/BulkActionsDialog";
 import { DeleteApplicationDialog } from "@/features/applications/components/DeleteApplicationDialog";
 import { InterviewDialog } from "@/features/applications/components/InterviewDialog";
 import { ManualApplicationDialog } from "@/features/applications/components/ManualApplicationDialog";
@@ -101,11 +102,13 @@ export default function ApplicationsPage() {
         dueCount={page.dueCount}
         dueSummary={page.dueSummary}
         selectedCount={page.selectedJobIds.size}
+        selectedFollowUpCount={page.selectedFollowUpCount}
         canExportCalendar={page.filteredApplications.some((entry) => entry.interviewAt)}
         onCreateManual={() => page.setIsCreateOpen(true)}
         onExportCsv={page.exportApplications}
         onExportCalendar={page.exportCalendar}
         onRemoveSelected={page.removeSelected}
+        onDisableFollowUpForSelected={page.openDisableFollowUpDialog}
       />
 
       <ApplicationsInsights
@@ -242,6 +245,29 @@ export default function ApplicationsPage() {
         }}
         onCancel={() => page.setDeleteJobId(null)}
         onConfirm={page.confirmDelete}
+      />
+
+      <BulkActionsDialog
+        open={page.bulkDialogAction === "delete-selected"}
+        onOpenChange={(open) => {
+          if (!open) page.setBulkDialogAction(null);
+        }}
+        title="Supprimer la sélection ?"
+        description={`Cette action retirera ${page.selectedJobIds.size} candidature${page.selectedJobIds.size > 1 ? "s" : ""} de votre suivi.`}
+        confirmLabel="Supprimer"
+        variant="destructive"
+        onConfirm={page.confirmBulkDeleteSelected}
+      />
+
+      <BulkActionsDialog
+        open={page.bulkDialogAction === "disable-followup-selected"}
+        onOpenChange={(open) => {
+          if (!open) page.setBulkDialogAction(null);
+        }}
+        title="Désactiver les relances ?"
+        description={`Les relances automatiques seront désactivées pour ${page.selectedFollowUpCount} candidature${page.selectedFollowUpCount > 1 ? "s" : ""}. Vous pourrez les réactiver individuellement depuis le détail de chaque candidature.`}
+        confirmLabel="Désactiver"
+        onConfirm={page.disableFollowUpForSelected}
       />
     </div>
   );
