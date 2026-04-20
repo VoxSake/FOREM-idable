@@ -6,6 +6,14 @@ import { ApplicationStatus, JobApplication } from "@/types/application";
 
 export type ApplicationModeFilter = "all" | "due" | "interviews" | "manual" | "coach_updates";
 
+export const APPLICATION_STATUS_OPTIONS: Array<{ value: ApplicationStatus; label: string }> = [
+  { value: "in_progress", label: "En cours" },
+  { value: "follow_up", label: "Relance à faire" },
+  { value: "interview", label: "Entretien" },
+  { value: "accepted", label: "Acceptée" },
+  { value: "rejected", label: "Refusée" },
+];
+
 export function getApplicationsDueSummary(applications: JobApplication[]) {
   const companyNames = applications
     .filter((entry) => isApplicationFollowUpDue(entry))

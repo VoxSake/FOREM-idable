@@ -275,6 +275,7 @@ export function useApplications() {
     addApplication,
     addManualApplication,
     removeApplication,
+    patchApplication,
     markAsRejected,
     markAsInProgress,
     markAsAccepted,

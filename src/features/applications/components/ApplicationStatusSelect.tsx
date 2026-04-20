@@ -9,16 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { APPLICATION_STATUS_OPTIONS } from "@/features/applications/utils";
 import { cn } from "@/lib/utils";
 import { ApplicationStatus } from "@/types/application";
 
-const STATUS_OPTIONS: Array<{ value: ApplicationStatus; label: string }> = [
-  { value: "in_progress", label: "En cours" },
-  { value: "follow_up", label: "Relance à faire" },
-  { value: "interview", label: "Entretien" },
-  { value: "accepted", label: "Acceptée" },
-  { value: "rejected", label: "Refusée" },
-];
+const STATUS_OPTIONS = APPLICATION_STATUS_OPTIONS;
 
 interface ApplicationStatusSelectProps {
   value: ApplicationStatus;

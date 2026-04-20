@@ -1,6 +1,6 @@
 "use client";
 
-import { BellOff, CalendarDays, Download, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, Download, MoreHorizontal, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -17,14 +16,10 @@ interface ApplicationsHeaderControlsProps {
   totalCount: number;
   dueCount: number;
   dueSummary: string;
-  selectedCount: number;
-  selectedFollowUpCount: number;
   canExportCalendar: boolean;
   onCreateManual: () => void;
   onExportCsv: () => void;
   onExportCalendar: () => void;
-  onRemoveSelected: () => void;
-  onDisableFollowUpForSelected: () => void;
 }
 
 export function ApplicationsHeaderControls({
@@ -32,14 +27,10 @@ export function ApplicationsHeaderControls({
   totalCount,
   dueCount,
   dueSummary,
-  selectedCount,
-  selectedFollowUpCount,
   canExportCalendar,
   onCreateManual,
   onExportCsv,
   onExportCalendar,
-  onRemoveSelected,
-  onDisableFollowUpForSelected,
 }: ApplicationsHeaderControlsProps) {
   return (
     <Card className="py-0">
@@ -86,24 +77,6 @@ export function ApplicationsHeaderControls({
                   Exporter les entretiens
                 </DropdownMenuItem>
               </DropdownMenuGroup>
-              {selectedCount > 0 ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      onClick={onDisableFollowUpForSelected}
-                      disabled={selectedFollowUpCount === 0}
-                    >
-                      <BellOff />
-                      Désactiver les relances ({selectedFollowUpCount})
-                    </DropdownMenuItem>
-                    <DropdownMenuItem variant="destructive" onClick={onRemoveSelected}>
-                      <Trash2 />
-                      Supprimer la sélection ({selectedCount})
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </>
-              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

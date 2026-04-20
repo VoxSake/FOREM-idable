@@ -9,10 +9,12 @@ import { ApplicationsEmptyState } from "@/features/applications/components/Appli
 import { ApplicationsHeaderControls } from "@/features/applications/components/ApplicationsHeaderControls";
 import { ApplicationsInsights } from "@/features/applications/components/ApplicationsInsights";
 import { ApplicationsPageIntro } from "@/features/applications/components/ApplicationsPageIntro";
+import { BulkActionBar } from "@/features/applications/components/BulkActionBar";
 import { BulkActionsDialog } from "@/features/applications/components/BulkActionsDialog";
 import { DeleteApplicationDialog } from "@/features/applications/components/DeleteApplicationDialog";
 import { InterviewDialog } from "@/features/applications/components/InterviewDialog";
 import { ManualApplicationDialog } from "@/features/applications/components/ManualApplicationDialog";
+import { applicationStatusLabel } from "@/features/applications/utils";
 import { useApplicationsPageState } from "@/features/applications/hooks/useApplicationsPageState";
 
 function ApplicationsPageSkeleton() {
@@ -101,14 +103,10 @@ export default function ApplicationsPage() {
         totalCount={page.applications.length}
         dueCount={page.dueCount}
         dueSummary={page.dueSummary}
-        selectedCount={page.selectedJobIds.size}
-        selectedFollowUpCount={page.selectedFollowUpCount}
         canExportCalendar={page.filteredApplications.some((entry) => entry.interviewAt)}
         onCreateManual={() => page.setIsCreateOpen(true)}
         onExportCsv={page.exportApplications}
         onExportCalendar={page.exportCalendar}
-        onRemoveSelected={page.removeSelected}
-        onDisableFollowUpForSelected={page.openDisableFollowUpDialog}
       />
 
       <ApplicationsInsights
@@ -159,6 +157,19 @@ export default function ApplicationsPage() {
           onResetFilters={page.resetFilters}
         />
       )}
+
+      <BulkActionBar
+        selectedCount={page.selectedJobIds.size}
+        selectedFollowUpCount={page.selectedFollowUpCount}
+        selectedFollowUpDisabledCount={page.selectedFollowUpDisabledCount}
+        isAllSelected={page.isAllSelected}
+        onToggleSelectAll={page.toggleSelectAll}
+        onClearSelection={page.clearSelection}
+        onDeleteSelected={page.removeSelected}
+        onDisableFollowUp={page.openDisableFollowUpDialog}
+        onEnableFollowUp={page.openEnableFollowUpDialog}
+        onChangeStatus={page.openChangeStatusDialog}
+      />
 
       <ApplicationDetailsSheet
         application={selectedApplication}
@@ -268,6 +279,31 @@ export default function ApplicationsPage() {
         description={`Les relances automatiques seront désactivées pour ${page.selectedFollowUpCount} candidature${page.selectedFollowUpCount > 1 ? "s" : ""}. Vous pourrez les réactiver individuellement depuis le détail de chaque candidature.`}
         confirmLabel="Désactiver"
         onConfirm={page.disableFollowUpForSelected}
+      />
+
+      <BulkActionsDialog
+        open={page.bulkDialogAction === "enable-followup-selected"}
+        onOpenChange={(open) => {
+          if (!open) page.setBulkDialogAction(null);
+        }}
+        title="Réactiver les relances ?"
+        description={`Les relances automatiques seront réactivées pour ${page.selectedFollowUpDisabledCount} candidature${page.selectedFollowUpDisabledCount > 1 ? "s" : ""}.`}
+        confirmLabel="Réactiver"
+        onConfirm={page.enableFollowUpForSelected}
+      />
+
+      <BulkActionsDialog
+        open={page.bulkDialogAction === "change-status-selected"}
+        onOpenChange={(open) => {
+          if (!open) {
+            page.setBulkDialogAction(null);
+            page.setBulkTargetStatus(null);
+          }
+        }}
+        title="Changer le statut ?"
+        description={`Le statut de ${page.selectedJobIds.size} candidature${page.selectedJobIds.size > 1 ? "s" : ""} sera modifié en « ${page.bulkTargetStatus ? applicationStatusLabel(page.bulkTargetStatus) : ""} ».`}
+        confirmLabel="Confirmer"
+        onConfirm={page.confirmBulkChangeStatus}
       />
     </div>
   );

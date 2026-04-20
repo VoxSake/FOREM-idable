@@ -32,7 +32,12 @@ import {
 
 const APPLICATIONS_PAGE_SIZE = 20;
 
-type BulkDialogAction = "delete-selected" | "disable-followup-selected" | null;
+type BulkDialogAction =
+  | "delete-selected"
+  | "disable-followup-selected"
+  | "enable-followup-selected"
+  | "change-status-selected"
+  | null;
 
 function createManualForm(): ManualApplicationFormState {
   return {
@@ -72,10 +77,12 @@ export function useApplicationsPageState() {
     markFollowUpDone: persistFollowUpDone,
     updateFollowUpSettings,
     removeApplication,
+    patchApplication,
     isLoaded,
   } = useApplications();
   const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
   const [bulkDialogAction, setBulkDialogAction] = useState<BulkDialogAction>(null);
+  const [bulkTargetStatus, setBulkTargetStatus] = useState<ApplicationStatus | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
@@ -151,6 +158,35 @@ export function useApplicationsPageState() {
   const currentProofsDraft = selectedApplication
     ? proofsDrafts[selectedApplication.job.id] ?? (selectedApplication.proofs ?? "")
     : "";
+
+  const isAllSelected = useMemo(
+    () =>
+      filteredApplications.length > 0 &&
+      filteredApplications.every((app) => selectedJobIds.has(app.job.id)),
+    [filteredApplications, selectedJobIds]
+  );
+
+  const selectedFollowUpCount = useMemo(
+    () =>
+      applications.filter(
+        (app) =>
+          selectedJobIds.has(app.job.id) &&
+          isFollowUpEnabled(app) &&
+          shouldShowFollowUpDetails(app.status)
+      ).length,
+    [applications, selectedJobIds]
+  );
+
+  const selectedFollowUpDisabledCount = useMemo(
+    () =>
+      applications.filter(
+        (app) =>
+          selectedJobIds.has(app.job.id) &&
+          !isFollowUpEnabled(app) &&
+          shouldShowFollowUpDetails(app.status)
+      ).length,
+    [applications, selectedJobIds]
+  );
 
   const resetManualForm = useCallback(() => {
     setManualForm(createManualForm());
@@ -249,6 +285,18 @@ export function useApplicationsPageState() {
     });
   }, []);
 
+  const toggleSelectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedJobIds(new Set());
+    } else {
+      setSelectedJobIds(new Set(filteredApplications.map((app) => app.job.id)));
+    }
+  }, [filteredApplications, isAllSelected]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedJobIds(new Set());
+  }, []);
+
   const removeSelected = useCallback(() => {
     setBulkDialogAction("delete-selected");
   }, []);
@@ -263,6 +311,15 @@ export function useApplicationsPageState() {
 
   const openDisableFollowUpDialog = useCallback(() => {
     setBulkDialogAction("disable-followup-selected");
+  }, []);
+
+  const openEnableFollowUpDialog = useCallback(() => {
+    setBulkDialogAction("enable-followup-selected");
+  }, []);
+
+  const openChangeStatusDialog = useCallback((status: ApplicationStatus) => {
+    setBulkTargetStatus(status);
+    setBulkDialogAction("change-status-selected");
   }, []);
 
   const disableFollowUpForSelected = useCallback(() => {
@@ -290,6 +347,53 @@ export function useApplicationsPageState() {
     setSelectedJobIds(new Set());
     setBulkDialogAction(null);
   }, [applications, selectedJobIds, updateFollowUpSettings]);
+
+  const enableFollowUpForSelected = useCallback(() => {
+    const applicationsToEnable = applications.filter(
+      (app) =>
+        selectedJobIds.has(app.job.id) &&
+        !isFollowUpEnabled(app) &&
+        shouldShowFollowUpDetails(app.status)
+    );
+
+    for (const app of applicationsToEnable) {
+      void updateFollowUpSettings(app.job.id, {
+        enabled: true,
+        dueAt: app.followUpDueAt,
+        status: app.status,
+      });
+    }
+
+    toast.success(
+      applicationsToEnable.length > 0
+        ? `Relance réactivée pour ${applicationsToEnable.length} candidature${applicationsToEnable.length > 1 ? "s" : ""}.`
+        : "Aucune candidature avec relance désactivée dans la sélection."
+    );
+
+    setSelectedJobIds(new Set());
+    setBulkDialogAction(null);
+  }, [applications, selectedJobIds, updateFollowUpSettings]);
+
+  const confirmBulkChangeStatus = useCallback(() => {
+    if (!bulkTargetStatus) return;
+
+    for (const jobId of selectedJobIds) {
+      void patchApplication(jobId, {
+        status: bulkTargetStatus,
+        interviewAt: null,
+        interviewDetails: null,
+      });
+    }
+
+    const count = selectedJobIds.size;
+    toast.success(
+      `Statut mis à jour pour ${count} candidature${count > 1 ? "s" : ""}.`
+    );
+
+    setSelectedJobIds(new Set());
+    setBulkDialogAction(null);
+    setBulkTargetStatus(null);
+  }, [bulkTargetStatus, patchApplication, selectedJobIds]);
 
   const submitManualForm = useCallback(async () => {
     if (!manualForm.company.trim() || !manualForm.title.trim()) return;
@@ -413,7 +517,11 @@ export function useApplicationsPageState() {
     filteredApplications,
     paginatedApplications,
     selectedJobIds,
+    isAllSelected,
+    selectedFollowUpCount,
+    selectedFollowUpDisabledCount,
     bulkDialogAction,
+    bulkTargetStatus,
     isCreateOpen,
     detailsJobId,
     deleteJobId,
@@ -439,16 +547,11 @@ export function useApplicationsPageState() {
     currentNotesDraft,
     currentProofsDraft,
     hasUnreadCoachUpdate,
-    selectedFollowUpCount: applications.filter(
-      (app) =>
-        selectedJobIds.has(app.job.id) &&
-        isFollowUpEnabled(app) &&
-        shouldShowFollowUpDetails(app.status)
-    ).length,
     setIsCreateOpen,
     setDetailsJobId,
     setDeleteJobId,
     setBulkDialogAction,
+    setBulkTargetStatus,
     setInterviewForm,
     setManualForm,
     setCurrentPage,
@@ -460,10 +563,16 @@ export function useApplicationsPageState() {
     openDetails,
     applyStatus,
     toggleSelection,
+    toggleSelectAll,
+    clearSelection,
     removeSelected,
     confirmBulkDeleteSelected,
     openDisableFollowUpDialog,
+    openEnableFollowUpDialog,
+    openChangeStatusDialog,
     disableFollowUpForSelected,
+    enableFollowUpForSelected,
+    confirmBulkChangeStatus,
     submitManualForm,
     openInterviewModal,
     submitInterview,
