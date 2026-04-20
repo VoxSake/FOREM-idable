@@ -15,8 +15,10 @@ interface BulkActionsDialogProps {
   title: string;
   description: string;
   confirmLabel: string;
+  pendingLabel?: string;
+  isPending?: boolean;
   variant?: "destructive" | "default";
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
 }
 
 export function BulkActionsDialog({
@@ -25,6 +27,8 @@ export function BulkActionsDialog({
   title,
   description,
   confirmLabel,
+  pendingLabel,
+  isPending = false,
   variant = "default",
   onConfirm,
 }: BulkActionsDialogProps) {
@@ -36,9 +40,16 @@ export function BulkActionsDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction variant={variant} onClick={onConfirm}>
-            {confirmLabel}
+          <AlertDialogCancel disabled={isPending}>Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            variant={variant}
+            disabled={isPending}
+            aria-busy={isPending}
+            onClick={() => {
+              void onConfirm();
+            }}
+          >
+            {isPending ? pendingLabel ?? confirmLabel : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

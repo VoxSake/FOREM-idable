@@ -60,6 +60,10 @@ function createEmptyInterviewForm(): InterviewFormState {
   };
 }
 
+function formatApplicationsCount(count: number) {
+  return `${count} candidature${count > 1 ? "s" : ""}`;
+}
+
 export function useApplicationsPageState() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const {
@@ -83,6 +87,7 @@ export function useApplicationsPageState() {
   const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
   const [bulkDialogAction, setBulkDialogAction] = useState<BulkDialogAction>(null);
   const [bulkTargetStatus, setBulkTargetStatus] = useState<ApplicationStatus | null>(null);
+  const [isBulkMutating, setIsBulkMutating] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
@@ -298,31 +303,68 @@ export function useApplicationsPageState() {
   }, []);
 
   const removeSelected = useCallback(() => {
+    if (selectedJobIds.size === 0 || isBulkMutating) return;
     setBulkDialogAction("delete-selected");
-  }, []);
+  }, [isBulkMutating, selectedJobIds]);
 
-  const confirmBulkDeleteSelected = useCallback(() => {
-    for (const jobId of selectedJobIds) {
-      void removeApplication(jobId);
+  const confirmBulkDeleteSelected = useCallback(async () => {
+    if (selectedJobIds.size === 0 || isBulkMutating) return;
+
+    setIsBulkMutating(true);
+    try {
+      const results = await Promise.all(
+        [...selectedJobIds].map(async (jobId) => ({
+          jobId,
+          ok: await removeApplication(jobId),
+        }))
+      );
+      const failedIds = results.filter((entry) => !entry.ok).map((entry) => entry.jobId);
+      const successIds = results.filter((entry) => entry.ok).map((entry) => entry.jobId);
+
+      if (successIds.length > 0 && detailsJobId && successIds.includes(detailsJobId)) {
+        setDetailsJobId(null);
+      }
+
+      setSelectedJobIds(new Set(failedIds));
+      setBulkDialogAction(null);
+
+      if (successIds.length === results.length) {
+        toast.success(`${formatApplicationsCount(successIds.length)} supprimée${successIds.length > 1 ? "s" : ""}.`);
+        return;
+      }
+
+      if (successIds.length > 0) {
+        toast.error("Suppression partielle de la sélection.", {
+          description: `${formatApplicationsCount(successIds.length)} supprimée${successIds.length > 1 ? "s" : ""}, ${formatApplicationsCount(failedIds.length)} en échec.`,
+        });
+        return;
+      }
+
+      notifyActionError("Impossible de supprimer la sélection.");
+    } finally {
+      setIsBulkMutating(false);
     }
-    setSelectedJobIds(new Set());
-    setBulkDialogAction(null);
-  }, [removeApplication, selectedJobIds]);
+  }, [detailsJobId, isBulkMutating, notifyActionError, removeApplication, selectedJobIds]);
 
   const openDisableFollowUpDialog = useCallback(() => {
+    if (selectedFollowUpCount === 0 || isBulkMutating) return;
     setBulkDialogAction("disable-followup-selected");
-  }, []);
+  }, [isBulkMutating, selectedFollowUpCount]);
 
   const openEnableFollowUpDialog = useCallback(() => {
+    if (selectedFollowUpDisabledCount === 0 || isBulkMutating) return;
     setBulkDialogAction("enable-followup-selected");
-  }, []);
+  }, [isBulkMutating, selectedFollowUpDisabledCount]);
 
   const openChangeStatusDialog = useCallback((status: ApplicationStatus) => {
+    if (selectedJobIds.size === 0 || isBulkMutating) return;
     setBulkTargetStatus(status);
     setBulkDialogAction("change-status-selected");
-  }, []);
+  }, [isBulkMutating, selectedJobIds]);
 
-  const disableFollowUpForSelected = useCallback(() => {
+  const disableFollowUpForSelected = useCallback(async () => {
+    if (isBulkMutating) return;
+
     const applicationsToDisable = applications.filter(
       (app) =>
         selectedJobIds.has(app.job.id) &&
@@ -330,25 +372,51 @@ export function useApplicationsPageState() {
         shouldShowFollowUpDetails(app.status)
     );
 
-    for (const app of applicationsToDisable) {
-      void updateFollowUpSettings(app.job.id, {
-        enabled: false,
-        dueAt: app.followUpDueAt,
-        status: app.status,
-      });
+    if (applicationsToDisable.length === 0) {
+      setBulkDialogAction(null);
+      notifyActionError("Aucune candidature avec relance active dans la sélection.");
+      return;
     }
 
-    toast.success(
-      applicationsToDisable.length > 0
-        ? `Relance désactivée pour ${applicationsToDisable.length} candidature${applicationsToDisable.length > 1 ? "s" : ""}.`
-        : "Aucune candidature avec relance active dans la sélection."
-    );
+    setIsBulkMutating(true);
+    try {
+      const results = await Promise.all(
+        applicationsToDisable.map(async (app) => ({
+          jobId: app.job.id,
+          ok: await updateFollowUpSettings(app.job.id, {
+            enabled: false,
+            dueAt: app.followUpDueAt,
+            status: app.status,
+          }),
+        }))
+      );
+      const failedIds = results.filter((entry) => !entry.ok).map((entry) => entry.jobId);
+      const successCount = results.length - failedIds.length;
 
-    setSelectedJobIds(new Set());
-    setBulkDialogAction(null);
-  }, [applications, selectedJobIds, updateFollowUpSettings]);
+      setSelectedJobIds(new Set(failedIds));
+      setBulkDialogAction(null);
 
-  const enableFollowUpForSelected = useCallback(() => {
+      if (successCount === results.length) {
+        toast.success(`Relance désactivée pour ${formatApplicationsCount(successCount)}.`);
+        return;
+      }
+
+      if (successCount > 0) {
+        toast.error("Désactivation partielle des relances.", {
+          description: `${formatApplicationsCount(successCount)} mise${successCount > 1 ? "s" : ""} à jour, ${formatApplicationsCount(failedIds.length)} en échec.`,
+        });
+        return;
+      }
+
+      notifyActionError("Impossible de désactiver les relances sélectionnées.");
+    } finally {
+      setIsBulkMutating(false);
+    }
+  }, [applications, isBulkMutating, notifyActionError, selectedJobIds, updateFollowUpSettings]);
+
+  const enableFollowUpForSelected = useCallback(async () => {
+    if (isBulkMutating) return;
+
     const applicationsToEnable = applications.filter(
       (app) =>
         selectedJobIds.has(app.job.id) &&
@@ -356,44 +424,95 @@ export function useApplicationsPageState() {
         shouldShowFollowUpDetails(app.status)
     );
 
-    for (const app of applicationsToEnable) {
-      void updateFollowUpSettings(app.job.id, {
-        enabled: true,
-        dueAt: app.followUpDueAt,
-        status: app.status,
-      });
+    if (applicationsToEnable.length === 0) {
+      setBulkDialogAction(null);
+      notifyActionError("Aucune candidature avec relance désactivée dans la sélection.");
+      return;
     }
 
-    toast.success(
-      applicationsToEnable.length > 0
-        ? `Relance réactivée pour ${applicationsToEnable.length} candidature${applicationsToEnable.length > 1 ? "s" : ""}.`
-        : "Aucune candidature avec relance désactivée dans la sélection."
-    );
+    setIsBulkMutating(true);
+    try {
+      const results = await Promise.all(
+        applicationsToEnable.map(async (app) => ({
+          jobId: app.job.id,
+          ok: await updateFollowUpSettings(app.job.id, {
+            enabled: true,
+            dueAt: app.followUpDueAt,
+            status: app.status,
+          }),
+        }))
+      );
+      const failedIds = results.filter((entry) => !entry.ok).map((entry) => entry.jobId);
+      const successCount = results.length - failedIds.length;
 
-    setSelectedJobIds(new Set());
-    setBulkDialogAction(null);
-  }, [applications, selectedJobIds, updateFollowUpSettings]);
+      setSelectedJobIds(new Set(failedIds));
+      setBulkDialogAction(null);
 
-  const confirmBulkChangeStatus = useCallback(() => {
+      if (successCount === results.length) {
+        toast.success(`Relance réactivée pour ${formatApplicationsCount(successCount)}.`);
+        return;
+      }
+
+      if (successCount > 0) {
+        toast.error("Réactivation partielle des relances.", {
+          description: `${formatApplicationsCount(successCount)} mise${successCount > 1 ? "s" : ""} à jour, ${formatApplicationsCount(failedIds.length)} en échec.`,
+        });
+        return;
+      }
+
+      notifyActionError("Impossible de réactiver les relances sélectionnées.");
+    } finally {
+      setIsBulkMutating(false);
+    }
+  }, [applications, isBulkMutating, notifyActionError, selectedJobIds, updateFollowUpSettings]);
+
+  const confirmBulkChangeStatus = useCallback(async () => {
+    if (isBulkMutating) return;
     if (!bulkTargetStatus) return;
 
-    for (const jobId of selectedJobIds) {
-      void patchApplication(jobId, {
-        status: bulkTargetStatus,
-        interviewAt: null,
-        interviewDetails: null,
-      });
+    if (bulkTargetStatus === "interview") {
+      setBulkDialogAction(null);
+      setBulkTargetStatus(null);
+      notifyActionError("Le statut Entretien doit être défini avec une date.");
+      return;
     }
 
-    const count = selectedJobIds.size;
-    toast.success(
-      `Statut mis à jour pour ${count} candidature${count > 1 ? "s" : ""}.`
-    );
+    setIsBulkMutating(true);
+    try {
+      const results = await Promise.all(
+        [...selectedJobIds].map(async (jobId) => ({
+          jobId,
+          ok: await patchApplication(jobId, {
+            status: bulkTargetStatus,
+            interviewAt: null,
+            interviewDetails: null,
+          }),
+        }))
+      );
+      const failedIds = results.filter((entry) => !entry.ok).map((entry) => entry.jobId);
+      const successCount = results.length - failedIds.length;
 
-    setSelectedJobIds(new Set());
-    setBulkDialogAction(null);
-    setBulkTargetStatus(null);
-  }, [bulkTargetStatus, patchApplication, selectedJobIds]);
+      setSelectedJobIds(new Set(failedIds));
+      setBulkDialogAction(null);
+      setBulkTargetStatus(null);
+
+      if (successCount === results.length) {
+        toast.success(`Statut mis à jour pour ${formatApplicationsCount(successCount)}.`);
+        return;
+      }
+
+      if (successCount > 0) {
+        toast.error("Mise à jour partielle du statut.", {
+          description: `${formatApplicationsCount(successCount)} mise${successCount > 1 ? "s" : ""} à jour, ${formatApplicationsCount(failedIds.length)} en échec.`,
+        });
+        return;
+      }
+
+      notifyActionError("Impossible de modifier le statut de la sélection.");
+    } finally {
+      setIsBulkMutating(false);
+    }
+  }, [bulkTargetStatus, isBulkMutating, notifyActionError, patchApplication, selectedJobIds]);
 
   const submitManualForm = useCallback(async () => {
     if (!manualForm.company.trim() || !manualForm.title.trim()) return;
@@ -522,6 +641,7 @@ export function useApplicationsPageState() {
     selectedFollowUpDisabledCount,
     bulkDialogAction,
     bulkTargetStatus,
+    isBulkMutating,
     isCreateOpen,
     detailsJobId,
     deleteJobId,

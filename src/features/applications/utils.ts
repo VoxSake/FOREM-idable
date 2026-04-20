@@ -14,6 +14,10 @@ export const APPLICATION_STATUS_OPTIONS: Array<{ value: ApplicationStatus; label
   { value: "rejected", label: "Refusée" },
 ];
 
+export const BULK_APPLICATION_STATUS_OPTIONS = APPLICATION_STATUS_OPTIONS.filter(
+  (option) => option.value !== "interview"
+);
+
 export function getApplicationsDueSummary(applications: JobApplication[]) {
   const companyNames = applications
     .filter((entry) => isApplicationFollowUpDue(entry))

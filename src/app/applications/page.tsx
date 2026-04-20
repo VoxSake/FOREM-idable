@@ -162,6 +162,7 @@ export default function ApplicationsPage() {
         selectedCount={page.selectedJobIds.size}
         selectedFollowUpCount={page.selectedFollowUpCount}
         selectedFollowUpDisabledCount={page.selectedFollowUpDisabledCount}
+        isBusy={page.isBulkMutating}
         isAllSelected={page.isAllSelected}
         onToggleSelectAll={page.toggleSelectAll}
         onClearSelection={page.clearSelection}
@@ -261,11 +262,13 @@ export default function ApplicationsPage() {
       <BulkActionsDialog
         open={page.bulkDialogAction === "delete-selected"}
         onOpenChange={(open) => {
-          if (!open) page.setBulkDialogAction(null);
+          if (!open && !page.isBulkMutating) page.setBulkDialogAction(null);
         }}
         title="Supprimer la sélection ?"
         description={`Cette action retirera ${page.selectedJobIds.size} candidature${page.selectedJobIds.size > 1 ? "s" : ""} de votre suivi.`}
         confirmLabel="Supprimer"
+        pendingLabel="Suppression..."
+        isPending={page.isBulkMutating}
         variant="destructive"
         onConfirm={page.confirmBulkDeleteSelected}
       />
@@ -273,29 +276,33 @@ export default function ApplicationsPage() {
       <BulkActionsDialog
         open={page.bulkDialogAction === "disable-followup-selected"}
         onOpenChange={(open) => {
-          if (!open) page.setBulkDialogAction(null);
+          if (!open && !page.isBulkMutating) page.setBulkDialogAction(null);
         }}
         title="Désactiver les relances ?"
         description={`Les relances automatiques seront désactivées pour ${page.selectedFollowUpCount} candidature${page.selectedFollowUpCount > 1 ? "s" : ""}. Vous pourrez les réactiver individuellement depuis le détail de chaque candidature.`}
         confirmLabel="Désactiver"
+        pendingLabel="Désactivation..."
+        isPending={page.isBulkMutating}
         onConfirm={page.disableFollowUpForSelected}
       />
 
       <BulkActionsDialog
         open={page.bulkDialogAction === "enable-followup-selected"}
         onOpenChange={(open) => {
-          if (!open) page.setBulkDialogAction(null);
+          if (!open && !page.isBulkMutating) page.setBulkDialogAction(null);
         }}
         title="Réactiver les relances ?"
         description={`Les relances automatiques seront réactivées pour ${page.selectedFollowUpDisabledCount} candidature${page.selectedFollowUpDisabledCount > 1 ? "s" : ""}.`}
         confirmLabel="Réactiver"
+        pendingLabel="Réactivation..."
+        isPending={page.isBulkMutating}
         onConfirm={page.enableFollowUpForSelected}
       />
 
       <BulkActionsDialog
         open={page.bulkDialogAction === "change-status-selected"}
         onOpenChange={(open) => {
-          if (!open) {
+          if (!open && !page.isBulkMutating) {
             page.setBulkDialogAction(null);
             page.setBulkTargetStatus(null);
           }
@@ -303,6 +310,8 @@ export default function ApplicationsPage() {
         title="Changer le statut ?"
         description={`Le statut de ${page.selectedJobIds.size} candidature${page.selectedJobIds.size > 1 ? "s" : ""} sera modifié en « ${page.bulkTargetStatus ? applicationStatusLabel(page.bulkTargetStatus) : ""} ».`}
         confirmLabel="Confirmer"
+        pendingLabel="Mise à jour..."
+        isPending={page.isBulkMutating}
         onConfirm={page.confirmBulkChangeStatus}
       />
     </div>
