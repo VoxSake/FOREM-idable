@@ -17,7 +17,6 @@ import {
   replaceGroupIdInDashboard,
   setGroupManagerInDashboard,
   updateManagedUserInDashboard,
-  updateUserRoleInDashboard,
 } from "@/features/coach/dashboardState";
 import { ApiKeySummary } from "@/types/externalApi";
 import { JobApplication } from "@/types/application";
@@ -47,7 +46,6 @@ export function useCoachDashboard() {
   const [undoAction, setUndoAction] = useState<CoachUndoAction | null>(null);
   const [groupName, setGroupName] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
-  const [isPromoteCoachOpen, setIsPromoteCoachOpen] = useState(false);
   const [memberPickerGroupId, setMemberPickerGroupId] = useState<number | null>(null);
   const [coachPickerGroupId, setCoachPickerGroupId] = useState<number | null>(null);
   const [managerPickerGroupId, setManagerPickerGroupId] = useState<number | null>(null);
@@ -114,13 +112,6 @@ export function useCoachDashboard() {
     setDashboard((current) => {
       if (!current) return current;
       return setGroupManagerInDashboard(current, groupId, coachId);
-    });
-  };
-
-  const updateUserRoleLocally = (userId: number, nextRole: "user" | "coach" | "admin") => {
-    setDashboard((current) => {
-      if (!current) return current;
-      return updateUserRoleInDashboard(current, userId, nextRole);
     });
   };
 
@@ -248,8 +239,6 @@ export function useCoachDashboard() {
     groupedUsers,
     recentActivity,
     importTargetUser,
-    promotableUsers,
-    managedCoaches,
     canEditSelectedUser,
     canManageSelectedUserApiKeys,
     totalApplications,
@@ -271,7 +260,6 @@ export function useCoachDashboard() {
 
   const coachAdminActions = useCoachAdminActions({
     user,
-    dashboard,
     selectedUser,
     selectedUserId,
     apiKeysTarget,
@@ -284,13 +272,11 @@ export function useCoachDashboard() {
     setFeedback,
     setIsApiKeysLoading,
     setIsDeletingUser,
-    setIsPromoteCoachOpen,
     setManagedApiKeys,
     setRevokeApiKeyTarget,
     setSelectedUserId,
     setUndoAction,
     updateManagedUserLocally,
-    updateUserRoleLocally,
   });
 
   const coachUtilities = useCoachUtilities({
@@ -305,11 +291,6 @@ export function useCoachDashboard() {
 
     if (undoAction.type === "remove-membership") {
       await coachGroupActions.restoreMembership(undoAction);
-      return;
-    }
-
-    if (undoAction.type === "demote-coach") {
-      await coachAdminActions.restoreCoachRole(undoAction);
     }
   };
 
@@ -325,8 +306,6 @@ export function useCoachDashboard() {
     setGroupName,
     isCreateGroupOpen,
     setIsCreateGroupOpen,
-    isPromoteCoachOpen,
-    setIsPromoteCoachOpen,
     memberPickerGroupId,
     setMemberPickerGroupId,
     coachPickerGroupId,
@@ -372,8 +351,6 @@ export function useCoachDashboard() {
     assignableCoaches,
     assignableManagers,
     groupedUsers,
-    promotableUsers,
-    managedCoaches,
     recentActivity,
     totalApplications,
     totalInterviews,
@@ -382,13 +359,11 @@ export function useCoachDashboard() {
     totalRejected,
     loadDashboard,
     createGroup: coachGroupActions.createGroup,
-    promoteCoach: coachAdminActions.promoteCoach,
     addMember: coachGroupActions.addMember,
     addCoach: coachGroupActions.addCoach,
     setGroupManager: coachGroupActions.setGroupManager,
     removeMember: coachGroupActions.removeMember,
     removeAssignedCoach: coachGroupActions.removeAssignedCoach,
-    demoteCoach: coachAdminActions.demoteCoach,
     deleteGroup: coachGroupActions.deleteGroup,
     updateManagedUser: coachAdminActions.updateManagedUser,
     openManagedUserApiKeys: coachAdminActions.openManagedUserApiKeys,

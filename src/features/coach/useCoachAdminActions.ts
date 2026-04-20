@@ -9,12 +9,11 @@ import {
   CoachUndoAction,
 } from "@/features/coach/types";
 import { ApiKeySummary } from "@/types/externalApi";
-import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
+import { CoachUserSummary } from "@/types/coach";
 import { AuthUser } from "@/types/auth";
 
 export function useCoachAdminActions(input: {
   user: AuthUser | null;
-  dashboard: CoachDashboardData | null;
   selectedUser: CoachUserSummary | null;
   selectedUserId: number | null;
   apiKeysTarget: CoachApiKeysTarget | null;
@@ -27,7 +26,6 @@ export function useCoachAdminActions(input: {
   setFeedback: Dispatch<SetStateAction<string | null>>;
   setIsApiKeysLoading: Dispatch<SetStateAction<boolean>>;
   setIsDeletingUser: Dispatch<SetStateAction<boolean>>;
-  setIsPromoteCoachOpen: Dispatch<SetStateAction<boolean>>;
   setManagedApiKeys: Dispatch<SetStateAction<ApiKeySummary[]>>;
   setRevokeApiKeyTarget: Dispatch<SetStateAction<CoachRevokeApiKeyTarget | null>>;
   setSelectedUserId: Dispatch<SetStateAction<number | null>>;
@@ -36,86 +34,7 @@ export function useCoachAdminActions(input: {
     userId: number,
     patch: Pick<CoachUserSummary, "firstName" | "lastName">
   ) => void;
-  updateUserRoleLocally: (userId: number, nextRole: "user" | "coach" | "admin") => void;
 }) {
-  const promoteCoach = useCallback(
-    async (userId: number, options?: { preserveDialog?: boolean; feedback?: string | null }) => {
-      input.updateUserRoleLocally(userId, "coach");
-      const response = await fetch("/api/admin/coaches", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-
-      if (!response.ok) {
-        input.updateUserRoleLocally(userId, "user");
-        input.setFeedback("Promotion coach impossible.");
-        return false;
-      }
-
-      input.setUndoAction(null);
-      if (!options?.preserveDialog) {
-        input.setIsPromoteCoachOpen(false);
-      }
-      if (options?.feedback !== null) {
-        input.setFeedback(options?.feedback ?? "Utilisateur promu coach.");
-      }
-      return true;
-    },
-    [input]
-  );
-
-  const demoteCoach = useCallback(
-    async (userId: number) => {
-      const targetUser = input.dashboard?.users.find((entry) => entry.id === userId);
-      if (!targetUser || (targetUser.role !== "coach" && targetUser.role !== "admin")) {
-        input.setFeedback("Utilisateur introuvable.");
-        return;
-      }
-
-      input.updateUserRoleLocally(userId, "user");
-      const response = await fetch(`/api/admin/coaches?userId=${userId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        input.updateUserRoleLocally(userId, targetUser.role);
-        input.setFeedback("Retrait du rôle coach impossible.");
-        return;
-      }
-
-      input.setUndoAction({
-        type: "demote-coach",
-        label: "Retrait du rôle coach effectué.",
-        userId,
-        previousRole: targetUser.role,
-      });
-      input.setFeedback("Rôle coach retiré.");
-    },
-    [input]
-  );
-
-  const restoreCoachRole = useCallback(
-    async (undoAction: Extract<CoachUndoAction, { type: "demote-coach" }>) => {
-      input.updateUserRoleLocally(undoAction.userId, undoAction.previousRole);
-      const restored = await promoteCoach(undoAction.userId, {
-        preserveDialog: true,
-        feedback: null,
-      });
-
-      if (!restored) {
-        input.updateUserRoleLocally(undoAction.userId, "user");
-        input.setFeedback("Impossible d'annuler le retrait du rôle coach.");
-        return false;
-      }
-
-      input.setUndoAction(null);
-      input.setFeedback("Retrait du rôle coach annulé.");
-      return true;
-    },
-    [input, promoteCoach]
-  );
-
   const updateManagedUser = useCallback(
     async (
       target: { userId: number; email: string },
@@ -235,10 +154,7 @@ export function useCoachAdminActions(input: {
 
   return {
     deleteUser,
-    demoteCoach,
     openManagedUserApiKeys,
-    promoteCoach,
-    restoreCoachRole,
     revokeManagedApiKey,
     updateManagedUser,
   };

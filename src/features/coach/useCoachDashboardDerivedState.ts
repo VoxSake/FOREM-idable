@@ -98,15 +98,6 @@ export function useCoachDashboardDerivedState({
     [dashboard, importTargetUserId]
   );
 
-  const promotableUsers = useMemo(
-    () => dashboard?.users.filter((entry) => entry.role === "user") ?? [],
-    [dashboard?.users]
-  );
-  const managedCoaches = useMemo(
-    () => dashboard?.users.filter((entry) => entry.role === "coach") ?? [],
-    [dashboard?.users]
-  );
-
   const canEditSelectedUser = useMemo(() => {
     if (!selectedUser || !user) return false;
     if (user.role === "admin") return true;
@@ -142,8 +133,6 @@ export function useCoachDashboardDerivedState({
     groupedUsers,
     recentActivity,
     importTargetUser,
-    promotableUsers,
-    managedCoaches,
     canEditSelectedUser,
     canManageSelectedUserApiKeys,
     totalApplications,

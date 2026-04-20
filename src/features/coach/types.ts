@@ -75,12 +75,6 @@ export type CoachUndoAction =
       groupId: number;
       userId: number;
       groupName: string;
-    }
-  | {
-      type: "demote-coach";
-      label: string;
-      userId: number;
-      previousRole: "coach" | "admin";
     };
 
 export type CoachMemberPickerGroup = CoachGroupSummary;
