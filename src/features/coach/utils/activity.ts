@@ -101,6 +101,7 @@ export interface CoachPriorityItem {
   summary: string;
   detail: string;
   timestamp: string | null;
+  hasAcceptedHint?: string;
 }
 
 export interface CoachPrioritySection {
@@ -173,6 +174,7 @@ export function buildCoachPrioritySections(
             ? `Plus ancienne le ${formatCoachDate(new Date(oldestDueTime).toISOString())}`
             : "Relance due à vérifier",
         timestamp: oldestDueTime ? new Date(oldestDueTime).toISOString() : null,
+        hasAcceptedHint: user.acceptedCount > 0 ? "A trouvé un stage" : undefined,
       } satisfies CoachPriorityItem;
     })
     .filter((item): item is CoachPriorityItem => item !== null)
@@ -239,7 +241,13 @@ export function buildCoachPrioritySections(
     .sort(comparePriorityItemsByTimestamp);
 
   const inactiveItems = beneficiaryUsers
-    .filter((user) => user.applicationCount > 0)
+    .filter((user) => {
+      if (user.applicationCount === 0) return false;
+      if (user.acceptedCount > 0) return false;
+      const activeCount = user.inProgressCount + user.dueCount + user.interviewCount;
+      if (activeCount === 0) return false;
+      return true;
+    })
     .map<CoachPriorityItem | null>((user) => {
       const latestActivityTime = parseTimestamp(user.latestActivityAt);
       if (latestActivityTime !== null && differenceInCalendarDays(now, new Date(latestActivityTime)) < 14) {

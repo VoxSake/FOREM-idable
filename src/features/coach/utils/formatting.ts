@@ -69,6 +69,15 @@ export function isCoachUserInactive(user: CoachUserSummary, now = new Date()) {
     return false;
   }
 
+  if (user.acceptedCount > 0) {
+    return false;
+  }
+
+  const activeCount = user.inProgressCount + user.dueCount + user.interviewCount;
+  if (activeCount === 0) {
+    return false;
+  }
+
   const latestActivity = parseTimestamp(user.latestActivityAt);
   if (latestActivity === null) {
     return true;

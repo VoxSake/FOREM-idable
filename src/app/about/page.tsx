@@ -21,6 +21,15 @@ import {
 
 const PRODUCT_UPDATES = [
   {
+    month: "Avril 2026",
+    items: [
+      "Barre d'actions en masse flottante sur les candidatures: sélection multiple, tout sélectionner/désélectionner, désactiver ou réactiver les relances, changer le statut en masse et supprimer — avec confirmation via AlertDialog shadcn pour chaque action destructrice.",
+      "Les bénéficiaires ayant trouvé un stage (au moins une candidature acceptée) n'apparaissent plus dans les «Suivis à relancer» de la vue coach — ils n'ont plus besoin d'être relancés.",
+      "Les bénéficiaires dont toutes les candidatures sont clôturées (uniquement des refus, aucune candidature active) sont exclus des «Suivis à relancer» — relancer n'a plus de sens.",
+      "Badge «A trouvé un stage» dans les priorités coach pour les bénéficiaires apparaissant dans les relances à traiter tout en ayant une candidature acceptée.",
+    ],
+  },
+  {
     month: "Mars 2026",
     items: [
       "Le pack conformité est désormais outillé de bout en bout: export JSON des données utilisateur, demande de suppression avec revue admin, legal holds, disclosure logs, purge minimale planifiable et section admin dédiée avec sélecteurs assistés pour cibler utilisateurs, candidatures et conversations.",

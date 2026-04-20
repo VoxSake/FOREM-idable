@@ -90,29 +90,184 @@ describe("buildCoachPrioritySections", () => {
     expect(sections[1].items[0]?.badgeLabel).toBe("Acme");
   });
 
-  it("flags inactive beneficiaries with applications after 14 days", () => {
+  it("shows hasAcceptedHint when a beneficiary with due items also has an accepted application", () => {
     const users = [
       makeUser({
-        id: 2,
-        firstName: "Bruno",
-        latestActivityAt: "2026-02-20T09:00:00.000Z",
-        applicationCount: 3,
+        id: 10,
+        firstName: "Diana",
+        dueCount: 1,
+        acceptedCount: 1,
+        inProgressCount: 1,
+        latestActivityAt: "2026-03-10T10:00:00.000Z",
         applications: [
           {
             job: {
-              id: "job-3",
-              title: "Ops",
-              company: "Beta",
-              location: "Liege",
+              id: "job-10",
+              title: "Dev Senior",
+              company: "Omega",
+              location: "Anvers",
               contractType: "CDI",
               publicationDate: "2026-02-01T00:00:00.000Z",
               url: "#",
               source: "forem",
             },
             appliedAt: "2026-02-01T09:00:00.000Z",
-            followUpDueAt: "2026-02-08T09:00:00.000Z",
+            followUpDueAt: "2026-03-12T00:00:00.000Z",
+            followUpEnabled: true,
+            status: "follow_up",
+            updatedAt: "2026-03-10T10:00:00.000Z",
+          },
+        ],
+      }),
+    ];
+
+    const sections = buildCoachPrioritySections(users, new Date("2026-03-18T12:00:00.000Z"));
+
+    expect(sections[0].total).toBe(1);
+    expect(sections[0].items[0]?.hasAcceptedHint).toBe("A trouvé un stage");
+  });
+
+  it("does not show hasAcceptedHint when acceptedCount is 0", () => {
+    const users = [
+      makeUser({
+        id: 11,
+        firstName: "Eve",
+        dueCount: 1,
+        acceptedCount: 0,
+        inProgressCount: 1,
+        latestActivityAt: "2026-03-10T10:00:00.000Z",
+        applications: [
+          {
+            job: {
+              id: "job-11",
+              title: "Dev Junior",
+              company: "Sigma",
+              location: "Gand",
+              contractType: "CDI",
+              publicationDate: "2026-03-01T00:00:00.000Z",
+              url: "#",
+              source: "forem",
+            },
+            appliedAt: "2026-03-01T09:00:00.000Z",
+            followUpDueAt: "2026-03-12T00:00:00.000Z",
+            followUpEnabled: true,
+            status: "follow_up",
+            updatedAt: "2026-03-10T10:00:00.000Z",
+          },
+        ],
+      }),
+    ];
+
+    const sections = buildCoachPrioritySections(users, new Date("2026-03-18T12:00:00.000Z"));
+
+    expect(sections[0].total).toBe(1);
+    expect(sections[0].items[0]?.hasAcceptedHint).toBeUndefined();
+  });
+
+  it("excludes beneficiaries with accepted applications from inactive section", () => {
+    const users = [
+      makeUser({
+        id: 5,
+        firstName: "Fabienne",
+        acceptedCount: 1,
+        inProgressCount: 0,
+        dueCount: 0,
+        interviewCount: 0,
+        latestActivityAt: "2026-02-01T09:00:00.000Z",
+        applicationCount: 2,
+        applications: [
+          {
+            job: {
+              id: "job-5a",
+              title: "Stage",
+              company: "Alpha",
+              location: "Bruxelles",
+              contractType: "Stage",
+              publicationDate: "2026-01-01T00:00:00.000Z",
+              url: "#",
+              source: "forem",
+            },
+            appliedAt: "2026-01-01T09:00:00.000Z",
+            followUpDueAt: "2026-01-15T09:00:00.000Z",
+            followUpEnabled: false,
+            status: "accepted",
+            updatedAt: "2026-02-01T09:00:00.000Z",
+          },
+        ],
+      }),
+    ];
+
+    const sections = buildCoachPrioritySections(users, new Date("2026-03-18T12:00:00.000Z"));
+
+    expect(sections[2].total).toBe(0);
+  });
+
+  it("excludes beneficiaries with only closed applications from inactive section", () => {
+    const users = [
+      makeUser({
+        id: 6,
+        firstName: "Gauthier",
+        acceptedCount: 0,
+        rejectedCount: 2,
+        inProgressCount: 0,
+        dueCount: 0,
+        interviewCount: 0,
+        latestActivityAt: "2026-02-01T09:00:00.000Z",
+        applicationCount: 2,
+        applications: [
+          {
+            job: {
+              id: "job-6a",
+              title: "Ops",
+              company: "Beta",
+              location: "Liege",
+              contractType: "CDI",
+              publicationDate: "2026-01-01T00:00:00.000Z",
+              url: "#",
+              source: "forem",
+            },
+            appliedAt: "2026-01-01T09:00:00.000Z",
+            followUpDueAt: "2026-01-15T09:00:00.000Z",
             followUpEnabled: false,
             status: "rejected",
+            updatedAt: "2026-02-01T09:00:00.000Z",
+          },
+        ],
+      }),
+    ];
+
+    const sections = buildCoachPrioritySections(users, new Date("2026-03-18T12:00:00.000Z"));
+
+    expect(sections[2].total).toBe(0);
+  });
+
+  it("includes inactive beneficiaries with active applications but no acceptances", () => {
+    const users = [
+      makeUser({
+        id: 7,
+        firstName: "Hugo",
+        acceptedCount: 0,
+        inProgressCount: 2,
+        dueCount: 0,
+        interviewCount: 0,
+        latestActivityAt: "2026-02-20T09:00:00.000Z",
+        applicationCount: 3,
+        applications: [
+          {
+            job: {
+              id: "job-7a",
+              title: "Data",
+              company: "Gamma",
+              location: "Mons",
+              contractType: "CDI",
+              publicationDate: "2026-02-01T00:00:00.000Z",
+              url: "#",
+              source: "forem",
+            },
+            appliedAt: "2026-02-01T09:00:00.000Z",
+            followUpDueAt: "2026-02-15T09:00:00.000Z",
+            followUpEnabled: true,
+            status: "in_progress",
             updatedAt: "2026-02-20T09:00:00.000Z",
           },
         ],
@@ -137,6 +292,36 @@ describe("coach activity helpers", () => {
         new Date("2026-03-18T12:00:00.000Z")
       )
     ).toBe(true);
+  });
+
+  it("does not mark beneficiaries as inactive if they have an accepted application", () => {
+    expect(
+      isCoachUserInactive(
+        makeUser({
+          latestActivityAt: "2026-02-01T09:00:00.000Z",
+          applicationCount: 2,
+          acceptedCount: 1,
+        }),
+        new Date("2026-03-18T12:00:00.000Z")
+      )
+    ).toBe(false);
+  });
+
+  it("does not mark beneficiaries as inactive if they have no active applications", () => {
+    expect(
+      isCoachUserInactive(
+        makeUser({
+          latestActivityAt: "2026-02-01T09:00:00.000Z",
+          applicationCount: 2,
+          acceptedCount: 0,
+          rejectedCount: 2,
+          inProgressCount: 0,
+          dueCount: 0,
+          interviewCount: 0,
+        }),
+        new Date("2026-03-18T12:00:00.000Z")
+      )
+    ).toBe(false);
   });
 
   it("builds recent activity entries ordered from newest to oldest", () => {

@@ -94,15 +94,18 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                           style={{ animationDelay: `${index * 40}ms` }}
                           onClick={() => onOpenUser(item.userId, item.jobId)}
                         >
-                          <div className="flex min-w-0 flex-col gap-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="truncate font-medium text-foreground">
-                                {item.userName}
-                              </p>
-                              <Badge variant="outline" className="max-w-[10rem] truncate" title={item.badgeTitle ?? item.badgeLabel}>
-                                {item.badgeLabel}
-                              </Badge>
-                            </div>
+<div className="flex min-w-0 flex-col gap-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="truncate font-medium text-foreground">
+                                  {item.userName}
+                                </p>
+                                <Badge variant="outline" className="max-w-[10rem] truncate" title={item.badgeTitle ?? item.badgeLabel}>
+                                  {item.badgeLabel}
+                                </Badge>
+                                {item.hasAcceptedHint ? (
+                                  <Badge variant="success" className="text-xs">{item.hasAcceptedHint}</Badge>
+                                ) : null}
+                              </div>
                             <p className="text-sm text-muted-foreground">
                               {item.summary}
                             </p>
