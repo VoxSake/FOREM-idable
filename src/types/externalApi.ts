@@ -1,4 +1,4 @@
-import { ApplicationStatus, ContractType, JobApplication } from "@/types/application";
+import { ApplicationStatus, JobApplication } from "@/types/application";
 import { TrackingPhase } from "@/types/coach";
 import { UserRole } from "@/types/auth";
 
