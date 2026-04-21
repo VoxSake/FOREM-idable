@@ -487,7 +487,7 @@ export default function AccountPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 items-start lg:grid-cols-2">
               <ProfileSection
                 form={profileForm}
                 canSubmit={canSubmitProfile}

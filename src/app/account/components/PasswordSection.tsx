@@ -20,14 +20,14 @@ export function PasswordSection({
   onSubmit,
 }: PasswordSectionProps) {
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-4">
       <AccountSectionHeader
         icon={ShieldCheck}
         title="Sécurité"
         description="Changez le mot de passe de votre compte."
       />
       <form
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values);
         })}
