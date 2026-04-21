@@ -1,4 +1,5 @@
 import { addDays } from "date-fns";
+import { normalizeContractType } from "@/lib/contractType";
 import { inferApplicationSourceType, isManualJob } from "@/lib/applications/sourceType";
 import { parseStoredJobApplication } from "@/lib/server/applicationSchemas";
 import { db, ensureDatabase } from "@/lib/server/db";
@@ -43,7 +44,7 @@ function sanitizeJob(input: Job): Job {
     title: sanitizeText(input.title, "Sans intitulé"),
     company: sanitizeOptionalText(input.company),
     location: sanitizeText(input.location, "Non précisé"),
-    contractType: sanitizeText(input.contractType, "Non précisé"),
+    contractType: normalizeContractType(input.contractType),
     url: sanitizeUrl(input.url, "#"),
   };
 }

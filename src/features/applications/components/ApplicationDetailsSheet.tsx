@@ -36,6 +36,7 @@ import {
   shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
 import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
+import { ContractTypeSelect } from "@/components/jobs/ContractTypeSelect";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
 interface ApplicationDetailsSheetProps {
@@ -407,13 +408,13 @@ function OfferDetailsSection({
           </Field>
           <Field>
             <FieldLabel htmlFor="sheet-manual-contract-type">Type</FieldLabel>
-            <Input
+            <ContractTypeSelect
               id="sheet-manual-contract-type"
               value={manualDetailsForm.contractType}
-              onChange={(event) =>
+              onValueChange={(value) =>
                 onManualDetailsFormChange((current) => ({
                   ...current,
-                  contractType: event.target.value,
+                  contractType: value,
                 }))
               }
             />

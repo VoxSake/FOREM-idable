@@ -116,9 +116,10 @@ export function CoachDialogs({ page }: CoachDialogsProps) {
             : "Le groupe sera supprimé."
         }
         confirmLabel="Supprimer"
+        isPending={page.isDeletingGroup}
         onOpenChange={(open) => !open && page.setRemoveGroup(null)}
         onConfirm={() => {
-          if (!page.removeGroup) return;
+          if (!page.removeGroup || page.isDeletingGroup) return;
           void page.deleteGroup(page.removeGroup.groupId);
           page.setRemoveGroup(null);
         }}

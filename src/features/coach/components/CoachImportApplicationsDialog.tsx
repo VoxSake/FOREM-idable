@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Papa from "papaparse";
+import { normalizeContractType } from "@/lib/contractType";
 import { AlertCircleIcon, CheckCircle2Icon, Download, LoaderCircle, Upload } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -226,7 +227,7 @@ export function CoachImportApplicationsDialog({
     const mappedRows = rows
       .map((row) => ({
         company: row[mapping.company] ?? "",
-        contractType: mapping.contractType ? row[mapping.contractType] ?? "" : "",
+        contractType: mapping.contractType ? normalizeContractType(row[mapping.contractType]) : "",
         title: row[mapping.title] ?? "",
         location: mapping.location ? row[mapping.location] ?? "" : "",
         appliedAt: mapping.appliedAt ? row[mapping.appliedAt] ?? "" : "",

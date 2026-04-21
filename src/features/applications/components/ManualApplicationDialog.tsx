@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
+import { ContractTypeSelect } from "@/components/jobs/ContractTypeSelect";
 import { ApplicationStatus } from "@/types/application";
 
 export interface ManualApplicationFormState {
@@ -78,11 +79,10 @@ export function ManualApplicationDialog({
             </Field>
             <Field>
               <FieldLabel htmlFor="manual-application-contract-type">Type</FieldLabel>
-              <Input
+              <ContractTypeSelect
                 id="manual-application-contract-type"
                 value={form.contractType}
-                onChange={(event) => onFormChange({ ...form, contractType: event.target.value })}
-                placeholder="CDI, CDD, intérim..."
+                onValueChange={(value) => onFormChange({ ...form, contractType: value })}
               />
             </Field>
             <Field className="sm:col-span-2">

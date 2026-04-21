@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { addDays } from "date-fns";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { sortApplicationsByMostRecent } from "@/features/applications/utils";
+import { normalizeContractType } from "@/lib/contractType";
 import { ApplicationStatus, JobApplication, JobApplicationPatch } from "@/types/application";
 import { Job } from "@/types/job";
 
@@ -23,7 +24,7 @@ function buildManualJob(input: {
     title: input.title,
     company: input.company,
     location: input.location || "Non précisé",
-    contractType: input.contractType || "Non précisé",
+    contractType: normalizeContractType(input.contractType),
     publicationDate: appliedAt.toISOString(),
     url: input.url || "#",
     source: "forem",
@@ -226,7 +227,7 @@ export function useApplications() {
       job: {
         title: patch.title.trim(),
         company: patch.company.trim(),
-        contractType: patch.contractType.trim() || "Non précisé",
+        contractType: normalizeContractType(patch.contractType),
         location: patch.location.trim() || "Non précisé",
         url: patch.url.trim() || "#",
         publicationDate: currentJob.publicationDate,

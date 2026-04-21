@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeContractType } from "@/lib/contractType";
 import { Job } from "@/types/job";
 
 export const applicationStatusSchema = z.enum([
@@ -129,7 +130,7 @@ const jobInputSchema = z
     title: z.string().trim().min(1, "Intitulé requis."),
     company: z.string().optional(),
     location: z.string().trim().min(1, "Localisation requise."),
-    contractType: z.string().trim().min(1, "Type de contrat requis."),
+    contractType: z.string().trim().min(1, "Type de contrat requis.").transform(normalizeContractType),
     publicationDate: z.string().trim().min(1, "Date de publication requise."),
     url: z.string().trim().min(1, "Lien de l'offre requis."),
     description: z.string().optional(),

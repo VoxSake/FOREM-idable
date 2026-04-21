@@ -1,4 +1,5 @@
 import { PoolClient } from "pg";
+import { normalizeContractType } from "@/lib/contractType";
 import { inferApplicationSourceType } from "@/lib/applications/sourceType";
 import type { ApplicationSourceType } from "@/lib/applications/sourceType";
 import { formatCoachAuthorName } from "@/lib/coachNotes";
@@ -168,7 +169,7 @@ function buildJob(row: ApplicationRow): Job {
     title: row.title ?? rawPayload?.title ?? "Sans intitulé",
     company: row.company ?? rawPayload?.company,
     location: row.location ?? rawPayload?.location ?? "Non precise",
-    contractType: row.contract_type ?? rawPayload?.contractType ?? "Non precise",
+    contractType: normalizeContractType(row.contract_type ?? rawPayload?.contractType),
     publicationDate: toIsoOrNow(row.publication_date ?? rawPayload?.publicationDate ?? null),
     url: row.url ?? rawPayload?.url ?? "#",
     source: normalizeJobSource(row.provider ?? rawPayload?.source),

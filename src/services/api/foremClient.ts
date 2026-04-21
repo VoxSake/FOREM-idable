@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { appendForemTrackingParam } from "@/lib/forem";
+import { normalizeContractType } from "@/lib/contractType";
 import { Job } from '@/types/job';
 import { LocationEntry, locationCache } from '@/services/location/locationCache';
 
@@ -323,7 +324,7 @@ function mapForemJobToStandard(record: z.infer<typeof foremRecordSchema>): Job {
         title,
         company,
         location: locationString,
-        contractType: record.typecontrat || 'Non spécifié',
+        contractType: normalizeContractType(record.typecontrat),
         publicationDate: record.datedebutdiffusion || new Date().toISOString(),
         url,
         description: record.metier || '',

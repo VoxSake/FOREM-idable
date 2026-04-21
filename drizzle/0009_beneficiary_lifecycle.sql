@@ -13,5 +13,4 @@ CREATE INDEX user_tracking_phases_user_id_idx ON user_tracking_phases(user_id, c
 ALTER TABLE coach_groups ADD COLUMN archived_at TIMESTAMPTZ;
 CREATE INDEX coach_groups_archived_at_idx ON coach_groups(archived_at) WHERE archived_at IS NOT NULL;
 
-UPDATE application_jobs SET contract_type = 'STAGE';
-ALTER TABLE application_jobs ADD CONSTRAINT application_jobs_contract_type_check CHECK (contract_type IN ('STAGE', 'CDI', 'CDD', 'ALTERNANCE', 'INTERIM', 'FREELANCE', 'VIE', 'CONTRAT_PRO', 'AUTRE'));
+

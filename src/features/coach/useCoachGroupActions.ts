@@ -45,6 +45,7 @@ export function useCoachGroupActions(input: {
   setMemberPickerGroupId: Dispatch<SetStateAction<number | null>>;
   setUndoAction: Dispatch<SetStateAction<CoachUndoAction | null>>;
   setGroupManagerLocally: (groupId: number, coachId: number) => void;
+  setIsDeletingGroup: Dispatch<SetStateAction<boolean>>;
 }) {
   const createGroup = useCallback(async () => {
     const trimmedGroupName = input.groupName.trim();
@@ -245,7 +246,7 @@ export function useCoachGroupActions(input: {
 
   const deleteGroup = useCallback(
     async (groupId: number) => {
-      const previousDashboard = input.dashboard;
+      input.setIsDeletingGroup(true);
       input.removeGroupLocally(groupId);
       const response = await fetch(`/api/coach/groups?groupId=${groupId}`, {
         method: "DELETE",
@@ -254,14 +255,15 @@ export function useCoachGroupActions(input: {
       const data = (await response.json().catch(() => ({}))) as { error?: string };
 
       if (!response.ok) {
-        input.setDashboard(previousDashboard);
+        await input.loadDashboard();
         input.setFeedback(data.error || "Suppression du groupe impossible.");
+        input.setIsDeletingGroup(false);
         return;
       }
 
-      await input.loadDashboard({ preserveFeedback: true });
       input.setUndoAction(null);
       input.setFeedback("Groupe supprimé.");
+      input.setIsDeletingGroup(false);
     },
     [input]
   );

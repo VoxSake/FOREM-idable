@@ -67,6 +67,7 @@ export function useCoachDashboard() {
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
   const { phaseFilter, setPhaseFilter } = useCoachPhaseTabs();
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false);
 
   const applyApplicationUpdate = (userId: number, application: JobApplication) => {
     setDashboard((current) => {
@@ -228,6 +229,7 @@ export function useCoachDashboard() {
     setManagerPickerGroupId,
     setMemberPickerGroupId,
     setUndoAction,
+    setIsDeletingGroup,
   });
 
   const {
@@ -364,6 +366,7 @@ export function useCoachDashboard() {
     totalAccepted,
     totalRejected,
     phaseCounts,
+    isDeletingGroup,
     loadDashboard,
     createGroup: coachGroupActions.createGroup,
     addMember: coachGroupActions.addMember,
