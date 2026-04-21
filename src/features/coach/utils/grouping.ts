@@ -2,6 +2,7 @@ import {
   CoachGroupedUserGroup,
   CoachManagerPickerGroup,
   CoachMemberPickerGroup,
+  CoachPhaseFilter,
   CoachUserFilter,
 } from "@/features/coach/types";
 import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
@@ -74,6 +75,11 @@ function matchesFilter(user: CoachUserSummary, userFilter: CoachUserFilter) {
   }
 }
 
+function matchesPhase(user: CoachUserSummary, phaseFilter: CoachPhaseFilter) {
+  if (phaseFilter === "all") return true;
+  return user.trackingPhase === phaseFilter;
+}
+
 function sortMembers(members: CoachUserSummary[]) {
   return [...members].sort((left, right) => {
     if (right.dueCount !== left.dueCount) return right.dueCount - left.dueCount;
@@ -95,14 +101,18 @@ export function buildGroupedUsers(input: {
   users: CoachUserSummary[];
   normalizedSearch: string;
   userFilter: CoachUserFilter;
+  phaseFilter?: CoachPhaseFilter;
 }): CoachGroupedUserGroup[] {
-  const { groups, users, normalizedSearch, userFilter } = input;
+  const { groups, users, normalizedSearch, userFilter, phaseFilter = "all" } = input;
 
   const standardGroups = groups.map((group) => {
     const members = users.filter((entry) => group.members.some((member) => member.id === entry.id));
     const visibleMembers = sortMembers(
       members.filter(
-        (entry) => matchesSearch(entry, normalizedSearch) && matchesFilter(entry, userFilter)
+        (entry) =>
+          matchesSearch(entry, normalizedSearch) &&
+          matchesFilter(entry, userFilter) &&
+          matchesPhase(entry, phaseFilter)
       )
     );
 
@@ -112,14 +122,15 @@ export function buildGroupedUsers(input: {
       createdById: group.createdBy.id,
       createdByLabel: getCoachUserDisplayName(group.createdBy),
       managerCoachId: group.managerCoachId,
+      archivedAt: group.archivedAt,
       canAddMembers: true,
       canManageCoaches: true,
       kind: "standard" as const,
-      totalApplications: members.reduce((sum, entry) => sum + entry.applicationCount, 0),
-      totalInterviews: members.reduce((sum, entry) => sum + entry.interviewCount, 0),
-      totalDue: members.reduce((sum, entry) => sum + entry.dueCount, 0),
-      totalAccepted: members.reduce((sum, entry) => sum + entry.acceptedCount, 0),
-      totalRejected: members.reduce((sum, entry) => sum + entry.rejectedCount, 0),
+      totalApplications: visibleMembers.reduce((sum, entry) => sum + entry.applicationCount, 0),
+      totalInterviews: visibleMembers.reduce((sum, entry) => sum + entry.interviewCount, 0),
+      totalDue: visibleMembers.reduce((sum, entry) => sum + entry.dueCount, 0),
+      totalAccepted: visibleMembers.reduce((sum, entry) => sum + entry.acceptedCount, 0),
+      totalRejected: visibleMembers.reduce((sum, entry) => sum + entry.rejectedCount, 0),
       members: visibleMembers,
       coaches: group.coaches,
     };
@@ -130,7 +141,8 @@ export function buildGroupedUsers(input: {
       entry.role === "user" &&
       entry.groupIds.length === 0 &&
       matchesSearch(entry, normalizedSearch) &&
-      matchesFilter(entry, userFilter)
+      matchesFilter(entry, userFilter) &&
+      matchesPhase(entry, phaseFilter)
   );
   const allUngroupedMembers = users.filter(
     (entry) => entry.role === "user" && entry.groupIds.length === 0
@@ -143,6 +155,7 @@ export function buildGroupedUsers(input: {
       createdById: null,
       createdByLabel: null,
       managerCoachId: null,
+      archivedAt: null,
       canAddMembers: false,
       canManageCoaches: false,
       kind: "ungrouped",
@@ -157,6 +170,6 @@ export function buildGroupedUsers(input: {
   ];
 
   return [...standardGroups, ...syntheticGroups].filter(
-    (group) => group.members.length > 0 || (!normalizedSearch && userFilter === "all")
+    (group) => group.members.length > 0 || (!normalizedSearch && userFilter === "all" && phaseFilter === "all")
   );
 }

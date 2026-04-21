@@ -1,4 +1,5 @@
-import { ApplicationStatus, JobApplication } from "@/types/application";
+import { ApplicationStatus, ContractType, JobApplication } from "@/types/application";
+import { TrackingPhase } from "@/types/coach";
 import { UserRole } from "@/types/auth";
 
 export interface ApiKeySummary {
@@ -68,6 +69,7 @@ export interface ExternalApiUserSummary {
   lastName: string;
   fullName: string;
   role: UserRole;
+  trackingPhase: TrackingPhase;
   groupIds: number[];
   groupNames: string[];
   applicationCount: number;
@@ -96,6 +98,7 @@ export interface ExternalApiGroupSummary {
   id: number;
   name: string;
   createdAt: string;
+  archivedAt: string | null;
   createdBy: {
     id: number;
     email: string;

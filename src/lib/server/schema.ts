@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   role: text("role").$type<UserRole>().notNull().default("user"),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   lastCoachActionAt: timestamp("last_coach_action_at", { withTimezone: true }),
+  trackingPhase: text("tracking_phase").notNull().default("job_search"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -328,11 +329,13 @@ export const coachGroups = pgTable(
     managerCoachUserId: bigint("manager_coach_user_id", { mode: "number" }).references(() => users.id, {
       onDelete: "set null",
     }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
     createdByIdx: index("coach_groups_created_by_idx").on(table.createdBy),
     managerCoachUserIdIdx: index("coach_groups_manager_coach_user_id_idx").on(table.managerCoachUserId),
+    archivedAtIdx: index("coach_groups_archived_at_idx").on(table.archivedAt),
   })
 );
 
@@ -367,6 +370,25 @@ export const coachGroupCoaches = pgTable(
   (table) => ({
     pk: primaryKey({ columns: [table.groupId, table.userId] }),
     userIdIdx: index("coach_group_coaches_user_id_idx").on(table.userId),
+  })
+);
+
+export const userTrackingPhases = pgTable(
+  "user_tracking_phases",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    phase: text("phase").notNull(),
+    reason: text("reason"),
+    createdByUserId: bigint("created_by_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("user_tracking_phases_user_id_idx").on(table.userId, table.createdAt),
   })
 );
 

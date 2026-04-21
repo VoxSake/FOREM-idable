@@ -125,6 +125,7 @@ export default function CoachPage() {
         totalDue={page.totalDue}
         totalAccepted={page.totalAccepted}
         totalRejected={page.totalRejected}
+        phaseCounts={page.phaseCounts}
       />
 
       <CoachPageContent

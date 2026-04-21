@@ -37,6 +37,7 @@ import { useCoachApplicationActions } from "@/features/coach/useCoachApplication
 import { useCoachAdminActions } from "@/features/coach/useCoachAdminActions";
 import { useCoachGroupActions } from "@/features/coach/useCoachGroupActions";
 import { useCoachUtilities } from "@/features/coach/useCoachUtilities";
+import { useCoachPhaseTabs } from "@/features/coach/useCoachPhaseTabs";
 
 export function useCoachDashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -65,6 +66,7 @@ export function useCoachDashboard() {
     useState<CoachCalendarRegenerationTarget | null>(null);
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
+  const { phaseFilter, setPhaseFilter } = useCoachPhaseTabs();
 
   const applyApplicationUpdate = (userId: number, application: JobApplication) => {
     setDashboard((current) => {
@@ -246,6 +248,7 @@ export function useCoachDashboard() {
     totalDue,
     totalAccepted,
     totalRejected,
+    phaseCounts,
   } = useCoachDashboardDerivedState({
     dashboard,
     user,
@@ -256,6 +259,7 @@ export function useCoachDashboard() {
     importTargetUserId,
     search,
     userFilter,
+    phaseFilter,
   });
 
   const coachAdminActions = useCoachAdminActions({
@@ -341,6 +345,8 @@ export function useCoachDashboard() {
     setSearch,
     userFilter,
     setUserFilter,
+    phaseFilter,
+    setPhaseFilter,
     selectedUser,
     canEditSelectedUser,
     canManageSelectedUserApiKeys,
@@ -357,6 +363,7 @@ export function useCoachDashboard() {
     totalDue,
     totalAccepted,
     totalRejected,
+    phaseCounts,
     loadDashboard,
     createGroup: coachGroupActions.createGroup,
     addMember: coachGroupActions.addMember,
@@ -365,6 +372,8 @@ export function useCoachDashboard() {
     removeMember: coachGroupActions.removeMember,
     removeAssignedCoach: coachGroupActions.removeAssignedCoach,
     deleteGroup: coachGroupActions.deleteGroup,
+    updateGroupPhase: coachGroupActions.updateGroupPhase,
+    archiveGroup: coachGroupActions.archiveGroup,
     updateManagedUser: coachAdminActions.updateManagedUser,
     openManagedUserApiKeys: coachAdminActions.openManagedUserApiKeys,
     revokeManagedApiKey: coachAdminActions.revokeManagedApiKey,

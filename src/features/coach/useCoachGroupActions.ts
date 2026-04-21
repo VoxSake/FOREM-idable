@@ -1,7 +1,7 @@
 "use client";
 
 import { Dispatch, SetStateAction, useCallback } from "react";
-import { CoachDashboardData } from "@/types/coach";
+import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import { AuthUser } from "@/types/auth";
 import { CoachUndoAction } from "@/features/coach/types";
 
@@ -288,14 +288,105 @@ export function useCoachGroupActions(input: {
     [input]
   );
 
+  const updateGroupPhase = useCallback(
+    async (groupId: number, phase: string, reason?: string) => {
+      const previousUsers = input.dashboard?.users.map((user) => ({
+        id: user.id,
+        phase: user.trackingPhase,
+      }));
+
+      input.setDashboard((current) => {
+        if (!current) return current;
+        const group = current.groups.find((g) => g.id === groupId);
+        if (!group) return current;
+        const memberIds = new Set(group.members.map((m) => m.id));
+        return {
+          ...current,
+          users: current.users.map((user) =>
+            memberIds.has(user.id) ? { ...user, trackingPhase: phase as CoachUserSummary["trackingPhase"] } : user
+          ),
+        };
+      });
+
+      const response = await fetch(`/api/coach/groups/${groupId}/phase`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase, reason }),
+      });
+
+      if (!response.ok) {
+        input.setDashboard((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            users: current.users.map((user) => {
+              const prev = previousUsers?.find((u) => u.id === user.id);
+              return prev ? { ...user, trackingPhase: prev.phase } : user;
+            }),
+          };
+        });
+        input.setFeedback("Changement de phase impossible.");
+        return;
+      }
+
+      input.setUndoAction(null);
+      input.setFeedback("Phase du groupe mise à jour.");
+    },
+    [input]
+  );
+
+  const archiveGroup = useCallback(
+    async (groupId: number, archived: boolean) => {
+      input.setDashboard((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          groups: current.groups.map((group) =>
+            group.id === groupId
+              ? { ...group, archivedAt: archived ? new Date().toISOString() : null }
+              : group
+          ),
+        };
+      });
+
+      const response = await fetch(`/api/coach/groups/${groupId}/archive`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+
+      if (!response.ok) {
+        input.setDashboard((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            groups: current.groups.map((group) =>
+              group.id === groupId
+                ? { ...group, archivedAt: archived ? null : new Date().toISOString() }
+                : group
+            ),
+          };
+        });
+        input.setFeedback(archived ? "Archivage impossible." : "Désarchivage impossible.");
+        return;
+      }
+
+      input.setUndoAction(null);
+      input.setFeedback(archived ? "Groupe archivé." : "Groupe désarchivé.");
+    },
+    [input]
+  );
+
   return {
     addCoach,
     addMember,
+    archiveGroup,
     createGroup,
     deleteGroup,
     removeAssignedCoach,
     removeMember,
     restoreMembership,
     setGroupManager,
+    updateGroupPhase,
   };
 }

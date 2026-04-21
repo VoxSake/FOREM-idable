@@ -1,4 +1,4 @@
-import { CoachGroupSummary, CoachUserSummary } from "@/types/coach";
+import { CoachGroupSummary, CoachUserSummary, TrackingPhase } from "@/types/coach";
 import { CalendarSubscriptionScope } from "@/types/calendar";
 
 export type CoachGroupedGroupKind = "standard" | "ungrouped";
@@ -10,6 +10,7 @@ export type CoachUserFilter =
   | "inactive"
   | "accepted"
   | "rejected";
+export type CoachPhaseFilter = TrackingPhase | "all";
 
 export interface CoachRemoveMembershipTarget {
   groupId: number;
@@ -79,12 +80,25 @@ export type CoachUndoAction =
 
 export type CoachMemberPickerGroup = CoachGroupSummary;
 
+export interface CoachGroupPhaseTarget {
+  groupId: number;
+  groupName: string;
+  phase: TrackingPhase;
+}
+
+export interface CoachArchiveGroupTarget {
+  groupId: number;
+  groupName: string;
+  archived: boolean;
+}
+
 export interface CoachGroupedUserGroup {
   id: number;
   name: string;
   createdById: number | null;
   createdByLabel: string | null;
   managerCoachId: number | null;
+  archivedAt: string | null;
   canAddMembers: boolean;
   canManageCoaches: boolean;
   kind: CoachGroupedGroupKind;

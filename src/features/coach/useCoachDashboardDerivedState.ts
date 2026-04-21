@@ -7,6 +7,7 @@ import {
   CoachGroupedUserGroup,
   CoachManagerPickerGroup,
   CoachMemberPickerGroup,
+  CoachPhaseFilter,
   CoachUserFilter,
 } from "@/features/coach/types";
 import {
@@ -26,6 +27,7 @@ type UseCoachDashboardDerivedStateParams = {
   importTargetUserId: number | null;
   search: string;
   userFilter: CoachUserFilter;
+  phaseFilter: CoachPhaseFilter;
 };
 
 export function useCoachDashboardDerivedState({
@@ -38,6 +40,7 @@ export function useCoachDashboardDerivedState({
   importTargetUserId,
   search,
   userFilter,
+  phaseFilter,
 }: UseCoachDashboardDerivedStateParams) {
   const deferredSearch = useDeferredValue(search);
 
@@ -85,8 +88,9 @@ export function useCoachDashboardDerivedState({
       users: dashboard.users,
       normalizedSearch: deferredSearch.trim().toLowerCase(),
       userFilter,
+      phaseFilter,
     });
-  }, [dashboard, deferredSearch, userFilter]);
+  }, [dashboard, deferredSearch, userFilter, phaseFilter]);
 
   const recentActivity = useMemo(
     () => buildCoachRecentActivity(dashboard?.users ?? []),
@@ -122,6 +126,23 @@ export function useCoachDashboardDerivedState({
   const totalRejected =
     dashboard?.users.reduce((sum, entry) => sum + entry.rejectedCount, 0) ?? 0;
 
+  const phaseCounts = useMemo(() => {
+    const counts = {
+      all: 0,
+      internship_search: 0,
+      job_search: 0,
+      placed: 0,
+      dropped: 0,
+    };
+    dashboard?.users.forEach((user) => {
+      counts.all++;
+      if (user.trackingPhase in counts) {
+        counts[user.trackingPhase as keyof typeof counts]++;
+      }
+    });
+    return counts;
+  }, [dashboard?.users]);
+
   return {
     selectedUser,
     memberPickerGroup,
@@ -140,5 +161,6 @@ export function useCoachDashboardDerivedState({
     totalDue,
     totalAccepted,
     totalRejected,
+    phaseCounts,
   };
 }

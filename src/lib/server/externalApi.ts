@@ -107,6 +107,7 @@ function toExternalUserSummary(
     lastName: user.lastName,
     fullName: `${user.firstName} ${user.lastName}`.trim() || user.email,
     role: user.role,
+    trackingPhase: user.trackingPhase,
     groupIds: user.groupIds,
     groupNames: user.groupNames,
     applicationCount: user.applicationCount,
@@ -423,6 +424,7 @@ export async function getExternalGroups(
         id: group.id,
         name: group.name,
         createdAt: group.createdAt,
+        archivedAt: group.archivedAt,
         createdBy: {
           id: group.createdBy.id,
           email: group.createdBy.email,

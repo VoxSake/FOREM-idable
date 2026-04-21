@@ -100,6 +100,7 @@ export async function getCoachDashboard(
       first_name: string;
       last_name: string;
       role: UserRole;
+      tracking_phase: string;
       last_seen_at: string | null;
       last_coach_action_at: string | null;
     }>(
@@ -108,6 +109,7 @@ export async function getCoachDashboard(
               first_name,
               last_name,
               role,
+              tracking_phase,
               last_seen_at,
               last_coach_action_at
        FROM users
@@ -117,6 +119,7 @@ export async function getCoachDashboard(
       id: number;
       name: string;
       created_at: string;
+      archived_at: string | null;
       created_by: number;
       created_by_email: string;
       created_by_first_name: string;
@@ -126,6 +129,7 @@ export async function getCoachDashboard(
       `SELECT coach_groups.id,
               coach_groups.name,
               coach_groups.created_at,
+              coach_groups.archived_at,
               coach_groups.created_by,
               coach_groups.manager_coach_user_id,
               users.email AS created_by_email,
@@ -198,6 +202,7 @@ export async function getCoachDashboard(
       id: groupId,
       name: row.name,
       createdAt: row.created_at,
+      archivedAt: row.archived_at,
       createdBy: {
         id: createdById,
         email: row.created_by_email,
@@ -293,6 +298,7 @@ export async function getCoachDashboard(
       firstName: row.first_name,
       lastName: row.last_name,
       role: row.role,
+      trackingPhase: row.tracking_phase as CoachUserSummary["trackingPhase"],
       groupIds: groupIdsByUser.get(userId) ?? [],
       groupNames: groupNamesByUser.get(userId) ?? [],
       ...buildCoachApplicationSummary(applications),

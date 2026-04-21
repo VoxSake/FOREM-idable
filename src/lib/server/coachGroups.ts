@@ -378,3 +378,77 @@ export async function setCoachGroupManager(
     groupId,
   });
 }
+
+export async function updateGroupPhase(
+  groupId: number,
+  phase: string,
+  reason: string | undefined,
+  actor: CoachCapableUser
+) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const allowed = await canManageCoachAssignments(actor, groupId);
+  if (!allowed) {
+    throw new Error("Forbidden");
+  }
+
+  const memberResult = await db.query<{ user_id: number }>(
+    `SELECT user_id FROM coach_group_members WHERE group_id = $1`,
+    [groupId]
+  );
+
+  const memberIds = memberResult.rows
+    .map((row) => toNumericId(row.user_id))
+    .filter((id): id is number => id !== null);
+
+  if (memberIds.length > 0) {
+    const placeholders = memberIds.map((_, i) => `$${i + 2}`).join(",");
+    await db.query(
+      `UPDATE users SET tracking_phase = $1 WHERE id IN (${placeholders})`,
+      [phase, ...memberIds]
+    );
+
+    for (const userId of memberIds) {
+      await db.query(
+        `INSERT INTO user_tracking_phases (user_id, phase, reason, created_by_user_id)
+         VALUES ($1, $2, $3, $4)`,
+        [userId, phase, reason ?? null, actor.id]
+      );
+    }
+  }
+
+  await markCoachAction(actor.id);
+  await recordAuditEvent({
+    actorUserId: actor.id,
+    action: "group_phase_changed",
+    groupId,
+    payload: { phase, reason, affectedUserCount: memberIds.length },
+  });
+}
+
+export async function archiveCoachGroup(
+  groupId: number,
+  archived: boolean,
+  actor: CoachCapableUser
+) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const allowed = await canManageCoachAssignments(actor, groupId);
+  if (!allowed) {
+    throw new Error("Forbidden");
+  }
+
+  await db.query(
+    `UPDATE coach_groups SET archived_at = ${archived ? "NOW()" : "NULL"} WHERE id = $1`,
+    [groupId]
+  );
+
+  await markCoachAction(actor.id);
+  await recordAuditEvent({
+    actorUserId: actor.id,
+    action: archived ? "group_archived" : "group_unarchived",
+    groupId,
+  });
+}

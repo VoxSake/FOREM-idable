@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CoachPhaseFilter } from "@/features/coach/types";
 
 interface CoachSummaryCardsProps {
   userCount: number;
@@ -17,6 +18,7 @@ interface CoachSummaryCardsProps {
   totalDue: number;
   totalAccepted: number;
   totalRejected: number;
+  phaseCounts?: Record<CoachPhaseFilter, number>;
 }
 
 export function CoachSummaryCards({
@@ -26,6 +28,7 @@ export function CoachSummaryCards({
   totalDue,
   totalAccepted,
   totalRejected,
+  phaseCounts,
 }: CoachSummaryCardsProps) {
   const primaryCards = [
     {
@@ -72,9 +75,29 @@ export function CoachSummaryCards({
     },
   ];
 
+  const phaseBadges = phaseCounts
+    ? [
+        { key: "internship_search" as const, label: "Recherche stage", count: phaseCounts.internship_search, variant: "default" as const },
+        { key: "job_search" as const, label: "Recherche emploi", count: phaseCounts.job_search, variant: "secondary" as const },
+        { key: "placed" as const, label: "Placés", count: phaseCounts.placed, variant: "outline" as const },
+        { key: "dropped" as const, label: "Abandonnés", count: phaseCounts.dropped, variant: "destructive" as const },
+      ].filter((b) => b.count > 0)
+    : [];
+
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1.1fr)]">
-      <div className="grid gap-3 md:grid-cols-3">
+    <div className="flex flex-col gap-3">
+      {phaseBadges.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {phaseBadges.map((badge) => (
+            <Badge key={badge.key} variant={badge.variant} className="text-xs">
+              {badge.label}
+              <span className="ml-1.5 rounded-full bg-background/20 px-1.5 py-0.5 tabular-nums">{badge.count}</span>
+            </Badge>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1.1fr)]">
+        <div className="grid gap-3 md:grid-cols-3">
         {primaryCards.map((card) => {
           const Icon = card.icon;
 
@@ -140,5 +163,6 @@ export function CoachSummaryCards({
         })}
       </div>
     </div>
+  </div>
   );
 }

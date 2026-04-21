@@ -9,6 +9,17 @@ export type ApplicationStatus =
   | "accepted"
   | "rejected";
 
+export type ContractType =
+  | "STAGE"
+  | "CDI"
+  | "CDD"
+  | "ALTERNANCE"
+  | "INTERIM"
+  | "FREELANCE"
+  | "VIE"
+  | "CONTRAT_PRO"
+  | "AUTRE";
+
 export type CoachNoteAuthorRole = Extract<UserRole, "coach" | "admin"> | "system";
 
 export interface CoachNoteAuthor {

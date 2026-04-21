@@ -296,6 +296,7 @@ export function insertGroupIntoDashboard(
         id: input.id,
         name: input.name,
         createdAt: input.createdAt,
+        archivedAt: null,
         createdBy: input.createdBy,
         managerCoachId: input.managerCoachId,
         members: [],

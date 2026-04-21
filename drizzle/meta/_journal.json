@@ -64,6 +64,13 @@
       "when": 1774540000000,
       "tag": "0008_security_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1775846400000,
+      "tag": "0009_beneficiary_lifecycle",
+      "breakpoints": true
     }
   ]
 }
