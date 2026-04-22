@@ -92,6 +92,8 @@ describe("buildCoachPrioritySections", () => {
   });
 
   it("shows computed phase badge as Sortie positive when a beneficiary with due items has an accepted job", () => {
+    // Note: a second non-accepted application is required so the user still has
+    // due items and appears in the "due" priority section (accepted apps are excluded from due count).
     const users = [
       makeUser({
         id: 10,

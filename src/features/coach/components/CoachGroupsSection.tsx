@@ -41,10 +41,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CoachFilterToggleGroup } from "@/features/coach/components/CoachFilterToggleGroup";
 import { CoachGroupPhaseDialog } from "@/features/coach/components/CoachGroupPhaseDialog";
+import { CoachGroupToolbar } from "@/features/coach/components/CoachGroupToolbar";
 import { CoachPhaseBadge } from "@/features/coach/components/CoachPhaseBadge";
-import { CoachPhaseTabs } from "@/features/coach/components/CoachPhaseTabs";
 import { coachUserFilterOptions } from "@/features/coach/filters";
 import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActivityMeta";
 import { formatCoachDate, getCoachUserDisplayName } from "@/features/coach/utils";
@@ -460,18 +459,18 @@ export function CoachGroupsSection({
       </CardHeader>
 
       <CardContent className="space-y-3 px-5 pb-5 sm:space-y-4">
-        <CoachPhaseTabs value={phaseFilter} onValueChange={onPhaseFilterChange} counts={phaseCounts} />
-
-        <Input value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="Rechercher par nom, prénom ou email..." />
-
-        <CoachFilterToggleGroup
-          options={coachUserFilterOptions}
-          value={userFilter}
-          onValueChange={onUserFilterChange}
-          renderIcon={(option) => (option.value === "all" ? <Filter data-icon="inline-start" /> : null)}
+        <CoachGroupToolbar
+          search={search}
+          onSearchChange={onSearchChange}
+          phaseFilter={phaseFilter}
+          onPhaseFilterChange={onPhaseFilterChange}
+          phaseCounts={phaseCounts}
+          userFilter={userFilter}
+          onUserFilterChange={onUserFilterChange}
+          filterOptions={coachUserFilterOptions}
         />
 
-        <div className="space-y-4">
+        <div className="min-h-[300px] space-y-4">
           {activeGroups.length > 0 ? activeGroups.map(renderGroup) : null}
           {archivedGroups.length > 0 && (
             <div className="space-y-4">
