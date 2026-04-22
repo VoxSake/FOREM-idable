@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ConversationParticipantSummary, ConversationPreview } from "@/types/messaging";
-import { getDisplayName, getInitials } from "@/features/messages/messages.utils";
+import { getDisplayName, getInitials, stringToHslBackground, stringToHslForeground } from "@/features/messages/messages.utils";
 
 export function ConversationAvatar({
   conversation,
@@ -24,16 +24,13 @@ export function ConversationAvatar({
   conversation: Pick<ConversationPreview, "title" | "type">;
   size?: "sm" | "default" | "lg";
 }) {
+  const bg = stringToHslBackground(conversation.title);
+  const fg = stringToHslForeground(conversation.title);
+
   return (
-    <Avatar size={size} className="border border-border/70 bg-background">
-      <AvatarFallback
-        className={cn(
-          conversation.type === "group"
-            ? "bg-primary/10 text-primary"
-            : "bg-muted text-muted-foreground"
-        )}
-      >
-        {conversation.type === "group" ? <Users /> : <UserRound />}
+    <Avatar size={size} className="border border-border/70 shrink-0" style={{ backgroundColor: bg }}>
+      <AvatarFallback style={{ color: fg }}>
+        {conversation.type === "group" ? <Users className="size-[55%]" /> : <UserRound className="size-[55%]" />}
       </AvatarFallback>
     </Avatar>
   );
@@ -64,12 +61,14 @@ export function ParticipantStack({
             email: participant.email,
             fallback: "Participant",
           });
+          const bg = stringToHslBackground(displayName);
+          const fg = stringToHslForeground(displayName);
 
           return (
             <Tooltip key={participant.userId}>
               <TooltipTrigger asChild>
-                <Avatar size="sm" className="border border-border/70 bg-background">
-                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                <Avatar size="sm" className="border border-border/70" style={{ backgroundColor: bg }}>
+                  <AvatarFallback style={{ color: fg }}>{getInitials(displayName)}</AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={6}>

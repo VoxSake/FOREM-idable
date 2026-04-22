@@ -242,9 +242,8 @@ export function useMessagesPageState() {
     };
   }, [isDirectDialogOpen, loadContacts]);
 
-  useEffect(() => {
-    scheduleScrollThreadToBottom("auto");
-  }, [scheduleScrollThreadToBottom, selectedConversationId, selectedConversation?.messages.length]);
+  // Scroll to bottom only when explicitly opening a conversation, not on every new message.
+  // MessageThread handles conditional scroll for incoming messages and the "new messages" badge.
 
   useEffect(() => {
     if (!isMobileConversationOpen || !selectedConversationId) {

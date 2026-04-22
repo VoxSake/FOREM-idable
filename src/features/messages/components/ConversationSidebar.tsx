@@ -72,7 +72,9 @@ function ConversationListItem({
               })}
             </span>
             {conversation.unreadCount > 0 ? (
-              <Badge variant="secondary">{conversation.unreadCount}</Badge>
+              <Badge variant="secondary" className="bg-primary/15 text-primary hover:bg-primary/20">
+                {conversation.unreadCount}
+              </Badge>
             ) : null}
           </div>
         </div>
@@ -109,28 +111,21 @@ export function ConversationSidebar({
 }) {
   const [mobileFilter, setMobileFilter] = useState<"all" | "group" | "direct">("all");
   const normalizedQuery = conversationQuery.trim().toLowerCase();
-  const filteredDirectConversations = !normalizedQuery
-    ? groupedConversations.direct
-    : groupedConversations.direct.filter((conversation) =>
-        `${conversation.title} ${conversation.subtitle ?? ""} ${
-          conversation.lastMessagePreview ?? ""
-        }`
-          .toLowerCase()
-          .includes(normalizedQuery)
-      );
-  const filteredGroupConversations = useMemo(() => {
-    if (!normalizedQuery) {
-      return groupedConversations.group;
-    }
 
-    return groupedConversations.group.filter((conversation) =>
-      `${conversation.title} ${conversation.subtitle ?? ""} ${
-        conversation.lastMessagePreview ?? ""
-      }`
-        .toLowerCase()
-        .includes(normalizedQuery)
+  const filteredGroupConversations = useMemo(() => {
+    if (!normalizedQuery) return groupedConversations.group;
+    return groupedConversations.group.filter((c) =>
+      `${c.title} ${c.subtitle ?? ""} ${c.lastMessagePreview ?? ""}`.toLowerCase().includes(normalizedQuery)
     );
   }, [groupedConversations.group, normalizedQuery]);
+
+  const filteredDirectConversations = useMemo(() => {
+    if (!normalizedQuery) return groupedConversations.direct;
+    return groupedConversations.direct.filter((c) =>
+      `${c.title} ${c.subtitle ?? ""} ${c.lastMessagePreview ?? ""}`.toLowerCase().includes(normalizedQuery)
+    );
+  }, [groupedConversations.direct, normalizedQuery]);
+
   const mobileConversations = useMemo(() => {
     const source =
       mobileFilter === "group"
@@ -141,7 +136,6 @@ export function ConversationSidebar({
               (left, right) =>
                 new Date(right.lastMessageAt).getTime() - new Date(left.lastMessageAt).getTime()
             );
-
     return source;
   }, [filteredDirectConversations, filteredGroupConversations, mobileFilter]);
 
@@ -209,7 +203,22 @@ export function ConversationSidebar({
                   </ToggleGroupItem>
                 </ToggleGroup>
               </>
-            ) : null}
+            ) : (
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="sidebar-search" className="sr-only">
+                    Rechercher une conversation
+                  </FieldLabel>
+                  <Input
+                    id="sidebar-search"
+                    value={conversationQuery}
+                    onChange={(event) => onConversationQueryChange(event.target.value)}
+                    placeholder="Rechercher une conversation..."
+                    className="h-9 rounded-lg bg-muted/30"
+                  />
+                </Field>
+              </FieldGroup>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -220,7 +229,7 @@ export function ConversationSidebar({
               onClick={onOpenDirectDialog}
               aria-label="Nouveau DM"
             >
-              <UserRound data-icon="inline-start" />
+              <UserRound className="size-4" />
               {!isMobile ? "Nouveau DM" : null}
             </Button>
           </div>
@@ -236,9 +245,7 @@ export function ConversationSidebar({
         {!hasConversations ? (
           <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
             <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <MessageSquareDashed />
-              </EmptyMedia>
+              <EmptyMedia variant="icon"><MessageSquareDashed /></EmptyMedia>
               <EmptyTitle>Aucune conversation.</EmptyTitle>
               <EmptyDescription>
                 Les groupes et messages privés apparaîtront ici.
@@ -257,13 +264,9 @@ export function ConversationSidebar({
                 mobileConversations.length === 0 ? (
                   <Empty className="min-h-72 rounded-2xl border border-dashed border-border/60 bg-muted/10">
                     <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <MessageSquareDashed />
-                      </EmptyMedia>
+                      <EmptyMedia variant="icon"><MessageSquareDashed /></EmptyMedia>
                       <EmptyTitle>Aucune conversation trouvée.</EmptyTitle>
-                      <EmptyDescription>
-                        Aucun résultat pour cette recherche.
-                      </EmptyDescription>
+                      <EmptyDescription>Aucun résultat pour cette recherche.</EmptyDescription>
                     </EmptyHeader>
                   </Empty>
                 ) : (
@@ -286,23 +289,27 @@ export function ConversationSidebar({
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Groupes
                       </p>
-                      <Badge variant="outline">{groupedConversations.group.length}</Badge>
+                      <Badge variant="outline">{filteredGroupConversations.length}</Badge>
                     </div>
 
                     {groupedConversations.group.length === 0 ? (
                       <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
                         <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <Users />
-                          </EmptyMedia>
+                          <EmptyMedia variant="icon"><Users /></EmptyMedia>
                           <EmptyTitle>Aucun groupe actif.</EmptyTitle>
-                          <EmptyDescription>
-                            Les conversations de groupe apparaîtront ici.
-                          </EmptyDescription>
+                          <EmptyDescription>Les conversations de groupe apparaîtront ici.</EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    ) : filteredGroupConversations.length === 0 ? (
+                      <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon"><MessageSquareDashed /></EmptyMedia>
+                          <EmptyTitle>Aucun résultat.</EmptyTitle>
+                          <EmptyDescription>Aucun groupe ne correspond à cette recherche.</EmptyDescription>
                         </EmptyHeader>
                       </Empty>
                     ) : (
-                      groupedConversations.group.map((conversation) => (
+                      filteredGroupConversations.map((conversation) => (
                         <ConversationListItem
                           key={conversation.id}
                           conversation={conversation}
@@ -319,43 +326,23 @@ export function ConversationSidebar({
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Messages privés
                       </p>
-                      <Badge variant="outline">{groupedConversations.direct.length}</Badge>
+                      <Badge variant="outline">{filteredDirectConversations.length}</Badge>
                     </div>
-
-                    <FieldGroup>
-                      <Field>
-                        <FieldLabel htmlFor="dm-search">Rechercher un message privé</FieldLabel>
-                        <Input
-                          id="dm-search"
-                          value={conversationQuery}
-                          onChange={(event) => onConversationQueryChange(event.target.value)}
-                          placeholder="Nom, email ou message"
-                        />
-                      </Field>
-                    </FieldGroup>
 
                     {groupedConversations.direct.length === 0 ? (
                       <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
                         <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <UserRound />
-                          </EmptyMedia>
+                          <EmptyMedia variant="icon"><UserRound /></EmptyMedia>
                           <EmptyTitle>Aucun DM ouvert.</EmptyTitle>
-                          <EmptyDescription>
-                            Ouvre un message privé avec le bouton en haut.
-                          </EmptyDescription>
+                          <EmptyDescription>Ouvre un message privé avec le bouton en haut.</EmptyDescription>
                         </EmptyHeader>
                       </Empty>
                     ) : filteredDirectConversations.length === 0 ? (
                       <Empty className="min-h-40 rounded-2xl border border-dashed border-border/60 bg-muted/10">
                         <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <MessageSquareDashed />
-                          </EmptyMedia>
+                          <EmptyMedia variant="icon"><MessageSquareDashed /></EmptyMedia>
                           <EmptyTitle>Aucun résultat.</EmptyTitle>
-                          <EmptyDescription>
-                            Aucun message privé ne correspond à cette recherche.
-                          </EmptyDescription>
+                          <EmptyDescription>Aucun message privé ne correspond à cette recherche.</EmptyDescription>
                         </EmptyHeader>
                       </Empty>
                     ) : (

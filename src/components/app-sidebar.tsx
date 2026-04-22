@@ -203,9 +203,12 @@ export function AppSidebar() {
 
     void loadMessagingMeta();
 
-    const intervalId = window.setInterval(() => {
-      void loadMessagingMeta();
-    }, 5000);
+    const isOnMessagesPage = pathname === "/messages";
+    const intervalId = isOnMessagesPage
+      ? null
+      : window.setInterval(() => {
+          void loadMessagingMeta();
+        }, 5000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -218,7 +221,9 @@ export function AppSidebar() {
 
     return () => {
       cancelled = true;
-      window.clearInterval(intervalId);
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
       window.removeEventListener("focus", handleVisibilityChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };

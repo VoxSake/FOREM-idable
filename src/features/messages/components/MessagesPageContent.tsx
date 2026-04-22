@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { DeleteMessageDialog } from "@/features/messages/components/DeleteMessageDialog";
 import { ConversationPanel } from "@/features/messages/components/ConversationPanel";
 import { ConversationSidebar } from "@/features/messages/components/ConversationSidebar";
@@ -10,6 +11,7 @@ import { useMessagesPageState } from "@/features/messages/hooks/useMessagesPageS
 
 export function MessagesPageContent() {
   const page = useMessagesPageState();
+  const isMobileViewport = useIsMobile();
 
   if (page.isLoading) {
     return <MessagesPageSkeleton />;
@@ -18,31 +20,33 @@ export function MessagesPageContent() {
   if (page.hasMessagingAccess === false) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 animate-in fade-in duration-500">
-        <Card className="overflow-hidden border-border/60 py-0">
-          <CardHeader className="border-b border-border/60 px-6 py-6">
-            <CardTitle className="text-2xl font-black tracking-tight">
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card py-0 shadow-sm">
+          <div className="border-b border-border/60 px-6 py-6">
+            <h1 className="text-2xl font-black tracking-tight">
               Messagerie indisponible
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 px-6 py-5 text-sm text-muted-foreground">
+            </h1>
+          </div>
+          <div className="flex flex-col gap-3 px-6 py-5 text-sm text-muted-foreground">
             <p>
-              La messagerie est reservee aux personnes rattachees a au moins un groupe de suivi.
+              La messagerie est réservée aux personnes rattachées à au moins un groupe de suivi.
             </p>
             <p>
-              Lorsqu&apos;un groupe vous est attribue, les conversations de groupe et les DM avec les
-              personnes du meme perimetre apparaissent ici.
+              Lorsqu&apos;un groupe vous est attribué, les conversations de groupe et les messages privés apparaissent ici.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const isMobileConversationVisible = isMobileViewport && page.isMobileConversationOpen && page.selectedPreview;
+
   return (
     <>
       <div className="-mx-4 -my-4 flex h-[calc(100svh-3.5rem)] w-[calc(100%+2rem)] flex-col gap-4 overflow-hidden px-0 animate-in fade-in duration-500 md:mx-auto md:my-0 md:h-[calc(100svh-3.5rem-2rem)] md:min-h-0 md:w-full md:max-w-[1440px] md:overflow-hidden md:px-4 lg:h-[calc(100svh-4rem-4rem)] lg:max-w-none lg:gap-0 lg:px-0">
+        {/* Mobile: soit sidebar soit panel */}
         <div className="min-h-0 flex-1 md:hidden">
-          {page.isMobileConversationOpen && page.selectedPreview ? (
+          {isMobileConversationVisible ? (
             <ConversationPanel
               selectedPreview={page.selectedPreview}
               selectedConversation={page.selectedConversation}
@@ -82,6 +86,7 @@ export function MessagesPageContent() {
           )}
         </div>
 
+        {/* Desktop: grid côte à côte */}
         <div className="hidden min-h-0 min-w-0 gap-4 md:grid md:h-full md:grid-cols-[360px_minmax(0,1fr)]">
           <ConversationSidebar
             groupedConversations={page.groupedConversations}
