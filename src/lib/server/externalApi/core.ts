@@ -2,13 +2,8 @@ import { isAfter } from "date-fns";
 import {
   formatCoachAuthorName,
   summarizeCoachContributors,
-  toCoachNoteAuthor,
 } from "@/lib/coachNotes";
-import { canAccessCoachUser, getCoachDashboard } from "@/lib/server/coach";
-import { db } from "@/lib/server/db";
-import { inferApplicationSourceType } from "@/lib/applications/sourceType";
-import { saveApplicationToRelationalStore } from "@/lib/server/applicationStore";
-import { escapeCsvCell } from "@/lib/csv";
+import { getCoachDashboard } from "@/lib/server/coach";
 import {
   ExternalApiActor,
   ExternalApiApplicationDetail,
@@ -20,7 +15,6 @@ import {
 } from "@/types/externalApi";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 import { CoachGroupMember, CoachUserSummary } from "@/types/coach";
-import { Job } from "@/types/job";
 import { RelationalApplicationRecord } from "@/lib/server/applicationStore";
 
 export function matchesSearch(haystack: string[], search?: string) {
@@ -235,96 +229,4 @@ export function sanitizeApplicationForList(
       sharedCoachNotes: [],
     },
   };
-}
-
-export async function getScopedApplicationRows(
-  actor: ExternalApiActor,
-  filters: ExternalApiFilters = {}
-) {
-  const dashboard = await loadDashboard(actor, {
-    userId: filters.userId,
-    groupId: filters.groupId,
-    role: filters.role,
-  });
-  const usersById = new Map(dashboard.users.map((user) => [user.id, user]));
-  let rows: ExternalApiApplicationRow[];
-
-  try {
-    const { listApplicationRecordsFromRelationalStoreByUsers } = await import("@/lib/server/applicationStore");
-    const records = await listApplicationRecordsFromRelationalStoreByUsers(
-      dashboard.users.map((user) => user.id)
-    );
-
-    rows = records
-      .map((record) => {
-        const user = usersById.get(record.userId);
-        return user ? toApplicationRow(record, user) : null;
-      })
-      .filter((row): row is ExternalApiApplicationRow => Boolean(row));
-  } catch {
-    rows = dashboard.users.flatMap((user) =>
-      user.applications.map((application, index) => ({
-        applicationId: index + 1,
-        userId: user.id,
-        userEmail: user.email,
-        userFirstName: user.firstName,
-        userLastName: user.lastName,
-        userRole: user.role,
-        groupIds: user.groupIds,
-        groupNames: user.groupNames,
-        isFollowUpDue: isDue(
-          application.status,
-          application.followUpDueAt,
-          application.followUpEnabled
-        ),
-        isInterviewScheduled: isInterviewScheduled(application.interviewAt),
-        application,
-      }))
-    );
-  }
-
-  rows = rows.filter((row) => matchesApplicationFilters(row, filters));
-
-  return { dashboard, rows, usersById };
-}
-
-export async function requireScopedUser(actor: ExternalApiActor, userId: number) {
-  if (actor.role === "admin") return true;
-  return canAccessCoachUser(actor, userId);
-}
-
-export function normalizeExternalJob(input: Partial<Job> & { id?: string; title?: string }) {
-  return {
-    id: input.id?.trim() || "",
-    title: input.title?.trim() || "",
-    company: input.company?.trim() || undefined,
-    location: input.location?.trim() || "Non précisé",
-    contractType: input.contractType?.trim() || "Non précisé",
-    publicationDate: input.publicationDate?.trim() || new Date().toISOString(),
-    url: input.url?.trim() || "#",
-    description: input.description?.trim() || undefined,
-    source: input.source ?? "forem",
-    pdfUrl: input.pdfUrl?.trim() || undefined,
-  } satisfies Job;
-}
-
-export async function persistApplicationRecord(record: { userId: number; position: number }, application: JobApplication) {
-  if (!db) throw new Error("Database unavailable");
-  const client = await db.connect();
-
-  try {
-    await client.query("BEGIN");
-    await saveApplicationToRelationalStore(client, {
-      userId: record.userId,
-      position: record.position,
-      application,
-      sourceType: inferApplicationSourceType(application),
-    });
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
 }
