@@ -109,8 +109,6 @@ function buildValues(input: {
 }
 
 async function persistNormalizedState(userId: number, values: Record<string, string>) {
-  if (!db) throw new Error("Database unavailable");
-
   const favorites = safeJsonParse<Job[]>(values[STORAGE_KEYS.favorites], []);
   const incomingApplications = safeJsonParse<JobApplication[]>(values[STORAGE_KEYS.applications], []);
   const searchHistory = safeJsonParse<SearchHistoryEntry[]>(values[STORAGE_KEYS.searchHistory], []);
@@ -171,9 +169,7 @@ async function persistNormalizedState(userId: number, values: Record<string, str
 }
 
 export async function getUserState(userId: number): Promise<PersistedUserState | null> {
-  await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-  const [favoritesResult, relationalApplications, searchHistoryResult, settingsResult] = await Promise.all([
+  await ensureDatabase();  const [favoritesResult, relationalApplications, searchHistoryResult, settingsResult] = await Promise.all([
     db.query<{ job: Job }>(
       `SELECT job
        FROM user_favorites
@@ -230,8 +226,6 @@ export async function getUserState(userId: number): Promise<PersistedUserState |
 
 export async function saveUserState(userId: number, values: unknown) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const sanitized = sanitizeValues(values);
   await persistNormalizedState(userId, sanitized);
 

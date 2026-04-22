@@ -106,9 +106,7 @@ export function normalizeExternalJob(input: Partial<Job> & { id?: string; title?
   } satisfies Job;
 }
 
-export async function persistApplicationRecord(record: { userId: number; position: number }, application: JobApplication) {
-  if (!db) throw new Error("Database unavailable");
-  const client = await db.connect();
+export async function persistApplicationRecord(record: { userId: number; position: number }, application: JobApplication) {  const client = await db.connect();
 
   try {
     await client.query("BEGIN");

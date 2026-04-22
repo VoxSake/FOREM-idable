@@ -70,14 +70,10 @@ function buildApplication(job: Job): JobApplication {
   };
 }
 
-async function getStoredApplication(userId: number, jobId: string) {
-  if (!db) throw new Error("Database unavailable");
-  return loadApplicationFromRelationalStore(userId, jobId);
+async function getStoredApplication(userId: number, jobId: string) {  return loadApplicationFromRelationalStore(userId, jobId);
 }
 
 async function getNextPosition(userId: number) {
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ next_position: number }>(
     `SELECT COALESCE(MAX(position), -1) + 1 AS next_position
      FROM applications
@@ -92,8 +88,6 @@ async function getNextPosition(userId: number) {
 }
 
 async function getApplicationPosition(userId: number, jobId: string) {
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ position: number }>(
     `SELECT position
      FROM applications
@@ -110,8 +104,6 @@ async function getApplicationPosition(userId: number, jobId: string) {
 
 export async function listApplicationsForUser(userId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const relationalApplications = await listApplicationsFromRelationalStore(userId);
   return sortApplicationsByAppliedAt(
     relationalApplications.map((application) => sanitizeApplicationForBeneficiary(application))
@@ -129,8 +121,6 @@ export async function createTrackedApplicationForUser(input: {
   interviewDetails?: string;
 }) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const existing = await getStoredApplication(input.userId, input.job.id);
   const appliedAt = input.appliedAt ? new Date(input.appliedAt) : new Date();
   const normalizedAppliedAt = Number.isNaN(appliedAt.getTime()) ? new Date() : appliedAt;
@@ -210,8 +200,6 @@ export async function updateApplicationForUser(input: {
   >;
 }) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const existing = await getStoredApplication(input.userId, input.jobId);
   if (!existing) {
     throw new Error("Application not found");
@@ -285,9 +273,7 @@ export async function updateApplicationForUser(input: {
 }
 
 export async function deleteApplicationForUser(userId: number, jobId: string) {
-  await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-  const client = await db.connect();
+  await ensureDatabase();  const client = await db.connect();
 
   try {
     await client.query("BEGIN");

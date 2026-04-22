@@ -409,32 +409,22 @@ async function loadApplicationRecordsByClause(
   );
 }
 
-export async function listApplicationsFromRelationalStore(userId: number) {
-  if (!db) throw new Error("Database unavailable");
-  return (await loadApplicationsByClause(db, "WHERE applications.user_id = $1", [userId])).get(userId) ?? [];
+export async function listApplicationsFromRelationalStore(userId: number) {  return (await loadApplicationsByClause(db, "WHERE applications.user_id = $1", [userId])).get(userId) ?? [];
 }
 
-export async function listApplicationsFromRelationalStoreByUsers(userIds: number[]) {
-  if (!db) throw new Error("Database unavailable");
-  if (userIds.length === 0) return new Map<number, JobApplication[]>();
+export async function listApplicationsFromRelationalStoreByUsers(userIds: number[]) {  if (userIds.length === 0) return new Map<number, JobApplication[]>();
   return loadApplicationsByClause(db, "WHERE applications.user_id = ANY($1::bigint[])", [userIds]);
 }
 
-export async function loadApplicationFromRelationalStore(userId: number, jobId: string) {
-  if (!db) throw new Error("Database unavailable");
-  const record = await getRelationalApplicationRecordByUserAndJob(userId, jobId);
+export async function loadApplicationFromRelationalStore(userId: number, jobId: string) {  const record = await getRelationalApplicationRecordByUserAndJob(userId, jobId);
   return record?.application ?? null;
 }
 
-export async function listApplicationRecordsFromRelationalStoreByUsers(userIds: number[]) {
-  if (!db) throw new Error("Database unavailable");
-  if (userIds.length === 0) return [];
+export async function listApplicationRecordsFromRelationalStoreByUsers(userIds: number[]) {  if (userIds.length === 0) return [];
   return loadApplicationRecordsByClause(db, "WHERE applications.user_id = ANY($1::bigint[])", [userIds]);
 }
 
-export async function getRelationalApplicationRecordById(applicationId: number) {
-  if (!db) throw new Error("Database unavailable");
-  const records = await loadApplicationRecordsByClause(
+export async function getRelationalApplicationRecordById(applicationId: number) {  const records = await loadApplicationRecordsByClause(
     db,
     "WHERE applications.id = $1",
     [applicationId]
@@ -443,9 +433,7 @@ export async function getRelationalApplicationRecordById(applicationId: number) 
   return records[0] ?? null;
 }
 
-export async function getRelationalApplicationRecordByUserAndJob(userId: number, jobId: string) {
-  if (!db) throw new Error("Database unavailable");
-  const records = await loadApplicationRecordsByClause(
+export async function getRelationalApplicationRecordByUserAndJob(userId: number, jobId: string) {  const records = await loadApplicationRecordsByClause(
     db,
     "WHERE applications.user_id = $1 AND applications.job_id = $2",
     [userId, jobId]

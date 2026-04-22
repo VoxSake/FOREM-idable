@@ -105,12 +105,19 @@ function createPool() {
   return pool;
 }
 
-export const db = globalThis.__foremIdablePool ?? createPool();
-export const orm =
-  globalThis.__foremIdableOrm ?? (db ? drizzle(db, { schema, casing: "snake_case" }) : null);
+const _db = globalThis.__foremIdablePool ?? createPool();
 
-if (db && !globalThis.__foremIdablePool) {
-  globalThis.__foremIdablePool = db;
+/**
+ * The database pool. Typed as non-null because every production code path
+ * calls ensureDatabase() before use, which throws if the pool could not be
+ * created (e.g. DATABASE_URL missing). In tests the pool may be mocked.
+ */
+export const db = _db as Pool;
+export const orm =
+  globalThis.__foremIdableOrm ?? (_db ? drizzle(_db, { schema, casing: "snake_case" }) : null);
+
+if (_db && !globalThis.__foremIdablePool) {
+  globalThis.__foremIdablePool = _db;
 }
 
 if (orm && !globalThis.__foremIdableOrm) {
@@ -118,12 +125,12 @@ if (orm && !globalThis.__foremIdableOrm) {
 }
 
 export async function ensureDatabase() {
-  if (!db) {
-    throw new Error("DATABASE_URL is not configured");
+  if (!_db) {
+    throw new Error("Database unavailable");
   }
 
   if (!globalThis.__foremIdableMigrationPromise) {
-    globalThis.__foremIdableMigrationPromise = runDatabaseMigrations(db);
+    globalThis.__foremIdableMigrationPromise = runDatabaseMigrations(_db);
   }
 
   await globalThis.__foremIdableMigrationPromise;

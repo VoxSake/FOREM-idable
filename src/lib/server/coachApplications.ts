@@ -48,9 +48,7 @@ export async function updateCoachApplicationNotes(input: {
   createSharedNote?: boolean;
   deleteSharedNote?: boolean;
 }) {
-  await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-  await assertCanAccessCoachUser(input.actor, input.userId);
+  await ensureDatabase();  await assertCanAccessCoachUser(input.actor, input.userId);
   const actor = toCoachNoteAuthor(input.actor);
   const relational = await loadApplicationFromRelationalStore(input.userId, input.jobId);
   const existing = relational;
@@ -220,9 +218,7 @@ export async function importCoachApplicationsForUser(input: {
   rows: CoachImportedApplicationInput[];
   dateFormat?: CoachImportDateFormat;
 }) {
-  await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-  await assertCanAccessCoachUser(input.actor, input.userId);
+  await ensureDatabase();  await assertCanAccessCoachUser(input.actor, input.userId);
 
   const importedApplications: JobApplication[] = [];
   let createdCount = 0;

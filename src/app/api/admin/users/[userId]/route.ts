@@ -44,9 +44,6 @@ export async function PATCH(
       }
 
       await ensureDatabase();
-      if (!db) {
-        return NextResponse.json({ error: "Database unavailable" }, { status: 500 });
-      }
 
       const targetResult = await db.query<{ role: UserRole; email: string }>(
         `SELECT role, email
@@ -139,9 +136,6 @@ export async function DELETE(
       }
 
       await ensureDatabase();
-      if (!db) {
-        return NextResponse.json({ error: "Database unavailable" }, { status: 500 });
-      }
 
       const targetResult = await db.query<{ role: UserRole; email: string }>(
         `SELECT role, email

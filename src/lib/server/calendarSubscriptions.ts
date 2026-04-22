@@ -26,8 +26,6 @@ function buildSubscriptionPath(token: string) {
 }
 
 async function getGroupById(groupId: number) {
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ id: number; name: string }>(
     `SELECT id, name
      FROM coach_groups
@@ -72,8 +70,6 @@ async function createSubscription(input: {
   groupId: number | null;
   createdBy: number;
 }) {
-  if (!db) throw new Error("Database unavailable");
-
   const { plainTextToken, tokenHash, keyPrefix, lastFour } = buildCalendarToken();
 
   const result = await db.query<{
@@ -127,8 +123,6 @@ export async function createCalendarSubscription(input: {
   actorId: number;
 }): Promise<CalendarSubscriptionSummary> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const target = await resolveSubscriptionTarget(input);
 
   const created = await createSubscription({
@@ -155,8 +149,6 @@ export async function regenerateCalendarSubscription(input: {
   actorId: number;
 }) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const target = await resolveSubscriptionTarget(input);
 
   await db.query(
@@ -188,8 +180,6 @@ export async function regenerateCalendarSubscription(input: {
 
 export async function resolveCalendarSubscription(token: string) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{
     id: number;
     scope: CalendarSubscriptionScope;
@@ -215,8 +205,6 @@ export async function resolveCalendarSubscription(token: string) {
 
 export async function touchCalendarSubscriptionUsage(subscriptionId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   await db.query(
     `UPDATE calendar_subscriptions
      SET last_used_at = NOW()
@@ -255,8 +243,6 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
   rows: CalendarFeedApplicationRow[];
 }> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const target = await resolveSubscriptionTarget({ scope: "group", groupId });
 
   const membersResult = await db.query<{
@@ -300,8 +286,6 @@ export async function listCalendarFeedRowsForGroup(groupId: number): Promise<{
 }
 
 async function resolveCalendarActorScope(actorId: number) {
-  if (!db) throw new Error("Database unavailable");
-
   const actorResult = await db.query<{ role: UserRole }>(
     `SELECT role
      FROM users
@@ -340,8 +324,6 @@ export async function listCalendarFeedRowsForAllGroups(actorId: number): Promise
   rows: CalendarFeedApplicationRow[];
 }> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const actorScope = await resolveCalendarActorScope(actorId);
   if (actorScope.managedGroupIds && actorScope.managedGroupIds.length === 0) {
     return {

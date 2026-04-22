@@ -8,8 +8,6 @@ export type CoachCapableUser = AuthUser & { role: "coach" | "admin" };
 
 export async function getManagedGroupIdsForCoach(userId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ group_id: number }>(
     `SELECT group_id
      FROM coach_group_coaches
@@ -28,8 +26,6 @@ export async function canManageCoachGroup(actor: CoachCapableUser, groupId: numb
   }
 
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ exists: boolean }>(
     `SELECT EXISTS (
        SELECT 1
@@ -49,8 +45,6 @@ export async function canManageCoachAssignments(actor: CoachCapableUser, groupId
   }
 
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ manager_coach_user_id: number | null }>(
     `SELECT manager_coach_user_id
      FROM coach_groups
@@ -82,8 +76,6 @@ export async function canAccessCoachUser(actor: CoachCapableUser, userId: number
   }
 
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ exists: boolean }>(
     `SELECT EXISTS (
        SELECT 1
@@ -108,8 +100,6 @@ export async function assertCanAccessCoachUser(actor: CoachCapableUser, userId: 
 
 export async function markCoachAction(userId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   await db.query(
     `UPDATE users
      SET last_coach_action_at = NOW()
@@ -121,8 +111,6 @@ export async function markCoachAction(userId: number) {
 
 export async function createCoachGroup(name: string, actor: CoachCapableUser) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const trimmed = name.trim();
   if (!trimmed) {
     throw new Error("Group name required");
@@ -162,8 +150,6 @@ export async function createCoachGroup(name: string, actor: CoachCapableUser) {
 
 export async function deleteCoachGroup(groupId: number, actor: CoachCapableUser) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   await assertCanManageCoachGroup(actor, groupId);
 
   await db.query(
@@ -192,8 +178,6 @@ export async function addUserToCoachGroup(
   actor?: CoachCapableUser
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   if (actor) {
     await assertCanManageCoachGroup(actor, groupId);
   }
@@ -223,8 +207,6 @@ export async function removeUserFromCoachGroup(
   actor?: CoachCapableUser
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   if (actor) {
     await assertCanManageCoachGroup(actor, groupId);
   }
@@ -253,8 +235,6 @@ export async function addCoachToGroup(
   actor: CoachCapableUser
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const allowed = await canManageCoachAssignments(actor, groupId);
   if (!allowed) {
     throw new Error("Forbidden");
@@ -296,8 +276,6 @@ export async function removeCoachFromGroup(
   actor: CoachCapableUser
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   if (actor.role === "coach" && actor.id === coachUserId) {
     throw new Error("SelfRemovalForbidden");
   }
@@ -337,8 +315,6 @@ export async function setCoachGroupManager(
   actor: AuthUser & { role: "admin" }
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const membershipResult = await db.query<{ exists: boolean }>(
     `SELECT EXISTS (
        SELECT 1
@@ -378,8 +354,6 @@ export async function updateGroupPhase(
   actor: CoachCapableUser
 ): Promise<{ updated: number; skipped: number }> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const allowed = await canManageCoachAssignments(actor, groupId);
   if (!allowed) {
     throw new Error("Forbidden");
@@ -438,8 +412,6 @@ export async function archiveCoachGroup(
   actor: CoachCapableUser
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const allowed = await canManageCoachAssignments(actor, groupId);
   if (!allowed) {
     throw new Error("Forbidden");
@@ -465,8 +437,6 @@ export async function updateUserPhase(
   actor: CoachCapableUser
 ): Promise<void> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   // Authorization: admin can edit anyone; coach can edit users in groups they manage
   if (actor.role !== "admin") {
     const managedResult = await db.query<{ group_id: number }>(

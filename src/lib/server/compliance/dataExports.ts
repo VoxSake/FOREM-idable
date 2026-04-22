@@ -61,8 +61,6 @@ export async function getUserDataExportPayload(userId: number, requestId: number
 }
 
 async function buildUserDataExport(userId: number) {
-  if (!db) throw new Error("Database unavailable");
-
   const userResult = await db.query(
     `SELECT id, email, first_name, last_name, role, created_at, last_seen_at, last_coach_action_at
      FROM users

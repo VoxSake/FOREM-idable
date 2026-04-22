@@ -245,9 +245,6 @@ export async function publishConversationEvent(
   event: MessageStreamEvent
 ) {
   await ensureDatabase();
-  if (!db) {
-    return;
-  }
 
   const participantIds = await loadActiveConversationParticipantIds(db, conversationId);
   await publishMessageEvent(participantIds, event);

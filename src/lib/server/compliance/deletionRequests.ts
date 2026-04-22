@@ -43,8 +43,6 @@ export async function listAccountDeletionRequestsForAdmin(
   limit = 50
 ): Promise<AdminAccountDeletionRequestSummary[]> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{
     id: number;
     status: string;

@@ -83,8 +83,6 @@ export async function getCoachDashboard(
   filters: CoachDashboardFilters = {}
 ): Promise<CoachDashboardData> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const [usersResult, groupsResult, membersResult, coachesResult, managedGroupIds] = await Promise.all([
     db.query<{
       id: number;
@@ -323,8 +321,6 @@ export async function getCoachDashboard(
 
 export async function setUserRole(userId: number, role: UserRole, actorId?: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const previousResult = await db.query<{ role: UserRole }>(
     `SELECT role
      FROM users

@@ -26,9 +26,6 @@ export async function GET(
     }
 
     await ensureDatabase();
-    if (!db) {
-      return NextResponse.json({ error: "Database unavailable" }, { status: 500 });
-    }
 
     const targetResult = await db.query<{ role: UserRole }>(
       `SELECT role FROM users WHERE id = $1 LIMIT 1`,

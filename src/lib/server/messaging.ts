@@ -68,8 +68,6 @@ export async function canDirectMessage(actor: AuthUser, targetUserId: number) {
   }
 
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   if (actor.role === "admin") {
     return true;
   }
@@ -113,8 +111,6 @@ export async function canDirectMessage(actor: AuthUser, targetUserId: number) {
 
 export async function listVisibleConversations(actor: AuthUser): Promise<ConversationPreview[]> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const conversations = await getAccessibleConversationMap(db, actor);
   return Array.from(conversations.values());
 }
@@ -124,8 +120,6 @@ export async function getConversationDetail(
   conversationId: number
 ): Promise<ConversationDetail> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const preview = await assertCanAccessConversation(db, actor, conversationId);
   const [participants, messages, canModerateMessages] = await Promise.all([
     loadConversationParticipants(db, conversationId),
@@ -143,8 +137,6 @@ export async function getConversationDetail(
 
 export async function markConversationAsRead(actor: AuthUser, conversationId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   await assertCanAccessConversation(db, actor, conversationId);
   return markConversationAsReadInternal(db, actor, conversationId);
 }
@@ -155,8 +147,6 @@ export async function sendTextMessage(
   content: string
 ): Promise<ConversationMessage | { ok: true; cleared: true }> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const preview = await assertCanAccessConversation(db, actor, conversationId);
 
   const conversationResult = await db.query<{ type: ConversationPreview["type"] }>(
@@ -272,8 +262,6 @@ export async function sendTextMessage(
 
 export async function listDirectMessageTargets(actor: AuthUser): Promise<DirectMessageTarget[]> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   if (actor.role === "admin") {
     const result = await db.query<{
       id: number;
@@ -391,8 +379,6 @@ export async function listDirectMessageTargets(actor: AuthUser): Promise<DirectM
 
 export async function findOrCreateDirectConversation(actor: AuthUser, targetUserId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const conversationId = await findOrCreateDirectConversationId(actor, targetUserId);
   const [preview, participants, messages] = await Promise.all([
     loadDirectConversationPreview(db, actor, conversationId),
@@ -414,8 +400,6 @@ export async function findOrCreateDirectConversation(actor: AuthUser, targetUser
 
 export async function findOrCreateDirectConversationId(actor: AuthUser, targetUserId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const [userAId, userBId] =
     actor.id < targetUserId ? [actor.id, targetUserId] : [targetUserId, actor.id];
 
@@ -508,8 +492,6 @@ export async function shareTextInDirectConversation(
   content: string
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const conversationId = await findOrCreateDirectConversationId(actor, targetUserId);
   const normalizedContent = content.trim();
   if (normalizedContent === "/clean") {
@@ -583,8 +565,6 @@ export async function shareTextInDirectConversation(
 
 export async function closeDirectConversation(actor: AuthUser, conversationId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const preview = await assertCanAccessConversation(db, actor, conversationId);
   if (preview.type !== "direct") {
     throw new Error("InvalidConversationType");
@@ -608,8 +588,6 @@ export async function deleteConversationMessage(
   messageId: number
 ) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   await assertCanAccessConversation(db, actor, conversationId);
 
   const messageResult = await db.query<{

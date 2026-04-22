@@ -6,8 +6,6 @@ const MAX_HISTORY_ITEMS = 8;
 
 export async function listSearchHistoryForUser(userId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const result = await db.query<{ entry: SearchHistoryEntry }>(
     `SELECT entry
      FROM user_search_history
@@ -20,8 +18,6 @@ export async function listSearchHistoryForUser(userId: number) {
 }
 
 async function persistSearchHistory(userId: number, history: SearchHistoryEntry[]) {
-  if (!db) throw new Error("Database unavailable");
-
   await db.query("BEGIN");
 
   try {
@@ -51,7 +47,5 @@ export async function addSearchHistoryEntryForUser(userId: number, entry: Search
 
 export async function clearSearchHistoryForUser(userId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   await db.query("DELETE FROM user_search_history WHERE user_id = $1", [userId]);
 }

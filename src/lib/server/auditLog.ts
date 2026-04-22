@@ -59,8 +59,6 @@ export type AdminAuditLogSummary = {
 
 export async function anonymizeAuditLogsForUser(userId: number) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const hold = await getActiveLegalHold("user", userId);
   if (hold) {
     // Conservation légale : on ne supprime ni n'anonymise les logs liés à cet utilisateur
@@ -87,8 +85,6 @@ export async function recordAuditEvent(input: {
   payload?: Record<string, unknown> | null;
 }) {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   await db.query(
     `INSERT INTO audit_logs (actor_user_id, action, target_user_id, group_id, payload)
      VALUES ($1, $2, $3, $4, $5::jsonb)`,
@@ -104,8 +100,6 @@ export async function recordAuditEvent(input: {
 
 export async function listAdminAuditLogs(limit = 200): Promise<AdminAuditLogSummary[]> {
   await ensureDatabase();
-  if (!db) throw new Error("Database unavailable");
-
   const safeLimit = Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 500) : 200;
   const result = await db.query(
     `SELECT
