@@ -1,18 +1,10 @@
 "use client";
 
-import { addDays, format, isAfter } from "date-fns";
+import { addDays, format } from "date-fns";
 import { useState } from "react";
-import { CalendarDays, FilePenLine, Save, Trash2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CalendarDays, FilePenLine, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
@@ -22,24 +14,24 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
-import { getJobExternalUrl } from "@/features/jobs/utils/jobLinks";
+import { useApplicationDerivedState } from "@/features/applications/hooks/useApplicationDerivedState";
 import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
 import {
   applicationStatusLabel,
   formatApplicationDate,
-  formatApplicationDateTime,
-  getDisplayApplicationStatus,
-  isFollowUpEnabled,
-  isFollowUpPending,
   isManualApplication,
-  shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
 import { getApplicationStatusBadgeVariant } from "@/lib/cardColors";
-import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
-import { ContractTypeSelect } from "@/components/jobs/ContractTypeSelect";
 import { ApplicationStatus, JobApplication } from "@/types/application";
+import {
+  CoachNotesSection,
+  DetailsSection,
+  EditableTextSection,
+  FollowUpSection,
+  InterviewDetailsSection,
+  OfferDetailsSection,
+} from "@/features/applications/components/sheet-sections";
 
 interface ApplicationDetailsSheetProps {
   application: JobApplication | null;
@@ -133,17 +125,9 @@ function ApplicationDetailsSheetBody({
   onRequestDelete,
 }: ApplicationDetailsSheetBodyProps) {
   const isManual = isManualApplication(application);
-  const followUpEnabled = isFollowUpEnabled(application);
-  const displayStatus = getDisplayApplicationStatus(application);
-  const interviewDate = application.interviewAt ? new Date(application.interviewAt) : null;
-  const hasInterview = Boolean(interviewDate) && !Number.isNaN(interviewDate!.getTime());
-  const followUpDue = new Date(application.followUpDueAt);
   const now = new Date();
-  const isDue =
-    isFollowUpPending(application.status) &&
-    followUpEnabled &&
-    !Number.isNaN(followUpDue.getTime()) &&
-    !isAfter(followUpDue, now);
+  const { followUpEnabled, displayStatus, hasInterview, isDue } =
+    useApplicationDerivedState(application, now);
   const defaultFollowUpDate = formatDefaultFollowUpDate(application.appliedAt);
   const initialFollowUpForm = {
     enabled: followUpEnabled,
@@ -183,13 +167,9 @@ function ApplicationDetailsSheetBody({
         <div className="flex flex-wrap gap-2 pt-2">
           <Badge variant="outline">{application.job.contractType || "Non précisé"}</Badge>
           {isManual ? (
-            <Badge variant="secondary">
-              Manuelle
-            </Badge>
+            <Badge variant="secondary">Manuelle</Badge>
           ) : (
-            <Badge variant="secondary">
-              Importée
-            </Badge>
+            <Badge variant="secondary">Importée</Badge>
           )}
           {application.sharedCoachNotes && application.sharedCoachNotes.length > 0 ? (
             <Badge variant="secondary">
@@ -211,7 +191,6 @@ function ApplicationDetailsSheetBody({
                   resetManualDetailsForm();
                   return;
                 }
-
                 setIsEditingManualDetails(true);
               }}
             >
@@ -349,345 +328,9 @@ function ApplicationDetailsSheetBody({
   );
 }
 
-function DetailsSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h3 className="font-medium">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-function OfferDetailsSection({
-  application,
-  isManual,
-  isEditingManualDetails,
-  manualDetailsForm,
-  onManualDetailsFormChange,
-  onCancelEdit,
-  onSave,
-}: {
-  application: JobApplication;
-  isManual: boolean;
-  isEditingManualDetails: boolean;
-  manualDetailsForm: {
-    company: string;
-    title: string;
-    contractType: string;
-    location: string;
-    url: string;
-  };
-  onManualDetailsFormChange: React.Dispatch<
-    React.SetStateAction<{
-      company: string;
-      title: string;
-      contractType: string;
-      location: string;
-      url: string;
-    }>
-  >;
-  onCancelEdit: () => void;
-  onSave: () => Promise<void>;
-}) {
-  const jobUrl =
-    application.job.url && application.job.url !== "#"
-      ? getJobExternalUrl(application.job)
-      : null;
-
-  if (isManual && isEditingManualDetails) {
-    return (
-      <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-        <FieldGroup className="grid gap-3 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="sheet-manual-company">Entreprise</FieldLabel>
-            <Input
-              id="sheet-manual-company"
-              value={manualDetailsForm.company}
-              onChange={(event) =>
-                onManualDetailsFormChange((current) => ({
-                  ...current,
-                  company: event.target.value,
-                }))
-              }
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="sheet-manual-contract-type">Type</FieldLabel>
-            <ContractTypeSelect
-              id="sheet-manual-contract-type"
-              value={manualDetailsForm.contractType}
-              onValueChange={(value) =>
-                onManualDetailsFormChange((current) => ({
-                  ...current,
-                  contractType: value,
-                }))
-              }
-            />
-          </Field>
-          <Field className="sm:col-span-2">
-            <FieldLabel htmlFor="sheet-manual-title">Intitulé</FieldLabel>
-            <Input
-              id="sheet-manual-title"
-              value={manualDetailsForm.title}
-              onChange={(event) =>
-                onManualDetailsFormChange((current) => ({
-                  ...current,
-                  title: event.target.value,
-                }))
-              }
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="sheet-manual-location">Lieu</FieldLabel>
-            <Input
-              id="sheet-manual-location"
-              value={manualDetailsForm.location}
-              onChange={(event) =>
-                onManualDetailsFormChange((current) => ({
-                  ...current,
-                  location: event.target.value,
-                }))
-              }
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="sheet-manual-url">Lien de l&apos;offre</FieldLabel>
-            <Input
-              id="sheet-manual-url"
-              value={manualDetailsForm.url}
-              onChange={(event) =>
-                onManualDetailsFormChange((current) => ({
-                  ...current,
-                  url: event.target.value,
-                }))
-              }
-              placeholder="https://..."
-            />
-          </Field>
-        </FieldGroup>
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancelEdit}>
-            Annuler
-          </Button>
-          <Button
-            type="button"
-            onClick={() => void onSave()}
-            disabled={!manualDetailsForm.company.trim() || !manualDetailsForm.title.trim()}
-          >
-            <Save data-icon="inline-start" />
-            Enregistrer
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-muted-foreground">
-      <p>{application.job.company || "Entreprise non précisée"}</p>
-      <p className="font-medium text-foreground">{application.job.title}</p>
-      <p>{application.job.location || "Non précisé"}</p>
-      <p>Type: {application.job.contractType || "Non précisé"}</p>
-      <p className="break-all">
-        Lien: {jobUrl || "Aucun"}
-      </p>
-    </div>
-  );
-}
-
-function FollowUpSection({
-  application,
-  followUpForm,
-  followUpSaveState,
-  defaultFollowUpDate,
-  onFollowUpFormChange,
-  onSave,
-}: {
-  application: JobApplication;
-  followUpForm: {
-    enabled: boolean;
-    dueAt: string;
-  };
-  followUpSaveState: "idle" | "error";
-  defaultFollowUpDate: string;
-  onFollowUpFormChange: (nextForm: { enabled: boolean; dueAt: string }) => void;
-  onSave: (nextForm: { enabled: boolean; dueAt: string }) => Promise<void>;
-}) {
-  if (!shouldShowFollowUpDetails(application.status)) {
-    return (
-      <p className="text-muted-foreground">
-        Aucune relance automatique sur une candidature clôturée.
-      </p>
-    );
-  }
-
-  return (
-    <FieldGroup className="rounded-lg border border-border/60 bg-muted/20 p-3">
-      <Field>
-        <FieldLabel htmlFor="sheet-follow-up-date">
-          {followUpForm.enabled ? "Relance active" : "Relance désactivée"}
-        </FieldLabel>
-        <Input
-          id="sheet-follow-up-date"
-          type="date"
-          value={followUpForm.dueAt}
-          onChange={(event) =>
-            onFollowUpFormChange({
-              ...followUpForm,
-              dueAt: event.target.value,
-            })
-          }
-        />
-        <FieldDescription>
-          {followUpForm.enabled
-            ? `Prochaine relance: ${formatApplicationDate(followUpForm.dueAt)}`
-            : "Relance désactivée pour cette candidature."}
-        </FieldDescription>
-      </Field>
-      <div className="flex flex-col gap-1 text-muted-foreground">
-        {application.lastFollowUpAt ? (
-          <p>Dernière relance: {formatApplicationDate(application.lastFollowUpAt)}</p>
-        ) : null}
-        {followUpSaveState === "error" ? (
-          <Alert variant="destructive">
-            <AlertTitle>Relance</AlertTitle>
-            <AlertDescription>Impossible d&apos;enregistrer la relance.</AlertDescription>
-          </Alert>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() =>
-            onFollowUpFormChange({
-              ...followUpForm,
-              dueAt: defaultFollowUpDate,
-            })
-          }
-          disabled={followUpForm.dueAt === defaultFollowUpDate}
-        >
-          Remettre à J+7
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() =>
-            void onSave({
-              enabled: !followUpForm.enabled,
-              dueAt: followUpForm.dueAt || defaultFollowUpDate,
-            })
-          }
-        >
-          {followUpForm.enabled ? "Désactiver la relance" : "Activer la relance"}
-        </Button>
-        <Button
-          type="button"
-          onClick={() =>
-            void onSave({
-              enabled: true,
-              dueAt: followUpForm.dueAt || defaultFollowUpDate,
-            })
-          }
-          disabled={!followUpForm.dueAt}
-        >
-          <Save data-icon="inline-start" />
-          Mettre à jour la relance
-        </Button>
-      </div>
-    </FieldGroup>
-  );
-}
-
-function InterviewDetailsSection({ application }: { application: JobApplication }) {
-  return (
-    <>
-      <p className="text-muted-foreground">
-        {application.interviewAt
-          ? formatApplicationDateTime(application.interviewAt ?? undefined)
-          : "Aucun entretien planifié"}
-      </p>
-      {application.interviewDetails ? (
-        <p className="whitespace-pre-wrap rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-muted-foreground">
-          {application.interviewDetails}
-        </p>
-      ) : null}
-    </>
-  );
-}
-
-function EditableTextSection({
-  value,
-  initialValue,
-  minHeightClassName,
-  placeholder,
-  onChange,
-  onSave,
-}: {
-  value: string;
-  initialValue: string;
-  minHeightClassName: string;
-  placeholder?: string;
-  onChange: (value: string) => void;
-  onSave: () => Promise<void>;
-}) {
-  return (
-    <>
-      <Textarea
-        className={minHeightClassName}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-      />
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => void onSave()}
-          disabled={value === initialValue}
-        >
-          <Save data-icon="inline-start" />
-          Enregistrer
-        </Button>
-      </div>
-    </>
-  );
-}
-
-function CoachNotesSection({ application }: { application: JobApplication }) {
-  return (
-    <>
-      {application.sharedCoachNotes?.map((note) => (
-        <div
-          key={note.id}
-          className="rounded-md border border-border/60 bg-muted/20 px-3 py-3 text-sm text-muted-foreground"
-        >
-          <div className="flex flex-col gap-1 text-xs">
-            <p>
-              Rédigée par {formatCoachAuthorName(note.createdBy)} •{" "}
-              {formatApplicationDateTime(note.updatedAt)}
-            </p>
-            {note.contributors.length > 1 ? (
-              <p>Contributions: {summarizeCoachContributors(note.contributors)}</p>
-            ) : null}
-          </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm">{note.content}</p>
-        </div>
-      ))}
-    </>
-  );
-}
-
 function formatDefaultFollowUpDate(appliedAt: string) {
   const baseDate = new Date(appliedAt);
   const normalizedDate = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate;
-
   return format(addDays(normalizedDate, 7), "yyyy-MM-dd");
 }
 
@@ -695,12 +338,10 @@ function getEditableFollowUpDate(followUpDueAt: string | undefined, fallbackDate
   if (!followUpDueAt) {
     return fallbackDate;
   }
-
   const followUpDate = new Date(followUpDueAt);
   if (Number.isNaN(followUpDate.getTime())) {
     return fallbackDate;
   }
-
   return format(followUpDate, "yyyy-MM-dd");
 }
 

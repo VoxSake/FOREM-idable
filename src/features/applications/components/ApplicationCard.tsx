@@ -1,19 +1,16 @@
 "use client";
 
-import { addDays, isAfter, isBefore } from "date-fns";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ApplicationsOfferButtons } from "@/features/applications/components/ApplicationsOfferButtons";
 import { ApplicationStatusSelect } from "@/features/applications/components/ApplicationStatusSelect";
+import { useApplicationDerivedState } from "@/features/applications/hooks/useApplicationDerivedState";
 import {
   applicationStatusLabel,
   formatApplicationDate,
   formatApplicationDateTime,
-  getDisplayApplicationStatus,
-  isFollowUpEnabled,
-  isFollowUpPending,
   isManualApplication,
   shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
@@ -47,22 +44,13 @@ export function ApplicationCard({
   onMarkFollowUpDone,
   onOpenInterview,
 }: ApplicationCardProps) {
-  const followUpDue = new Date(application.followUpDueAt);
-  const interviewDate = application.interviewAt ? new Date(application.interviewAt) : null;
-  const hasInterview = Boolean(interviewDate) && !Number.isNaN(interviewDate!.getTime());
-  const followUpEnabled = isFollowUpEnabled(application);
-  const isDue =
-    isFollowUpPending(application.status) &&
-    followUpEnabled &&
-    !Number.isNaN(followUpDue.getTime()) &&
-    !isAfter(followUpDue, now);
-  const isSoon =
-    isFollowUpPending(application.status) &&
-    followUpEnabled &&
-    !Number.isNaN(followUpDue.getTime()) &&
-    isAfter(followUpDue, now) &&
-    isBefore(followUpDue, addDays(now, 2));
-  const displayStatus = getDisplayApplicationStatus(application);
+  const {
+    hasInterview,
+    followUpEnabled,
+    isDue,
+    isSoon,
+    displayStatus,
+  } = useApplicationDerivedState(application, now);
 
   return (
     <Card

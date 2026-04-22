@@ -104,21 +104,23 @@ export function isFollowUpEnabled(application: Pick<JobApplication, "followUpEna
 }
 
 export function isApplicationFollowUpDue(
-  application: Pick<JobApplication, "status" | "followUpDueAt" | "followUpEnabled">
+  application: Pick<JobApplication, "status" | "followUpDueAt" | "followUpEnabled">,
+  now: Date = new Date()
 ) {
   const due = new Date(application.followUpDueAt);
   return (
     isFollowUpPending(application.status) &&
     isFollowUpEnabled(application) &&
     !Number.isNaN(due.getTime()) &&
-    !isAfter(due, new Date())
+    !isAfter(due, now)
   );
 }
 
 export function getDisplayApplicationStatus(
-  application: Pick<JobApplication, "status" | "followUpDueAt" | "followUpEnabled">
+  application: Pick<JobApplication, "status" | "followUpDueAt" | "followUpEnabled">,
+  now: Date = new Date()
 ) {
-  return isApplicationFollowUpDue(application) ? "follow_up" : application.status;
+  return isApplicationFollowUpDue(application, now) ? "follow_up" : application.status;
 }
 
 export function shouldShowFollowUpDetails(status: ApplicationStatus) {
