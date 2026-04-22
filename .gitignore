@@ -55,3 +55,6 @@ todo.md
 
 # TypeScript
 *.tsbuildinfo
+
+# security audit outputs (confidential, generated locally)
+security-audit/
