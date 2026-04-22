@@ -102,7 +102,10 @@ export function LocationAutocomplete({
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] lg:w-[350px] p-0 rounded-xl" align="start">
+            <PopoverContent
+              className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[95vw] p-0 rounded-xl"
+              align="start"
+            >
                 {/* We disable cmDK internal filtering so we can handle display ourselves, but keep keyboard nav */}
                 <Command shouldFilter={false}>
                     <CommandInput

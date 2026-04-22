@@ -2,18 +2,14 @@
 
 import { Suspense, useState } from "react";
 import { SearchEngine, SearchState } from "@/components/search/SearchEngine";
+import { FeaturedSearch } from "@/types/featuredSearch";
 import { SearchHistoryPanel } from "@/features/jobs/components/SearchHistoryPanel";
 import { ExportDialog } from "@/features/jobs/components/ExportDialog";
 import { JobDetailsSheet } from "@/features/jobs/components/JobDetailsSheet";
 import { AuthRequiredDialog } from "@/components/auth/AuthRequiredDialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@/components/ui/empty";
+
 import {
   Dialog,
   DialogContent,
@@ -126,31 +122,22 @@ function DashboardPageContent() {
     <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 animate-in fade-in duration-500">
       {page.hasSearched ? (
         <>
-          <section className="flex flex-col gap-4 rounded-[28px] border border-border/60 bg-card/70 p-4 shadow-sm sm:p-5">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-muted-foreground">
-                Recherche d&apos;offres
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Reprenez la recherche ou affinez-la.
-              </h1>
-            </div>
-            <SearchEngine
-              key={searchFormKey}
-              onSearch={(state: SearchState) => page.handleSearch(state)}
-              initialState={searchFormInitialState}
-              featuredSearches={availableFeaturedSearches}
-              onRunFeaturedSearch={(item) => {
-                void page.runFeaturedSearch(item);
-              }}
-              historyCount={page.user && page.isHistoryLoaded ? page.history.length : 0}
-              onOpenHistory={
-                page.user && page.isHistoryLoaded && page.history.length > 0
-                  ? () => setIsHistoryOpen(true)
-                  : undefined
-              }
-            />
-          </section>
+          <SearchFormSection
+            searchFormKey={searchFormKey}
+            searchFormInitialState={searchFormInitialState}
+            availableFeaturedSearches={availableFeaturedSearches}
+            historyCount={page.user && page.isHistoryLoaded ? page.history.length : 0}
+            onOpenHistory={
+              page.user && page.isHistoryLoaded && page.history.length > 0
+                ? () => setIsHistoryOpen(true)
+                : undefined
+            }
+            onSearch={(state: SearchState) => page.handleSearch(state)}
+            onRunFeaturedSearch={(item) => {
+              void page.runFeaturedSearch(item);
+            }}
+            hasSearched
+          />
 
           <HomeSearchResultsSection
             jobs={page.jobs}
@@ -195,33 +182,24 @@ function DashboardPageContent() {
         <>
           <HomePageHero />
 
-          <SearchEngine
-            key={searchFormKey}
-            onSearch={(state: SearchState) => page.handleSearch(state)}
-            initialState={searchFormInitialState}
-            featuredSearches={availableFeaturedSearches}
-            onRunFeaturedSearch={(item) => {
-              void page.runFeaturedSearch(item);
-            }}
+          <SearchFormSection
+            searchFormKey={searchFormKey}
+            searchFormInitialState={searchFormInitialState}
+            availableFeaturedSearches={availableFeaturedSearches}
             historyCount={page.user && page.isHistoryLoaded ? page.history.length : 0}
             onOpenHistory={
               page.user && page.isHistoryLoaded && page.history.length > 0
                 ? () => setIsHistoryOpen(true)
                 : undefined
             }
+            onSearch={(state: SearchState) => page.handleSearch(state)}
+            onRunFeaturedSearch={(item) => {
+              void page.runFeaturedSearch(item);
+            }}
+            hasSearched={false}
           />
 
           {authPanel}
-
-          <Empty className="mt-8 min-h-64 w-full bg-card/50">
-            <EmptyHeader>
-              <EmptyTitle>Effectuez une recherche pour commencer.</EmptyTitle>
-              <EmptyDescription>
-                Lance une première recherche pour afficher les offres, l&apos;historique et les actions
-                d&apos;export.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
         </>
       )}
 
@@ -291,6 +269,56 @@ function DashboardPageContent() {
       </Dialog>
     </div>
   );
+}
+
+function SearchFormSection({
+  searchFormKey,
+  searchFormInitialState,
+  availableFeaturedSearches,
+  historyCount,
+  onOpenHistory,
+  onSearch,
+  onRunFeaturedSearch,
+  hasSearched,
+}: {
+  searchFormKey: string;
+  searchFormInitialState: Partial<SearchState>;
+  availableFeaturedSearches: FeaturedSearch[];
+  historyCount: number;
+  onOpenHistory?: () => void;
+  onSearch: (state: SearchState) => void;
+  onRunFeaturedSearch: (item: FeaturedSearch) => void;
+  hasSearched: boolean;
+}) {
+  const engine = (
+    <SearchEngine
+      key={searchFormKey}
+      onSearch={onSearch}
+      initialState={searchFormInitialState}
+      featuredSearches={availableFeaturedSearches}
+      onRunFeaturedSearch={onRunFeaturedSearch}
+      historyCount={historyCount}
+      onOpenHistory={onOpenHistory}
+    />
+  );
+
+  if (hasSearched) {
+    return (
+      <section className="flex flex-col gap-4 rounded-[28px] border border-border/60 bg-card/70 p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-muted-foreground">
+            Recherche d&apos;offres
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Reprenez la recherche ou affinez-la.
+          </h1>
+        </div>
+        {engine}
+      </section>
+    );
+  }
+
+  return engine;
 }
 
 export default function DashboardPage() {
