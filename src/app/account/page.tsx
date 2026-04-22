@@ -15,25 +15,13 @@ import { useAccountApiKeys } from "@/hooks/useAccountApiKeys";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { AuthUser } from "@/types/auth";
 import {
-  fetchDataExportRequests,
-  fetchDeletionRequests,
-  updateProfile,
-  updatePassword,
-  generateDataExport as apiGenerateDataExport,
-  submitDeletionRequest as apiSubmitDeletionRequest,
-  cancelDeletionRequest as apiCancelDeletionRequest,
-} from "@/lib/api/account";
-import {
-  AccountDeletionRequestSummary,
   ApiKeyFormValues,
-  DataExportRequestSummary,
-  FeedbackState,
-  PasswordFormValues,
-  ProfileFormValues,
   apiKeySchema,
-  passwordSchema,
-  profileSchema,
 } from "./account.schemas";
+import { useProfileForm } from "./hooks/useProfileForm";
+import { usePasswordForm } from "./hooks/usePasswordForm";
+import { useDataExports } from "./hooks/useDataExports";
+import { useAccountDeletion } from "./hooks/useAccountDeletion";
 import { AccountDeletionSection } from "./components/AccountDeletionSection";
 import { ApiKeysSection } from "./components/ApiKeysSection";
 import { DataExportSection } from "./components/DataExportSection";
@@ -82,36 +70,11 @@ function AccountPageSkeleton() {
 export default function AccountPage() {
   const { user, isLoading, refresh, setUser } = useAuth();
   const { settings, updateSettings, isLoaded: isSettingsLoaded } = useSettings();
-  const [profileFeedback, setProfileFeedback] = useState<FeedbackState | null>(null);
-  const [passwordFeedback, setPasswordFeedback] = useState<FeedbackState | null>(null);
-  const [dataExportFeedback, setDataExportFeedback] = useState<FeedbackState | null>(null);
-  const [deletionFeedback, setDeletionFeedback] = useState<FeedbackState | null>(null);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [isLoadingExports, setIsLoadingExports] = useState(false);
-  const [isLoadingDeletionRequests, setIsLoadingDeletionRequests] = useState(false);
-  const [isGeneratingExport, setIsGeneratingExport] = useState(false);
-  const [isSubmittingDeletionRequest, setIsSubmittingDeletionRequest] = useState(false);
-  const [dataExportRequests, setDataExportRequests] = useState<DataExportRequestSummary[]>([]);
-  const [deletionRequests, setDeletionRequests] = useState<AccountDeletionRequestSummary[]>([]);
+  const profile = useProfileForm();
+  const password = usePasswordForm();
+  const dataExports = useDataExports();
+  const accountDeletion = useAccountDeletion();
 
-  const profileForm = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    mode: "onChange",
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-    },
-  });
-  const passwordForm = useForm<PasswordFormValues>({
-    resolver: zodResolver(passwordSchema),
-    mode: "onChange",
-    defaultValues: {
-      currentPassword: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
   const apiKeyForm = useForm<ApiKeyFormValues>({
     resolver: zodResolver(apiKeySchema),
     mode: "onChange",
@@ -120,174 +83,24 @@ export default function AccountPage() {
       expiry: "none",
     },
   });
-
-  const [currentFirstName = "", currentLastName = ""] = useWatch({
-    control: profileForm.control,
-    name: ["firstName", "lastName"],
-  });
-  const [currentOldPassword = "", newPassword = "", newPasswordConfirmation = ""] = useWatch({
-    control: passwordForm.control,
-    name: ["currentPassword", "password", "confirmPassword"],
-  });
   const [currentApiKeyName = "", currentApiKeyExpiry = "none"] = useWatch({
     control: apiKeyForm.control,
     name: ["name", "expiry"],
   });
 
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    profileForm.reset({
-      firstName: user.firstName,
-      lastName: user.lastName,
-    });
-  }, [profileForm, user]);
-
   const canManageApiKeys = user?.role === "coach" || user?.role === "admin";
   const apiKeys = useAccountApiKeys({ enabled: canManageApiKeys });
 
-  useToastFeedback(profileFeedback, { title: "Mise à jour du profil" });
-  useToastFeedback(passwordFeedback, { title: "Mot de passe" });
+  useToastFeedback(profile.feedback, { title: "Mise à jour du profil" });
+  useToastFeedback(password.feedback, { title: "Mot de passe" });
   useToastFeedback(apiKeys.feedback, { title: "Clés API" });
-  useToastFeedback(dataExportFeedback, { title: "Export de données" });
-  useToastFeedback(deletionFeedback, { title: "Suppression du compte" });
+  useToastFeedback(dataExports.feedback, { title: "Export de données" });
+  useToastFeedback(accountDeletion.feedback, { title: "Suppression du compte" });
 
-  const isProfileUnchanged = useMemo(
-    () =>
-      !user ||
-      (currentFirstName.trim() === user.firstName.trim() &&
-        currentLastName.trim() === user.lastName.trim()),
-    [currentFirstName, currentLastName, user]
-  );
-  const isPasswordEmpty = currentOldPassword.length === 0 && newPassword.length === 0 && newPasswordConfirmation.length === 0;
-
-  const canSubmitProfile =
-    !isSavingProfile && !isProfileUnchanged && profileForm.formState.isValid;
-  const canSubmitPassword =
-    !isSavingPassword && !isPasswordEmpty && passwordForm.formState.isValid;
   const canSubmitApiKey =
     !apiKeys.isCreating &&
     currentApiKeyName.trim().length > 0 &&
     apiKeyForm.formState.isValid;
-
-  const loadDataExportRequests = useCallback(async () => {
-    setIsLoadingExports(true);
-
-    try {
-      const { data } = await fetchDataExportRequests();
-      if (!data.requests) {
-        setDataExportFeedback({
-          type: "error",
-          message: "Chargement des exports impossible.",
-        });
-        return;
-      }
-      setDataExportRequests(data.requests);
-    } catch {
-      setDataExportFeedback({
-        type: "error",
-        message: "Chargement des exports impossible.",
-      });
-    } finally {
-      setIsLoadingExports(false);
-    }
-  }, []);
-
-  const loadDeletionRequests = useCallback(async () => {
-    setIsLoadingDeletionRequests(true);
-
-    try {
-      const { data } = await fetchDeletionRequests();
-      if (!data.requests) {
-        setDeletionFeedback({
-          type: "error",
-          message: "Chargement des demandes impossible.",
-        });
-        return;
-      }
-      setDeletionRequests(data.requests);
-    } catch {
-      setDeletionFeedback({
-        type: "error",
-        message: "Chargement des demandes impossible.",
-      });
-    } finally {
-      setIsLoadingDeletionRequests(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!user) {
-      setDataExportRequests([]);
-      setDeletionRequests([]);
-      return;
-    }
-
-    void loadDataExportRequests();
-    void loadDeletionRequests();
-  }, [loadDataExportRequests, loadDeletionRequests, user]);
-
-  const saveProfile = useCallback(async (values: ProfileFormValues) => {
-    setIsSavingProfile(true);
-    setProfileFeedback(null);
-
-    try {
-      const { data } = await updateProfile(values);
-
-      if (!data.user) {
-        setProfileFeedback({
-          type: "error",
-          message: "Mise à jour impossible.",
-        });
-        return;
-      }
-
-      setUser(data.user);
-      profileForm.reset({
-        firstName: data.user.firstName,
-        lastName: data.user.lastName,
-      });
-      await refresh();
-      setProfileFeedback({
-        type: "success",
-        message: "Nom et prénom mis à jour.",
-      });
-    } catch {
-      setProfileFeedback({
-        type: "error",
-        message: "Mise à jour impossible.",
-      });
-    } finally {
-      setIsSavingProfile(false);
-    }
-  }, [profileForm, refresh, setUser]);
-
-  const savePassword = useCallback(async (values: PasswordFormValues) => {
-    setIsSavingPassword(true);
-    setPasswordFeedback(null);
-
-    try {
-      await updatePassword({
-        currentPassword: values.currentPassword,
-        password: values.password,
-      });
-
-      passwordForm.reset();
-      setPasswordFeedback({
-        type: "success",
-        message: "Mot de passe mis à jour.",
-      });
-    } catch {
-      setPasswordFeedback({
-        type: "error",
-        message: "Mise à jour impossible.",
-      });
-    } finally {
-      setIsSavingPassword(false);
-    }
-  }, [passwordForm]);
 
   const createApiKey = useCallback(async (values: ApiKeyFormValues) => {
     const wasCreated = await apiKeys.createApiKey(values);
@@ -300,97 +113,6 @@ export default function AccountPage() {
       expiry: "none",
     });
   }, [apiKeyForm, apiKeys]);
-
-  const generateDataExport = useCallback(async () => {
-    setIsGeneratingExport(true);
-    setDataExportFeedback(null);
-
-    try {
-      const { data } = await apiGenerateDataExport();
-      if (!data.request) {
-        setDataExportFeedback({
-          type: "error",
-          message: "Export impossible.",
-        });
-        return;
-      }
-
-      await loadDataExportRequests();
-      setDataExportFeedback({
-        type: "success",
-        message: "Export généré. Vous pouvez maintenant le télécharger.",
-      });
-    } catch {
-      setDataExportFeedback({
-        type: "error",
-        message: "Export impossible.",
-      });
-    } finally {
-      setIsGeneratingExport(false);
-    }
-  }, [loadDataExportRequests]);
-
-  const downloadDataExport = useCallback((requestId: number) => {
-    window.location.href = `/api/account/data-export/${requestId}`;
-  }, []);
-
-  const submitDeletionRequest = useCallback(async (reason: string) => {
-    setIsSubmittingDeletionRequest(true);
-    setDeletionFeedback(null);
-
-    try {
-      const { data } = await apiSubmitDeletionRequest(reason);
-      if (!data.request) {
-        setDeletionFeedback({
-          type: "error",
-          message: "Demande impossible.",
-        });
-        return;
-      }
-
-      await loadDeletionRequests();
-      setDeletionFeedback({
-        type: "success",
-        message: "Demande de suppression enregistrée.",
-      });
-    } catch {
-      setDeletionFeedback({
-        type: "error",
-        message: "Demande impossible.",
-      });
-    } finally {
-      setIsSubmittingDeletionRequest(false);
-    }
-  }, [loadDeletionRequests]);
-
-  const cancelDeletionRequest = useCallback(async () => {
-    setIsSubmittingDeletionRequest(true);
-    setDeletionFeedback(null);
-
-    try {
-      const { data } = await apiCancelDeletionRequest();
-      if (!data.request) {
-        setDeletionFeedback({
-          type: "error",
-          message: "Annulation impossible.",
-        });
-        return;
-      }
-
-      await loadDeletionRequests();
-      setDeletionFeedback({
-        type: "success",
-        message: "Demande de suppression annulée.",
-      });
-    } catch {
-      setDeletionFeedback({
-        type: "error",
-        message: "Annulation impossible.",
-      });
-    } finally {
-      setIsSubmittingDeletionRequest(false);
-    }
-  }, [loadDeletionRequests]);
 
   const handleSearchModeChange = useCallback(
     (value: "AND" | "OR") => {
@@ -448,16 +170,16 @@ export default function AccountPage() {
           <CardContent className="flex flex-col gap-6">
             <div className="grid gap-6 items-start lg:grid-cols-2">
               <ProfileSection
-                form={profileForm}
-                canSubmit={canSubmitProfile}
-                isSubmitting={isSavingProfile}
-                onSubmit={saveProfile}
+                form={profile.form}
+                canSubmit={profile.canSubmit}
+                isSubmitting={profile.isSaving}
+                onSubmit={profile.save}
               />
               <PasswordSection
-                form={passwordForm}
-                canSubmit={canSubmitPassword}
-                isSubmitting={isSavingPassword}
-                onSubmit={savePassword}
+                form={password.form}
+                canSubmit={password.canSubmit}
+                isSubmitting={password.isSaving}
+                onSubmit={password.save}
               />
             </div>
 
@@ -488,18 +210,18 @@ export default function AccountPage() {
 
         <div className="grid gap-6 xl:grid-cols-2">
           <DataExportSection
-            requests={dataExportRequests}
-            isLoading={isLoadingExports}
-            isExporting={isGeneratingExport}
-            onCreate={generateDataExport}
-            onDownload={downloadDataExport}
+            requests={dataExports.requests}
+            isLoading={dataExports.isLoading}
+            isExporting={dataExports.isGenerating}
+            onCreate={dataExports.generate}
+            onDownload={dataExports.download}
           />
           <AccountDeletionSection
-            requests={deletionRequests}
-            isLoading={isLoadingDeletionRequests}
-            isSubmitting={isSubmittingDeletionRequest}
-            onSubmit={submitDeletionRequest}
-            onCancel={cancelDeletionRequest}
+            requests={accountDeletion.requests}
+            isLoading={accountDeletion.isLoading}
+            isSubmitting={accountDeletion.isSubmitting}
+            onSubmit={accountDeletion.submit}
+            onCancel={accountDeletion.cancel}
           />
         </div>
       </div>
