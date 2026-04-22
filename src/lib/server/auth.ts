@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { ensureDatabase, orm } from "@/lib/server/db";
 import { passwordResetTokens, sessions, users } from "@/lib/server/schema";
 import { AuthUser } from "@/types/auth";
+import { anonymizeAuditLogsForUser } from "@/lib/server/auditLog";
 
 const SESSION_COOKIE = serverConfig.app.sessionCookieName;
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7;
@@ -319,5 +320,6 @@ export async function deleteUserAccount(userId: number) {
   await ensureDatabase();
   if (!orm) throw new Error("Database unavailable");
 
+  await anonymizeAuditLogsForUser(userId);
   await orm.delete(users).where(eq(users.id, userId));
 }

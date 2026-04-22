@@ -86,7 +86,15 @@ async function main() {
     summary.expiredAuditLogs = await deleteCount(
       client,
       `DELETE FROM audit_logs
-       WHERE created_at < NOW() - ($1::text || ' months')::interval`,
+        WHERE created_at < NOW() - ($1::text || ' months')::interval
+          AND actor_user_id NOT IN (
+            SELECT target_id FROM legal_holds
+            WHERE target_type = 'user' AND released_at IS NULL
+          )
+          AND target_user_id NOT IN (
+            SELECT target_id FROM legal_holds
+            WHERE target_type = 'user' AND released_at IS NULL
+          )`,
       [String(auditLogRetentionMonths)]
     );
 

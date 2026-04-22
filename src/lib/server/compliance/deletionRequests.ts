@@ -1,7 +1,7 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { AuthUser } from "@/types/auth";
 import { deleteUserAccount } from "@/lib/server/auth";
-import { recordAuditEvent } from "@/lib/server/auditLog";
+import { recordAuditEvent, anonymizeAuditLogsForUser } from "@/lib/server/auditLog";
 import { db, ensureDatabase, orm } from "@/lib/server/db";
 import { logServerEvent } from "@/lib/server/observability";
 import { accountDeletionRequests, users } from "@/lib/server/schema";
@@ -233,6 +233,7 @@ export async function reviewAccountDeletionRequest(input: {
     },
   });
 
+  await anonymizeAuditLogsForUser(request.userId);
   await deleteUserAccount(request.userId);
 
   return {

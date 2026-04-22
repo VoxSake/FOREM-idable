@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
           level: "warn",
           meta: {
             hasIdentifier: Boolean(email),
+            ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
           },
         });
         return NextResponse.json({ error: "Identifiants invalides." }, { status: 401 });

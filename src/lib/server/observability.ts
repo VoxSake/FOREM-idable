@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "async_hooks";
-import { randomUUID } from "crypto";
+import { createHmac, randomUUID } from "crypto";
 import { NextRequest } from "next/server";
 
 type ObservabilityLevel = "info" | "warn" | "error";
@@ -8,9 +8,17 @@ interface RequestLogContext {
   requestId: string;
   method: string;
   path: string;
+  ip?: string;
+  userAgent?: string;
+  userId?: number;
 }
 
 const requestContextStore = new AsyncLocalStorage<RequestLogContext>();
+
+function hashUserId(userId: number): string {
+  const secret = process.env.AUDIT_HASH_SECRET || "dev-secret-change-me";
+  return createHmac("sha256", secret).update(String(userId)).digest("hex").slice(0, 16);
+}
 
 function isTimingEnabled() {
   return process.env.SERVER_TIMING_LOGS?.trim().toLowerCase() === "true";
@@ -67,15 +75,23 @@ function sanitizeMeta(meta: Record<string, unknown> | undefined) {
   return Object.fromEntries(
     Object.entries(meta)
       .filter(([, value]) => value !== undefined)
-      .map(([key, value]) => [key, redactKey(key, value)])
+      .map(([key, value]) => {
+        if (/userId/i.test(key) && typeof value === "number") {
+          return [key, hashUserId(value)];
+        }
+        return [key, redactKey(key, value)];
+      })
   );
 }
 
-export function createRequestContext(request: NextRequest): RequestLogContext {
+export function createRequestContext(request: NextRequest, userId?: number): RequestLogContext {
   return {
     requestId: request.headers.get("x-request-id")?.trim() || randomUUID(),
     method: request.method,
     path: request.nextUrl.pathname,
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined,
+    userAgent: request.headers.get("user-agent") || undefined,
+    userId,
   };
 }
 
@@ -85,9 +101,12 @@ export function getCurrentRequestContext() {
 
 export async function withRequestContext<T>(
   request: NextRequest,
-  run: (context: RequestLogContext) => Promise<T>
+  userIdOrRun: number | undefined | ((context: RequestLogContext) => Promise<T>),
+  maybeRun?: (context: RequestLogContext) => Promise<T>
 ) {
-  const context = createRequestContext(request);
+  const userId = typeof userIdOrRun === "number" ? userIdOrRun : undefined;
+  const run = typeof userIdOrRun === "function" ? userIdOrRun : maybeRun!;
+  const context = createRequestContext(request, userId);
   return requestContextStore.run(context, () => run(context));
 }
 
@@ -116,6 +135,9 @@ export function logServerEvent(input: {
     requestId: context?.requestId,
     method: context?.method,
     path: context?.path,
+    ip: context?.ip,
+    userAgent: context?.userAgent,
+    userId: context?.userId ? hashUserId(context.userId) : undefined,
     durationMs:
       typeof input.durationMs === "number" ? Math.round(input.durationMs * 100) / 100 : undefined,
     meta: sanitizeMeta(input.meta),

@@ -563,9 +563,9 @@ export const auditLogs = pgTable(
   "audit_logs",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    actorUserId: bigint("actor_user_id", { mode: "number" })
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    actorUserId: bigint("actor_user_id", { mode: "number" }).references(() => users.id, {
+      onDelete: "set null",
+    }),
     action: text("action").notNull(),
     targetUserId: bigint("target_user_id", { mode: "number" }).references(() => users.id, {
       onDelete: "set null",

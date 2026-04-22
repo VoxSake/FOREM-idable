@@ -1,5 +1,6 @@
 import { db, ensureDatabase } from "@/lib/server/db";
 import { toIso } from "@/lib/server/compliance/shared";
+import { getActiveLegalHold } from "@/lib/server/compliance/legalHolds";
 
 export type AuditAction =
   | "admin_role_changed"
@@ -55,6 +56,28 @@ export type AdminAuditLogSummary = {
     name: string;
   } | null;
 };
+
+export async function anonymizeAuditLogsForUser(userId: number) {
+  await ensureDatabase();
+  if (!db) throw new Error("Database unavailable");
+
+  const hold = await getActiveLegalHold("user", userId);
+  if (hold) {
+    // Conservation légale : on ne supprime ni n'anonymise les logs liés à cet utilisateur
+    return { anonymized: false, reason: "active_legal_hold" };
+  }
+
+  await db.query(
+    `UPDATE audit_logs
+     SET actor_user_id = NULL,
+         target_user_id = NULL,
+         payload = payload || '{"anonymized": true}'::jsonb
+     WHERE actor_user_id = $1 OR target_user_id = $1`,
+    [userId]
+  );
+
+  return { anonymized: true };
+}
 
 export async function recordAuditEvent(input: {
   actorUserId: number;
