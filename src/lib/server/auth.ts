@@ -7,8 +7,9 @@ import { passwordResetTokens, sessions, users } from "@/lib/server/schema";
 import { AuthUser } from "@/types/auth";
 
 const SESSION_COOKIE = serverConfig.app.sessionCookieName;
-const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
+const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7;
 const PASSWORD_RESET_DURATION_MS = 1000 * 60 * 60;
+const SESSION_SLIDE_THRESHOLD_MS = 1000 * 60 * 60 * 24;
 
 function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
   const derived = scryptSync(password, salt, 64).toString("hex");
@@ -190,7 +191,23 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     .limit(1);
 
   if (user) {
-    await orm.update(users).set({ lastSeenAt: new Date() }).where(eq(users.id, user.id));
+    const now = new Date();
+    await orm.update(users).set({ lastSeenAt: now }).where(eq(users.id, user.id));
+
+    const newExpiresAt = new Date(now.getTime() + SESSION_DURATION_MS);
+    await orm
+      .update(sessions)
+      .set({ expiresAt: newExpiresAt })
+      .where(eq(sessions.tokenHash, hashToken(token)));
+
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      expires: newExpiresAt,
+    });
   }
 
   return user ?? null;
