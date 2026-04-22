@@ -350,7 +350,7 @@ export function CoachGroupsSection({
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="min-w-0 break-words font-medium">{getCoachUserDisplayName(entry)}</p>
                             <Badge variant="secondary" className="capitalize">{entry.role}</Badge>
-                            <CoachPhaseBadge phase={entry.trackingPhase} />
+                            <CoachPhaseBadge phase={entry.trackingPhase} applications={entry.applications} />
                           </div>
                         </div>
                         {group.kind === "standard" ? (

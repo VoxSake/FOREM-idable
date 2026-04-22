@@ -63,7 +63,7 @@ export function CoachUserSheetHeader({
               {user.groupNames.length > 0 ? user.groupNames.join(" • ") : "Aucun groupe assigné"}
             </span>
             <CoachUserActivityMeta user={user} as="span" className="block" />
-            <CoachPhaseBadge phase={user.trackingPhase} className="mt-1" />
+            <CoachPhaseBadge phase={user.trackingPhase} applications={user.applications} className="mt-1" />
           </SheetDescription>
         </div>
 
