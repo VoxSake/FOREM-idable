@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface ApiResponse<T> {
   response: Response;
@@ -22,6 +22,15 @@ export function useAdminResource<T>({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Keep the latest callbacks without invalidating the stable `load` reference.
+  const fetchRef = useRef(fetchFn);
+  const extractRef = useRef(extract);
+  const messageRef = useRef(errorMessage);
+
+  fetchRef.current = fetchFn;
+  extractRef.current = extract;
+  messageRef.current = errorMessage;
+
   const load = useCallback(async () => {
     if (!isAuthorized) {
       setItems([]);
@@ -32,21 +41,21 @@ export function useAdminResource<T>({
     setFeedback(null);
 
     try {
-      const { response, data } = await fetchFn();
-      const extracted = extract(data);
+      const { response, data } = await fetchRef.current();
+      const extracted = extractRef.current(data);
 
       if (!response.ok || !extracted) {
-        setFeedback((data.error as string | undefined) || errorMessage);
+        setFeedback((data.error as string | undefined) || messageRef.current);
         return;
       }
 
       setItems(extracted);
     } catch {
-      setFeedback(errorMessage);
+      setFeedback(messageRef.current);
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthorized, fetchFn, extract, errorMessage]);
+  }, [isAuthorized]);
 
   return {
     items,
