@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { fetchCurrentUser } from "@/lib/api/auth";
 import { AuthUser } from "@/types/auth";
 
 interface AuthContextValue {
@@ -20,8 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/me", { cache: "no-store" });
-      const data = (await response.json()) as { user: AuthUser | null };
+      const { data } = await fetchCurrentUser();
       setUser(data.user ?? null);
     } catch {
       setUser(null);

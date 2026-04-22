@@ -7,6 +7,11 @@ import {
   SearchHistoryEntry,
   searchHistoryArraySchema,
 } from "@/features/jobs/types/searchHistory";
+import {
+  fetchSearchHistory,
+  addSearchHistoryEntry as apiAddSearchHistoryEntry,
+  clearSearchHistory as apiClearSearchHistory,
+} from "@/lib/api/searchHistory";
 
 export function useSearchHistory() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -23,8 +28,7 @@ export function useSearchHistory() {
     setIsLoaded(false);
 
     try {
-      const response = await fetch("/api/search-history", { cache: "no-store" });
-      const data = (await response.json()) as { history?: SearchHistoryEntry[] };
+      const { data } = await fetchSearchHistory();
       const parsedHistory = searchHistoryArraySchema.safeParse(data.history);
       setHistory(parsedHistory.success ? parsedHistory.data : []);
     } catch {
@@ -48,32 +52,26 @@ export function useSearchHistory() {
       createdAt: new Date().toISOString(),
     };
 
-    const response = await fetch("/api/search-history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entry }),
-    });
-
-    if (!response.ok) {
+    try {
+      const { data } = await apiAddSearchHistoryEntry(entry);
+      const parsedHistory = searchHistoryArraySchema.safeParse(data.history);
+      setHistory(parsedHistory.success ? parsedHistory.data : []);
+      return true;
+    } catch {
       return false;
     }
-
-    const data = (await response.json()) as { history?: SearchHistoryEntry[] };
-    const parsedHistory = searchHistoryArraySchema.safeParse(data.history);
-    setHistory(parsedHistory.success ? parsedHistory.data : []);
-    return true;
   };
 
   const clearHistory = async () => {
     if (!user) return false;
 
-    const response = await fetch("/api/search-history", { method: "DELETE" });
-    if (!response.ok) {
+    try {
+      await apiClearSearchHistory();
+      setHistory([]);
+      return true;
+    } catch {
       return false;
     }
-
-    setHistory([]);
-    return true;
   };
 
   return { history, addEntry, clearHistory, isLoaded, isAuthenticated: Boolean(user) };

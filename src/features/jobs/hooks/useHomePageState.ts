@@ -9,6 +9,7 @@ import { useExportJobs } from "@/features/jobs/hooks/useExportJobs";
 import { useJobSearch } from "@/features/jobs/hooks/useJobSearch";
 import { useSelectionJobs } from "@/features/jobs/hooks/useSelectionJobs";
 import { fromSearchParams, toSearchPath } from "@/features/jobs/utils/searchUrl";
+import { fetchFeaturedSearches } from "@/lib/api/featuredSearches";
 import { FeaturedSearch } from "@/types/featuredSearch";
 import { Job } from "@/types/job";
 import { SearchQuery } from "@/types/search";
@@ -54,10 +55,9 @@ export function useHomePageState() {
   useEffect(() => {
     let isMounted = true;
 
-    void fetch("/api/featured-searches", { cache: "no-store" })
-      .then((response) => response.json().then((data) => ({ response, data })))
-      .then(({ response, data }) => {
-        if (!isMounted || !response.ok || !Array.isArray(data.featuredSearches)) {
+    void fetchFeaturedSearches()
+      .then(({ data }) => {
+        if (!isMounted || !Array.isArray(data.featuredSearches)) {
           return;
         }
 

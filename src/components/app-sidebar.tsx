@@ -16,6 +16,7 @@ import {
 } from "@/components/app-shell.config";
 import { AuthSidebarPanel } from "@/components/auth/AuthSidebarPanel";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { fetchConversations } from "@/features/messages/messages.api";
 import { Button } from "@/components/ui/button";
 import { runtimeConfig } from "@/config/runtime";
 import {
@@ -179,10 +180,7 @@ export function AppSidebar() {
 
     async function loadMessagingMeta() {
       try {
-        const response = await fetch("/api/messages/conversations", { cache: "no-store" });
-        const data = (await response.json().catch(() => ({}))) as {
-          conversations?: ConversationPreview[];
-        };
+        const { response, data } = await fetchConversations();
 
         if (!response.ok || !data.conversations) {
           if (!cancelled) {

@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { logoutUser } from "@/lib/api/auth";
 import { runtimeConfig } from "@/config/runtime";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 import { toast } from "sonner";
@@ -140,7 +141,7 @@ export function AuthSidebarPanel() {
     setIsSubmitting(true);
 
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await logoutUser();
       setUser(null);
       await refresh();
       toast.success("Déconnecté.");

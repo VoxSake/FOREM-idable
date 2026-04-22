@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { runtimeConfig } from "@/config/runtime";
+import { requestPasswordReset } from "@/lib/api/auth";
 import { toast } from "sonner";
 
 interface ForgotPasswordDialogProps {
@@ -32,17 +33,7 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = (await response.json()) as { error?: string; message?: string };
-
-      if (!response.ok) {
-        toast.error(data.error || "Envoi impossible.");
-        return;
-      }
+      const { data } = await requestPasswordReset(email);
 
       toast.success(
         data.message ||

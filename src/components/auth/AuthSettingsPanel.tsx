@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { logoutUser } from "@/lib/api/auth";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -73,7 +74,7 @@ export function AuthSettingsPanel() {
     setIsSubmitting(true);
 
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await logoutUser();
       setUser(null);
       await refresh();
       toast.success("Déconnecté.");
