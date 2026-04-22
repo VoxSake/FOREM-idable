@@ -454,8 +454,8 @@ export async function archiveCoachGroup(
   }
 
   await db.query(
-    `UPDATE coach_groups SET archived_at = ${archived ? "NOW()" : "NULL"} WHERE id = $1`,
-    [groupId]
+    `UPDATE coach_groups SET archived_at = CASE WHEN $2 THEN NOW() ELSE NULL END WHERE id = $1`,
+    [groupId, archived]
   );
 
   await markCoachAction(actor.id);

@@ -221,10 +221,11 @@ async function buildUserDataExport(userId: number) {
       : Promise.resolve({ rows: [] }),
     conversationIds.length
       ? db.query(
-          `SELECT *
+          `SELECT id, conversation_id, user_id, last_read_message_id, last_read_at
            FROM conversation_reads
-           WHERE conversation_id = ANY($1::bigint[])`,
-          [conversationIds]
+           WHERE conversation_id = ANY($1::bigint[])
+             AND user_id = $2`,
+          [conversationIds, userId]
         )
       : Promise.resolve({ rows: [] }),
   ]);

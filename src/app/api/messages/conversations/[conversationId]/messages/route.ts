@@ -5,6 +5,7 @@ import { sendTextMessage } from "@/lib/server/messaging";
 import { sendConversationMessageSchema } from "@/lib/server/messagingSchemas";
 import { parseIntegerParam } from "@/lib/server/requestSchemas";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { checkRateLimit } from "@/lib/server/rateLimit";
 
 export async function POST(
   request: NextRequest,
@@ -17,6 +18,19 @@ export async function POST(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const rateLimit = await checkRateLimit({
+      scope: "messages-send",
+      limit: 60,
+      windowMs: 60 * 1000,
+      identifier: String(user.id),
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Trop de messages envoyés. Veuillez patienter." },
+        { status: 429 }
+      );
     }
 
     const params = await context.params;
