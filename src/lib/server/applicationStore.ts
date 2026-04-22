@@ -81,41 +81,7 @@ type ContributorRow = {
   role: CoachNoteAuthor["role"];
 };
 
-function toNumericId(value: number | string | null | undefined) {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function splitDisplayName(displayName: string) {
-  const trimmed = displayName.trim();
-  if (!trimmed) {
-    return { firstName: "", lastName: "" };
-  }
-
-  const [firstName, ...rest] = trimmed.split(/\s+/);
-  return {
-    firstName,
-    lastName: rest.join(" "),
-  };
-}
-
-function toIsoOrNow(value: string | null | undefined) {
-  const candidate = value ? new Date(value) : new Date();
-  return Number.isNaN(candidate.getTime()) ? new Date().toISOString() : candidate.toISOString();
-}
-
-function toIsoOrNull(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  const candidate = new Date(value);
-  return Number.isNaN(candidate.getTime()) ? null : candidate.toISOString();
-}
+import { toNumericId, splitDisplayName, toIsoOrNow, toIsoOrNull } from "@/lib/server/common";
 
 function normalizeJobSource(value: string | null | undefined): Job["source"] {
   if (value === "forem" || value === "linkedin" || value === "indeed" || value === "adzuna") {

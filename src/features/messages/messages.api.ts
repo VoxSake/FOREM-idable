@@ -1,5 +1,6 @@
 "use client";
 
+import { get, post, del } from "@/lib/api/client";
 import { JobApplication } from "@/types/application";
 import { Job } from "@/types/job";
 import {
@@ -9,18 +10,10 @@ import {
   DirectMessageTarget,
 } from "@/types/messaging";
 
-async function readJson<T>(response: Response): Promise<T> {
-  return (await response.json().catch(() => ({}))) as T;
-}
-
-export async function fetchConversations() {
-  const response = await fetch("/api/messages/conversations", { cache: "no-store" });
-  const data = await readJson<{
-    error?: string;
-    conversations?: ConversationPreview[];
-  }>(response);
-
-  return { response, data };
+export function fetchConversations() {
+  return get<{ conversations?: ConversationPreview[] }>("/api/messages/conversations", {
+    cache: "no-store",
+  });
 }
 
 export async function fetchConversationDetail(
@@ -28,112 +21,53 @@ export async function fetchConversationDetail(
   options?: { markAsRead?: boolean }
 ) {
   if (options?.markAsRead) {
-    await fetch(`/api/messages/conversations/${conversationId}/read`, {
-      method: "POST",
-    });
+    await post<Record<string, never>>(`/api/messages/conversations/${conversationId}/read`);
   }
 
-  const response = await fetch(`/api/messages/conversations/${conversationId}`, {
-    cache: "no-store",
-  });
-  const data = await readJson<{
-    error?: string;
-    conversation?: ConversationDetail;
-  }>(response);
-
-  return { response, data };
+  return get<{ conversation?: ConversationDetail }>(
+    `/api/messages/conversations/${conversationId}`,
+    { cache: "no-store" }
+  );
 }
 
-export async function fetchMessageContacts(signal?: AbortSignal) {
-  const response = await fetch("/api/messages/contacts", {
+export function fetchMessageContacts(signal?: AbortSignal) {
+  return get<{ contacts?: DirectMessageTarget[] }>("/api/messages/contacts", {
     cache: "no-store",
     signal,
   });
-  const data = await readJson<{
-    error?: string;
-    contacts?: DirectMessageTarget[];
-  }>(response);
-
-  return { response, data };
 }
 
-export async function fetchTrackedApplications() {
-  const response = await fetch("/api/applications", { cache: "no-store" });
-  const data = await readJson<{
-    applications?: JobApplication[];
-  }>(response);
-
-  return { response, data };
+export function fetchTrackedApplications() {
+  return get<{ applications?: JobApplication[] }>("/api/applications", { cache: "no-store" });
 }
 
-export async function postConversationMessage(conversationId: number, content: string) {
-  const response = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
-  const data = await readJson<{
-    cleared?: boolean;
-    error?: string;
-    message?: ConversationMessage;
-  }>(response);
-
-  return { response, data };
-}
-
-export async function createTrackedApplication(job: Job) {
-  const response = await fetch("/api/applications", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ job }),
-  });
-  const data = await readJson<{ error?: string }>(response);
-
-  return { response, data };
-}
-
-export async function removeConversationMessage(conversationId: number, messageId: number) {
-  const response = await fetch(
-    `/api/messages/conversations/${conversationId}/messages/${messageId}`,
-    { method: "DELETE" }
+export function postConversationMessage(conversationId: number, content: string) {
+  return post<{ cleared?: boolean; message?: ConversationMessage }>(
+    `/api/messages/conversations/${conversationId}/messages`,
+    { content }
   );
-  const data = await readJson<{
-    error?: string;
-    message?: ConversationMessage;
-  }>(response);
-
-  return { response, data };
 }
 
-export async function closeDirectMessageConversation(conversationId: number) {
-  const response = await fetch(`/api/messages/conversations/${conversationId}/close`, {
-    method: "POST",
-  });
-  const data = await readJson<{ error?: string }>(response);
-
-  return { response, data };
+export function createTrackedApplication(job: Job) {
+  return post<Record<string, never>>("/api/applications", { job });
 }
 
-export async function createDirectMessageConversation(targetUserId: number) {
-  const response = await fetch("/api/messages/conversations/direct", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ targetUserId }),
-  });
-  const data = await readJson<{
-    error?: string;
-    conversation?: ConversationDetail;
-  }>(response);
-
-  return { response, data };
+export function removeConversationMessage(conversationId: number, messageId: number) {
+  return del<{ message?: ConversationMessage }>(
+    `/api/messages/conversations/${conversationId}/messages/${messageId}`
+  );
 }
 
-export async function shareDirectMessage(targetUserId: number, content: string) {
-  const response = await fetch("/api/messages/share/direct", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ targetUserId, content }),
+export function closeDirectMessageConversation(conversationId: number) {
+  return post<Record<string, never>>(`/api/messages/conversations/${conversationId}/close`);
+}
+
+export function createDirectMessageConversation(targetUserId: number) {
+  return post<{ conversation?: ConversationDetail }>("/api/messages/conversations/direct", {
+    targetUserId,
   });
-  const data = await readJson<{ error?: string }>(response);
-  return { response, data };
+}
+
+export function shareDirectMessage(targetUserId: number, content: string) {
+  return post<Record<string, never>>("/api/messages/share/direct", { targetUserId, content });
 }

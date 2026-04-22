@@ -1,18 +1,10 @@
 import { recordAuditEvent } from "@/lib/server/auditLog";
 import { db, ensureDatabase } from "@/lib/server/db";
 import { logServerEvent } from "@/lib/server/observability";
+import { toNumericId } from "@/lib/server/common";
 import { AuthUser, UserRole } from "@/types/auth";
 
 export type CoachCapableUser = AuthUser & { role: "coach" | "admin" };
-
-function toNumericId(value: number | string | null | undefined) {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
 
 export async function getManagedGroupIdsForCoach(userId: number) {
   await ensureDatabase();

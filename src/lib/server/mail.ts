@@ -1,4 +1,5 @@
 import { runtimeConfig } from "@/config/runtime";
+import { escapeHtml } from "@/lib/server/common";
 
 function getProjectLabel() {
   return runtimeConfig.app.name;
@@ -6,15 +7,6 @@ function getProjectLabel() {
 
 export function isPasswordResetEnabled() {
   return process.env.PASSWORD_RESET_ENABLED === "true";
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }
 
 function getAppBaseUrl() {

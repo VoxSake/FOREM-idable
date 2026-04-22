@@ -41,23 +41,30 @@ export function useMessagesDataLoader({
         setError(null);
       }
 
-      const { response, data } = await fetchConversations();
+      try {
+        const { data } = await fetchConversations();
 
-      if (!response.ok || !data.conversations) {
-        throw new Error(data.error || "Chargement des conversations impossible.");
+        if (!data.conversations) {
+          throw new Error("Chargement des conversations impossible.");
+        }
+
+        setConversations(data.conversations);
+        setHasMessagingAccess(data.conversations.some((entry) => entry.type === "group"));
+
+        const nextConversationId =
+          preferredConversationId &&
+          data.conversations.some((entry) => entry.id === preferredConversationId)
+            ? preferredConversationId
+            : data.conversations[0]?.id ?? null;
+
+        setSelectedConversationId(nextConversationId);
+        return nextConversationId;
+      } catch (err) {
+        if (!options?.silent) {
+          setError(err instanceof Error ? err.message : "Chargement des conversations impossible.");
+        }
+        return null;
       }
-
-      setConversations(data.conversations);
-      setHasMessagingAccess(data.conversations.some((entry) => entry.type === "group"));
-
-      const nextConversationId =
-        preferredConversationId &&
-        data.conversations.some((entry) => entry.id === preferredConversationId)
-          ? preferredConversationId
-          : data.conversations[0]?.id ?? null;
-
-      setSelectedConversationId(nextConversationId);
-      return nextConversationId;
     },
     [setConversations, setError, setHasMessagingAccess, setSelectedConversationId]
   );
@@ -70,12 +77,12 @@ export function useMessagesDataLoader({
       }
 
       try {
-        const { response, data } = await fetchConversationDetail(conversationId, {
+        const { data } = await fetchConversationDetail(conversationId, {
           markAsRead: options?.markAsRead,
         });
 
-        if (!response.ok || !data.conversation) {
-          throw new Error(data.error || "Chargement de la conversation impossible.");
+        if (!data.conversation) {
+          throw new Error("Chargement de la conversation impossible.");
         }
 
         setSelectedConversation(data.conversation);
@@ -117,10 +124,10 @@ export function useMessagesDataLoader({
       }
 
       try {
-        const { response, data } = await fetchMessageContacts(options?.signal);
+        const { data } = await fetchMessageContacts(options?.signal);
 
-        if (!response.ok || !data.contacts) {
-          throw new Error(data.error || "Chargement des contacts impossible.");
+        if (!data.contacts) {
+          throw new Error("Chargement des contacts impossible.");
         }
 
         setContacts(data.contacts);
@@ -145,9 +152,9 @@ export function useMessagesDataLoader({
 
   const loadTrackedApplications = useCallback(async () => {
     try {
-      const { response, data } = await fetchTrackedApplications();
+      const { data } = await fetchTrackedApplications();
 
-      if (!response.ok || !data.applications) {
+      if (!data.applications) {
         return;
       }
 

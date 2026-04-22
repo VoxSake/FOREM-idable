@@ -119,11 +119,7 @@ export function ShareOfferDialog({
     const shareUrl = getJobExternalUrl(job);
     setIsSharing(true);
     try {
-      const { response, data } = await postConversationMessage(conversationId, shareUrl);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Envoi impossible.");
-      }
+      await postConversationMessage(conversationId, shareUrl);
 
       toast.success("Offre partagée dans la conversation.");
       onOpenChange(false);
@@ -140,11 +136,7 @@ export function ShareOfferDialog({
     const shareUrl = getJobExternalUrl(job);
     setIsSharing(true);
     try {
-      const { response, data } = await shareDirectMessage(targetUserId, shareUrl);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Conversation privée indisponible.");
-      }
+      await shareDirectMessage(targetUserId, shareUrl);
 
       toast.success("Offre envoyée en message privé.");
       onOpenChange(false);

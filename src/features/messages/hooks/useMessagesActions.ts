@@ -95,14 +95,10 @@ export function useMessagesActions({
     setError(null);
 
     try {
-      const { response, data } = await postConversationMessage(
+      const { data } = await postConversationMessage(
         selectedConversation.id,
         normalizedDraft
       );
-
-      if (!response.ok) {
-        throw new Error(data.error || "Envoi du message impossible.");
-      }
 
       if (data.cleared) {
         setDraft("");
@@ -172,11 +168,7 @@ export function useMessagesActions({
 
   const addSharedJobToApplications = useCallback(async (job: Job) => {
     try {
-      const { response, data } = await createTrackedApplication(job);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Impossible d'ajouter la candidature.");
-      }
+      await createTrackedApplication(job);
 
       setTrackedJobIds((current) => (current.includes(job.id) ? current : [...current, job.id]));
       toast.success("Offre ajoutée au suivi.");
@@ -194,14 +186,10 @@ export function useMessagesActions({
 
     setIsDeletingMessage(true);
     try {
-      const { response, data } = await removeConversationMessage(
+      const { data } = await removeConversationMessage(
         selectedConversation.id,
         messagePendingDeletion.id
       );
-
-      if (!response.ok) {
-        throw new Error(data.error || "Suppression du message impossible.");
-      }
 
       if (data.message) {
         setSelectedConversation((current) =>
@@ -257,11 +245,7 @@ export function useMessagesActions({
     setError(null);
 
     try {
-      const { response, data } = await closeDirectMessageConversation(selectedConversationId);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Fermeture du DM impossible.");
-      }
+      await closeDirectMessageConversation(selectedConversationId);
 
       const remaining = conversations.filter((entry) => entry.id !== selectedConversationId);
       const nextConversationId = remaining[0]?.id ?? null;
@@ -297,10 +281,10 @@ export function useMessagesActions({
       setIsDirectDialogOpen(false);
 
       try {
-        const { response, data } = await createDirectMessageConversation(contact.userId);
+        const { data } = await createDirectMessageConversation(contact.userId);
 
-        if (!response.ok || !data.conversation) {
-          throw new Error(data.error || "Création du DM impossible.");
+        if (!data.conversation) {
+          throw new Error("Création du DM impossible.");
         }
 
         setSelectedConversation(data.conversation);

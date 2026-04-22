@@ -7,6 +7,7 @@ import {
   type CoachCapableUser,
 } from "@/lib/server/coachGroups";
 import { logServerEvent } from "@/lib/server/observability";
+import { toNumericId } from "@/lib/server/common";
 import { buildCoachApplicationSummary } from "@/features/coach/applicationSummary";
 import { CoachGroupMember } from "@/types/coach";
 import { AuthUser, UserRole } from "@/types/auth";
@@ -21,15 +22,6 @@ interface CoachDashboardFilters {
   groupId?: number | null;
   role?: UserRole | null;
   search?: string | null;
-}
-
-function toNumericId(value: number | string | null | undefined) {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
 }
 
 function canCoach(role: UserRole) {
