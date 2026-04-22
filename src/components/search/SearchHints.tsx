@@ -20,6 +20,9 @@ export function SearchHints({
   const primaryFeaturedSearch = visibleFeaturedSearches[0];
   const secondaryFeaturedSearches = visibleFeaturedSearches.slice(1);
 
+  const hasContent = selectedLocationsLabel || primaryFeaturedSearch;
+  if (!hasContent) return null;
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-muted/15 px-4 py-3 text-xs text-muted-foreground">
       <div className="flex flex-wrap items-center gap-2">

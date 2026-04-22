@@ -167,7 +167,10 @@ export function AdminApiKeysSection({
     return apiKeys.filter((entry) => {
       const entryStatus = getApiKeyStatus(entry);
       if (status !== "all" && entryStatus !== status) {
-        return false;
+        // "expiring" keys are still functionally active
+        if (!(status === "active" && entryStatus === "expiring")) {
+          return false;
+        }
       }
 
       if (!normalizedSearch) {
