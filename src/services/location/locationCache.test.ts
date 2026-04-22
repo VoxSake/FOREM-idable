@@ -65,4 +65,24 @@ describe("locationCache", () => {
     // But still backfills parentId from fallback
     expect(verviersLoc?.parentId).toBe("arr-ve");
   });
+
+  it("returns precomputed postal codes for known arrondissements", () => {
+    const veCodes = locationCache.getPostalCodesForArrondissement("arr-ve");
+    expect(veCodes).toContain("4800");
+    expect(veCodes).toContain("4860");
+    expect(veCodes.length).toBeGreaterThan(5);
+
+    const bxCodes = locationCache.getPostalCodesForArrondissement("arr-bx");
+    expect(bxCodes).toContain("1000");
+    expect(bxCodes).toContain("1030");
+
+    const gaCodes = locationCache.getPostalCodesForArrondissement("arr-ga");
+    expect(gaCodes).toContain("9000");
+    expect(gaCodes.length).toBeGreaterThan(10);
+  });
+
+  it("returns empty array for unknown arrondissements", () => {
+    const codes = locationCache.getPostalCodesForArrondissement("arr-unknown");
+    expect(codes).toEqual([]);
+  });
 });

@@ -273,6 +273,13 @@ async function buildArrondissementClause(locationEntry: LocationEntry): Promise<
         return localitiesClause || postalsClause;
     }
 
+    // Strategy 3: precomputed postal codes from fallback data (last resort)
+    const fallbackPostals = locationCache.getPostalCodesForArrondissement(arrondissementId);
+    if (fallbackPostals.length > 0) {
+        const postalsClause = buildInClause("lieuxtravailcodepostal", Array.from(fallbackPostals));
+        if (postalsClause) return postalsClause;
+    }
+
     return null;
 }
 

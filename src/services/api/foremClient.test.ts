@@ -76,13 +76,13 @@ describe("foremClient", () => {
     });
   });
 
-  it("falls back to clean arrondissement name in search() when no localities match", async () => {
+  it("falls back to precomputed postal codes when no localities match via code or parentId", async () => {
     const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
       json: async () => ({ total_count: 3, results: [] }),
     } as Response);
 
-    // Ensure location cache is seeded with fallback data
+    // Only the arrondissement entry — no localities with matching code or parentId
     vi.spyOn(locationCache, "getHierarchy").mockResolvedValue([
       { id: "arr-ve", name: "Arrondissement de Verviers", type: "Arrondissements", parentId: "lg", code: "63000" },
     ]);
@@ -97,8 +97,11 @@ describe("foremClient", () => {
 
     const url = new URL(fetchSpy.mock.calls[0][0] as string);
     const where = url.searchParams.get("where");
-    // Should fallback to search("Verviers") instead of search("Arrondissement de Verviers")
-    expect(where).toContain('search("Verviers")');
+    // Strategy 3: should use precomputed postal codes from fallback data
+    expect(where).toContain('lieuxtravailcodepostal in (');
+    expect(where).toContain('"4800"');
+    // Should NOT fall back to search() when we have precomputed postal codes
+    expect(where).not.toContain('search("Verviers")');
     expect(where).not.toContain('search("Arrondissement de Verviers")');
   });
 
@@ -127,5 +130,57 @@ describe("foremClient", () => {
     // Should use locality names and postal codes from parentId-linked entries
     expect(where).toContain('lieuxtravaillocalite in ("Verviers","VERVIERS")');
     expect(where).toContain('lieuxtravailcodepostal in ("4800","4860")');
+  });
+
+  it("uses precomputed postal codes for expanded fallback arrondissements", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ total_count: 5, results: [] }),
+    } as Response);
+
+    // API returns no localities at all (full offline)
+    vi.spyOn(locationCache, "getHierarchy").mockResolvedValue([
+      { id: "arr-bx", name: "Arrondissement de Bruxelles", type: "Arrondissements", parentId: "bx", code: "21000" },
+    ]);
+
+    await fetchForemJobs({
+      keywords: ["developpeur"],
+      locations: [{ id: "arr-bx", name: "Arrondissement de Bruxelles", type: "Arrondissements" }],
+      booleanMode: "OR",
+      limit: 5,
+      offset: 0,
+    });
+
+    const url = new URL(fetchSpy.mock.calls[0][0] as string);
+    const where = url.searchParams.get("where");
+    // Should contain postal codes for Bruxelles (1000, 1020, 1030, etc.)
+    expect(where).toContain('lieuxtravailcodepostal in (');
+    expect(where).toContain('"1000"');
+    expect(where).toContain('"1030"');
+  });
+
+  it("uses precomputed postal codes for Gand arrondissement in offline mode", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ total_count: 5, results: [] }),
+    } as Response);
+
+    vi.spyOn(locationCache, "getHierarchy").mockResolvedValue([
+      { id: "arr-ga", name: "Arrondissement de Gand", type: "Arrondissements", parentId: "ovl", code: "35000" },
+    ]);
+
+    await fetchForemJobs({
+      keywords: ["developpeur"],
+      locations: [{ id: "arr-ga", name: "Arrondissement de Gand", type: "Arrondissements" }],
+      booleanMode: "OR",
+      limit: 5,
+      offset: 0,
+    });
+
+    const url = new URL(fetchSpy.mock.calls[0][0] as string);
+    const where = url.searchParams.get("where");
+    expect(where).toContain('lieuxtravailcodepostal in (');
+    expect(where).toContain('"9000"');
+    expect(where).toContain('"9030"');
   });
 });
