@@ -102,9 +102,9 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                                 <Badge variant="outline" className="max-w-[10rem] truncate" title={item.badgeTitle ?? item.badgeLabel}>
                                   {item.badgeLabel}
                                 </Badge>
-                                {item.hasAcceptedHint ? (
-                                  <Badge variant="success" className="text-xs">{item.hasAcceptedHint}</Badge>
-                                ) : null}
+                                <Badge variant={item.computedPhaseVariant} className="text-xs">
+                                  {item.computedPhaseLabel}
+                                </Badge>
                               </div>
                             <p className="text-sm text-muted-foreground">
                               {item.summary}

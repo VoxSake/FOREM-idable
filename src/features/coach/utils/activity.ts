@@ -13,6 +13,10 @@ import {
   isTrackedCoachBeneficiary,
   parseTimestamp,
 } from "@/features/coach/utils/formatting";
+import {
+  hasAcceptedJob,
+  hasAcceptedStage,
+} from "@/features/coach/utils/phaseBadge";
 
 export interface CoachRecentActivityItem {
   id: string;
@@ -101,7 +105,39 @@ export interface CoachPriorityItem {
   summary: string;
   detail: string;
   timestamp: string | null;
-  hasAcceptedHint?: string;
+  computedPhaseLabel: string;
+  computedPhaseVariant: "default" | "secondary" | "success" | "outline" | "destructive";
+}
+
+function getComputedPhaseBadge(user: CoachUserSummary) {
+  if (user.trackingPhase === "placed") {
+    return { label: "En emploi", variant: "outline" as const };
+  }
+  if (user.trackingPhase === "dropped") {
+    return { label: "Sortie du dispositif", variant: "destructive" as const };
+  }
+
+  const hasJob = hasAcceptedJob(user.applications);
+  const hasStage = hasAcceptedStage(user.applications);
+
+  if (user.trackingPhase === "internship_search") {
+    if (hasJob) {
+      return { label: "Sortie positive", variant: "success" as const };
+    }
+    if (hasStage) {
+      return { label: "Recherche stage", variant: "success" as const };
+    }
+    return { label: "Recherche stage", variant: "default" as const };
+  }
+
+  if (user.trackingPhase === "job_search") {
+    if (hasJob) {
+      return { label: "Sortie positive", variant: "success" as const };
+    }
+    return { label: "Recherche emploi", variant: "secondary" as const };
+  }
+
+  return { label: user.trackingPhase, variant: "outline" as const };
 }
 
 export interface CoachPrioritySection {
@@ -135,6 +171,7 @@ export function buildCoachPrioritySections(
   const beneficiaryUsers = users.filter((entry) => isTrackedCoachBeneficiary(entry));
 
   const dueItems = beneficiaryUsers
+    .filter((user) => !hasAcceptedStage(user.applications))
     .map<CoachPriorityItem | null>((user) => {
       const dueApplications = user.applications.filter((application) => isApplicationDue(application));
       if (dueApplications.length === 0) {
@@ -153,6 +190,7 @@ export function buildCoachPrioritySections(
       const oldestDueCompany = oldestDueApplication?.job.company || "Entreprise non précisée";
       const dueBadgeLabel =
         dueApplications.length > 1 ? `${oldestDueCompany} + ${dueApplications.length - 1}` : oldestDueCompany;
+      const phaseBadge = getComputedPhaseBadge(user);
 
       return {
         id: `due-${user.id}`,
@@ -174,7 +212,8 @@ export function buildCoachPrioritySections(
             ? `Plus ancienne le ${formatCoachDate(new Date(oldestDueTime).toISOString())}`
             : "Relance due à vérifier",
         timestamp: oldestDueTime ? new Date(oldestDueTime).toISOString() : null,
-        hasAcceptedHint: user.acceptedCount > 0 ? "A trouvé un stage" : undefined,
+        computedPhaseLabel: phaseBadge.label,
+        computedPhaseVariant: phaseBadge.variant,
       } satisfies CoachPriorityItem;
     })
     .filter((item): item is CoachPriorityItem => item !== null)
@@ -214,6 +253,7 @@ export function buildCoachPrioritySections(
         upcomingInterviews.length > 1
           ? `${earliestInterviewCompany} + ${upcomingInterviews.length - 1}`
           : earliestInterviewCompany;
+      const phaseBadge = getComputedPhaseBadge(user);
 
       return {
         id: `interview-${user.id}`,
@@ -235,6 +275,8 @@ export function buildCoachPrioritySections(
             ? `Prochain le ${formatCoachDate(new Date(earliestInterviewTime).toISOString(), true)}`
             : "Entretien programmé à vérifier",
         timestamp: earliestInterviewTime ? new Date(earliestInterviewTime).toISOString() : null,
+        computedPhaseLabel: phaseBadge.label,
+        computedPhaseVariant: phaseBadge.variant,
       } satisfies CoachPriorityItem;
     })
     .filter((item): item is CoachPriorityItem => item !== null)
@@ -254,6 +296,8 @@ export function buildCoachPrioritySections(
         return null;
       }
 
+      const phaseBadge = getComputedPhaseBadge(user);
+
       return {
         id: `inactive-${user.id}`,
         userId: user.id,
@@ -268,6 +312,8 @@ export function buildCoachPrioritySections(
           : "Aucune activité enregistrée",
         detail: `${user.applicationCount} candidature${user.applicationCount > 1 ? "s" : ""} à suivre`,
         timestamp: latestActivityTime ? new Date(latestActivityTime).toISOString() : null,
+        computedPhaseLabel: phaseBadge.label,
+        computedPhaseVariant: phaseBadge.variant,
       } satisfies CoachPriorityItem;
     })
     .filter((item): item is CoachPriorityItem => item !== null)

@@ -14,6 +14,7 @@ function makeUser(overrides: Partial<CoachUserSummary>): CoachUserSummary {
     firstName: overrides.firstName ?? "Jane",
     lastName: overrides.lastName ?? "Doe",
     role: overrides.role ?? "user",
+    trackingPhase: overrides.trackingPhase ?? "internship_search",
     groupIds: overrides.groupIds ?? [1],
     groupNames: overrides.groupNames ?? ["Groupe A"],
     applicationCount: overrides.applicationCount ?? 1,
@@ -90,7 +91,7 @@ describe("buildCoachPrioritySections", () => {
     expect(sections[1].items[0]?.badgeLabel).toBe("Acme");
   });
 
-  it("shows hasAcceptedHint when a beneficiary with due items also has an accepted application", () => {
+  it("shows computed phase badge as Sortie positive when a beneficiary with due items has an accepted job", () => {
     const users = [
       makeUser({
         id: 10,
@@ -102,9 +103,26 @@ describe("buildCoachPrioritySections", () => {
         applications: [
           {
             job: {
-              id: "job-10",
+              id: "job-10a",
               title: "Dev Senior",
               company: "Omega",
+              location: "Anvers",
+              contractType: "CDI",
+              publicationDate: "2026-02-01T00:00:00.000Z",
+              url: "#",
+              source: "forem",
+            },
+            appliedAt: "2026-02-01T09:00:00.000Z",
+            followUpDueAt: "2026-03-12T00:00:00.000Z",
+            followUpEnabled: true,
+            status: "accepted",
+            updatedAt: "2026-03-10T10:00:00.000Z",
+          },
+          {
+            job: {
+              id: "job-10b",
+              title: "Dev Junior",
+              company: "Beta",
               location: "Anvers",
               contractType: "CDI",
               publicationDate: "2026-02-01T00:00:00.000Z",
@@ -124,10 +142,47 @@ describe("buildCoachPrioritySections", () => {
     const sections = buildCoachPrioritySections(users, new Date("2026-03-18T12:00:00.000Z"));
 
     expect(sections[0].total).toBe(1);
-    expect(sections[0].items[0]?.hasAcceptedHint).toBe("A trouvé un stage");
+    expect(sections[0].items[0]?.computedPhaseLabel).toBe("Sortie positive");
+    expect(sections[0].items[0]?.computedPhaseVariant).toBe("success");
   });
 
-  it("does not show hasAcceptedHint when acceptedCount is 0", () => {
+  it("excludes beneficiaries with an accepted stage from due section", () => {
+    const users = [
+      makeUser({
+        id: 12,
+        firstName: "Fabienne",
+        dueCount: 1,
+        acceptedCount: 1,
+        inProgressCount: 1,
+        latestActivityAt: "2026-03-10T10:00:00.000Z",
+        applications: [
+          {
+            job: {
+              id: "job-12",
+              title: "Stage",
+              company: "Alpha",
+              location: "Bruxelles",
+              contractType: "Stage",
+              publicationDate: "2026-03-01T00:00:00.000Z",
+              url: "#",
+              source: "forem",
+            },
+            appliedAt: "2026-03-01T09:00:00.000Z",
+            followUpDueAt: "2026-03-12T00:00:00.000Z",
+            followUpEnabled: true,
+            status: "accepted",
+            updatedAt: "2026-03-10T10:00:00.000Z",
+          },
+        ],
+      }),
+    ];
+
+    const sections = buildCoachPrioritySections(users, new Date("2026-03-18T12:00:00.000Z"));
+
+    expect(sections[0].total).toBe(0);
+  });
+
+  it("shows default phase badge when no accepted application", () => {
     const users = [
       makeUser({
         id: 11,
@@ -161,7 +216,8 @@ describe("buildCoachPrioritySections", () => {
     const sections = buildCoachPrioritySections(users, new Date("2026-03-18T12:00:00.000Z"));
 
     expect(sections[0].total).toBe(1);
-    expect(sections[0].items[0]?.hasAcceptedHint).toBeUndefined();
+    expect(sections[0].items[0]?.computedPhaseLabel).toBe("Recherche stage");
+    expect(sections[0].items[0]?.computedPhaseVariant).toBe("default");
   });
 
   it("excludes beneficiaries with accepted applications from inactive section", () => {

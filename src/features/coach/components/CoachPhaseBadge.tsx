@@ -1,25 +1,12 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { normalizeContractType } from "@/lib/contractType";
+import {
+  hasAcceptedJob,
+  hasAcceptedStage,
+} from "@/features/coach/utils/phaseBadge";
 import { JobApplication } from "@/types/application";
 import { TrackingPhase } from "@/types/coach";
-
-function isStageContract(contractType: string): boolean {
-  return normalizeContractType(contractType) === "STAGE";
-}
-
-function hasAcceptedStage(applications: JobApplication[]): boolean {
-  return applications.some(
-    (a) => a.status === "accepted" && isStageContract(a.job.contractType)
-  );
-}
-
-function hasAcceptedJob(applications: JobApplication[]): boolean {
-  return applications.some(
-    (a) => a.status === "accepted" && !isStageContract(a.job.contractType)
-  );
-}
 
 interface CoachPhaseBadgeProps {
   phase: TrackingPhase;
