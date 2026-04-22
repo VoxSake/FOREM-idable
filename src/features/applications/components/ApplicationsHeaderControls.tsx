@@ -33,7 +33,7 @@ export function ApplicationsHeaderControls({
   onExportCalendar,
 }: ApplicationsHeaderControlsProps) {
   return (
-    <Card className="py-0">
+    <Card className="border-border/60 py-0">
       <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">
@@ -61,7 +61,7 @@ export function ApplicationsHeaderControls({
             disabled={displayedCount === 0}
           >
             <Download data-icon="inline-start" />
-            Exporter en Excel
+            Exporter en CSV
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

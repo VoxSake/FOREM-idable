@@ -22,17 +22,22 @@ export function ApplicationsOfferButtons({
 
   return (
     <div
-      className={isSheet ? "flex flex-wrap gap-2" : "grid grid-cols-2 gap-2"}
+      className={isSheet ? "flex flex-wrap gap-2" : "flex flex-wrap gap-2"}
       onClick={(event) => event.stopPropagation()}
     >
       {hasWebLink ? (
         <Button
           size="sm"
           asChild
-          className={`h-8 gap-1 whitespace-nowrap ${isSheet ? "px-3" : "w-full"}`}
+          className={`h-8 gap-1 whitespace-nowrap ${isSheet ? "px-3" : "flex-1"}`}
         >
-          <a href={jobUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="h-3 w-3" />
+          <a
+            href={jobUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Ouvrir l'offre WEB dans un nouvel onglet — ${application.job.title}`}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
             WEB
           </a>
         </Button>
@@ -42,10 +47,15 @@ export function ApplicationsOfferButtons({
           variant="outline"
           size="sm"
           asChild
-          className={`h-8 whitespace-nowrap ${isSheet ? "px-3" : "w-full"}`}
+          className={`h-8 gap-1 whitespace-nowrap ${isSheet ? "px-3" : "flex-1"}`}
         >
-          <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-            <FileText className="mr-1 h-3 w-3" />
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Ouvrir le PDF dans un nouvel onglet — ${application.job.title}`}
+          >
+            <FileText className="h-3.5 w-3.5" />
             PDF
           </a>
         </Button>

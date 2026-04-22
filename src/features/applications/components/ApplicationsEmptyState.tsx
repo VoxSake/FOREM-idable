@@ -24,7 +24,7 @@ export function ApplicationsEmptyState({
   onResetFilters,
 }: ApplicationsEmptyStateProps) {
   return (
-    <Empty className="mt-8 min-h-96 w-full bg-card">
+    <Empty className="mt-8 min-h-96 w-full bg-muted/10">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <BriefcaseBusiness />
@@ -49,13 +49,13 @@ export function ApplicationsEmptyState({
         <EmptyContent>
           <Button type="button" onClick={onCreateManual}>
             <Plus data-icon="inline-start" />
-            Encoder une candidature externe
+            Ajouter une candidature manuelle
           </Button>
         </EmptyContent>
       )}
 
       <Badge variant="warning" className="gap-2 rounded-full px-3 py-1 text-xs">
-        <Clock3 className="h-3.5 w-3.5" />
+        <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
         Les relances sont mises en avant 7 jours après l&apos;envoi.
       </Badge>
     </Empty>

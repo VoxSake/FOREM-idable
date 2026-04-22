@@ -79,7 +79,7 @@ export function ApplicationsInsights({
 
   return (
     <>
-      <Card className="gap-0 py-0">
+      <Card className="gap-0 border-border/60 py-0">
         <CardHeader className="gap-2 p-4">
           <CardTitle className="text-base">Vue d&apos;ensemble</CardTitle>
           <CardDescription>
@@ -89,24 +89,13 @@ export function ApplicationsInsights({
         <CardContent className="p-4 pt-0">
           <div className={`grid gap-3 sm:grid-cols-2 ${visibleStats.length === 5 ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>
             {visibleStats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-lg border border-border/60 bg-muted/20 px-3 py-3"
-              >
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:text-xs">
-                  {stat.label}
-                </p>
-                <p className="mt-2 text-2xl font-black text-foreground">{stat.value}</p>
-                {stat.hint ? (
-                  <p className="mt-2 text-xs text-muted-foreground sm:text-sm">{stat.hint}</p>
-                ) : null}
-              </div>
+              <StatCell key={stat.label} stat={stat} />
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="gap-0 py-0">
+      <Card className="gap-0 border-border/60 py-0">
         <CardContent className="p-4">
           <div className="grid gap-3">
             <div className="relative">
@@ -180,4 +169,32 @@ export function ApplicationsInsights({
       </Card>
     </>
   );
+}
+
+function StatCell({ stat }: { stat: { label: string; value: number; hint?: string | null } }) {
+  const colors = getStatColors(stat.label);
+  return (
+    <div className={`rounded-lg border px-3 py-3 ${colors}`}>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:text-xs">
+        {stat.label}
+      </p>
+      <p className="mt-2 text-2xl font-black text-foreground">{stat.value}</p>
+      {stat.hint ? (
+        <p className="mt-2 text-xs text-muted-foreground sm:text-sm">{stat.hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function getStatColors(label: string): string {
+  switch (label) {
+    case "Relances dues":
+      return "border-[#F2C27A] bg-[#FFF5E8] dark:border-[#6D4B1E] dark:bg-[#2A1D0F]";
+    case "Entretiens à venir":
+      return "border-[#9FCAE8] bg-[#EEF6FC] dark:border-[#2A5573] dark:bg-[#10202B]";
+    case "Retours coach":
+      return "border-[#B8C5E0] bg-[#EFF2F8] dark:border-[#2A3B5A] dark:bg-[#121A2B]";
+    default:
+      return "border-border/60 bg-muted/20";
+  }
 }

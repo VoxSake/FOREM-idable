@@ -45,7 +45,7 @@ export function BulkActionBar({
       role="toolbar"
       aria-label="Actions sur la sélection"
       aria-busy={isBusy}
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-6xl items-center gap-2 rounded-xl border bg-card/95 px-4 py-3 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-card/85 animate-in slide-in-from-bottom-4 duration-300"
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-6xl flex-wrap items-center gap-2 rounded-xl border bg-card/95 px-4 py-3 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-card/85 animate-in slide-in-from-bottom-4 duration-300 min-w-0"
     >
       <Button
         type="button"

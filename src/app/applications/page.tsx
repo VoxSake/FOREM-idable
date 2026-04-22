@@ -37,7 +37,7 @@ function ApplicationsPageSkeleton() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex flex-col gap-3">
@@ -49,7 +49,7 @@ function ApplicationsPageSkeleton() {
         ))}
       </section>
 
-      <section className="grid gap-3 xl:grid-cols-2">
+      <section className="grid gap-3 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex flex-col gap-4">
@@ -124,7 +124,7 @@ export default function ApplicationsPage() {
 
       {page.filteredApplications.length > 0 ? (
         <>
-          <div className="grid gap-3 xl:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             {page.paginatedApplications.map((application) => (
               <ApplicationCard
                 key={application.job.id}

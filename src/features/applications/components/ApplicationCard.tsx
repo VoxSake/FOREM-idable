@@ -66,21 +66,32 @@ export function ApplicationCard({
 
   return (
     <Card
+      role="button"
+      tabIndex={0}
+      aria-label={`Ouvrir les détails de ${application.job.title} chez ${application.job.company || "Entreprise non précisée"}`}
       className={cn(
-        "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/20",
+        "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-muted/20",
         getStatusCardClasses(application.status, isDue, hasInterview, hasUnreadCoachUpdate)
       )}
       onClick={() => onOpenDetails(application.job.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenDetails(application.job.id);
+        }
+      }}
     >
       <div className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          className="mt-1 size-4 shrink-0 cursor-pointer accent-primary"
-          checked={isSelected}
-          onChange={() => onToggleSelection(application.job.id)}
-          onClick={(event) => event.stopPropagation()}
-          aria-label="Sélectionner la candidature"
-        />
+        <label className="mt-1 shrink-0 cursor-pointer">
+          <input
+            type="checkbox"
+            className="size-4 accent-primary"
+            checked={isSelected}
+            onChange={() => onToggleSelection(application.job.id)}
+            onClick={(event) => event.stopPropagation()}
+            aria-label="Sélectionner la candidature"
+          />
+        </label>
 
         <CardContent className="min-w-0 flex-1 p-0">
           <div className="flex min-h-full flex-col gap-2.5">

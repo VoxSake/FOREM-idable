@@ -1,6 +1,6 @@
 "use client";
 
-import { addDays, format } from "date-fns";
+import { addDays, format, isAfter } from "date-fns";
 import { useState } from "react";
 import { CalendarDays, FilePenLine, Save, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -32,9 +32,11 @@ import {
   formatApplicationDateTime,
   getDisplayApplicationStatus,
   isFollowUpEnabled,
+  isFollowUpPending,
   isManualApplication,
   shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
+import { getApplicationStatusBadgeVariant } from "@/lib/cardColors";
 import { formatCoachAuthorName, summarizeCoachContributors } from "@/lib/coachNotes";
 import { ContractTypeSelect } from "@/components/jobs/ContractTypeSelect";
 import { ApplicationStatus, JobApplication } from "@/types/application";
@@ -133,6 +135,15 @@ function ApplicationDetailsSheetBody({
   const isManual = isManualApplication(application);
   const followUpEnabled = isFollowUpEnabled(application);
   const displayStatus = getDisplayApplicationStatus(application);
+  const interviewDate = application.interviewAt ? new Date(application.interviewAt) : null;
+  const hasInterview = Boolean(interviewDate) && !Number.isNaN(interviewDate!.getTime());
+  const followUpDue = new Date(application.followUpDueAt);
+  const now = new Date();
+  const isDue =
+    isFollowUpPending(application.status) &&
+    followUpEnabled &&
+    !Number.isNaN(followUpDue.getTime()) &&
+    !isAfter(followUpDue, now);
   const defaultFollowUpDate = formatDefaultFollowUpDate(application.appliedAt);
   const initialFollowUpForm = {
     enabled: followUpEnabled,
@@ -186,7 +197,7 @@ function ApplicationDetailsSheetBody({
             </Badge>
           ) : null}
           <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
-          <Badge variant={displayStatus === "follow_up" ? "warning" : "secondary"}>
+          <Badge variant={getApplicationStatusBadgeVariant(displayStatus, isDue, hasInterview)}>
             {applicationStatusLabel(displayStatus)}
           </Badge>
           {isManual ? (
