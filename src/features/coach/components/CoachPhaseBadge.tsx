@@ -1,12 +1,12 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { normalizeContractType } from "@/lib/contractType";
 import { JobApplication } from "@/types/application";
 import { TrackingPhase } from "@/types/coach";
 
 function isStageContract(contractType: string): boolean {
-  const normalized = contractType.toUpperCase().trim();
-  return normalized.includes("STAGE") || normalized.includes("STAGIAIRE");
+  return normalizeContractType(contractType) === "STAGE";
 }
 
 function hasAcceptedStage(applications: JobApplication[]): boolean {
@@ -25,6 +25,14 @@ interface CoachPhaseBadgeProps {
   phase: TrackingPhase;
   applications?: JobApplication[];
   className?: string;
+}
+
+function PositiveBadge({ className }: { className?: string }) {
+  return (
+    <Badge variant="success" className={className}>
+      Sortie positive
+    </Badge>
+  );
 }
 
 export function CoachPhaseBadge({
@@ -53,11 +61,7 @@ export function CoachPhaseBadge({
 
   if (phase === "internship_search") {
     if (hasJob) {
-      return (
-        <Badge variant="success" className={className}>
-          Sortie positive
-        </Badge>
-      );
+      return <PositiveBadge className={className} />;
     }
     if (hasStage) {
       return (
@@ -75,11 +79,7 @@ export function CoachPhaseBadge({
 
   if (phase === "job_search") {
     if (hasJob) {
-      return (
-        <Badge variant="success" className={className}>
-          Sortie positive
-        </Badge>
-      );
+      return <PositiveBadge className={className} />;
     }
     return (
       <Badge variant="secondary" className={className}>
