@@ -23,6 +23,12 @@ export interface ComputedPhaseBadge {
   variant: "default" | "secondary" | "success" | "outline" | "destructive";
 }
 
+export function getSummaryBadgeVariant(tone: "accepted" | "rejected" | "interview") {
+  if (tone === "rejected") return "error";
+  if (tone === "accepted") return "success";
+  return "info";
+}
+
 export function getComputedPhaseBadge(
   trackingPhase: TrackingPhase,
   hasAcceptedStage: boolean,
