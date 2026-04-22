@@ -7,8 +7,8 @@ const TABS: { value: CoachPhaseFilter; label: string }[] = [
   { value: "all", label: "Tous" },
   { value: "internship_search", label: "Recherche stage" },
   { value: "job_search", label: "Recherche emploi" },
-  { value: "placed", label: "Placés" },
-  { value: "dropped", label: "Abandonnés" },
+  { value: "placed", label: "En emploi" },
+  { value: "dropped", label: "Sortie du dispositif" },
 ];
 
 interface CoachPhaseTabsProps {

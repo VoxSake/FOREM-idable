@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   fetchCoachDashboard,
@@ -17,6 +18,7 @@ import {
   replaceGroupIdInDashboard,
   setGroupManagerInDashboard,
   updateManagedUserInDashboard,
+  updateUserPhaseInDashboard,
 } from "@/features/coach/dashboardState";
 import { ApiKeySummary } from "@/types/externalApi";
 import { JobApplication } from "@/types/application";
@@ -64,6 +66,7 @@ export function useCoachDashboard() {
   const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [calendarRegenerationTarget, setCalendarRegenerationTarget] =
     useState<CoachCalendarRegenerationTarget | null>(null);
+  const [phaseDialogUser, setPhaseDialogUser] = useState<CoachUserSummary | null>(null);
   const [search, setSearch] = useState("");
   const [userFilter, setUserFilter] = useState<CoachUserFilter>("all");
   const { phaseFilter, setPhaseFilter } = useCoachPhaseTabs();
@@ -127,6 +130,35 @@ export function useCoachDashboard() {
       return updateManagedUserInDashboard(current, userId, patch);
     });
   };
+
+  const updateUserPhase = useCallback(
+    async (userId: number, phase: string, reason?: string) => {
+      const previousPhase = dashboard?.users.find((u) => u.id === userId)?.trackingPhase;
+
+      setDashboard((current) => {
+        if (!current) return current;
+        return updateUserPhaseInDashboard(current, userId, phase as CoachUserSummary["trackingPhase"]);
+      });
+
+      const response = await fetch(`/api/coach/users/${userId}/phase`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase, reason }),
+      });
+
+      if (!response.ok) {
+        setDashboard((current) => {
+          if (!current || !previousPhase) return current;
+          return updateUserPhaseInDashboard(current, userId, previousPhase);
+        });
+        toast.error("Changement de phase impossible.");
+        return;
+      }
+
+      toast.success("Phase mise à jour.");
+    },
+    [dashboard, setDashboard]
+  );
 
   const addGroupLocally = (input: {
     id: number;
@@ -342,6 +374,8 @@ export function useCoachDashboard() {
     setDeleteUserTarget,
     calendarRegenerationTarget,
     setCalendarRegenerationTarget,
+    phaseDialogUser,
+    setPhaseDialogUser,
     savingCoachNoteKey: coachApplicationActions.savingCoachNoteKey,
     search,
     setSearch,
@@ -381,6 +415,7 @@ export function useCoachDashboard() {
     openManagedUserApiKeys: coachAdminActions.openManagedUserApiKeys,
     revokeManagedApiKey: coachAdminActions.revokeManagedApiKey,
     deleteUser: coachAdminActions.deleteUser,
+    updateUserPhase,
     savePrivateCoachNote: coachApplicationActions.savePrivateCoachNote,
     createSharedCoachNote: coachApplicationActions.createSharedCoachNote,
     updateSharedCoachNote: coachApplicationActions.updateSharedCoachNote,

@@ -138,6 +138,7 @@ function renderSheet(user: CoachUserSummary, overrides: Partial<ComponentProps<t
     onOpenImport: vi.fn(),
     onEdit: vi.fn(),
     onDeleteUser: vi.fn(),
+    onOpenPhaseChange: vi.fn(),
     onSavePrivateCoachNote: vi.fn(async () => true),
     onCreateSharedCoachNote: vi.fn(async () => true),
     onUpdateSharedCoachNote: vi.fn(async () => true),

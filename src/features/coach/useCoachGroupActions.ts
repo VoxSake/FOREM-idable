@@ -1,6 +1,7 @@
 "use client";
 
 import { Dispatch, SetStateAction, useCallback } from "react";
+import { toast } from "sonner";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import { AuthUser } from "@/types/auth";
 import { CoachUndoAction } from "@/features/coach/types";
@@ -305,7 +306,9 @@ export function useCoachGroupActions(input: {
         return {
           ...current,
           users: current.users.map((user) =>
-            memberIds.has(user.id) ? { ...user, trackingPhase: phase as CoachUserSummary["trackingPhase"] } : user
+            memberIds.has(user.id) && user.trackingPhase !== "placed" && user.trackingPhase !== "dropped"
+              ? { ...user, trackingPhase: phase as CoachUserSummary["trackingPhase"] }
+              : user
           ),
         };
       });
@@ -315,6 +318,12 @@ export function useCoachGroupActions(input: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phase, reason }),
       });
+
+      const data = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        updated?: number;
+        skipped?: number;
+      };
 
       if (!response.ok) {
         input.setDashboard((current) => {
@@ -332,7 +341,10 @@ export function useCoachGroupActions(input: {
       }
 
       input.setUndoAction(null);
-      input.setFeedback("Phase du groupe mise à jour.");
+      toast.success("Phase du groupe mise à jour.");
+      if ((data.skipped ?? 0) > 0) {
+        toast.info(`${data.skipped} ignoré${data.skipped! > 1 ? 's' : ''} car déjà en sortie.`);
+      }
     },
     [input]
   );

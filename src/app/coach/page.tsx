@@ -7,6 +7,7 @@ import { CoachImportApplicationsDialog } from "@/features/coach/components/Coach
 import { CoachPageContent } from "@/features/coach/components/CoachPageContent";
 import { CoachPageHeader } from "@/features/coach/components/CoachPageHeader";
 import { CoachSummaryCards } from "@/features/coach/components/CoachSummaryCards";
+import { CoachUserPhaseDialog } from "@/features/coach/components/CoachUserPhaseDialog";
 import { CoachUserSheet } from "@/features/coach/components/CoachUserSheet";
 import { useCoachPageState } from "@/features/coach/useCoachPageState";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
@@ -150,6 +151,7 @@ export default function CoachPage() {
         onOpenImport={() => page.setImportTargetUserId(page.selectedUser?.id ?? null)}
         onEdit={page.openSelectedUserEditor}
         onDeleteUser={page.openSelectedUserDeletion}
+        onOpenPhaseChange={page.openSelectedUserPhaseChange}
         onSavePrivateCoachNote={(userId, jobId, content) =>
           page.savePrivateCoachNote(userId, jobId, content)
         }
@@ -168,6 +170,19 @@ export default function CoachPage() {
         onDeleteApplication={(userId, jobId) =>
           page.deleteManagedApplication(userId, jobId)
         }
+      />
+
+      <CoachUserPhaseDialog
+        open={Boolean(page.phaseDialogUser)}
+        userName={page.phaseDialogUser ? `${page.phaseDialogUser.firstName} ${page.phaseDialogUser.lastName}`.trim() || page.phaseDialogUser.email : ""}
+        currentPhase={page.phaseDialogUser?.trackingPhase ?? "job_search"}
+        onOpenChange={page.closePhaseDialog}
+        onConfirm={(phase, reason) => {
+          if (page.phaseDialogUser) {
+            page.updateUserPhase(page.phaseDialogUser.id, phase, reason);
+          }
+          page.setPhaseDialogUser(null);
+        }}
       />
 
       <CoachDialogs page={page} />

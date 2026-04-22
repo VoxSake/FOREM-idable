@@ -6,8 +6,8 @@ import { TrackingPhase } from "@/types/coach";
 const PHASE_CONFIG: Record<TrackingPhase, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   internship_search: { label: "Recherche stage", variant: "default" },
   job_search: { label: "Recherche emploi", variant: "secondary" },
-  placed: { label: "Placé", variant: "outline" },
-  dropped: { label: "Abandonné", variant: "destructive" },
+  placed: { label: "En emploi", variant: "outline" },
+  dropped: { label: "Sortie du dispositif", variant: "destructive" },
 };
 
 interface CoachPhaseBadgeProps {

@@ -17,6 +17,7 @@ export type AuditAction =
   | "group_coach_removed"
   | "group_manager_changed"
   | "group_phase_changed"
+  | "user_phase_changed"
   | "group_archived"
   | "group_unarchived"
   | "coach_csv_import_completed"

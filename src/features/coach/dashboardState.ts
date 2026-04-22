@@ -221,6 +221,25 @@ export function setGroupManagerInDashboard(
   };
 }
 
+export function updateUserPhaseInDashboard(
+  dashboard: CoachDashboardData,
+  userId: number,
+  phase: CoachUserSummary["trackingPhase"]
+): CoachDashboardData {
+  return {
+    ...dashboard,
+    users: dashboard.users.map((entry) =>
+      entry.id === userId ? { ...entry, trackingPhase: phase } : entry
+    ),
+    groups: dashboard.groups.map((group) => ({
+      ...group,
+      members: group.members.map((entry) =>
+        entry.id === userId ? { ...entry, trackingPhase: phase } : entry
+      ),
+    })),
+  };
+}
+
 export function updateManagedUserInDashboard(
   dashboard: CoachDashboardData,
   userId: number,

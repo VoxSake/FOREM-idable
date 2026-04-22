@@ -65,6 +65,19 @@ export function useCoachPageState() {
     });
   }, [coach]);
 
+  const closePhaseDialog = useCallback(
+    (open: boolean) => {
+      if (open) return;
+      coach.setPhaseDialogUser(null);
+    },
+    [coach]
+  );
+
+  const openSelectedUserPhaseChange = useCallback(() => {
+    if (!coach.selectedUser) return;
+    coach.setPhaseDialogUser(coach.selectedUser);
+  }, [coach]);
+
   const resetApiKeysDialog = useCallback(
     (open: boolean) => {
       if (open) return;
@@ -108,6 +121,8 @@ export function useCoachPageState() {
     openUserFromActivity,
     openSelectedUserEditor,
     openSelectedUserDeletion,
+    closePhaseDialog,
+    openSelectedUserPhaseChange,
     resetApiKeysDialog,
     requestRevokeApiKey,
     closeImportDialog,

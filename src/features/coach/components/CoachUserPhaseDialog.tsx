@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/select";
 import { TrackingPhase } from "@/types/coach";
 
-interface CoachGroupPhaseDialogProps {
+interface CoachUserPhaseDialogProps {
   open: boolean;
-  groupName: string;
+  userName: string;
+  currentPhase: TrackingPhase;
   onOpenChange: (open: boolean) => void;
   onConfirm: (phase: TrackingPhase, reason?: string) => void;
 }
@@ -35,13 +36,14 @@ const PHASE_OPTIONS: { value: TrackingPhase; label: string }[] = [
   { value: "dropped", label: "Sortie du dispositif" },
 ];
 
-export function CoachGroupPhaseDialog({
+export function CoachUserPhaseDialog({
   open,
-  groupName,
+  userName,
+  currentPhase,
   onOpenChange,
   onConfirm,
-}: CoachGroupPhaseDialogProps) {
-  const [phase, setPhase] = useState<TrackingPhase>("job_search");
+}: CoachUserPhaseDialogProps) {
+  const [phase, setPhase] = useState<TrackingPhase>(currentPhase);
   const [reason, setReason] = useState("");
 
   const handleConfirm = () => {
@@ -54,9 +56,9 @@ export function CoachGroupPhaseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Changer la phase du groupe</DialogTitle>
+          <DialogTitle>Changer la phase de {userName}</DialogTitle>
           <DialogDescription>
-            Modifier la phase de suivi pour tous les membres de <strong>{groupName}</strong>.
+            Modifier la phase de suivi pour ce bénéficiaire.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">

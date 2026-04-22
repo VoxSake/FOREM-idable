@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { requireCoachAccess } from "@/lib/server/coach";
-import { updateGroupPhase } from "@/lib/server/coachGroups";
+import { updateUserPhase } from "@/lib/server/coachGroups";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { z } from "zod";
 
 const bodySchema = z.object({
   phase: z.enum(["internship_search", "job_search", "placed", "dropped"]),
   reason: z.string().optional(),
 });
 
-function parseGroupId(value: string) {
-  const groupId = Number(value);
-  return Number.isInteger(groupId) ? groupId : null;
+function parseUserId(value: string) {
+  const id = Number(value);
+  return Number.isInteger(id) ? id : null;
 }
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ groupId: string }> }
+  context: { params: Promise<{ userId: string }> }
 ) {
   return withRequestContext(request, async () => {
     try {
@@ -29,28 +29,27 @@ export async function PATCH(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      const { groupId: rawGroupId } = await context.params;
-      const groupId = parseGroupId(rawGroupId);
+      const { userId: rawUserId } = await context.params;
+      const userId = parseUserId(rawUserId);
       const body = await request.json();
-      const parseResult = bodySchema.safeParse(body);
+      const parsed = bodySchema.safeParse(body);
 
-      if (!groupId || !parseResult.success) {
+      if (!userId || !parsed.success) {
         return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
       }
 
-      const { phase, reason } = parseResult.data;
-      const { updated, skipped } = await updateGroupPhase(groupId, phase, reason, user);
-      return NextResponse.json({ ok: true, updated, skipped });
+      await updateUserPhase(userId, parsed.data.phase, parsed.data.reason, user);
+      return NextResponse.json({ ok: true });
     } catch (error) {
-      const { groupId: rawGroupId } = await context.params;
-      const groupId = parseGroupId(rawGroupId);
+      const { userId: rawUserId } = await context.params;
+      const userId = parseUserId(rawUserId);
 
       logServerEvent({
         category: "coach",
-        action: "group_phase_change_failed",
+        action: "user_phase_change_failed",
         level: error instanceof Error && error.message === "Forbidden" ? "warn" : "error",
         meta: {
-          groupId: groupId ?? undefined,
+          userId: userId ?? undefined,
           error: error instanceof Error ? error.message : "unknown",
         },
       });

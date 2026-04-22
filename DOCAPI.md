@@ -104,7 +104,25 @@ Notes visibles par le bénéficiaire et les autres coachs.
 ## 👥 Utilisateurs & Groupes
 
 ### `GET /api/external/users`
-Liste les bénéficiaires visibles. Inclut des agrégats comme `dueCount` (nombre de relances en retard).
+Liste les bénéficiaires visibles. Inclut des agrégats comme `dueCount` (nombre de relances en retard) ainsi que `trackingPhase` (phase de suivi actuelle).
+
+### `PATCH /api/external/users/:userId/phase`
+Met à jour la phase de suivi d'un bénéficiaire.
+
+**Body :**
+```json
+{
+  "phase": "internship_search|job_search|placed|dropped",
+  "reason": "optionnel"
+}
+```
+
+**Réponse :**
+```json
+{ "ok": true }
+```
+
+**Erreurs possibles :** `400` (paramètres invalides), `403` (accès interdit), `404` (utilisateur introuvable), `500` (erreur serveur).
 
 ### `GET /api/external/groups`
 Liste les groupes de suivi. Permet d'extraire la liste des membres et leurs statistiques globales.

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileKey2, FilePenLine, FileSpreadsheet, MoreHorizontal, Trash2 } from "lucide-react";
+import { Download, FileKey2, FilePenLine, FileSpreadsheet, GitBranch, MoreHorizontal, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { CoachPhaseBadge } from "@/features/coach/components/CoachPhaseBadge";
 import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActivityMeta";
 import { getCoachUserDisplayName } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
@@ -30,6 +31,7 @@ interface CoachUserSheetHeaderProps {
   onOpenImport: () => void;
   onEdit: () => void;
   onDeleteUser: () => void;
+  onOpenPhaseChange: () => void;
 }
 
 export function CoachUserSheetHeader({
@@ -43,6 +45,7 @@ export function CoachUserSheetHeader({
   onOpenImport,
   onEdit,
   onDeleteUser,
+  onOpenPhaseChange,
 }: CoachUserSheetHeaderProps) {
   return (
     <SheetHeader className="border-b bg-muted/30 p-5 pr-12">
@@ -60,6 +63,7 @@ export function CoachUserSheetHeader({
               {user.groupNames.length > 0 ? user.groupNames.join(" • ") : "Aucun groupe assigné"}
             </span>
             <CoachUserActivityMeta user={user} as="span" className="block" />
+            <CoachPhaseBadge phase={user.trackingPhase} className="mt-1" />
           </SheetDescription>
         </div>
 
@@ -90,6 +94,10 @@ export function CoachUserSheetHeader({
                 <DropdownMenuItem onClick={onOpenImport}>
                   <FileSpreadsheet className="h-4 w-4" />
                   Importer un suivi (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onOpenPhaseChange}>
+                  <GitBranch className="h-4 w-4" />
+                  Changer de phase
                 </DropdownMenuItem>
                 {canEditUser && (
                   <DropdownMenuItem onClick={onEdit}>
