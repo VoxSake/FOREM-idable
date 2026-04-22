@@ -37,9 +37,6 @@ export async function PATCH(
     if (error instanceof Error && error.message === "Forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    if (error instanceof Error && error.message === "User not found") {
-      return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
-    }
 
     return NextResponse.json({ error: "Changement de phase impossible." }, { status: 500 });
   }

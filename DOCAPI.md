@@ -122,7 +122,7 @@ Met à jour la phase de suivi d'un bénéficiaire.
 { "ok": true }
 ```
 
-**Erreurs possibles :** `400` (paramètres invalides), `403` (accès interdit), `404` (utilisateur introuvable), `500` (erreur serveur).
+**Erreurs possibles :** `400` (paramètres invalides), `403` (accès interdit), `500` (erreur serveur).
 
 ### `GET /api/external/groups`
 Liste les groupes de suivi. Permet d'extraire la liste des membres et leurs statistiques globales.

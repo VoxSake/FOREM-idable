@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,10 @@ export function CoachUserPhaseDialog({
 }: CoachUserPhaseDialogProps) {
   const [phase, setPhase] = useState<TrackingPhase>(currentPhase);
   const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    setPhase(currentPhase);
+  }, [currentPhase]);
 
   const handleConfirm = () => {
     onConfirm(phase, reason.trim() || undefined);

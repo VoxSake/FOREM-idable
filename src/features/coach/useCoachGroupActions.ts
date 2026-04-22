@@ -343,7 +343,7 @@ export function useCoachGroupActions(input: {
       input.setUndoAction(null);
       toast.success("Phase du groupe mise à jour.");
       if ((data.skipped ?? 0) > 0) {
-        toast.info(`${data.skipped} ignoré${data.skipped! > 1 ? 's' : ''} car déjà en sortie.`);
+        toast.info(`${data.skipped} ignoré${(data.skipped ?? 0) > 1 ? 's' : ''} car déjà en sortie.`);
       }
     },
     [input]
