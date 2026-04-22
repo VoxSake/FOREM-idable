@@ -15,6 +15,15 @@ import { useAccountApiKeys } from "@/hooks/useAccountApiKeys";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { AuthUser } from "@/types/auth";
 import {
+  fetchDataExportRequests,
+  fetchDeletionRequests,
+  updateProfile,
+  updatePassword,
+  generateDataExport as apiGenerateDataExport,
+  submitDeletionRequest as apiSubmitDeletionRequest,
+  cancelDeletionRequest as apiCancelDeletionRequest,
+} from "@/lib/api/account";
+import {
   AccountDeletionRequestSummary,
   ApiKeyFormValues,
   DataExportRequestSummary,
@@ -167,20 +176,14 @@ export default function AccountPage() {
     setIsLoadingExports(true);
 
     try {
-      const response = await fetch("/api/account/data-export");
-      const data = (await response.json()) as {
-        error?: string;
-        requests?: DataExportRequestSummary[];
-      };
-
-      if (!response.ok || !data.requests) {
+      const { data } = await fetchDataExportRequests();
+      if (!data.requests) {
         setDataExportFeedback({
           type: "error",
-          message: data.error || "Chargement des exports impossible.",
+          message: "Chargement des exports impossible.",
         });
         return;
       }
-
       setDataExportRequests(data.requests);
     } catch {
       setDataExportFeedback({
@@ -196,20 +199,14 @@ export default function AccountPage() {
     setIsLoadingDeletionRequests(true);
 
     try {
-      const response = await fetch("/api/account/deletion-request");
-      const data = (await response.json()) as {
-        error?: string;
-        requests?: AccountDeletionRequestSummary[];
-      };
-
-      if (!response.ok || !data.requests) {
+      const { data } = await fetchDeletionRequests();
+      if (!data.requests) {
         setDeletionFeedback({
           type: "error",
-          message: data.error || "Chargement des demandes impossible.",
+          message: "Chargement des demandes impossible.",
         });
         return;
       }
-
       setDeletionRequests(data.requests);
     } catch {
       setDeletionFeedback({
@@ -237,17 +234,12 @@ export default function AccountPage() {
     setProfileFeedback(null);
 
     try {
-      const response = await fetch("/api/account", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = (await response.json()) as { error?: string; user?: AuthUser };
+      const { data } = await updateProfile(values);
 
-      if (!response.ok || !data.user) {
+      if (!data.user) {
         setProfileFeedback({
           type: "error",
-          message: data.error || "Mise à jour impossible.",
+          message: "Mise à jour impossible.",
         });
         return;
       }
@@ -277,20 +269,10 @@ export default function AccountPage() {
     setPasswordFeedback(null);
 
     try {
-      const response = await fetch("/api/account/password", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword: values.currentPassword, password: values.password }),
+      await updatePassword({
+        currentPassword: values.currentPassword,
+        password: values.password,
       });
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        setPasswordFeedback({
-          type: "error",
-          message: data.error || "Mise à jour impossible.",
-        });
-        return;
-      }
 
       passwordForm.reset();
       setPasswordFeedback({
@@ -324,18 +306,11 @@ export default function AccountPage() {
     setDataExportFeedback(null);
 
     try {
-      const response = await fetch("/api/account/data-export", {
-        method: "POST",
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        request?: DataExportRequestSummary;
-      };
-
-      if (!response.ok || !data.request) {
+      const { data } = await apiGenerateDataExport();
+      if (!data.request) {
         setDataExportFeedback({
           type: "error",
-          message: data.error || "Export impossible.",
+          message: "Export impossible.",
         });
         return;
       }
@@ -364,20 +339,11 @@ export default function AccountPage() {
     setDeletionFeedback(null);
 
     try {
-      const response = await fetch("/api/account/deletion-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason.trim() || undefined }),
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        request?: AccountDeletionRequestSummary;
-      };
-
-      if (!response.ok || !data.request) {
+      const { data } = await apiSubmitDeletionRequest(reason);
+      if (!data.request) {
         setDeletionFeedback({
           type: "error",
-          message: data.error || "Demande impossible.",
+          message: "Demande impossible.",
         });
         return;
       }
@@ -402,18 +368,11 @@ export default function AccountPage() {
     setDeletionFeedback(null);
 
     try {
-      const response = await fetch("/api/account/deletion-request", {
-        method: "DELETE",
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        request?: AccountDeletionRequestSummary;
-      };
-
-      if (!response.ok || !data.request) {
+      const { data } = await apiCancelDeletionRequest();
+      if (!data.request) {
         setDeletionFeedback({
           type: "error",
-          message: data.error || "Annulation impossible.",
+          message: "Annulation impossible.",
         });
         return;
       }

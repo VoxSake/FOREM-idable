@@ -1,3 +1,4 @@
+import { get, post, patch, del } from "@/lib/api/client";
 import { FeaturedSearchPayload } from "@/features/featured-searches/featuredSearchSchema";
 import { CoachDashboardData } from "@/types/coach";
 import { AdminApiKeySummary } from "@/types/externalApi";
@@ -74,87 +75,59 @@ export type AdminLegalHoldTargetOption = {
   description: string | null;
 };
 
-async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit) {
-  const response = await fetch(input, init);
-  const data = (await response.json().catch(() => ({}))) as T;
-  return { response, data };
-}
-
 export function fetchAdminDashboard() {
-  return requestJson<{ error?: string; dashboard?: CoachDashboardData }>("/api/coach/dashboard", {
+  return get<{ error?: string; dashboard?: CoachDashboardData }>("/api/coach/dashboard", {
     cache: "no-store",
   });
 }
 
 export function promoteCoachRole(userId: number) {
-  return requestJson<{ error?: string; ok?: boolean }>("/api/admin/coaches", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
-  });
+  return post<{ error?: string; ok?: boolean }>("/api/admin/coaches", { userId });
 }
 
 export function demoteCoachRole(userId: number) {
-  return requestJson<{ error?: string; ok?: boolean }>(`/api/admin/coaches?userId=${userId}`, {
-    method: "DELETE",
-  });
+  return del<{ error?: string; ok?: boolean }>(`/api/admin/coaches?userId=${userId}`);
 }
 
 export function fetchAdminApiKeys() {
-  return requestJson<{ error?: string; apiKeys?: AdminApiKeySummary[] }>("/api/admin/api-keys", {
+  return get<{ error?: string; apiKeys?: AdminApiKeySummary[] }>("/api/admin/api-keys", {
     cache: "no-store",
   });
 }
 
 export function revokeAdminApiKey(keyId: number) {
-  return requestJson<{ error?: string; ok?: boolean }>(`/api/admin/api-keys/${keyId}`, {
-    method: "DELETE",
-  });
+  return del<{ error?: string; ok?: boolean }>(`/api/admin/api-keys/${keyId}`);
 }
 
 export function fetchAdminFeaturedSearches() {
-  return requestJson<{ error?: string; featuredSearches?: FeaturedSearch[] }>(
+  return get<{ error?: string; featuredSearches?: FeaturedSearch[] }>(
     "/api/admin/featured-searches",
-    {
-      cache: "no-store",
-    }
+    { cache: "no-store" }
   );
 }
 
 export function createAdminFeaturedSearch(payload: FeaturedSearchPayload) {
-  return requestJson<{ error?: string; featuredSearch?: FeaturedSearch }>(
+  return post<{ error?: string; featuredSearch?: FeaturedSearch }>(
     "/api/admin/featured-searches",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
+    payload
   );
 }
 
 export function updateAdminFeaturedSearch(id: number, payload: FeaturedSearchPayload) {
-  return requestJson<{ error?: string; featuredSearch?: FeaturedSearch }>(
+  return patch<{ error?: string; featuredSearch?: FeaturedSearch }>(
     `/api/admin/featured-searches/${id}`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
+    payload
   );
 }
 
 export function deleteAdminFeaturedSearch(id: number) {
-  return requestJson<{ error?: string; ok?: boolean }>(`/api/admin/featured-searches/${id}`, {
-    method: "DELETE",
-  });
+  return del<{ error?: string; ok?: boolean }>(`/api/admin/featured-searches/${id}`);
 }
 
 export function fetchAdminAccountDeletionRequests() {
-  return requestJson<{ error?: string; requests?: AdminAccountDeletionRequest[] }>(
+  return get<{ error?: string; requests?: AdminAccountDeletionRequest[] }>(
     "/api/admin/account-deletion-requests",
-    {
-      cache: "no-store",
-    }
+    { cache: "no-store" }
   );
 }
 
@@ -162,19 +135,15 @@ export function reviewAdminAccountDeletionRequest(
   id: number,
   payload: { action: "approve" | "reject" | "complete"; reviewNote?: string }
 ) {
-  return requestJson<{
+  return patch<{
     error?: string;
     request?: AdminAccountDeletionRequest | null;
     deletedUserId?: number | null;
-  }>(`/api/admin/account-deletion-requests/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  }>(`/api/admin/account-deletion-requests/${id}`, payload);
 }
 
 export function fetchAdminLegalHolds() {
-  return requestJson<{ error?: string; holds?: AdminLegalHold[] }>("/api/admin/legal-holds", {
+  return get<{ error?: string; holds?: AdminLegalHold[] }>("/api/admin/legal-holds", {
     cache: "no-store",
   });
 }
@@ -183,19 +152,14 @@ export function fetchAdminLegalHoldTargetOptions(
   targetType: "conversation" | "application",
   search?: string
 ) {
-  const params = new URLSearchParams({
-    targetType,
-  });
-
+  const params = new URLSearchParams({ targetType });
   if (search?.trim()) {
     params.set("q", search.trim());
   }
 
-  return requestJson<{ error?: string; options?: AdminLegalHoldTargetOption[] }>(
+  return get<{ error?: string; options?: AdminLegalHoldTargetOption[] }>(
     `/api/admin/legal-hold-targets?${params.toString()}`,
-    {
-      cache: "no-store",
-    }
+    { cache: "no-store" }
   );
 }
 
@@ -204,34 +168,23 @@ export function createAdminLegalHold(payload: {
   targetId: number;
   reason: string;
 }) {
-  return requestJson<{ error?: string; hold?: AdminLegalHold }>("/api/admin/legal-holds", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  return post<{ error?: string; hold?: AdminLegalHold }>("/api/admin/legal-holds", payload);
 }
 
 export function releaseAdminLegalHold(id: number) {
-  return requestJson<{ error?: string; hold?: AdminLegalHold }>(`/api/admin/legal-holds/${id}`, {
-    method: "DELETE",
-  });
+  return del<{ error?: string; hold?: AdminLegalHold }>(`/api/admin/legal-holds/${id}`);
 }
 
 export function fetchAdminDisclosureLogs() {
-  return requestJson<{ error?: string; logs?: AdminDisclosureLog[] }>(
-    "/api/admin/disclosure-logs",
-    {
-      cache: "no-store",
-    }
-  );
+  return get<{ error?: string; logs?: AdminDisclosureLog[] }>("/api/admin/disclosure-logs", {
+    cache: "no-store",
+  });
 }
 
 export function fetchAdminAuditLogs(limit = 200) {
-  return requestJson<{ error?: string; logs?: AdminAuditLog[] }>(
+  return get<{ error?: string; logs?: AdminAuditLog[] }>(
     `/api/admin/audit-logs?limit=${encodeURIComponent(String(limit))}`,
-    {
-      cache: "no-store",
-    }
+    { cache: "no-store" }
   );
 }
 
@@ -244,12 +197,8 @@ export function createAdminDisclosureLog(payload: {
   scopeSummary: string;
   exportReference?: string;
 }) {
-  return requestJson<{
+  return post<{
     error?: string;
     log?: { id: number; createdAt: string };
-  }>("/api/admin/disclosure-logs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  }>("/api/admin/disclosure-logs", payload);
 }

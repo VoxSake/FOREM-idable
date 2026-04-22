@@ -5,6 +5,12 @@ import { addDays } from "date-fns";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { sortApplicationsByMostRecent } from "@/features/applications/utils";
 import { normalizeContractType } from "@/lib/contractType";
+import {
+  fetchApplications as apiFetchApplications,
+  createApplication as apiCreateApplication,
+  patchApplication as apiPatchApplication,
+  deleteApplication as apiDeleteApplication,
+} from "@/lib/api/applications";
 import { ApplicationStatus, JobApplication, JobApplicationPatch } from "@/types/application";
 import { Job } from "@/types/job";
 
@@ -46,8 +52,7 @@ export function useApplications() {
     setIsLoaded(false);
 
     try {
-      const response = await fetch("/api/applications", { cache: "no-store" });
-      const data = (await response.json()) as { applications?: JobApplication[] };
+      const { data } = await apiFetchApplications();
       setApplications(Array.isArray(data.applications) ? data.applications : []);
     } catch {
       setApplications([]);
@@ -84,17 +89,7 @@ export function useApplications() {
     }) => {
       if (!user) return false;
 
-      const response = await fetch("/api/applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        return false;
-      }
-
-      const data = (await response.json().catch(() => ({}))) as { application?: JobApplication };
+      const { data } = await apiCreateApplication(payload);
       if (data.application) {
         upsertApplication(data.application);
       }
@@ -107,17 +102,7 @@ export function useApplications() {
     async (jobId: string, patch: JobApplicationPatch) => {
       if (!user) return false;
 
-      const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patch }),
-      });
-
-      if (!response.ok) {
-        return false;
-      }
-
-      const data = (await response.json().catch(() => ({}))) as { application?: JobApplication };
+      const { data } = await apiPatchApplication(jobId, patch);
       if (data.application) {
         upsertApplication(data.application);
       }
@@ -151,14 +136,7 @@ export function useApplications() {
     async (jobId: string) => {
       if (!user) return false;
 
-      const response = await fetch(`/api/applications/${encodeURIComponent(jobId)}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        return false;
-      }
-
+      await apiDeleteApplication(jobId);
       setApplications((current) => current.filter((entry) => entry.job.id !== jobId));
       return true;
     },

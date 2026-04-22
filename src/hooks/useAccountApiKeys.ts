@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { buildApiKeyExpiryDate } from "@/app/account/account.utils";
 import { ApiKeyFormValues, FeedbackState } from "@/app/account/account.schemas";
-import { ApiKeyCreateResult, ApiKeySummary } from "@/types/externalApi";
+import {
+  fetchAccountApiKeys,
+  createAccountApiKey as apiCreateAccountApiKey,
+  revokeAccountApiKey as apiRevokeAccountApiKey,
+} from "@/lib/api/account";
+import { ApiKeySummary } from "@/types/externalApi";
 
 type UseAccountApiKeysOptions = {
   enabled: boolean;
@@ -30,18 +35,15 @@ export function useAccountApiKeys({ enabled }: UseAccountApiKeysOptions) {
     setFeedback(null);
 
     try {
-      const response = await fetch("/api/account/api-keys", { cache: "no-store" });
-      const data = (await response.json()) as { error?: string; apiKeys?: ApiKeySummary[] };
-
-      if (!response.ok || !data.apiKeys) {
+      const { data } = await fetchAccountApiKeys();
+      if (!data.apiKeys) {
         setFeedback({
           type: "error",
-          message: data.error || "Chargement des clés API impossible.",
+          message: "Chargement des clés API impossible.",
         });
         setApiKeys([]);
         return;
       }
-
       setApiKeys(data.apiKeys);
     } catch {
       setFeedback({
@@ -64,20 +66,15 @@ export function useAccountApiKeys({ enabled }: UseAccountApiKeysOptions) {
     setNewApiKey(null);
 
     try {
-      const response = await fetch("/api/account/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name,
-          expiresAt: buildApiKeyExpiryDate(values.expiry),
-        }),
+      const { data } = await apiCreateAccountApiKey({
+        name: values.name,
+        expiresAt: buildApiKeyExpiryDate(values.expiry),
       });
-      const data = (await response.json()) as { error?: string } & Partial<ApiKeyCreateResult>;
 
-      if (!response.ok || !data.apiKey || !data.plainTextKey) {
+      if (!data.apiKey || !data.plainTextKey) {
         setFeedback({
           type: "error",
-          message: data.error || "Création de la clé API impossible.",
+          message: "Création de la clé API impossible.",
         });
         return false;
       }
@@ -105,19 +102,7 @@ export function useAccountApiKeys({ enabled }: UseAccountApiKeysOptions) {
     setFeedback(null);
 
     try {
-      const response = await fetch(`/api/account/api-keys/${keyId}`, {
-        method: "DELETE",
-      });
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
-
-      if (!response.ok) {
-        setFeedback({
-          type: "error",
-          message: data.error || "Révocation impossible.",
-        });
-        return;
-      }
-
+      await apiRevokeAccountApiKey(keyId);
       setApiKeys((current) => current.filter((entry) => entry.id !== keyId));
       setFeedback({
         type: "success",
