@@ -32,8 +32,11 @@ import {
   isApplicationDue,
 } from "@/features/coach/utils";
 import { getJobExternalUrl, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
+import {
+  getApplicationStatusBadgeVariant,
+  getStatusCardClasses,
+} from "@/lib/cardColors";
 import { CoachUserSummary } from "@/types/coach";
-import { JobApplication } from "@/types/application";
 import { cn } from "@/lib/utils";
 
 interface CoachUserApplicationCardProps {
@@ -103,7 +106,7 @@ export function CoachUserApplicationCard({
 
   return (
     <Collapsible open={isOpen} onOpenChange={onToggleOpen}>
-      <div ref={targetRef} className={getApplicationCardClassName(application.status, isDue)}>
+      <div ref={targetRef} className={cn("rounded-xl border transition-colors", getStatusCardClasses(application.status, isDue, false))}>
         <div className="flex items-start gap-3 p-4">
           <CollapsibleTrigger asChild>
             <button
@@ -121,7 +124,7 @@ export function CoachUserApplicationCard({
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant={getApplicationStatusBadgeVariant(application.status, isDue)}>
+                  <Badge variant={getApplicationStatusBadgeVariant(application.status, isDue, false)}>
                     {coachStatusLabel(displayStatus)}
                   </Badge>
                   <Badge variant="outline">{isManual ? "Manuelle" : "Importée"}</Badge>
@@ -293,59 +296,4 @@ export function CoachUserApplicationCard({
   );
 }
 
-function getApplicationCardClassName(status: JobApplication["status"], isDue: boolean) {
-  const baseClassName = "rounded-xl border transition-colors";
 
-  if (status === "interview") {
-    return cn(
-      baseClassName,
-      "border-[#9FCAE8] bg-[#EEF6FC] hover:border-[#87BADF] hover:bg-[#E3F0FA] dark:border-[#2A5573] dark:bg-[#10202B] dark:hover:border-[#3A6C8E] dark:hover:bg-[#152B39]"
-    );
-  }
-
-  if (status === "accepted") {
-    return cn(
-      baseClassName,
-      "border-[#9BD7A1] bg-[#EEF9F0] hover:border-[#7FC788] hover:bg-[#E5F5E8] dark:border-[#245A31] dark:bg-[#12261A] dark:hover:border-[#357A45] dark:hover:bg-[#173120]"
-    );
-  }
-
-  if (status === "rejected") {
-    return cn(
-      baseClassName,
-      "border-[#F3A19B] bg-[#FFF0EE] hover:border-[#E78D86] hover:bg-[#FEE4E0] dark:border-[#6E3531] dark:bg-[#2C1715] dark:hover:border-[#8A4742] dark:hover:bg-[#351C19]"
-    );
-  }
-
-  if (isDue) {
-    return cn(
-      baseClassName,
-      "border-[#F2C27A] bg-[#FFF5E8] hover:border-[#E6B35E] hover:bg-[#FDEED8] dark:border-[#6D4B1E] dark:bg-[#2A1D0F] dark:hover:border-[#8A6027] dark:hover:bg-[#352514]"
-    );
-  }
-
-  return cn(baseClassName, "bg-card hover:border-primary/50 hover:bg-primary/5");
-}
-
-function getApplicationStatusBadgeVariant(
-  status: JobApplication["status"],
-  isDue: boolean
-) {
-  if (status === "accepted") {
-    return "success";
-  }
-
-  if (status === "rejected") {
-    return "error";
-  }
-
-  if (status === "interview") {
-    return "info";
-  }
-
-  if (isDue) {
-    return "warning";
-  }
-
-  return "secondary";
-}

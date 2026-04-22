@@ -186,7 +186,7 @@ function ApplicationDetailsSheetBody({
             </Badge>
           ) : null}
           <Badge variant="outline">Envoyée le {formatApplicationDate(application.appliedAt)}</Badge>
-          <Badge variant={displayStatus === "follow_up" ? "destructive" : "secondary"}>
+          <Badge variant={displayStatus === "follow_up" ? "warning" : "secondary"}>
             {applicationStatusLabel(displayStatus)}
           </Badge>
           {isManual ? (

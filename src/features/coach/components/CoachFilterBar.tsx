@@ -175,7 +175,7 @@ export function CoachFilterChips<T extends string>({
               "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               isActive && variant === "default" && "border-primary bg-primary text-primary-foreground",
               isActive && variant === "destructive" && "border-destructive bg-destructive text-white",
-              isActive && variant === "warning" && "border-amber-500 bg-amber-500 text-white",
+              isActive && variant === "warning" && "border-[#F2C27A] bg-[#FFF5E8] text-[#A46110] dark:border-[#6D4B1E] dark:bg-[#2A1D0F] dark:text-[#F2C27A]",
               !isActive && "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >

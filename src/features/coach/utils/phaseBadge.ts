@@ -20,7 +20,7 @@ export function hasAcceptedJob(applications: JobApplication[]): boolean {
 
 export interface ComputedPhaseBadge {
   label: string;
-  variant: "default" | "secondary" | "success" | "outline" | "destructive";
+  variant: "default" | "secondary" | "success" | "outline" | "destructive" | "error" | "info" | "warning";
 }
 
 export function getSummaryBadgeVariant(tone: "accepted" | "rejected" | "interview") {
@@ -39,7 +39,7 @@ export function getComputedPhaseBadge(
   }
 
   if (trackingPhase === "dropped") {
-    return { label: "Sortie du dispositif", variant: "destructive" };
+    return { label: "Sortie du dispositif", variant: "error" };
   }
 
   if (trackingPhase === "internship_search") {

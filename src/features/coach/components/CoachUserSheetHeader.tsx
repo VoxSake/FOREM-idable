@@ -16,6 +16,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { CoachPhaseBadge } from "@/features/coach/components/CoachPhaseBadge";
+import { CoachStatGrid } from "@/features/coach/components/CoachStatGrid";
 import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActivityMeta";
 import { getCoachUserDisplayName } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
@@ -129,16 +130,14 @@ export function CoachUserSheetHeader({
         </div>
       </div>
 
-      <div className="grid gap-2 pt-2 sm:grid-cols-3">
-        <Badge variant="outline" className="justify-center">
-          {user.applicationCount} candidatures
-        </Badge>
-        <Badge variant="outline" className="justify-center">
-          {user.interviewCount} entretien(s)
-        </Badge>
-        <Badge variant={user.dueCount > 0 ? "warning" : "outline"} className="justify-center">
-          {user.dueCount} relance(s) dues
-        </Badge>
+      <div className="pt-2">
+        <CoachStatGrid
+          applicationCount={user.applicationCount}
+          interviewCount={user.interviewCount}
+          dueCount={user.dueCount}
+          acceptedCount={user.acceptedCount}
+          rejectedCount={user.rejectedCount}
+        />
       </div>
     </SheetHeader>
   );

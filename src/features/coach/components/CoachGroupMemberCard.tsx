@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CoachPhaseBadge } from "@/features/coach/components/CoachPhaseBadge";
+import { CoachStatGrid } from "@/features/coach/components/CoachStatGrid";
 import { CoachUserActivityMeta } from "@/features/coach/components/CoachUserActivityMeta";
 import { CoachGroupedGroupKind, CoachRemoveMembershipTarget } from "@/features/coach/types";
 import { getCoachUserDisplayName } from "@/features/coach/utils";
@@ -115,46 +116,13 @@ export const CoachGroupMemberCard = React.memo(function CoachGroupMemberCard({
           />
         </div>
         <div className="grid min-w-0 gap-2 sm:min-w-[250px]">
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <div className="rounded-lg border border-border/60 bg-muted/10 px-2.5 py-2 text-center sm:px-3">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Candidatures
-              </p>
-              <p className="text-sm font-semibold text-foreground">
-                {entry.applicationCount}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-[#EEF6FC] px-2.5 py-2 text-center dark:border-[#2A5573] dark:bg-[#10202B] sm:px-3">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Entretiens
-              </p>
-              <p className="text-sm font-semibold text-[#2E6E99] dark:text-sky-300">
-                {entry.interviewCount}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-[#FFF5E8] px-2.5 py-2 text-center dark:border-[#6D4B1E] dark:bg-[#2A1D0F] sm:px-3">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Relances
-              </p>
-              <p className="text-sm font-semibold text-[#A46110] dark:text-amber-300">
-                {entry.dueCount}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-background px-2.5 py-2 text-center sm:px-3">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Résultats
-              </p>
-              <div className="flex items-center justify-center gap-1 text-sm font-semibold text-foreground">
-                <span className="text-[#2F7A3E] dark:text-emerald-300">
-                  {entry.acceptedCount}
-                </span>
-                <span className="text-muted-foreground">/</span>
-                <span className="text-[#C85A50] dark:text-rose-300">
-                  {entry.rejectedCount}
-                </span>
-              </div>
-            </div>
-          </div>
+          <CoachStatGrid
+            applicationCount={entry.applicationCount}
+            interviewCount={entry.interviewCount}
+            dueCount={entry.dueCount}
+            acceptedCount={entry.acceptedCount}
+            rejectedCount={entry.rejectedCount}
+          />
         </div>
       </div>
     </div>

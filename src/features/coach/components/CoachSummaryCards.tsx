@@ -80,7 +80,7 @@ export function CoachSummaryCards({
         { key: "internship_search" as const, label: "Recherche stage", count: phaseCounts.internship_search, variant: "default" as const },
         { key: "job_search" as const, label: "Recherche emploi", count: phaseCounts.job_search, variant: "secondary" as const },
         { key: "placed" as const, label: "En emploi", count: phaseCounts.placed, variant: "outline" as const },
-        { key: "dropped" as const, label: "Sortie du dispositif", count: phaseCounts.dropped, variant: "destructive" as const },
+        { key: "dropped" as const, label: "Sortie du dispositif", count: phaseCounts.dropped, variant: "error" as const },
       ].filter((b) => b.count > 0)
     : [];
 

@@ -17,6 +17,10 @@ import {
   isManualApplication,
   shouldShowFollowUpDetails,
 } from "@/features/applications/utils";
+import {
+  getApplicationStatusBadgeVariant,
+  getStatusCardClasses,
+} from "@/lib/cardColors";
 import { cn } from "@/lib/utils";
 import { ApplicationStatus, JobApplication } from "@/types/application";
 
@@ -64,11 +68,7 @@ export function ApplicationCard({
     <Card
       className={cn(
         "cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/20",
-        getApplicationCardClassName(application.status, {
-          hasInterview,
-          hasUnreadCoachUpdate,
-          isDue,
-        })
+        getStatusCardClasses(application.status, isDue, hasInterview, hasUnreadCoachUpdate)
       )}
       onClick={() => onOpenDetails(application.job.id)}
     >
@@ -159,37 +159,6 @@ export function ApplicationCard({
   );
 }
 
-function getApplicationCardClassName(
-  status: ApplicationStatus,
-  options: {
-    hasInterview: boolean;
-    hasUnreadCoachUpdate: boolean;
-    isDue: boolean;
-  }
-) {
-  if (options.isDue) {
-    return "border-[#F2C27A] bg-[#FFF5E8] dark:border-[#6D4B1E] dark:bg-[#2A1D0F]";
-  }
-
-  if (status === "accepted") {
-    return "border-[#9BD7A1] bg-[#EEF9F0] dark:border-[#245A31] dark:bg-[#12261A]";
-  }
-
-  if (status === "rejected") {
-    return "border-[#F3A19B] bg-[#FFF0EE] dark:border-[#6E3531] dark:bg-[#2C1715]";
-  }
-
-  if (status === "interview" || options.hasInterview) {
-    return "border-[#9FCAE8] bg-[#EEF6FC] dark:border-[#2A5573] dark:bg-[#10202B]";
-  }
-
-  if (options.hasUnreadCoachUpdate) {
-    return "border-primary/30 bg-primary/5";
-  }
-
-  return null;
-}
-
 function ApplicationCardHeader({ application }: { application: JobApplication }) {
   return (
     <div className="min-h-14 min-w-0 text-left">
@@ -237,30 +206,6 @@ function ApplicationCardBadges({
       ) : null}
     </div>
   );
-}
-
-function getApplicationStatusBadgeVariant(
-  status: ApplicationStatus,
-  isDue: boolean,
-  hasInterview: boolean
-) {
-  if (status === "accepted") {
-    return "success";
-  }
-
-  if (status === "rejected") {
-    return "error";
-  }
-
-  if (status === "interview" || hasInterview) {
-    return "info";
-  }
-
-  if (isDue) {
-    return "warning";
-  }
-
-  return "secondary";
 }
 
 function ApplicationCardMeta({

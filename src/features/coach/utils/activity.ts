@@ -103,7 +103,7 @@ export interface CoachPriorityItem {
   detail: string;
   timestamp: string | null;
   computedPhaseLabel: string;
-  computedPhaseVariant: "default" | "secondary" | "success" | "outline" | "destructive";
+  computedPhaseVariant: "default" | "secondary" | "success" | "outline" | "destructive" | "error" | "info" | "warning";
 }
 
 function computePhaseBadge(user: CoachUserSummary) {
