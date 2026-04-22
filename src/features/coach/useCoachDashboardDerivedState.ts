@@ -135,6 +135,7 @@ export function useCoachDashboardDerivedState({
       dropped: 0,
     };
     dashboard?.users.forEach((user) => {
+      if (user.role === "coach") return;
       counts.all++;
       if (user.trackingPhase in counts) {
         counts[user.trackingPhase as keyof typeof counts]++;

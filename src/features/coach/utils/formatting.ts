@@ -61,6 +61,7 @@ export function isApplicationDue(application: JobApplication) {
 }
 
 export function isTrackedCoachBeneficiary(user: CoachUserSummary) {
+  if (user.role === "coach") return false;
   return user.role === "user" || user.groupIds.length > 0;
 }
 

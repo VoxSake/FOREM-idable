@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { buildCoachPrioritySections } from "@/features/coach/utils";
+import { buildCoachPrioritySections, isTrackedCoachBeneficiary } from "@/features/coach/utils";
 import { useCoachDashboard } from "@/features/coach/useCoachDashboard";
 import { useManagedUserEditor } from "@/features/coach/useManagedUserEditor";
 
@@ -15,7 +15,7 @@ export function useCoachPageState() {
   const followedUserCount = useMemo(
     () =>
       coach.dashboard?.users.filter(
-        (entry) => entry.role === "user" || entry.groupIds.length > 0
+        (entry) => isTrackedCoachBeneficiary(entry)
       ).length ?? 0,
     [coach.dashboard?.users]
   );

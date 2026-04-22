@@ -106,7 +106,11 @@ export function buildGroupedUsers(input: {
   const { groups, users, normalizedSearch, userFilter, phaseFilter = "all" } = input;
 
   const standardGroups = groups.map((group) => {
-    const members = users.filter((entry) => group.members.some((member) => member.id === entry.id));
+    const members = users.filter(
+      (entry) =>
+        entry.role !== "coach" &&
+        group.members.some((member) => member.id === entry.id)
+    );
     const visibleMembers = sortMembers(
       members.filter(
         (entry) =>
