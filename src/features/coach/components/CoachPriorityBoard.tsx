@@ -95,7 +95,7 @@ export function CoachPriorityBoard({ sections, onOpenUser }: CoachPriorityBoardP
                           onClick={() => onOpenUser(item.userId, item.jobId)}
                         >
 <div className="flex min-w-0 flex-col gap-1">
-                              <div className="flex flex-wrap items-center gap-2">
+                              <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 <p className="truncate font-medium text-foreground">
                                   {item.userName}
                                 </p>

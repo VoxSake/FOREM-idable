@@ -59,8 +59,8 @@ export function CoachGroupToolbar({
   return (
     <div className="space-y-3">
       {/* Barre sticky */}
-      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm min-w-0">
+        <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             value={search}
@@ -81,7 +81,7 @@ export function CoachGroupToolbar({
         </div>
 
         <Select value={phaseFilter} onValueChange={(v) => onPhaseFilterChange(v as CoachPhaseFilter)}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[120px] sm:w-[150px]">
             <SelectValue placeholder="Phase" />
           </SelectTrigger>
           <SelectContent>
@@ -135,7 +135,7 @@ export function CoachGroupToolbar({
       </div>
 
       {/* Chips rapides */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex flex-wrap gap-1.5 pb-1 min-w-0">
         {QUICK_CHIPS.map((chip) => {
           const isActive = userFilter === chip.value;
           return (

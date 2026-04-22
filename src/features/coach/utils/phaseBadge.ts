@@ -49,7 +49,7 @@ export function getComputedPhaseBadge(
     if (hasAcceptedStage) {
       return { label: "Recherche stage", variant: "success" };
     }
-    return { label: "Recherche stage", variant: "default" };
+    return { label: "Recherche stage", variant: "info" };
   }
 
   if (trackingPhase === "job_search") {

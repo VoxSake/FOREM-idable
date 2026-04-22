@@ -24,7 +24,7 @@ export function CoachPageContent({
   currentUserRole,
 }: CoachPageContentProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 min-w-0 overflow-x-hidden">
       {page.followedUserCount === 0 ? (
         <Empty className="rounded-2xl border border-dashed bg-card/80 p-8">
           <EmptyHeader>

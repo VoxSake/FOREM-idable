@@ -115,7 +115,7 @@ export function CoachGroupCard({
         <div className="flex cursor-pointer flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-base font-semibold">{group.name}</p>
+               <p className="min-w-0 break-words text-base font-semibold">{group.name}</p>
               {isArchived ? (
                 <Badge variant="secondary">Archivé</Badge>
               ) : (
@@ -159,11 +159,11 @@ export function CoachGroupCard({
               {group.kind === "standard"
                 ? `${group.coaches.length} coach${group.coaches.length > 1 ? "s" : ""}`
                 : "Aucun coach attribué"}
-              {group.createdByLabel ? ` • créé par ${group.createdByLabel}` : ""}
+              {group.createdByLabel ? <span className="break-all"> • créé par {group.createdByLabel}</span> : null}
             </p>
             {group.kind === "standard" ? (
               <TooltipProvider>
-                <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
+                <div className="mt-2 flex min-w-0 flex-wrap gap-1.5 sm:gap-2">
                   {group.coaches.length > 0 ? (
                     group.coaches.map((coach) => (
                       <Tooltip key={`${group.id}-coach-${coach.id}`}>

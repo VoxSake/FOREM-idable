@@ -244,7 +244,7 @@ describe("buildCoachPrioritySections", () => {
 
     expect(sections[0].total).toBe(1);
     expect(sections[0].items[0]?.computedPhaseLabel).toBe("Recherche stage");
-    expect(sections[0].items[0]?.computedPhaseVariant).toBe("default");
+    expect(sections[0].items[0]?.computedPhaseVariant).toBe("info");
   });
 
   it("excludes beneficiaries with accepted applications from inactive section", () => {

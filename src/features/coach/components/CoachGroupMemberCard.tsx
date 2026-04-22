@@ -104,7 +104,7 @@ export const CoachGroupMemberCard = React.memo(function CoachGroupMemberCard({
           <p className="break-all text-xs text-muted-foreground">
             {entry.email}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="break-all text-xs text-muted-foreground">
             {entry.groupNames.length > 0
               ? entry.groupNames.join(" • ")
               : "Sans groupe"}
