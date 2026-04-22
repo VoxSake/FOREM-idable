@@ -32,7 +32,7 @@ const FOREM_NOMENCLATURE_URL =
   "https://www.leforem.be/recherche-offres/api/Nomenclature/Localisations";
 const ODWB_RECORDS_URL =
   "https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem/records?select=lieuxtravailregion,lieuxtravaillocalite,lieuxtravailcodepostal&limit=5000";
-const SERVER_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const SERVER_CACHE_TTL_MS = 60 * 60 * 1000;
 
 let serverCache: { ts: number; entries: LocationEntry[]; source: string } | null = null;
 

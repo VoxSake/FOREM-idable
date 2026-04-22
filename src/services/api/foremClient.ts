@@ -225,36 +225,55 @@ function buildInClause(field: string, values: string[]): string | null {
 async function buildArrondissementClause(locationEntry: LocationEntry): Promise<string | null> {
     const entries = await locationCache.getHierarchy();
     const arrondissementCode = locationEntry.code;
-    if (!arrondissementCode || !/^\d{5}$/.test(arrondissementCode)) return null;
 
-    const prefix = arrondissementCode.slice(0, 2);
+    // Strategy 1: use arrondissement code prefix (best when full hierarchy is available)
+    if (arrondissementCode && /^\d{5}$/.test(arrondissementCode)) {
+        const prefix = arrondissementCode.slice(0, 2);
 
-    const localityNames = entries
-        .filter((entry) =>
-            entry.type === "Localités" &&
-            entry.code &&
-            entry.code.startsWith(prefix) &&
-            entry.postalCode
-        )
-        .map((entry) => stripPostalPrefix(entry.name));
+        const matchingEntries = entries.filter(
+            (entry) =>
+                entry.type === "Localités" &&
+                entry.code &&
+                entry.code.startsWith(prefix) &&
+                entry.postalCode
+        );
 
-    const postals = entries
-        .filter((entry) =>
-            entry.type === "Localités" &&
-            entry.code &&
-            entry.code.startsWith(prefix) &&
-            entry.postalCode
-        )
-        .map((entry) => entry.postalCode as string);
+        const localityNames = matchingEntries.map((entry) => stripPostalPrefix(entry.name));
+        const postals = matchingEntries.map((entry) => entry.postalCode as string);
 
-    const localitiesClause = buildInClause("lieuxtravaillocalite", [
-        ...localityNames,
-        ...localityNames.map((name) => name.toUpperCase()),
-    ]);
-    const postalsClause = buildInClause("lieuxtravailcodepostal", postals);
+        const localitiesClause = buildInClause("lieuxtravaillocalite", [
+            ...localityNames,
+            ...localityNames.map((name) => name.toUpperCase()),
+        ]);
+        const postalsClause = buildInClause("lieuxtravailcodepostal", postals);
 
-    if (localitiesClause && postalsClause) return `(${localitiesClause} OR ${postalsClause})`;
-    return localitiesClause || postalsClause;
+        if (localitiesClause && postalsClause) return `(${localitiesClause} OR ${postalsClause})`;
+        if (localitiesClause || postalsClause) return localitiesClause || postalsClause;
+    }
+
+    // Strategy 2: match by parentId (works with fallback / partial hierarchies)
+    const arrondissementId = locationEntry.id;
+    const byParent = entries.filter(
+        (entry) => entry.type === "Localités" && entry.parentId === arrondissementId
+    );
+
+    if (byParent.length > 0) {
+        const localityNames = byParent.map((entry) => stripPostalPrefix(entry.name));
+        const postals = byParent
+            .map((entry) => entry.postalCode)
+            .filter(Boolean) as string[];
+
+        const localitiesClause = buildInClause("lieuxtravaillocalite", [
+            ...localityNames,
+            ...localityNames.map((name) => name.toUpperCase()),
+        ]);
+        const postalsClause = buildInClause("lieuxtravailcodepostal", postals);
+
+        if (localitiesClause && postalsClause) return `(${localitiesClause} OR ${postalsClause})`;
+        return localitiesClause || postalsClause;
+    }
+
+    return null;
 }
 
 async function buildLocationFilter(location: string, locationEntry?: LocationEntry): Promise<string> {
@@ -271,7 +290,18 @@ async function buildLocationFilter(location: string, locationEntry?: LocationEnt
     }
 
     if (locationEntry.type === "Régions") {
-        return buildInClause("lieuxtravailregion", [normalizeRegionLabel(locationEntry.name)]) || `search("${escapeOdsString(normalizedRegion)}")`;
+        const normalized = normalizeRegionLabel(locationEntry.name);
+        // Only use lieuxtravailregion filter for the 3 standard Belgian regions.
+        // For non-standard regions (e.g. "Région de Verviers"), fallback to search()
+        // which scans all text fields and yields better results.
+        const isStandardRegion =
+            normalized === "RÉGION WALLONNE" ||
+            normalized === "RÉGION FLAMANDE" ||
+            normalized === "RÉGION DE BRUXELLES-CAPITALE";
+        if (isStandardRegion) {
+            return buildInClause("lieuxtravailregion", [normalized]) || `search("${escapeOdsString(normalizedRegion)}")`;
+        }
+        return `search("${escapeOdsString(normalizedRegion)}")`;
     }
 
     if (locationEntry.type === "Provinces") {
@@ -279,12 +309,19 @@ async function buildLocationFilter(location: string, locationEntry?: LocationEnt
         if (!/^Province\s+/i.test(provinceName)) {
             provinceName = `Province de ${provinceName}`;
         }
-        return buildInClause("lieuxtravailregion", [provinceName]) || `search("${escapeOdsString(normalizedRegion)}")`;
+        const clause = buildInClause("lieuxtravailregion", [provinceName]);
+        if (clause) return clause;
+        // Fallback: search for the province name without the "Province de/d'" prefix
+        const provinceSearchName = locationEntry.name.replace(/^Province\s+(de\s+|d')?/i, '').trim();
+        return `search("${escapeOdsString(provinceSearchName)}")`;
     }
 
     if (locationEntry.type === "Arrondissements") {
         const arrClause = await buildArrondissementClause(locationEntry);
-        return arrClause || `search("${escapeOdsString(normalizedRegion)}")`;
+        if (arrClause) return arrClause;
+        // Fallback: search for the locality name without the "Arrondissement de/d'" prefix
+        const arrName = locationEntry.name.replace(/^Arrondissement\s+(de\s+|d')?/i, '').trim();
+        return `search("${escapeOdsString(arrName)}")`;
     }
 
     if (locationEntry.type === "Communes" || locationEntry.type === "Localités") {
