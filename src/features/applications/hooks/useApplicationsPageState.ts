@@ -7,6 +7,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useApplications } from "@/hooks/useApplications";
 import { useApplicationSelection } from "@/features/applications/hooks/useApplicationSelection";
 import { useBulkApplicationMutations } from "@/features/applications/hooks/useBulkApplicationMutations";
+import { useApplicationDialogs } from "@/features/applications/hooks/useApplicationDialogs";
+import { useApplicationDrafts } from "@/features/applications/hooks/useApplicationDrafts";
 import {
   ApplicationModeFilter,
   countClosedApplications,
@@ -73,17 +75,13 @@ export function useApplicationsPageState() {
     patchApplication,
     isLoaded,
   } = useApplications();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [detailsJobId, setDetailsJobId] = useState<string | null>(null);
-  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
-  const [interviewJobId, setInterviewJobId] = useState<string | null>(null);
+  const dialogs = useApplicationDialogs();
+  const drafts = useApplicationDrafts();
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState<ApplicationModeFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [manualForm, setManualForm] = useState<ManualApplicationFormState>(createManualForm);
   const [interviewForm, setInterviewForm] = useState<InterviewFormState>(createEmptyInterviewForm);
-  const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
-  const [proofsDrafts, setProofsDrafts] = useState<Record<string, string>>({});
   const now = useMemo(() => new Date(), []);
   const coachNoteViews = useCoachNoteViews(user?.id);
 
@@ -146,22 +144,22 @@ export function useApplicationsPageState() {
   }, [effectiveApplicationsPage, filteredApplications]);
 
   const selectedApplication = useMemo(
-    () => applications.find((entry) => entry.job.id === detailsJobId) ?? null,
-    [applications, detailsJobId]
+    () => applications.find((entry) => entry.job.id === dialogs.detailsJobId) ?? null,
+    [applications, dialogs.detailsJobId]
   );
   const deleteApplication = useMemo(
-    () => applications.find((entry) => entry.job.id === deleteJobId) ?? null,
-    [applications, deleteJobId]
+    () => applications.find((entry) => entry.job.id === dialogs.deleteJobId) ?? null,
+    [applications, dialogs.deleteJobId]
   );
   const interviewApplication = useMemo(
-    () => applications.find((entry) => entry.job.id === interviewJobId) ?? null,
-    [applications, interviewJobId]
+    () => applications.find((entry) => entry.job.id === dialogs.interviewJobId) ?? null,
+    [applications, dialogs.interviewJobId]
   );
   const currentNotesDraft = selectedApplication
-    ? notesDrafts[selectedApplication.job.id] ?? (selectedApplication.notes ?? "")
+    ? drafts.notesDrafts[selectedApplication.job.id] ?? (selectedApplication.notes ?? "")
     : "";
   const currentProofsDraft = selectedApplication
-    ? proofsDrafts[selectedApplication.job.id] ?? (selectedApplication.proofs ?? "")
+    ? drafts.proofsDrafts[selectedApplication.job.id] ?? (selectedApplication.proofs ?? "")
     : "";
 
   const resetManualForm = useCallback(() => {
@@ -169,9 +167,9 @@ export function useApplicationsPageState() {
   }, []);
 
   const resetInterviewDialog = useCallback(() => {
-    setInterviewJobId(null);
+    dialogs.closeInterview();
     setInterviewForm(createEmptyInterviewForm());
-  }, []);
+  }, [dialogs]);
 
   const notifyActionError = useCallback((message: string) => {
     toast.error(message, { description: "Candidatures" });
@@ -199,9 +197,9 @@ export function useApplicationsPageState() {
   }, [user?.id]);
 
   const openDetails = useCallback((jobId: string) => {
-    setDetailsJobId(jobId);
+    dialogs.openDetails(jobId);
     markCoachUpdateSeen(applications.find((entry) => entry.job.id === jobId) ?? null);
-  }, [applications, markCoachUpdateSeen]);
+  }, [applications, dialogs, markCoachUpdateSeen]);
 
   const applyStatus = useCallback((jobId: string, status: ApplicationStatus) => {
     void (async () => {
@@ -230,7 +228,7 @@ export function useApplicationsPageState() {
           );
           if (!saved) notifyActionError("Impossible de mettre à jour l'entretien.");
         } else {
-          setInterviewJobId(jobId);
+          dialogs.openInterview(jobId);
           setInterviewForm({
             interviewAt: "",
             interviewDetails: existing?.interviewDetails ?? "",
@@ -262,8 +260,8 @@ export function useApplicationsPageState() {
     removeApplication,
     updateFollowUpSettings,
     patchApplication,
-    detailsJobId,
-    setDetailsJobId,
+    detailsJobId: dialogs.detailsJobId,
+    setDetailsJobId: dialogs.closeDetails,
   });
 
   const submitManualForm = useCallback(async () => {
@@ -286,20 +284,20 @@ export function useApplicationsPageState() {
     }
 
     resetManualForm();
-    setIsCreateOpen(false);
-  }, [addManualApplication, manualForm, notifyActionError, resetManualForm]);
+    dialogs.closeCreate();
+  }, [addManualApplication, dialogs, manualForm, notifyActionError, resetManualForm]);
 
   const openInterviewModal = useCallback((application: JobApplication) => {
     const date = application.interviewAt ? new Date(application.interviewAt) : null;
     const interviewAt =
       date && !Number.isNaN(date.getTime()) ? format(date, "yyyy-MM-dd'T'HH:mm") : "";
 
-    setInterviewJobId(application.job.id);
+    dialogs.openInterview(application.job.id);
     setInterviewForm({
       interviewAt,
       interviewDetails: application.interviewDetails ?? "",
     });
-  }, []);
+  }, [dialogs]);
 
   const submitInterview = useCallback(async () => {
     if (!interviewApplication || !interviewForm.interviewAt) return;
@@ -336,12 +334,8 @@ export function useApplicationsPageState() {
       notifyActionError("Impossible d'enregistrer les notes.");
       return;
     }
-    setNotesDrafts((current) => {
-      const next = { ...current };
-      delete next[selectedApplication.job.id];
-      return next;
-    });
-  }, [currentNotesDraft, notifyActionError, saveNotes, selectedApplication]);
+      drafts.clearDrafts(selectedApplication.job.id);
+  }, [currentNotesDraft, drafts, notifyActionError, saveNotes, selectedApplication]);
 
   const saveSelectedProofs = useCallback(async () => {
     if (!selectedApplication) return;
@@ -350,12 +344,8 @@ export function useApplicationsPageState() {
       notifyActionError("Impossible d'enregistrer les preuves.");
       return;
     }
-    setProofsDrafts((current) => {
-      const next = { ...current };
-      delete next[selectedApplication.job.id];
-      return next;
-    });
-  }, [currentProofsDraft, notifyActionError, saveProofs, selectedApplication]);
+      drafts.clearDrafts(selectedApplication.job.id);
+  }, [currentProofsDraft, drafts, notifyActionError, saveProofs, selectedApplication]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteApplication) return;
@@ -366,10 +356,10 @@ export function useApplicationsPageState() {
         return;
       }
 
-      if (detailsJobId === deleteApplication.job.id) setDetailsJobId(null);
-      setDeleteJobId(null);
+      if (dialogs.detailsJobId === deleteApplication.job.id) dialogs.closeDetails();
+      dialogs.closeDelete();
     })();
-  }, [deleteApplication, detailsJobId, notifyActionError, removeApplication]);
+  }, [deleteApplication, dialogs, notifyActionError, removeApplication]);
 
   const markFollowUpDone = useCallback((jobId: string) => {
     void (async () => {
@@ -392,10 +382,7 @@ export function useApplicationsPageState() {
     selectedFollowUpCount,
     selectedFollowUpDisabledCount,
     ...bulkMutations,
-    isCreateOpen,
-    detailsJobId,
-    deleteJobId,
-    interviewJobId,
+    ...dialogs,
     search,
     modeFilter,
     currentPage,
@@ -417,14 +404,11 @@ export function useApplicationsPageState() {
     currentNotesDraft,
     currentProofsDraft,
     hasUnreadCoachUpdate,
-    setIsCreateOpen,
-    setDetailsJobId,
-    setDeleteJobId,
-    setInterviewForm,
     setManualForm,
+    setInterviewForm,
     setCurrentPage,
-    setNotesDrafts,
-    setProofsDrafts,
+    setNotesDraft: drafts.setNotesDraft,
+    setProofsDraft: drafts.setProofsDraft,
     handleSearchChange,
     handleModeFilterChange,
     resetFilters,

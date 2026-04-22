@@ -104,7 +104,7 @@ export default function ApplicationsPage() {
         dueCount={page.dueCount}
         dueSummary={page.dueSummary}
         canExportCalendar={page.filteredApplications.some((entry) => entry.interviewAt)}
-        onCreateManual={() => page.setIsCreateOpen(true)}
+        onCreateManual={page.openCreate}
         onExportCsv={page.exportApplications}
         onExportCalendar={page.exportCalendar}
       />
@@ -153,7 +153,7 @@ export default function ApplicationsPage() {
       ) : (
         <ApplicationsEmptyState
           hasApplications={page.applications.length > 0}
-          onCreateManual={() => page.setIsCreateOpen(true)}
+          onCreateManual={page.openCreate}
           onResetFilters={page.resetFilters}
         />
       )}
@@ -181,23 +181,17 @@ export default function ApplicationsPage() {
         notesDraft={page.currentNotesDraft}
         proofsDraft={page.currentProofsDraft}
         onOpenChange={(open) => {
-          if (!open) page.setDetailsJobId(null);
+          if (!open) page.closeDetails();
         }}
         onApplyStatus={page.applyStatus}
         onNotesDraftChange={(value) =>
           selectedApplication
-            ? page.setNotesDrafts((current) => ({
-                ...current,
-                [selectedApplication.job.id]: value,
-              }))
+            ? page.setNotesDraft(selectedApplication.job.id, value)
             : undefined
         }
         onProofsDraftChange={(value) =>
           selectedApplication
-            ? page.setProofsDrafts((current) => ({
-                ...current,
-                [selectedApplication.job.id]: value,
-              }))
+            ? page.setProofsDraft(selectedApplication.job.id, value)
             : undefined
         }
         onSaveNotes={page.saveSelectedNotes}
@@ -221,17 +215,17 @@ export default function ApplicationsPage() {
         }
         onMarkFollowUpDone={page.markFollowUpDone}
         onOpenInterview={page.openInterviewModal}
-        onRequestDelete={page.setDeleteJobId}
+        onRequestDelete={page.openDelete}
       />
 
       <ManualApplicationDialog
         open={page.isCreateOpen}
         form={page.manualForm}
-        onOpenChange={page.setIsCreateOpen}
+        onOpenChange={(open) => (open ? page.openCreate() : page.closeCreate())}
         onFormChange={page.setManualForm}
         onCancel={() => {
           page.resetManualForm();
-          page.setIsCreateOpen(false);
+          page.closeCreate();
         }}
         onSubmit={page.submitManualForm}
       />
@@ -253,9 +247,9 @@ export default function ApplicationsPage() {
         application={page.deleteApplication}
         open={Boolean(page.deleteApplication)}
         onOpenChange={(open) => {
-          if (!open) page.setDeleteJobId(null);
+          if (!open) page.closeDelete();
         }}
-        onCancel={() => page.setDeleteJobId(null)}
+        onCancel={page.closeDelete}
         onConfirm={page.confirmDelete}
       />
 
