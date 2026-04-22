@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { runtimeConfig } from "@/config/runtime";
+import { resetPassword } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -43,17 +44,7 @@ export function ResetPasswordContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        toast.error(data.error || "Réinitialisation impossible.");
-        return;
-      }
+      await resetPassword(token, password);
 
       setIsSuccess(true);
       setPassword("");

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { runtimeConfig } from "@/config/runtime";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { loginUser, registerUser } from "@/lib/api/auth";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 import { toast } from "sonner";
 
@@ -57,29 +58,13 @@ export function AuthRequiredDialog({
     setIsSubmitting(true);
 
     try {
-      const payload =
+      const { data } =
         effectiveMode === "login"
-          ? { email, password }
-          : { email, password, firstName, lastName };
+          ? await loginUser({ email, password })
+          : await registerUser({ email, password, firstName, lastName });
 
-      const response = await fetch(`/api/auth/${effectiveMode}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        user?: {
-          id: number;
-          email: string;
-          firstName: string;
-          lastName: string;
-          role: "user" | "coach" | "admin";
-        };
-      };
-
-      if (!response.ok || !data.user) {
-        toast.error(data.error || "Action impossible.");
+      if (!data.user) {
+        toast.error("Action impossible.");
         return;
       }
 
