@@ -7,7 +7,30 @@ import {
 } from "@/features/coach/utils";
 import { CoachUserSummary } from "@/types/coach";
 
+function isStageContract(contractType: string): boolean {
+  const normalized = contractType.toUpperCase().trim();
+  return normalized.includes("STAGE") || normalized.includes("STAGIAIRE");
+}
+
+function deriveAcceptedFlags(applications: CoachUserSummary["applications"]) {
+  let hasAcceptedStage = false;
+  let hasAcceptedJob = false;
+  for (const app of applications) {
+    if (app.status === "accepted") {
+      if (isStageContract(app.job.contractType)) {
+        hasAcceptedStage = true;
+      } else {
+        hasAcceptedJob = true;
+      }
+    }
+  }
+  return { hasAcceptedStage, hasAcceptedJob };
+}
+
 function makeUser(overrides: Partial<CoachUserSummary>): CoachUserSummary {
+  const applications = overrides.applications ?? [];
+  const derived = deriveAcceptedFlags(applications);
+
   return {
     id: overrides.id ?? 1,
     email: overrides.email ?? "user@example.com",
@@ -26,7 +49,9 @@ function makeUser(overrides: Partial<CoachUserSummary>): CoachUserSummary {
     latestActivityAt: overrides.latestActivityAt ?? "2026-03-01T09:00:00.000Z",
     lastSeenAt: overrides.lastSeenAt ?? null,
     lastCoachActionAt: overrides.lastCoachActionAt ?? null,
-    applications: overrides.applications ?? [],
+    hasAcceptedStage: overrides.hasAcceptedStage ?? derived.hasAcceptedStage,
+    hasAcceptedJob: overrides.hasAcceptedJob ?? derived.hasAcceptedJob,
+    applications,
   };
 }
 

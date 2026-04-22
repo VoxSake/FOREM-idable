@@ -5,7 +5,7 @@ import { ArrowUpRight, CalendarClock, History, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { CoachFilterToggleGroup } from "@/features/coach/components/CoachFilterToggleGroup";
+import { CoachFilterBar } from "@/features/coach/components/CoachFilterBar";
 import {
   CoachRecentActivityFilter,
   coachRecentActivityFilterOptions,
@@ -54,7 +54,7 @@ export function CoachRecentActivity({ items, onOpenItem }: CoachRecentActivityPr
       <CardContent className="flex flex-col gap-3 p-4 sm:gap-4 sm:p-5">
         {items.length > 0 ? (
           <>
-            <CoachFilterToggleGroup
+            <CoachFilterBar
               compact
               options={coachRecentActivityFilterOptions}
               value={activeFilter}

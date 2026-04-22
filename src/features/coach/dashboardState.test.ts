@@ -30,6 +30,8 @@ function makeDashboard(overrides: Partial<CoachDashboardData> = {}): CoachDashbo
         latestActivityAt: "2026-04-01T10:00:00.000Z",
         lastSeenAt: null,
         lastCoachActionAt: null,
+        hasAcceptedStage: false,
+        hasAcceptedJob: false,
         applications: [],
       },
       {
@@ -50,6 +52,8 @@ function makeDashboard(overrides: Partial<CoachDashboardData> = {}): CoachDashbo
         latestActivityAt: "2026-04-01T10:00:00.000Z",
         lastSeenAt: null,
         lastCoachActionAt: null,
+        hasAcceptedStage: false,
+        hasAcceptedJob: false,
         applications: [],
       },
     ],

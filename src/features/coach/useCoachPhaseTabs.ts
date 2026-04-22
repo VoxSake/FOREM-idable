@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { CoachPhaseFilter } from "@/features/coach/types";
 
-const STORAGE_KEY = "forem:coach:phase-tab:v1";
+const STORAGE_KEY = "forem:coach:phase-tab:v2";
 
 function getStoredPhase(): CoachPhaseFilter {
   if (typeof window === "undefined") return "all";

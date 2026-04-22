@@ -50,6 +50,8 @@ export interface CoachUserSummary {
   latestActivityAt: string | null;
   lastSeenAt: string | null;
   lastCoachActionAt: string | null;
+  hasAcceptedStage: boolean;
+  hasAcceptedJob: boolean;
   applications: JobApplication[];
 }
 

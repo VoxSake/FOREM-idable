@@ -1,15 +1,14 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  hasAcceptedJob,
-  hasAcceptedStage,
-} from "@/features/coach/utils/phaseBadge";
+import { getComputedPhaseBadge } from "@/features/coach/utils/phaseBadge";
 import { JobApplication } from "@/types/application";
 import { TrackingPhase } from "@/types/coach";
 
 interface CoachPhaseBadgeProps {
   phase: TrackingPhase;
+  hasAcceptedStage?: boolean;
+  hasAcceptedJob?: boolean;
   applications?: JobApplication[];
   className?: string;
 }
@@ -24,56 +23,24 @@ function PositiveBadge({ className }: { className?: string }) {
 
 export function CoachPhaseBadge({
   phase,
-  applications = [],
+  hasAcceptedStage,
+  hasAcceptedJob,
+  applications,
   className,
 }: CoachPhaseBadgeProps) {
-  if (phase === "placed") {
-    return (
-      <Badge variant="outline" className={className}>
-        En emploi
-      </Badge>
-    );
+  const computed = getComputedPhaseBadge(
+    phase,
+    hasAcceptedStage ?? false,
+    hasAcceptedJob ?? false
+  );
+
+  if (computed.label === "Sortie positive") {
+    return <PositiveBadge className={className} />;
   }
 
-  if (phase === "dropped") {
-    return (
-      <Badge variant="destructive" className={className}>
-        Sortie du dispositif
-      </Badge>
-    );
-  }
-
-  const hasJob = hasAcceptedJob(applications);
-  const hasStage = hasAcceptedStage(applications);
-
-  if (phase === "internship_search") {
-    if (hasJob) {
-      return <PositiveBadge className={className} />;
-    }
-    if (hasStage) {
-      return (
-        <Badge variant="success" className={className}>
-          Recherche stage
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="default" className={className}>
-        Recherche stage
-      </Badge>
-    );
-  }
-
-  if (phase === "job_search") {
-    if (hasJob) {
-      return <PositiveBadge className={className} />;
-    }
-    return (
-      <Badge variant="secondary" className={className}>
-        Recherche emploi
-      </Badge>
-    );
-  }
-
-  return null;
+  return (
+    <Badge variant={computed.variant} className={className}>
+      {computed.label}
+    </Badge>
+  );
 }
