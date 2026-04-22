@@ -58,7 +58,7 @@ const LEGAL_BASIS: TextItem[] = [
   },
   {
     title: "Sécurité et intégrité",
-    text: "Gestion des sessions, prévention des abus, journalisation technique minimale, protection des accès et des exportations API. Base juridique principale: intérêt légitime à sécuriser le service.",
+    text: "Gestion des sessions (7 jours, renouvellement glissant), prévention des abus par rate limiting, journalisation technique minimale avec pseudonymisation des identifiants, protection des accès et des exportations API. Base juridique principale: intérêt légitime à sécuriser le service.",
   },
   {
     title: "Coordination des entretiens",
@@ -97,8 +97,9 @@ const ACCESS_AND_RETENTION = [
     paragraphs: [
       "Les données locales restent dans votre navigateur jusqu'à leur suppression par vos soins, par effacement manuel du navigateur ou via les fonctions prévues dans l'application.",
       "Les données associées à un compte connecté sont conservées tant que le compte reste actif ou jusqu'à demande de suppression. Une demande de suppression peut nécessiter une revue manuelle avant traitement effectif et rester suspendue si une obligation légale, un litige ou un legal hold l'impose.",
-      "Les sessions expirent automatiquement. Les clés API peuvent être révoquées à tout moment et peuvent aussi expirer automatiquement si une date d'expiration a été définie.",
-      "Les exports de données générés pour un utilisateur sont temporaires et supprimés après leur durée de disponibilité. Certaines données techniques ou de sécurité expirées peuvent également être purgées de manière périodique.",
+      "Les sessions expirent automatiquement après 7 jours (renouvelées à chaque utilisation). Les clés API peuvent être révoquées à tout moment et peuvent aussi expirer automatiquement si une date d'expiration a été définie.",
+      "Les exports de données générés pour un utilisateur sont temporaires et supprimés après leur durée de disponibilité. L'historique de recherche est purgé au-delà de la durée configurée. Le contenu des messages est effacé après 18 mois d'inactivité de la conversation.",
+      "Les journaux d'audit (traçabilité des actions administratives et coach) sont conservés jusqu'à 24 mois. Lors de la suppression effective d'un compte, les identifiants personnels dans ces journaux sont anonymisés, sauf si une obligation légale (legal hold) impose leur conservation.",
       "Les flux calendrier reflètent l'état courant des entretiens enregistrés dans l'application. Lorsqu'un entretien est modifié ou supprimé, la source est mise à jour côté FOREM-idable, mais la disparition effective dans un agenda tiers dépend du délai de resynchronisation appliqué par ce service tiers.",
     ],
   },
