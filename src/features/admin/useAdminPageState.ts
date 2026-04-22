@@ -18,6 +18,7 @@ import {
   updateAdminFeaturedSearch,
 } from "@/features/admin/adminApi";
 import { useAdminDashboard } from "@/features/admin/useAdminDashboard";
+import { useAdminResource } from "@/features/admin/hooks/useAdminResource";
 import { FeaturedSearchPayload } from "@/features/featured-searches/featuredSearchSchema";
 import { AdminApiKeySummary } from "@/types/externalApi";
 import { FeaturedSearch } from "@/types/featuredSearch";
@@ -25,202 +26,77 @@ import { AdminAccountDeletionRequest, AdminAuditLog, AdminDisclosureLog, AdminLe
 
 export function useAdminPageState() {
   const admin = useAdminDashboard();
-  const [apiKeys, setApiKeys] = useState<AdminApiKeySummary[]>([]);
-  const [apiKeysFeedback, setApiKeysFeedback] = useState<string | null>(null);
-  const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
+
+  const apiKeysState = useAdminResource<AdminApiKeySummary>({
+    isAuthorized: admin.isAuthorized,
+    fetchFn: fetchAdminApiKeys as () => ReturnType<typeof fetchAdminApiKeys>,
+    extract: (data) => data.apiKeys as AdminApiKeySummary[] | undefined,
+    errorMessage: "Chargement des clés API impossible.",
+  });
+
+  const featuredSearchesState = useAdminResource<FeaturedSearch>({
+    isAuthorized: admin.isAuthorized,
+    fetchFn: fetchAdminFeaturedSearches as () => ReturnType<typeof fetchAdminFeaturedSearches>,
+    extract: (data) => data.featuredSearches as FeaturedSearch[] | undefined,
+    errorMessage: "Chargement des recherches mises en avant impossible.",
+  });
+
+  const deletionRequestsState = useAdminResource<AdminAccountDeletionRequest>({
+    isAuthorized: admin.isAuthorized,
+    fetchFn: fetchAdminAccountDeletionRequests as () => ReturnType<typeof fetchAdminAccountDeletionRequests>,
+    extract: (data) => data.requests as AdminAccountDeletionRequest[] | undefined,
+    errorMessage: "Chargement des demandes impossible.",
+  });
+
+  const legalHoldsState = useAdminResource<AdminLegalHold>({
+    isAuthorized: admin.isAuthorized,
+    fetchFn: fetchAdminLegalHolds as () => ReturnType<typeof fetchAdminLegalHolds>,
+    extract: (data) => data.holds as AdminLegalHold[] | undefined,
+    errorMessage: "Chargement des legal holds impossible.",
+  });
+
+  const disclosureLogsState = useAdminResource<AdminDisclosureLog>({
+    isAuthorized: admin.isAuthorized,
+    fetchFn: fetchAdminDisclosureLogs as () => ReturnType<typeof fetchAdminDisclosureLogs>,
+    extract: (data) => data.logs as AdminDisclosureLog[] | undefined,
+    errorMessage: "Chargement des disclosure logs impossible.",
+  });
+
+  const auditLogsState = useAdminResource<AdminAuditLog>({
+    isAuthorized: admin.isAuthorized,
+    fetchFn: (async () => fetchAdminAuditLogs(200)) as () => ReturnType<typeof fetchAdminAuditLogs>,
+    extract: (data) => data.logs as AdminAuditLog[] | undefined,
+    errorMessage: "Chargement des audit logs impossible.",
+  });
+
   const [revokeTarget, setRevokeTarget] = useState<AdminApiKeySummary | null>(null);
   const [isRevokingApiKey, setIsRevokingApiKey] = useState(false);
-  const [featuredSearches, setFeaturedSearches] = useState<FeaturedSearch[]>([]);
-  const [featuredSearchesFeedback, setFeaturedSearchesFeedback] = useState<string | null>(null);
-  const [isFeaturedSearchesLoading, setIsFeaturedSearchesLoading] = useState(false);
   const [isSavingFeaturedSearch, setIsSavingFeaturedSearch] = useState(false);
   const [savingFeaturedSearchId, setSavingFeaturedSearchId] = useState<number | null>(null);
   const [isDeletingFeaturedSearch, setIsDeletingFeaturedSearch] = useState(false);
-  const [deletionRequests, setDeletionRequests] = useState<AdminAccountDeletionRequest[]>([]);
-  const [deletionRequestsFeedback, setDeletionRequestsFeedback] = useState<string | null>(null);
-  const [isDeletionRequestsLoading, setIsDeletionRequestsLoading] = useState(false);
   const [reviewingDeletionRequestId, setReviewingDeletionRequestId] = useState<number | null>(null);
-  const [legalHolds, setLegalHolds] = useState<AdminLegalHold[]>([]);
-  const [legalHoldsFeedback, setLegalHoldsFeedback] = useState<string | null>(null);
-  const [isLegalHoldsLoading, setIsLegalHoldsLoading] = useState(false);
   const [isCreatingLegalHold, setIsCreatingLegalHold] = useState(false);
   const [isReleasingLegalHold, setIsReleasingLegalHold] = useState(false);
-  const [disclosureLogs, setDisclosureLogs] = useState<AdminDisclosureLog[]>([]);
-  const [disclosureLogsFeedback, setDisclosureLogsFeedback] = useState<string | null>(null);
-  const [isDisclosureLogsLoading, setIsDisclosureLogsLoading] = useState(false);
   const [isCreatingDisclosureLog, setIsCreatingDisclosureLog] = useState(false);
-  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
-  const [auditLogsFeedback, setAuditLogsFeedback] = useState<string | null>(null);
-  const [isAuditLogsLoading, setIsAuditLogsLoading] = useState(false);
-
-  const loadApiKeys = useCallback(async () => {
-    if (!admin.isAuthorized) {
-      setApiKeys([]);
-      return;
-    }
-
-    setIsApiKeysLoading(true);
-    setApiKeysFeedback(null);
-
-    try {
-      const { response, data } = await fetchAdminApiKeys();
-
-      if (!response.ok || !data.apiKeys) {
-        setApiKeysFeedback(data.error || "Chargement des clés API impossible.");
-        return;
-      }
-
-      setApiKeys(data.apiKeys);
-    } catch {
-      setApiKeysFeedback("Chargement des clés API impossible.");
-    } finally {
-      setIsApiKeysLoading(false);
-    }
-  }, [admin.isAuthorized]);
-
-  const loadFeaturedSearches = useCallback(async () => {
-    if (!admin.isAuthorized) {
-      setFeaturedSearches([]);
-      return;
-    }
-
-    setIsFeaturedSearchesLoading(true);
-    setFeaturedSearchesFeedback(null);
-
-    try {
-      const { response, data } = await fetchAdminFeaturedSearches();
-
-      if (!response.ok || !data.featuredSearches) {
-        setFeaturedSearchesFeedback(data.error || "Chargement des recherches mises en avant impossible.");
-        return;
-      }
-
-      setFeaturedSearches(data.featuredSearches);
-    } catch {
-      setFeaturedSearchesFeedback("Chargement des recherches mises en avant impossible.");
-    } finally {
-      setIsFeaturedSearchesLoading(false);
-    }
-  }, [admin.isAuthorized]);
-
-  const loadDeletionRequests = useCallback(async () => {
-    if (!admin.isAuthorized) {
-      setDeletionRequests([]);
-      return;
-    }
-
-    setIsDeletionRequestsLoading(true);
-    setDeletionRequestsFeedback(null);
-
-    try {
-      const { response, data } = await fetchAdminAccountDeletionRequests();
-
-      if (!response.ok || !data.requests) {
-        setDeletionRequestsFeedback(data.error || "Chargement des demandes impossible.");
-        return;
-      }
-
-      setDeletionRequests(data.requests);
-    } catch {
-      setDeletionRequestsFeedback("Chargement des demandes impossible.");
-    } finally {
-      setIsDeletionRequestsLoading(false);
-    }
-  }, [admin.isAuthorized]);
-
-  const loadLegalHolds = useCallback(async () => {
-    if (!admin.isAuthorized) {
-      setLegalHolds([]);
-      return;
-    }
-
-    setIsLegalHoldsLoading(true);
-    setLegalHoldsFeedback(null);
-
-    try {
-      const { response, data } = await fetchAdminLegalHolds();
-
-      if (!response.ok || !data.holds) {
-        setLegalHoldsFeedback(data.error || "Chargement des legal holds impossible.");
-        return;
-      }
-
-      setLegalHolds(data.holds);
-    } catch {
-      setLegalHoldsFeedback("Chargement des legal holds impossible.");
-    } finally {
-      setIsLegalHoldsLoading(false);
-    }
-  }, [admin.isAuthorized]);
-
-  const loadDisclosureLogs = useCallback(async () => {
-    if (!admin.isAuthorized) {
-      setDisclosureLogs([]);
-      return;
-    }
-
-    setIsDisclosureLogsLoading(true);
-    setDisclosureLogsFeedback(null);
-
-    try {
-      const { response, data } = await fetchAdminDisclosureLogs();
-
-      if (!response.ok || !data.logs) {
-        setDisclosureLogsFeedback(data.error || "Chargement des disclosure logs impossible.");
-        return;
-      }
-
-      setDisclosureLogs(data.logs);
-    } catch {
-      setDisclosureLogsFeedback("Chargement des disclosure logs impossible.");
-    } finally {
-      setIsDisclosureLogsLoading(false);
-    }
-  }, [admin.isAuthorized]);
-
-  const loadAuditLogs = useCallback(async () => {
-    if (!admin.isAuthorized) {
-      setAuditLogs([]);
-      return;
-    }
-
-    setIsAuditLogsLoading(true);
-    setAuditLogsFeedback(null);
-
-    try {
-      const { response, data } = await fetchAdminAuditLogs();
-
-      if (!response.ok || !data.logs) {
-        setAuditLogsFeedback(data.error || "Chargement des audit logs impossible.");
-        return;
-      }
-
-      setAuditLogs(data.logs);
-    } catch {
-      setAuditLogsFeedback("Chargement des audit logs impossible.");
-    } finally {
-      setIsAuditLogsLoading(false);
-    }
-  }, [admin.isAuthorized]);
 
   useEffect(() => {
     if (admin.isAuthLoading) return;
     if (!admin.isAuthorized) return;
-    void loadApiKeys();
-    void loadFeaturedSearches();
-    void loadDeletionRequests();
-    void loadLegalHolds();
-    void loadDisclosureLogs();
-    void loadAuditLogs();
+    void apiKeysState.load();
+    void featuredSearchesState.load();
+    void deletionRequestsState.load();
+    void legalHoldsState.load();
+    void disclosureLogsState.load();
+    void auditLogsState.load();
   }, [
     admin.isAuthLoading,
     admin.isAuthorized,
-    loadApiKeys,
-    loadFeaturedSearches,
-    loadDeletionRequests,
-    loadLegalHolds,
-    loadDisclosureLogs,
-    loadAuditLogs,
+    apiKeysState.load,
+    featuredSearchesState.load,
+    deletionRequestsState.load,
+    legalHoldsState.load,
+    disclosureLogsState.load,
+    auditLogsState.load,
   ]);
 
   const revokeApiKey = useCallback(async () => {
@@ -231,12 +107,12 @@ export function useAdminPageState() {
       const { response, data } = await revokeAdminApiKey(revokeTarget.id);
 
       if (!response.ok) {
-        setApiKeysFeedback(data.error || "Révocation impossible.");
+        apiKeysState.setFeedback(data.error || "Révocation impossible.");
         return false;
       }
 
       const revokedAt = new Date().toISOString();
-      setApiKeys((current) =>
+      apiKeysState.setItems((current) =>
         current.map((entry) =>
           entry.id === revokeTarget.id
             ? {
@@ -246,16 +122,16 @@ export function useAdminPageState() {
             : entry
         )
       );
-      setApiKeysFeedback(`Clé API révoquée: ${revokeTarget.name}.`);
+      apiKeysState.setFeedback(`Clé API révoquée: ${revokeTarget.name}.`);
       setRevokeTarget(null);
       return true;
     } catch {
-      setApiKeysFeedback("Révocation impossible.");
+      apiKeysState.setFeedback("Révocation impossible.");
       return false;
     } finally {
       setIsRevokingApiKey(false);
     }
-  }, [revokeTarget]);
+  }, [revokeTarget, apiKeysState]);
 
   const createFeaturedSearch = useCallback(async (payload: FeaturedSearchPayload) => {
     setIsSavingFeaturedSearch(true);
@@ -265,23 +141,23 @@ export function useAdminPageState() {
       const { response, data } = await createAdminFeaturedSearch(payload);
 
       if (!response.ok || !data.featuredSearch) {
-        setFeaturedSearchesFeedback(data.error || "Création impossible.");
+        featuredSearchesState.setFeedback(data.error || "Création impossible.");
         return false;
       }
 
-      setFeaturedSearches((current) =>
+      featuredSearchesState.setItems((current) =>
         [...current, data.featuredSearch!].sort((left, right) => left.sortOrder - right.sortOrder)
       );
-      setFeaturedSearchesFeedback(`Recherche mise en avant créée: ${data.featuredSearch.title}.`);
+      featuredSearchesState.setFeedback(`Recherche mise en avant créée: ${data.featuredSearch!.title}.`);
       return true;
     } catch {
-      setFeaturedSearchesFeedback("Création impossible.");
+      featuredSearchesState.setFeedback("Création impossible.");
       return false;
     } finally {
       setIsSavingFeaturedSearch(false);
       setSavingFeaturedSearchId(null);
     }
-  }, []);
+  }, [featuredSearchesState]);
 
   const updateFeaturedSearch = useCallback(async (id: number, payload: FeaturedSearchPayload) => {
     setIsSavingFeaturedSearch(true);
@@ -291,52 +167,52 @@ export function useAdminPageState() {
       const { response, data } = await updateAdminFeaturedSearch(id, payload);
 
       if (!response.ok || !data.featuredSearch) {
-        setFeaturedSearchesFeedback(data.error || "Mise à jour impossible.");
+        featuredSearchesState.setFeedback(data.error || "Mise à jour impossible.");
         return false;
       }
 
-      setFeaturedSearches((current) =>
+      featuredSearchesState.setItems((current) =>
         current
           .map((entry) => (entry.id === id ? data.featuredSearch! : entry))
           .sort((left, right) => left.sortOrder - right.sortOrder)
       );
-      setFeaturedSearchesFeedback(`Recherche mise en avant mise à jour: ${data.featuredSearch.title}.`);
+      featuredSearchesState.setFeedback(`Recherche mise en avant mise à jour: ${data.featuredSearch!.title}.`);
       return true;
     } catch {
-      setFeaturedSearchesFeedback("Mise à jour impossible.");
+      featuredSearchesState.setFeedback("Mise à jour impossible.");
       return false;
     } finally {
       setIsSavingFeaturedSearch(false);
       setSavingFeaturedSearchId(null);
     }
-  }, []);
+  }, [featuredSearchesState]);
 
   const deleteFeaturedSearch = useCallback(async (id: number) => {
     setIsDeletingFeaturedSearch(true);
 
     try {
-      const target = featuredSearches.find((entry) => entry.id === id) ?? null;
+      const target = featuredSearchesState.items.find((entry) => entry.id === id) ?? null;
       const { response, data } = await deleteAdminFeaturedSearch(id);
 
       if (!response.ok) {
-        setFeaturedSearchesFeedback(data.error || "Suppression impossible.");
+        featuredSearchesState.setFeedback(data.error || "Suppression impossible.");
         return false;
       }
 
-      setFeaturedSearches((current) => current.filter((entry) => entry.id !== id));
-      setFeaturedSearchesFeedback(
+      featuredSearchesState.setItems((current) => current.filter((entry) => entry.id !== id));
+      featuredSearchesState.setFeedback(
         target
           ? `Recherche mise en avant supprimée: ${target.title}.`
           : "Recherche mise en avant supprimée."
       );
       return true;
     } catch {
-      setFeaturedSearchesFeedback("Suppression impossible.");
+      featuredSearchesState.setFeedback("Suppression impossible.");
       return false;
     } finally {
       setIsDeletingFeaturedSearch(false);
     }
-  }, [featuredSearches]);
+  }, [featuredSearchesState]);
 
   const reviewDeletionRequest = useCallback(async (input: {
     id: number;
@@ -352,38 +228,39 @@ export function useAdminPageState() {
       });
 
       if (!response.ok) {
-        setDeletionRequestsFeedback(data.error || "Traitement impossible.");
+        deletionRequestsState.setFeedback(data.error || "Traitement impossible.");
         return false;
       }
 
       if (input.action === "complete") {
-        setDeletionRequests((current) => current.filter((entry) => entry.id !== input.id));
-        setDeletionRequestsFeedback("Suppression finalisée.");
+        deletionRequestsState.setItems((current) => current.filter((entry) => entry.id !== input.id));
+        deletionRequestsState.setFeedback("Suppression finalisée.");
       } else if (data.request) {
-        setDeletionRequests((current) =>
+        const request = data.request;
+        deletionRequestsState.setItems((current) =>
           current.map((entry) =>
             entry.id === input.id
               ? {
                   ...entry,
-                  ...data.request!,
-                  user: data.request!.user ?? entry.user,
+                  ...request,
+                  user: request.user ?? entry.user,
                 }
               : entry
           )
         );
-        setDeletionRequestsFeedback(
+        deletionRequestsState.setFeedback(
           input.action === "approve" ? "Demande approuvée." : "Demande refusée."
         );
       }
 
       return true;
     } catch {
-      setDeletionRequestsFeedback("Traitement impossible.");
+      deletionRequestsState.setFeedback("Traitement impossible.");
       return false;
     } finally {
       setReviewingDeletionRequestId(null);
     }
-  }, []);
+  }, [deletionRequestsState]);
 
   const createLegalHold = useCallback(async (payload: {
     targetType: "user" | "conversation" | "application";
@@ -396,20 +273,20 @@ export function useAdminPageState() {
       const { response, data } = await createAdminLegalHold(payload);
 
       if (!response.ok || !data.hold) {
-        setLegalHoldsFeedback(data.error || "Création du legal hold impossible.");
+        legalHoldsState.setFeedback(data.error || "Création du legal hold impossible.");
         return false;
       }
 
-      setLegalHolds((current) => [data.hold!, ...current.filter((entry) => entry.id !== data.hold!.id)]);
-      setLegalHoldsFeedback("Legal hold créé.");
+      legalHoldsState.setItems((current) => [data.hold!, ...current.filter((entry) => entry.id !== data.hold!.id)]);
+      legalHoldsState.setFeedback("Legal hold créé.");
       return true;
     } catch {
-      setLegalHoldsFeedback("Création du legal hold impossible.");
+      legalHoldsState.setFeedback("Création du legal hold impossible.");
       return false;
     } finally {
       setIsCreatingLegalHold(false);
     }
-  }, []);
+  }, [legalHoldsState]);
 
   const releaseLegalHold = useCallback(async (id: number) => {
     setIsReleasingLegalHold(true);
@@ -418,20 +295,20 @@ export function useAdminPageState() {
       const { response, data } = await releaseAdminLegalHold(id);
 
       if (!response.ok) {
-        setLegalHoldsFeedback(data.error || "Libération du legal hold impossible.");
+        legalHoldsState.setFeedback(data.error || "Libération du legal hold impossible.");
         return false;
       }
 
-      setLegalHolds((current) => current.filter((entry) => entry.id !== id));
-      setLegalHoldsFeedback("Legal hold libéré.");
+      legalHoldsState.setItems((current) => current.filter((entry) => entry.id !== id));
+      legalHoldsState.setFeedback("Legal hold libéré.");
       return true;
     } catch {
-      setLegalHoldsFeedback("Libération du legal hold impossible.");
+      legalHoldsState.setFeedback("Libération du legal hold impossible.");
       return false;
     } finally {
       setIsReleasingLegalHold(false);
     }
-  }, []);
+  }, [legalHoldsState]);
 
   const createDisclosureLog = useCallback(async (payload: {
     requestType?: "authority_request" | "litigation" | "other";
@@ -448,79 +325,79 @@ export function useAdminPageState() {
       const { response, data } = await createAdminDisclosureLog(payload);
 
       if (!response.ok || !data.log) {
-        setDisclosureLogsFeedback(data.error || "Journalisation impossible.");
+        disclosureLogsState.setFeedback(data.error || "Journalisation impossible.");
         return false;
       }
 
-      await loadDisclosureLogs();
-      setDisclosureLogsFeedback("Disclosure log ajouté.");
+      await disclosureLogsState.load();
+      disclosureLogsState.setFeedback("Disclosure log ajouté.");
       return true;
     } catch {
-      setDisclosureLogsFeedback("Journalisation impossible.");
+      disclosureLogsState.setFeedback("Journalisation impossible.");
       return false;
     } finally {
       setIsCreatingDisclosureLog(false);
     }
-  }, [loadDisclosureLogs]);
+  }, [disclosureLogsState]);
 
   const apiKeyStats = useMemo(() => {
     const now = Date.now();
 
     return {
-      total: apiKeys.length,
-      active: apiKeys.filter(
+      total: apiKeysState.items.length,
+      active: apiKeysState.items.filter(
         (entry) =>
           !entry.revokedAt &&
           (!entry.expiresAt || new Date(entry.expiresAt).getTime() > now)
       ).length,
-      revoked: apiKeys.filter((entry) => Boolean(entry.revokedAt)).length,
-      expiringSoon: apiKeys.filter((entry) => {
+      revoked: apiKeysState.items.filter((entry) => Boolean(entry.revokedAt)).length,
+      expiringSoon: apiKeysState.items.filter((entry) => {
         if (entry.revokedAt || !entry.expiresAt) return false;
         const expiresAt = new Date(entry.expiresAt).getTime();
         const fourteenDays = 14 * 24 * 60 * 60 * 1000;
         return expiresAt > now && expiresAt - now <= fourteenDays;
       }).length,
     };
-  }, [apiKeys]);
+  }, [apiKeysState.items]);
 
   return {
     ...admin,
-    apiKeys,
-    apiKeysFeedback,
-    isApiKeysLoading,
+    apiKeys: apiKeysState.items,
+    apiKeysFeedback: apiKeysState.feedback,
+    isApiKeysLoading: apiKeysState.isLoading,
     apiKeyStats,
-    featuredSearches,
-    featuredSearchesFeedback,
-    isFeaturedSearchesLoading,
+    featuredSearches: featuredSearchesState.items,
+    featuredSearchesFeedback: featuredSearchesState.feedback,
+    isFeaturedSearchesLoading: featuredSearchesState.isLoading,
     isSavingFeaturedSearch,
     savingFeaturedSearchId,
     isDeletingFeaturedSearch,
-    deletionRequests,
-    deletionRequestsFeedback,
-    isDeletionRequestsLoading,
+    deletionRequests: deletionRequestsState.items,
+    deletionRequestsFeedback: deletionRequestsState.feedback,
+    isDeletionRequestsLoading: deletionRequestsState.isLoading,
     reviewingDeletionRequestId,
-    legalHolds,
-    legalHoldsFeedback,
-    isLegalHoldsLoading,
+    legalHolds: legalHoldsState.items,
+    legalHoldsFeedback: legalHoldsState.feedback,
+    isLegalHoldsLoading: legalHoldsState.isLoading,
     isCreatingLegalHold,
     isReleasingLegalHold,
-    disclosureLogs,
-    disclosureLogsFeedback,
-    isDisclosureLogsLoading,
+    disclosureLogs: disclosureLogsState.items,
+    disclosureLogsFeedback: disclosureLogsState.feedback,
+    isDisclosureLogsLoading: disclosureLogsState.isLoading,
     isCreatingDisclosureLog,
-    auditLogs,
-    auditLogsFeedback,
-    isAuditLogsLoading,
+    auditLogs: auditLogsState.items,
+    auditLogsFeedback: auditLogsState.feedback,
+    isAuditLogsLoading: auditLogsState.isLoading,
     revokeTarget,
     setRevokeTarget,
     isRevokingApiKey,
-    loadApiKeys,
+    loadApiKeys: apiKeysState.load,
     revokeApiKey,
-    loadFeaturedSearches,
-    loadDeletionRequests,
-    loadLegalHolds,
-    loadDisclosureLogs,
-    loadAuditLogs,
+    loadFeaturedSearches: featuredSearchesState.load,
+    loadDeletionRequests: deletionRequestsState.load,
+    loadLegalHolds: legalHoldsState.load,
+    loadDisclosureLogs: disclosureLogsState.load,
+    loadAuditLogs: auditLogsState.load,
     createFeaturedSearch,
     updateFeaturedSearch,
     deleteFeaturedSearch,
