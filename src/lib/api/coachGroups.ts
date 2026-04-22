@@ -1,4 +1,4 @@
-import { get, post, patch, del } from "@/lib/api/client";
+import { get, post, patch, put, del } from "@/lib/api/client";
 
 export function createCoachGroup(name: string) {
   return post<{ group?: { id: number }; error?: string }>("/api/coach/groups", { name });
@@ -13,7 +13,7 @@ export function addCoachGroupCoach(groupId: number, userId: number) {
 }
 
 export function setCoachGroupManager(groupId: number, userId: number) {
-  return post<Record<string, never>>(`/api/coach/groups/${groupId}/manager`, { userId });
+  return put<Record<string, never>>(`/api/coach/groups/${groupId}/manager`, { userId });
 }
 
 export function removeCoachGroupMember(groupId: number, userId: number) {

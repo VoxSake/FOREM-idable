@@ -5,6 +5,17 @@ import { toast } from "sonner";
 import { CoachDashboardData, CoachUserSummary } from "@/types/coach";
 import { AuthUser } from "@/types/auth";
 import { CoachUndoAction } from "@/features/coach/types";
+import {
+  createCoachGroup,
+  addCoachGroupMember,
+  addCoachGroupCoach,
+  setCoachGroupManager,
+  removeCoachGroupMember,
+  removeCoachGroupCoach,
+  deleteCoachGroup,
+  updateCoachGroupPhase,
+  archiveCoachGroup,
+} from "@/lib/api/coachGroups";
 
 export function useCoachGroupActions(input: {
   user: AuthUser | null;
@@ -81,25 +92,16 @@ export function useCoachGroupActions(input: {
           : null,
     });
 
-    const response = await fetch("/api/coach/groups", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: trimmedGroupName }),
-    });
+    try {
+      const { data } = await createCoachGroup(trimmedGroupName);
 
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      group?: { id: number };
-    };
-
-    if (!response.ok) {
+      if (data.group?.id) {
+        input.replaceGroupIdLocally(temporaryGroupId, data.group.id);
+      }
+    } catch {
       input.removeGroupLocally(temporaryGroupId);
-      input.setFeedback(data.error || "Création du groupe impossible.");
+      input.setFeedback("Création du groupe impossible.");
       return;
-    }
-
-    if (data.group?.id) {
-      input.replaceGroupIdLocally(temporaryGroupId, data.group.id);
     }
 
     input.setUndoAction(null);
@@ -111,13 +113,9 @@ export function useCoachGroupActions(input: {
   const addMember = useCallback(
     async (groupId: number, userId: number) => {
       input.addMembershipLocally(groupId, userId);
-      const response = await fetch(`/api/coach/groups/${groupId}/members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-
-      if (!response.ok) {
+      try {
+        await addCoachGroupMember(groupId, userId);
+      } catch {
         input.removeMembershipLocally(groupId, userId);
         input.setFeedback("Ajout au groupe impossible.");
         return;
@@ -133,13 +131,9 @@ export function useCoachGroupActions(input: {
   const addCoach = useCallback(
     async (groupId: number, userId: number) => {
       input.addCoachLocally(groupId, userId);
-      const response = await fetch(`/api/coach/groups/${groupId}/coaches`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-
-      if (!response.ok) {
+      try {
+        await addCoachGroupCoach(groupId, userId);
+      } catch {
         input.removeCoachLocally(groupId, userId);
         input.setFeedback("Attribution du coach impossible.");
         return;
@@ -157,13 +151,9 @@ export function useCoachGroupActions(input: {
       const previousManagerId =
         input.dashboard?.groups.find((entry) => entry.id === groupId)?.managerCoachId ?? null;
       input.setGroupManagerLocally(groupId, userId);
-      const response = await fetch(`/api/coach/groups/${groupId}/manager`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-
-      if (!response.ok) {
+      try {
+        await setCoachGroupManager(groupId, userId);
+      } catch {
         input.setDashboard((current) => {
           if (!current) return current;
           return {
@@ -198,11 +188,9 @@ export function useCoachGroupActions(input: {
       }
 
       input.removeMembershipLocally(groupId, userId);
-      const response = await fetch(`/api/coach/groups/${groupId}/members?userId=${userId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
+      try {
+        await removeCoachGroupMember(groupId, userId);
+      } catch {
         input.addMembershipLocally(groupId, userId);
         input.setFeedback("Suppression du groupe impossible.");
         return;
@@ -225,17 +213,16 @@ export function useCoachGroupActions(input: {
       const previousManagerId =
         input.dashboard?.groups.find((entry) => entry.id === groupId)?.managerCoachId ?? null;
       input.removeCoachLocally(groupId, userId);
-      const response = await fetch(`/api/coach/groups/${groupId}/coaches?userId=${userId}`, {
-        method: "DELETE",
-      });
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
-
-      if (!response.ok) {
+      try {
+        await removeCoachGroupCoach(groupId, userId);
+      } catch (error) {
         input.addCoachLocally(groupId, userId);
         if (previousManagerId) {
           input.setGroupManagerLocally(groupId, previousManagerId);
         }
-        input.setFeedback(data.error || "Retrait du coach impossible.");
+        input.setFeedback(
+          error instanceof Error ? error.message : "Retrait du coach impossible."
+        );
         return;
       }
 
@@ -249,15 +236,13 @@ export function useCoachGroupActions(input: {
     async (groupId: number) => {
       input.setIsDeletingGroup(true);
       input.removeGroupLocally(groupId);
-      const response = await fetch(`/api/coach/groups?groupId=${groupId}`, {
-        method: "DELETE",
-      });
-
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
-
-      if (!response.ok) {
+      try {
+        await deleteCoachGroup(groupId);
+      } catch (error) {
         await input.loadDashboard();
-        input.setFeedback(data.error || "Suppression du groupe impossible.");
+        input.setFeedback(
+          error instanceof Error ? error.message : "Suppression du groupe impossible."
+        );
         input.setIsDeletingGroup(false);
         return;
       }
@@ -272,13 +257,9 @@ export function useCoachGroupActions(input: {
   const restoreMembership = useCallback(
     async (undoAction: Extract<CoachUndoAction, { type: "remove-membership" }>) => {
       input.addMembershipLocally(undoAction.groupId, undoAction.userId);
-      const response = await fetch(`/api/coach/groups/${undoAction.groupId}/members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: undoAction.userId }),
-      });
-
-      if (!response.ok) {
+      try {
+        await addCoachGroupMember(undoAction.groupId, undoAction.userId);
+      } catch {
         input.removeMembershipLocally(undoAction.groupId, undoAction.userId);
         input.setFeedback("Impossible d'annuler le retrait du groupe.");
         return false;
@@ -313,19 +294,15 @@ export function useCoachGroupActions(input: {
         };
       });
 
-      const response = await fetch(`/api/coach/groups/${groupId}/phase`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phase, reason }),
-      });
+      try {
+        const { data } = await updateCoachGroupPhase(groupId, phase, reason);
 
-      const data = (await response.json().catch(() => ({}))) as {
-        ok?: boolean;
-        updated?: number;
-        skipped?: number;
-      };
-
-      if (!response.ok) {
+        input.setUndoAction(null);
+        toast.success("Phase du groupe mise à jour.");
+        if ((data.skipped ?? 0) > 0) {
+          toast.info(`${data.skipped} ignoré${(data.skipped ?? 0) > 1 ? 's' : ''} car déjà en sortie.`);
+        }
+      } catch {
         input.setDashboard((current) => {
           if (!current) return current;
           return {
@@ -338,12 +315,6 @@ export function useCoachGroupActions(input: {
         });
         input.setFeedback("Changement de phase impossible.");
         return;
-      }
-
-      input.setUndoAction(null);
-      toast.success("Phase du groupe mise à jour.");
-      if ((data.skipped ?? 0) > 0) {
-        toast.info(`${data.skipped} ignoré${(data.skipped ?? 0) > 1 ? 's' : ''} car déjà en sortie.`);
       }
     },
     [input]
@@ -363,13 +334,9 @@ export function useCoachGroupActions(input: {
         };
       });
 
-      const response = await fetch(`/api/coach/groups/${groupId}/archive`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ archived }),
-      });
-
-      if (!response.ok) {
+      try {
+        await archiveCoachGroup(groupId, archived);
+      } catch {
         input.setDashboard((current) => {
           if (!current) return current;
           return {

@@ -45,6 +45,10 @@ export function patch<T>(url: string, body?: unknown, init?: RequestInit) {
   return requestJson<T>(url, { ...jsonInit("PATCH", body), ...init });
 }
 
+export function put<T>(url: string, body?: unknown, init?: RequestInit) {
+  return requestJson<T>(url, { ...jsonInit("PUT", body), ...init });
+}
+
 export function del<T>(url: string, init?: RequestInit) {
   return requestJson<T>(url, { ...init, method: "DELETE" });
 }
