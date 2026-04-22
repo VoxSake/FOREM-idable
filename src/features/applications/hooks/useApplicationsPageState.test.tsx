@@ -158,7 +158,7 @@ describe("useApplicationsPageState", () => {
     act(() => {
       result.current.toggleSelection("job-1");
       result.current.toggleSelection("job-2");
-      result.current.setDetailsJobId("job-1");
+      result.current.openDetails("job-1");
     });
 
     await act(async () => {
