@@ -1,3 +1,4 @@
+import { fetchOfferDetails } from "@/lib/api/offers";
 import { OfferDetails } from "@/features/jobs/types/offerDetails";
 
 export const offerDetailsService = {
@@ -5,17 +6,16 @@ export const offerDetailsService = {
     offerId: string,
     options?: { signal?: AbortSignal }
   ): Promise<OfferDetails | null> {
-    const response = await fetch(`/api/offers/${offerId}`, {
-      signal: options?.signal,
-    });
-    if (!response.ok) return null;
-
-    const payload = (await response.json()) as Partial<OfferDetails>;
-    return {
-      offerId,
-      description: payload.description,
-      highlights: payload.highlights || [],
-      sections: payload.sections || [],
-    };
+    try {
+      const { data } = await fetchOfferDetails(offerId, options?.signal);
+      return {
+        offerId,
+        description: data.description,
+        highlights: data.highlights || [],
+        sections: data.sections || [],
+      };
+    } catch {
+      return null;
+    }
   },
 };

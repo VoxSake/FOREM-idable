@@ -127,3 +127,13 @@ export async function createDirectMessageConversation(targetUserId: number) {
 
   return { response, data };
 }
+
+export async function shareDirectMessage(targetUserId: number, content: string) {
+  const response = await fetch("/api/messages/share/direct", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ targetUserId, content }),
+  });
+  const data = await readJson<{ error?: string }>(response);
+  return { response, data };
+}

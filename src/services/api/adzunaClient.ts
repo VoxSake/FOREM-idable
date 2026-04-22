@@ -1,3 +1,4 @@
+import { post } from "@/lib/api/client";
 import { ForemSearchParams } from "./foremClient";
 import { Job } from "@/types/job";
 
@@ -11,17 +12,8 @@ export async function fetchAdzunaJobs(
   params: ForemSearchParams
 ): Promise<{ jobs: Job[]; total: number }> {
   try {
-    const response = await fetch("/api/providers/adzuna/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
+    const { data } = await post<AdzunaSearchResponse>("/api/providers/adzuna/search", params);
 
-    if (!response.ok) {
-      return { jobs: [], total: 0 };
-    }
-
-    const data = (await response.json()) as AdzunaSearchResponse;
     if (!data.enabled) {
       return { jobs: [], total: 0 };
     }
@@ -35,4 +27,3 @@ export async function fetchAdzunaJobs(
     return { jobs: [], total: 0 };
   }
 }
-

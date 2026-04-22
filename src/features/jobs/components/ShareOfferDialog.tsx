@@ -15,6 +15,12 @@ import {
 import { getJobExternalUrl } from "@/features/jobs/utils/jobLinks";
 import { Job } from "@/types/job";
 import { ConversationPreview, DirectMessageTarget } from "@/types/messaging";
+import {
+  fetchConversations,
+  fetchMessageContacts,
+  postConversationMessage,
+  shareDirectMessage,
+} from "@/features/messages/messages.api";
 import { getDisplayName } from "@/features/messages/messages.utils";
 import { MessagesSquare, UserRound } from "lucide-react";
 
@@ -45,22 +51,15 @@ export function ShareOfferDialog({
     setIsLoading(true);
     setError(null);
 
-    void Promise.all([
-      fetch("/api/messages/conversations", { cache: "no-store" }).then((response) =>
-        response.json().then((data) => ({ response, data }))
-      ),
-      fetch("/api/messages/contacts", { cache: "no-store" }).then((response) =>
-        response.json().then((data) => ({ response, data }))
-      ),
-    ])
+    void Promise.all([fetchConversations(), fetchMessageContacts()])
       .then(([conversationResult, contactsResult]) => {
         if (!isMounted) return;
 
         const nextConversations = Array.isArray(conversationResult.data?.conversations)
-          ? (conversationResult.data.conversations as ConversationPreview[])
+          ? conversationResult.data.conversations
           : [];
         const nextContacts = Array.isArray(contactsResult.data?.contacts)
-          ? (contactsResult.data.contacts as DirectMessageTarget[])
+          ? contactsResult.data.contacts
           : [];
 
         setConversations(nextConversations);
@@ -120,14 +119,9 @@ export function ShareOfferDialog({
     const shareUrl = getJobExternalUrl(job);
     setIsSharing(true);
     try {
-      const response = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: shareUrl }),
-      });
+      const { response, data } = await postConversationMessage(conversationId, shareUrl);
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => ({}))) as { error?: string };
         throw new Error(data.error || "Envoi impossible.");
       }
 
@@ -146,14 +140,9 @@ export function ShareOfferDialog({
     const shareUrl = getJobExternalUrl(job);
     setIsSharing(true);
     try {
-      const response = await fetch("/api/messages/share/direct", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId, content: shareUrl }),
-      });
+      const { response, data } = await shareDirectMessage(targetUserId, shareUrl);
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => ({}))) as { error?: string };
         throw new Error(data.error || "Conversation privée indisponible.");
       }
 
