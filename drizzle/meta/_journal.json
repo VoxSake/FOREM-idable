@@ -71,6 +71,13 @@
       "when": 1775846400000,
       "tag": "0009_beneficiary_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776919500831,
+      "tag": "0010_furry_titania",
+      "breakpoints": true
     }
   ]
 }

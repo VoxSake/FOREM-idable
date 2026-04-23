@@ -678,3 +678,57 @@ export const disclosureLogs = pgTable(
     createdByIdx: index("disclosure_logs_created_by_idx").on(table.createdByUserId),
   })
 );
+
+export const scoutJobs = pgTable(
+  "scout_jobs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
+    query: text("query").notNull(),
+    lat: text("lat").notNull(),
+    lon: text("lon").notNull(),
+    radius: integer("radius").notNull(),
+    categories: jsonb("categories").notNull().default(sql`'[]'::jsonb`),
+    scrapeEmails: boolean("scrape_emails").notNull().default(false),
+    totalSteps: integer("total_steps").notNull().default(0),
+    completedSteps: integer("completed_steps").notNull().default(0),
+    resultCount: integer("result_count").notNull().default(0),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => ({
+    userStatusIdx: index("scout_jobs_user_status_idx").on(table.userId, table.status),
+    createdAtIdx: index("scout_jobs_created_at_idx").on(table.createdAt),
+  })
+);
+
+export const scoutResults = pgTable(
+  "scout_results",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    jobId: bigint("job_id", { mode: "number" })
+      .notNull()
+      .references(() => scoutJobs.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    type: text("type").notNull().default("?"),
+    email: text("email"),
+    website: text("website"),
+    phone: text("phone"),
+    address: text("address"),
+    lat: text("lat"),
+    lon: text("lon"),
+    town: text("town"),
+    emailSource: text("email_source").notNull().default(""),
+    allEmails: jsonb("all_emails").notNull().default(sql`'[]'::jsonb`),
+    osmId: bigint("osm_id", { mode: "number" }),
+  },
+  (table) => ({
+    jobIdIdx: index("scout_results_job_id_idx").on(table.jobId),
+    emailIdx: index("scout_results_email_idx").on(table.email),
+    osmIdIdx: index("scout_results_osm_id_idx").on(table.osmId),
+  })
+);

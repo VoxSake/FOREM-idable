@@ -1,6 +1,7 @@
 import {
   Briefcase,
   CircleHelp,
+  MapPin,
   Send,
   ShieldCheck,
   UserRound,
@@ -23,6 +24,7 @@ export interface AppSidebarNavItem {
 const BASE_NAV_ITEMS: AppSidebarNavItem[] = [
   { title: "Recherche", url: "/", icon: Briefcase },
   { title: "Candidatures", url: "/applications", icon: Send },
+  { title: "Scout", url: "/scout", icon: MapPin },
   { title: "Mon compte", url: "/account", icon: UserRound },
   { title: "À propos", url: "/about", icon: CircleHelp },
 ];
@@ -58,16 +60,22 @@ export const FOOTER_NAV_ITEMS: AppSidebarNavItem[] = [
   { title: "Confidentialité", url: "/privacy", icon: ShieldCheck },
 ];
 
-export function getSidebarNavItems(role?: UserRole): AppSidebarNavItem[] {
+export function getSidebarNavItems(role?: UserRole, isAuthenticated?: boolean): AppSidebarNavItem[] {
+  let items = [...BASE_NAV_ITEMS];
+
+  if (!isAuthenticated) {
+    items = items.filter((item) => item.url !== "/scout");
+  }
+
   if (role === "admin") {
-    return [ADMIN_NAV_ITEM, COACH_NAV_ITEM, ...BASE_NAV_ITEMS];
+    return [ADMIN_NAV_ITEM, COACH_NAV_ITEM, ...items];
   }
 
   if (role === "coach") {
-    return [COACH_NAV_ITEM, ...BASE_NAV_ITEMS];
+    return [COACH_NAV_ITEM, ...items];
   }
 
-  return BASE_NAV_ITEMS;
+  return items;
 }
 
 export function isSidebarItemActive(pathname: string, itemUrl: string) {

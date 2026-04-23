@@ -246,7 +246,7 @@ export function AppSidebar() {
   }, [messagingConversations, user]);
 
   const navItems = useMemo(() => {
-    const baseItems = getSidebarNavItems(user?.role);
+    const baseItems = getSidebarNavItems(user?.role, !!user);
     if (!messagingNav.hasGroupMessagingAccess) {
       return baseItems;
     }
