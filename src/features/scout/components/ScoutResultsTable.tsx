@@ -48,7 +48,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
     [filtered, safePage]
   );
 
-  const exportCsv = () => {
+  function downloadCsv(format: "excel" | "csv") {
     const headers = ["Nom", "Type", "Email", "Téléphone", "Site web", "Adresse", "Ville", "Source email"];
     const rows = filtered.map((r) =>
       [
@@ -62,13 +62,27 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
         r.emailSource,
       ].map(escapeCsvCell)
     );
-    const csv = ["\uFEFF" + headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+    if (format === "excel") {
+      // European Excel: semicolon separator + BOM
+      const content = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+      const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+      triggerDownload(blob, `scout-resultats-${new Date().toISOString().slice(0, 10)}.csv`);
+    } else {
+      // Standard CSV: comma separator, no BOM
+      const content = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+      triggerDownload(blob, `scout-resultats-${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+  }
+
+  function triggerDownload(blob: Blob, filename: string) {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `scout-resultats-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = filename;
     link.click();
-  };
+    URL.revokeObjectURL(link.href);
+  }
 
   if (results.length === 0) {
     return (
@@ -92,8 +106,12 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
             placeholder="Filtrer..."
             className="w-full sm:w-48"
           />
-          <Button type="button" variant="outline" size="sm" onClick={exportCsv}>
-            <Download data-icon="inline-start" />
+          <Button type="button" variant="outline" size="sm" onClick={() => downloadCsv("excel")}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Excel
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => downloadCsv("csv")}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
             CSV
           </Button>
         </div>
