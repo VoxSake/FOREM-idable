@@ -87,8 +87,19 @@ export async function GET(
         categories: safeJson(job.categories),
       },
       results: resultsResult.rows.map((r) => ({
-        ...r,
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        email: r.email,
+        website: r.website,
+        phone: r.phone,
+        address: r.address,
+        lat: r.lat,
+        lon: r.lon,
+        town: r.town,
+        emailSource: r.email_source,
         allEmails: safeJson(r.all_emails),
+        osmId: r.osm_id,
       })),
     });
   } catch (error) {

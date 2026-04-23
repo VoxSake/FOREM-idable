@@ -15,11 +15,12 @@ interface ScoutResultsTableProps {
   onApply?: (result: ScoutResult) => void;
 }
 
-function escapeCsvCell(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
+function escapeCsvCell(value: unknown): string {
+  const str = value == null ? "" : String(value);
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
   }
-  return value;
+  return str;
 }
 
 export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) {
