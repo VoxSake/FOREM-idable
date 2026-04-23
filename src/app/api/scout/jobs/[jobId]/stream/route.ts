@@ -12,7 +12,7 @@ import {
   cacheScoutResult,
   getCachedCompany,
 } from "@/lib/server/companyCache";
-import { checkRateLimit } from "@/lib/server/rateLimit";
+
 
 const encoder = new TextEncoder();
 
@@ -47,15 +47,13 @@ export async function GET(
     return new Response("Forbidden", { status: 403 });
   }
 
-  // Rate limit: max 1 stream per user
-  const streamRateLimit = await checkRateLimit({
-    scope: "scout-stream",
-    limit: 1,
-    windowMs: 5 * 60 * 1000, // 5 minutes - long enough for a full search
-    identifier: String(user.id),
-  });
-  if (!streamRateLimit.allowed) {
-    return new Response("Too many concurrent searches. Wait for the current one to finish.", { status: 429 });
+  // Prevent multiple concurrent running jobs for the same user
+  const otherRunning = await db.query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE user_id = $1 AND status = 'running' AND id != $2`,
+    [user.id, jobId]
+  );
+  if (Number(otherRunning.rows[0].count) > 0) {
+    return new Response("Vous avez déjà une recherche en cours. Attendez qu'elle termine.", { status: 429 });
   }
 
   const stream = new ReadableStream({
