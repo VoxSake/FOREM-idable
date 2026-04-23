@@ -1,6 +1,7 @@
 "use client";
 
 import { History, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScoutJob } from "../scoutSchemas";
@@ -26,11 +27,11 @@ function formatDate(date: string | null) {
 
 function statusLabel(status: ScoutJob["status"]) {
   switch (status) {
-    case "queued": return { text: "En file", className: "bg-gray-100 text-gray-800" };
-    case "pending": return { text: "En attente", className: "bg-yellow-100 text-yellow-800" };
-    case "running": return { text: "En cours", className: "bg-blue-100 text-blue-800" };
-    case "completed": return { text: "Terminé", className: "bg-green-100 text-green-800" };
-    case "failed": return { text: "Échec", className: "bg-red-100 text-red-800" };
+    case "queued": return { text: "En file", variant: "secondary" as const };
+    case "pending": return { text: "En attente", variant: "warning" as const };
+    case "running": return { text: "En cours", variant: "info" as const };
+    case "completed": return { text: "Terminé", variant: "success" as const };
+    case "failed": return { text: "Échec", variant: "error" as const };
   }
 }
 
@@ -68,10 +69,10 @@ export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete, onOpenH
                 <span className="text-xs text-muted-foreground">
                   {job.radius >= 1000 ? `${(job.radius / 1000).toFixed(1)} km` : `${job.radius} m`} · {formatDate(job.createdAt)}
                 </span>
-                <div className="flex items-center gap-2">
-                  <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium ${status.className}`}>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Badge variant={status.variant} className="rounded px-1.5 py-0.5 text-[10px]">
                     {status.text}
-                  </span>
+                  </Badge>
                   {job.status === "completed" && (
                     <span className="text-xs text-muted-foreground">{job.resultCount} résultats</span>
                   )}

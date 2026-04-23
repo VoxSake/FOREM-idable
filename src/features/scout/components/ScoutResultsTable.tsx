@@ -13,6 +13,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
@@ -148,22 +149,22 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle>Résultats ({sorted.length})</CardTitle>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full min-w-0 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
           <Input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Filtrer..."
-            className="w-full sm:w-48"
+            className="min-w-0 sm:w-48"
           />
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => downloadCsv("excel")}>
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex">
+            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadCsv("excel")}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
               Excel
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => downloadCsv("csv")}>
+            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadCsv("csv")}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
               CSV
             </Button>
@@ -287,9 +288,9 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                   </h3>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="inline-block rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                  <Badge variant="secondary" className="max-w-32 truncate rounded px-1.5 py-0.5 text-[10px]">
                     {r.type}
-                  </span>
+                  </Badge>
                   {onApply && (
                     <Button
                       type="button"
