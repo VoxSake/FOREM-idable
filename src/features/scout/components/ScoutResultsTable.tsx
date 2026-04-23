@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { Download, ExternalLink, Send } from "lucide-react";
+import { Download, ExternalLink, Mail, MapPin, Phone, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -64,12 +64,10 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
     );
 
     if (format === "excel") {
-      // European Excel: semicolon separator + BOM
       const content = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
       const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
       triggerDownload(blob, `scout-resultats-${new Date().toISOString().slice(0, 10)}.csv`);
     } else {
-      // Standard CSV: comma separator, no BOM
       const content = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
       const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
       triggerDownload(blob, `scout-resultats-${new Date().toISOString().slice(0, 10)}.csv`);
@@ -117,7 +115,8 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-xl border">
+        {/* Desktop table */}
+        <div className="hidden rounded-xl border lg:block">
           <div className="overflow-x-auto">
             <Table className="table-fixed w-full">
               <TableHeader>
@@ -179,6 +178,58 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
             </Table>
           </div>
         </div>
+
+        {/* Mobile cards */}
+        <div className="flex flex-col gap-3 lg:hidden">
+          {visible.map((r) => (
+            <div key={r.id} className="rounded-lg border bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-sm font-semibold" title={r.name}>
+                    {r.name}
+                  </h3>
+                  <span className="inline-block mt-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                    {r.type}
+                  </span>
+                </div>
+                {onApply && (
+                  <Button type="button" size="sm" variant="ghost" className="h-8 shrink-0 px-2" onClick={() => onApply(r)}>
+                    <Send className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                {r.email && (
+                  <a href={`mailto:${r.email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                    <Mail className="h-3.5 w-3.5" />
+                    <span className="truncate max-w-[140px]">{r.email}</span>
+                  </a>
+                )}
+                {r.phone && (
+                  <a href={`tel:${r.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                    <Phone className="h-3.5 w-3.5" />
+                    <span>{r.phone}</span>
+                  </a>
+                )}
+                {r.website && (
+                  <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Site
+                  </a>
+                )}
+              </div>
+
+              {(r.address || r.town) && (
+                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span>{[r.address, r.town].filter(Boolean).join(", ")}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
         <div className="mt-4">
           <LocalPagination
             currentPage={safePage}
