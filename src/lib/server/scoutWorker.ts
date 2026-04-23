@@ -269,18 +269,19 @@ export async function startScoutWorker(): Promise<void> {
     // ignore recovery errors
   }
 
-  // Run immediately, then every 10 seconds
-  processNextJob().catch(() => {});
-  setInterval(() => {
-    processNextJob().catch(() => {});
-  }, 10000);
-
   logServerEvent({
     category: "scout",
     action: "worker_started",
     level: "info",
-    meta: { intervalMs: 10000 },
+    meta: { pollIntervalMs: 10000 },
   });
+
+  // Loop instead of setInterval so jobs are strictly sequential:
+  // the next job is only picked after the previous one fully completes.
+  while (true) {
+    await processNextJob();
+    await sleep(10000);
+  }
 }
 
 function sleep(ms: number) {
