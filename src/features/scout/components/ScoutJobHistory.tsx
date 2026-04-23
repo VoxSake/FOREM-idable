@@ -37,8 +37,8 @@ function statusLabel(status: ScoutJob["status"]) {
 export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete, onOpenHistory }: ScoutJobHistoryProps) {
   if (jobs.length === 0) return null;
 
-  const recent = jobs.slice(0, 5);
-  const remaining = Math.max(0, jobs.length - 5);
+  const recent = jobs.slice(0, 4);
+  const remaining = Math.max(0, jobs.length - 4);
 
   return (
     <Card>
