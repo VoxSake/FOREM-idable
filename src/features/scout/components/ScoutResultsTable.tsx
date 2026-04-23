@@ -182,8 +182,8 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
         {/* Mobile cards */}
         <div className="flex flex-col gap-3 lg:hidden">
           {visible.map((r) => (
-            <div key={r.id} className="rounded-lg border bg-card p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
+            <div key={r.id} className="min-w-0 overflow-hidden rounded-lg border bg-card p-4 shadow-sm">
+              <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-sm font-semibold" title={r.name}>
                     {r.name}
@@ -199,31 +199,31 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                 )}
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-sm">
                 {r.email && (
-                  <a href={`mailto:${r.email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
-                    <Mail className="h-3.5 w-3.5" />
-                    <span className="truncate max-w-[140px]">{r.email}</span>
+                  <a href={`mailto:${r.email}`} className="inline-flex min-w-0 items-center gap-1 text-primary hover:underline">
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate max-w-[120px]">{r.email}</span>
                   </a>
                 )}
                 {r.phone && (
-                  <a href={`tel:${r.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
-                    <Phone className="h-3.5 w-3.5" />
-                    <span>{r.phone}</span>
+                  <a href={`tel:${r.phone}`} className="inline-flex min-w-0 items-center gap-1 text-primary hover:underline">
+                    <Phone className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate max-w-[120px]">{r.phone}</span>
                   </a>
                 )}
                 {r.website && (
-                  <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Site
+                  <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 text-primary hover:underline">
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate max-w-[100px]">{r.website.replace(/^https?:\/\//, "")}</span>
                   </a>
                 )}
               </div>
 
               {(r.address || r.town) && (
-                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="mt-2 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 shrink-0" />
-                  <span>{[r.address, r.town].filter(Boolean).join(", ")}</span>
+                  <span className="truncate">{[r.address, r.town].filter(Boolean).join(", ")}</span>
                 </div>
               )}
             </div>
