@@ -4,8 +4,8 @@ import { useState } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { SCOUT_CATEGORIES } from "@/lib/server/scoutOverpass";
@@ -61,10 +61,10 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <FieldGroup className="gap-4">
-            <Field>
-              <FieldLabel htmlFor="scout-query">Ville</FieldLabel>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="scout-query">Ville</Label>
               <Input
                 id="scout-query"
                 value={query}
@@ -72,10 +72,10 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
                 placeholder="Ex: Liège, Bruxelles, Namur..."
                 required
               />
-            </Field>
+            </div>
 
-            <Field>
-              <FieldLabel>Rayon : {radius[0] >= 1000 ? `${(radius[0] / 1000).toFixed(1)} km` : `${radius[0]} m`}</FieldLabel>
+            <div className="flex flex-col gap-1.5">
+              <Label>Rayon : {radius[0] >= 1000 ? `${(radius[0] / 1000).toFixed(1)} km` : `${radius[0]} m`}</Label>
               <input
                 type="range"
                 min={500}
@@ -83,45 +83,43 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
                 step={500}
                 value={radius[0]}
                 onChange={(e) => setRadius([Number(e.target.value)])}
-                className="w-full"
+                className="w-full accent-primary"
               />
-            </Field>
+            </div>
 
-            <Field className="flex flex-row items-start gap-3 space-y-0">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
               <Checkbox
                 id="scout-scrape"
                 checked={scrapeEmails}
                 onCheckedChange={(checked) => setScrapeEmails(checked === true)}
+                className="mt-0.5"
               />
-              <div className="space-y-1 leading-none">
-                <label htmlFor="scout-scrape" className="text-sm font-medium">
-                  Scraper les emails
-                </label>
-                <p className="text-xs text-muted-foreground">
+              <div className="flex flex-col gap-0.5 leading-snug">
+                <span className="text-sm font-medium">Scraper les emails</span>
+                <span className="text-xs text-muted-foreground">
                   Visite chaque site web pour trouver des emails (plus lent, respecte le rate limiting).
-                </p>
+                </span>
               </div>
-            </Field>
+            </label>
 
-            <Field className="flex flex-row items-start gap-3 space-y-0">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
               <Checkbox
                 id="scout-all-cats"
                 checked={selectAll}
                 onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                className="mt-0.5"
               />
-              <div className="space-y-1 leading-none">
-                <label htmlFor="scout-all-cats" className="text-sm font-medium">
-                  Tous les secteurs
-                </label>
-                <p className="text-xs text-muted-foreground">
+              <div className="flex flex-col gap-0.5 leading-snug">
+                <span className="text-sm font-medium">Tous les secteurs</span>
+                <span className="text-xs text-muted-foreground">
                   Sinon, sélectionnez les catégories ci-dessous.
-                </p>
+                </span>
               </div>
-            </Field>
-          </FieldGroup>
+            </label>
+          </div>
 
           {!selectAll && (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {ALL_CATEGORIES.map(({ key, label }) => (
                 <label
                   key={key}
@@ -141,8 +139,8 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
             </div>
           )}
 
-          <Button type="submit" disabled={isLoading || !query.trim()} className="w-full sm:w-auto">
-            <Search data-icon="inline-start" />
+          <Button type="submit" disabled={isLoading || !query.trim()} className="w-full sm:w-auto self-start">
+            <Search className="mr-2 h-4 w-4" />
             {isLoading ? "Lancement..." : "Lancer la recherche"}
           </Button>
         </form>
