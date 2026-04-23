@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,7 @@ interface ScoutFormProps {
 
 export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
   const [query, setQuery] = useState("");
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
   const [radius, setRadius] = useState([5000]);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [scrapeEmails, setScrapeEmails] = useState(false);
@@ -42,6 +43,27 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
       setSelectedCategories(new Set());
     }
   };
+
+  useEffect(() => {
+    if (!query || query.length < 3) {
+      setCitySuggestions([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=be&limit=5`,
+        { headers: { "Accept-Language": "fr" } }
+      )
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setCitySuggestions(data.map((d: { display_name: string }) => d.display_name));
+          }
+        })
+        .catch(() => {});
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,11 +89,17 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
               <Label htmlFor="scout-query">Ville</Label>
               <Input
                 id="scout-query"
+                list="scout-city-suggestions"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ex: Liège, Bruxelles, Namur..."
                 required
               />
+              <datalist id="scout-city-suggestions">
+                {citySuggestions.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
             </div>
 
             <div className="flex flex-col gap-1.5">

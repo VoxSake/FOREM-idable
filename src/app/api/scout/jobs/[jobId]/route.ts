@@ -47,7 +47,7 @@ export async function GET(
     if (!job) {
       return NextResponse.json({ error: "Job introuvable." }, { status: 404 });
     }
-    if (job.user_id !== user.id) {
+    if (Number(job.user_id) !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -73,14 +73,22 @@ export async function GET(
       [jobId]
     );
 
+    function safeJson(value: unknown) {
+      if (value === null || value === undefined) return value;
+      if (typeof value === "string") {
+        try { return JSON.parse(value); } catch { return value; }
+      }
+      return value;
+    }
+
     return NextResponse.json({
       job: {
         ...job,
-        categories: JSON.parse(job.categories),
+        categories: safeJson(job.categories),
       },
       results: resultsResult.rows.map((r) => ({
         ...r,
-        allEmails: JSON.parse(r.all_emails),
+        allEmails: safeJson(r.all_emails),
       })),
     });
   } catch (error) {
@@ -120,7 +128,7 @@ export async function DELETE(
     if (check.rows.length === 0) {
       return NextResponse.json({ error: "Job introuvable." }, { status: 404 });
     }
-    if (check.rows[0].user_id !== user.id) {
+    if (Number(check.rows[0].user_id) !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

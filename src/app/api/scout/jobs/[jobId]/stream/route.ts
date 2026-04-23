@@ -39,7 +39,7 @@ export async function GET(
   if (check.rows.length === 0) {
     return new Response("Job not found", { status: 404 });
   }
-  if (check.rows[0].user_id !== user.id) {
+  if (Number(check.rows[0].user_id) !== user.id) {
     return new Response("Forbidden", { status: 403 });
   }
 

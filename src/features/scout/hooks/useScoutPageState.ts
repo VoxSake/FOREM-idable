@@ -42,10 +42,8 @@ export function useScoutPageState() {
     setIsSubmitting(true);
     try {
       const { jobId } = await createScoutJob(input);
-      await loadJobs();
-      await loadJobDetail(jobId);
 
-      // Start SSE stream
+      // Start SSE stream immediately so the job actually runs
       const es = openScoutStream(jobId);
       setProgress({ step: 0, total: 1, found: 0 });
 
@@ -83,6 +81,10 @@ export function useScoutPageState() {
         setProgress(null);
         es.close();
       };
+
+      // Refresh history and job detail in background (don't block stream)
+      loadJobs().catch(() => {});
+      loadJobDetail(jobId).catch(() => {});
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Échec du lancement.");
     } finally {
