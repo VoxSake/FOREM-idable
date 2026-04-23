@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
        RETURNING id`,
       [
         user.id,
-        "pending",
+        "queued",
         geo.display_name,
         geo.lat,
         geo.lon,

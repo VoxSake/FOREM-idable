@@ -18,3 +18,6 @@ CREATE TABLE "company_cache" (
 --> statement-breakpoint
 CREATE INDEX "company_cache_website_idx" ON "company_cache" USING btree ("website");--> statement-breakpoint
 CREATE INDEX "company_cache_scraped_at_idx" ON "company_cache" USING btree ("scraped_at");
+
+-- Convert old pending/running jobs to queued so the new worker picks them up
+UPDATE scout_jobs SET status = 'queued' WHERE status IN ('pending', 'running');

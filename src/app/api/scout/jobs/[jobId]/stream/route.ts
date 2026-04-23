@@ -1,18 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
 import { db } from "@/lib/server/db";
-import { logServerEvent } from "@/lib/server/observability";
-import {
-  buildOverpassQuery,
-  parseOverpassElements,
-  queryOverpass,
-} from "@/lib/server/scoutOverpass";
-import { scrapeEmails } from "@/lib/server/scoutScraper";
-import {
-  cacheScoutResult,
-  getCachedCompany,
-} from "@/lib/server/companyCache";
-
 
 const encoder = new TextEncoder();
 
@@ -35,9 +23,8 @@ export async function GET(
     return new Response("Invalid job ID", { status: 400 });
   }
 
-  // Verify ownership
-  const check = await db.query<{ user_id: number; status: string }>(
-    `SELECT user_id, status FROM scout_jobs WHERE id = $1`,
+  const check = await db.query<{ user_id: number }>(
+    `SELECT user_id FROM scout_jobs WHERE id = $1`,
     [jobId]
   );
   if (check.rows.length === 0) {
@@ -47,262 +34,97 @@ export async function GET(
     return new Response("Forbidden", { status: 403 });
   }
 
-  // Prevent multiple concurrent running jobs for the same user
-  const otherRunning = await db.query<{ count: string }>(
-    `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE user_id = $1 AND status = 'running' AND id != $2`,
-    [user.id, jobId]
-  );
-  if (Number(otherRunning.rows[0].count) > 0) {
-    return new Response("Vous avez déjà une recherche en cours. Attendez qu'elle termine.", { status: 429 });
-  }
-
   const stream = new ReadableStream({
     async start(controller) {
+      let lastCompletedSteps = -1;
+      let lastResultCount = -1;
+      let lastStatus = "";
+
       try {
-        // If already completed or failed, just send final state
-        if (check.rows[0].status === "completed" || check.rows[0].status === "failed") {
-          const result = await db.query<{ result_count: number }>(
-            `SELECT result_count FROM scout_jobs WHERE id = $1`,
-            [jobId]
-          );
-          sendEvent(controller, {
-            type: check.rows[0].status === "completed" ? "completed" : "error",
-            resultCount: result.rows[0]?.result_count ?? 0,
-            message: check.rows[0].status === "failed" ? "Échec précédent." : undefined,
-          });
-          controller.close();
-          return;
-        }
-
-        // Mark as running
-        await db.query(`UPDATE scout_jobs SET status = 'running' WHERE id = $1`, [jobId]);
-
-        const jobResult = await db.query<{
-          lat: string;
-          lon: string;
-          radius: number;
-          categories: string;
-          scrape_emails: boolean;
-        }>(
-          `SELECT lat, lon, radius, categories, scrape_emails FROM scout_jobs WHERE id = $1`,
-          [jobId]
-        );
-
-        const job = jobResult.rows[0];
-        function safeJson(value: unknown) {
-          if (value === null || value === undefined) return value;
-          if (typeof value === "string") {
-            try { return JSON.parse(value); } catch { return value; }
-          }
-          return value;
-        }
-        const categories: string[] = safeJson(job.categories) as string[];
-        const batchSize = 3;
-        const batches: string[][] = [];
-        for (let i = 0; i < categories.length; i += batchSize) {
-          batches.push(categories.slice(i, i + batchSize));
-        }
-
-        // Update total steps
-        const totalSteps = batches.length;
-        await db.query(`UPDATE scout_jobs SET total_steps = $1 WHERE id = $2`, [totalSteps, jobId]);
-
-        let insertedCount = 0;
-        const seenOsmIds = new Set<number>();
-
-        for (let i = 0; i < batches.length; i++) {
-          const query = buildOverpassQuery(
-            batches[i],
-            job.radius,
-            Number(job.lat),
-            Number(job.lon)
-          );
-
-          const elements = await queryOverpass(query, request.signal);
-          const parsed = parseOverpassElements(elements);
-
-          // Insert results, checking cache first
-          for (const item of parsed) {
-            if (item.osmId && seenOsmIds.has(item.osmId)) continue;
-            if (item.osmId) seenOsmIds.add(item.osmId);
-
-            // Check cache for pre-scraped data
-            let cached = null;
-            if (item.osmId) {
-              cached = await getCachedCompany(item.osmId);
-            }
-
-            const email = cached?.email ?? (item.email || null);
-            const emailSource = cached?.emailSource ?? (item.email ? "osm" : "");
-            const allEmails = cached?.allEmails ?? [];
-
-            await db.query(
-              `INSERT INTO scout_results (job_id, name, type, email, website, phone, address, lat, lon, town, email_source, all_emails, osm_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13)
-               ON CONFLICT DO NOTHING`,
-              [
-                jobId,
-                item.name,
-                item.type,
-                email,
-                item.website || null,
-                item.phone || null,
-                item.address || null,
-                item.lat !== null ? String(item.lat) : null,
-                item.lon !== null ? String(item.lon) : null,
-                item.town || null,
-                emailSource,
-                JSON.stringify(allEmails),
-                item.osmId || null,
-              ]
-            );
-            insertedCount++;
-
-            // Cache the raw result (even without email) so we don't re-insert it
-            if (item.osmId) {
-              await cacheScoutResult({
-                osmId: item.osmId,
-                name: item.name,
-                type: item.type,
-                email,
-                website: item.website || null,
-                phone: item.phone || null,
-                address: item.address || null,
-                lat: item.lat !== null ? String(item.lat) : null,
-                lon: item.lon !== null ? String(item.lon) : null,
-                town: item.town || null,
-                emailSource,
-                allEmails,
-              });
-            }
-          }
-
-          await db.query(
-            `UPDATE scout_jobs SET completed_steps = $1, result_count = $2 WHERE id = $3`,
-            [i + 1, insertedCount, jobId]
-          );
-
-          sendEvent(controller, {
-            type: "progress",
-            step: i + 1,
-            total: totalSteps,
-            found: insertedCount,
-            message: `Batch ${i + 1}/${totalSteps} — ${parsed.length} résultats`,
-          });
-
-          if (request.signal.aborted) {
-            throw new Error("Aborted");
-          }
-
-          if (i < batches.length - 1) {
-            await sleep(3000);
-          }
-        }
-
-        // Optional email scraping with cache
-        if (job.scrape_emails) {
-          const toScrape = await db.query<{
-            id: number;
-            website: string;
-            osm_id: number | null;
+        const poll = async () => {
+          const result = await db.query<{
+            status: string;
+            total_steps: number;
+            completed_steps: number;
+            result_count: number;
+            error_message: string | null;
           }>(
-            `SELECT id, website, osm_id FROM scout_results WHERE job_id = $1 AND (email IS NULL OR email = '') AND website IS NOT NULL AND website != ''`,
+            `SELECT status, total_steps, completed_steps, result_count, error_message
+             FROM scout_jobs WHERE id = $1`,
             [jobId]
           );
 
-          const totalScrapeSteps = totalSteps + toScrape.rows.length;
-          await db.query(`UPDATE scout_jobs SET total_steps = $1 WHERE id = $2`, [totalScrapeSteps, jobId]);
+          if (result.rows.length === 0) {
+            sendEvent(controller, { type: "error", message: "Job introuvable." });
+            controller.close();
+            return false;
+          }
 
-          for (let i = 0; i < toScrape.rows.length; i++) {
-            const { id: resultId, website, osm_id: resultOsmId } = toScrape.rows[i];
+          const job = result.rows[0];
 
-            let emails: string[] = [];
-
-            // Check cache first
-            if (resultOsmId) {
-              const cached = await getCachedCompany(resultOsmId);
-              if (cached?.email) {
-                emails = cached.allEmails;
-              }
-            }
-
-            // If not cached, scrape
-            if (emails.length === 0 && website) {
-              emails = await scrapeEmails(website);
-
-              // Update cache with scraped data
-              if (resultOsmId && emails.length > 0) {
-                await cacheScoutResult(
-                  {
-                    osmId: resultOsmId,
-                    name: "",
-                    type: "?",
-                    email: emails[0],
-                    website,
-                    phone: null,
-                    address: null,
-                    lat: null,
-                    lon: null,
-                    town: null,
-                    emailSource: "scrape",
-                    allEmails: emails,
-                  },
-                  new Date()
-                );
-              }
-            }
-
-            if (emails.length > 0) {
-              await db.query(
-                `UPDATE scout_results SET email = $1, email_source = 'scrape', all_emails = $2::jsonb WHERE id = $3`,
-                [emails[0], JSON.stringify(emails), resultId]
-              );
-            }
-
+          if (job.status === "queued") {
             sendEvent(controller, {
               type: "progress",
-              step: totalSteps + i + 1,
-              total: totalScrapeSteps,
-              found: insertedCount,
-              message: `Scraping ${i + 1}/${toScrape.rows.length}${emails.length > 0 ? ` — ${emails.length} email(s) trouvé(s)` : ""}`,
+              step: 0,
+              total: job.total_steps || 1,
+              found: job.result_count ?? 0,
+              message: "En attente dans la file...",
             });
-
-            if (request.signal.aborted) {
-              throw new Error("Aborted");
-            }
-
-            // Rate limit: wait 2s between website scrapes to avoid IP ban
-            if (i < toScrape.rows.length - 1 && emails.length === 0) {
-              await sleep(2000);
-            } else if (i < toScrape.rows.length - 1) {
-              await sleep(400);
-            }
+            return true;
           }
+
+          if (job.status === "running") {
+            if (
+              job.completed_steps !== lastCompletedSteps ||
+              job.result_count !== lastResultCount
+            ) {
+              lastCompletedSteps = job.completed_steps;
+              lastResultCount = job.result_count;
+              sendEvent(controller, {
+                type: "progress",
+                step: job.completed_steps,
+                total: job.total_steps || 1,
+                found: job.result_count ?? 0,
+                message: `Recherche en cours...`,
+              });
+            }
+            return true;
+          }
+
+          if (job.status === "completed") {
+            sendEvent(controller, {
+              type: "completed",
+              resultCount: job.result_count ?? 0,
+            });
+            controller.close();
+            return false;
+          }
+
+          if (job.status === "failed") {
+            sendEvent(controller, {
+              type: "error",
+              message: job.error_message || "Échec de la recherche.",
+            });
+            controller.close();
+            return false;
+          }
+
+          return true;
+        };
+
+        // Initial poll
+        let shouldContinue = await poll();
+        if (!shouldContinue) return;
+
+        while (shouldContinue) {
+          await sleep(1500);
+          if (request.signal.aborted) {
+            controller.close();
+            return;
+          }
+          shouldContinue = await poll();
         }
-
-        await db.query(
-          `UPDATE scout_jobs SET status = 'completed', result_count = $1, completed_at = NOW() WHERE id = $2`,
-          [insertedCount, jobId]
-        );
-
-        sendEvent(controller, {
-          type: "completed",
-          resultCount: insertedCount,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Erreur inconnue";
-        await db.query(
-          `UPDATE scout_jobs SET status = 'failed', error_message = $1 WHERE id = $2`,
-          [message, jobId]
-        );
-        sendEvent(controller, { type: "error", message });
-        logServerEvent({
-          category: "scout",
-          action: "stream_failed",
-          level: "error",
-          meta: { jobId, error: message },
-        });
-      } finally {
+      } catch {
         controller.close();
       }
     },

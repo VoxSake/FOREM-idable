@@ -11,7 +11,7 @@ export type ScoutJobCreateInput = z.infer<typeof scoutJobCreateSchema>;
 
 export interface ScoutJob {
   id: number;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "queued" | "pending" | "running" | "completed" | "failed";
   query: string;
   lat: string;
   lon: string;
