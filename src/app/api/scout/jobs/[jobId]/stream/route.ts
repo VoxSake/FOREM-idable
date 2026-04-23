@@ -76,7 +76,14 @@ export async function GET(
         );
 
         const job = jobResult.rows[0];
-        const categories: string[] = JSON.parse(job.categories);
+        function safeJson(value: unknown) {
+          if (value === null || value === undefined) return value;
+          if (typeof value === "string") {
+            try { return JSON.parse(value); } catch { return value; }
+          }
+          return value;
+        }
+        const categories: string[] = safeJson(job.categories) as string[];
         const batchSize = 3;
         const batches: string[][] = [];
         for (let i = 0; i < categories.length; i += batchSize) {
