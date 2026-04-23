@@ -65,10 +65,6 @@ export default function ScoutPage() {
               message={page.progress.message}
             />
           )}
-
-          {(page.activeJob?.status === "completed" || page.results.length > 0) && (
-            <ScoutResultsTable results={page.results} onApply={handleApply} />
-          )}
         </div>
 
         <div className="flex min-w-0 flex-col gap-6">
@@ -80,6 +76,10 @@ export default function ScoutPage() {
           />
         </div>
       </div>
+
+      {(page.activeJob?.status === "completed" || page.results.length > 0) && (
+        <ScoutResultsTable results={page.results} onApply={handleApply} />
+      )}
     </div>
   );
 }

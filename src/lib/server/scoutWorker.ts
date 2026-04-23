@@ -21,6 +21,14 @@ function safeJson(value: unknown): unknown {
   return value;
 }
 
+async function jobStillExists(jobId: number): Promise<boolean> {
+  const result = await db.query<{ id: number }>(
+    `SELECT id FROM scout_jobs WHERE id = $1`,
+    [jobId]
+  );
+  return result.rows.length > 0;
+}
+
 async function processNextJob(): Promise<void> {
   const jobResult = await db.query<{
     id: number;
@@ -72,9 +80,14 @@ async function processNextJob(): Promise<void> {
       const elements = await queryOverpass(overpassQuery);
       const parsed = parseOverpassElements(elements);
 
-      for (const item of parsed) {
+        for (const item of parsed) {
         if (item.osmId && seenOsmIds.has(item.osmId)) continue;
         if (item.osmId) seenOsmIds.add(item.osmId);
+
+        // If user deleted the job mid-processing, bail out gracefully
+        if (!(await jobStillExists(jobId))) {
+          return;
+        }
 
         let cached = null;
         if (item.osmId) {
@@ -125,15 +138,20 @@ async function processNextJob(): Promise<void> {
         }
       }
 
-      await db.query(
-        `UPDATE scout_jobs SET completed_steps = $1, result_count = $2 WHERE id = $3`,
-        [i + 1, insertedCount, jobId]
-      );
+      if (await jobStillExists(jobId)) {
+        await db.query(
+          `UPDATE scout_jobs SET completed_steps = $1, result_count = $2 WHERE id = $3`,
+          [i + 1, insertedCount, jobId]
+        );
+      }
 
       if (i < batches.length - 1) {
         await sleep(3000);
       }
     }
+
+    // Bail if job was deleted before scraping
+    if (!(await jobStillExists(jobId))) return;
 
     // Scraping
     if (job.scrape_emails) {
@@ -191,10 +209,12 @@ async function processNextJob(): Promise<void> {
           );
         }
 
-        await db.query(
-          `UPDATE scout_jobs SET completed_steps = $1 WHERE id = $2`,
-          [totalSteps + i + 1, jobId]
-        );
+        if (await jobStillExists(jobId)) {
+          await db.query(
+            `UPDATE scout_jobs SET completed_steps = $1 WHERE id = $2`,
+            [totalSteps + i + 1, jobId]
+          );
+        }
 
         if (i < toScrape.rows.length - 1 && emails.length === 0) {
           await sleep(2000);
@@ -204,16 +224,20 @@ async function processNextJob(): Promise<void> {
       }
     }
 
-    await db.query(
-      `UPDATE scout_jobs SET status = 'completed', result_count = $1, completed_at = NOW() WHERE id = $2`,
-      [insertedCount, jobId]
-    );
+    if (await jobStillExists(jobId)) {
+      await db.query(
+        `UPDATE scout_jobs SET status = 'completed', result_count = $1, completed_at = NOW() WHERE id = $2`,
+        [insertedCount, jobId]
+      );
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erreur inconnue";
-    await db.query(
-      `UPDATE scout_jobs SET status = 'failed', error_message = $1 WHERE id = $2`,
-      [message, jobId]
-    );
+    if (await jobStillExists(jobId)) {
+      await db.query(
+        `UPDATE scout_jobs SET status = 'failed', error_message = $1 WHERE id = $2`,
+        [message, jobId]
+      );
+    }
     logServerEvent({
       category: "scout",
       action: "worker_job_failed",
