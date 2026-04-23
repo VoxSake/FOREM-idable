@@ -116,7 +116,9 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                 {visible.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="truncate" title={r.name}>
-                      <span className="font-medium">{r.name}</span>
+                      <span className="font-medium">
+                        {r.name.length > 16 ? `${r.name.slice(0, 16)}…` : r.name}
+                      </span>
                     </TableCell>
                     <TableCell className="truncate whitespace-nowrap" title={r.type}>{r.type}</TableCell>
                     <TableCell className="truncate" title={r.email ?? undefined}>
