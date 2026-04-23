@@ -6,9 +6,13 @@ import {
   buildOverpassQuery,
   parseOverpassElements,
   queryOverpass,
-  SCOUT_CATEGORIES,
 } from "@/lib/server/scoutOverpass";
 import { scrapeEmails } from "@/lib/server/scoutScraper";
+import {
+  cacheScoutResult,
+  getCachedCompany,
+} from "@/lib/server/companyCache";
+import { checkRateLimit } from "@/lib/server/rateLimit";
 
 const encoder = new TextEncoder();
 
@@ -41,6 +45,17 @@ export async function GET(
   }
   if (Number(check.rows[0].user_id) !== user.id) {
     return new Response("Forbidden", { status: 403 });
+  }
+
+  // Rate limit: max 1 stream per user
+  const streamRateLimit = await checkRateLimit({
+    scope: "scout-stream",
+    limit: 1,
+    windowMs: 5 * 60 * 1000, // 5 minutes - long enough for a full search
+    identifier: String(user.id),
+  });
+  if (!streamRateLimit.allowed) {
+    return new Response("Too many concurrent searches. Wait for the current one to finish.", { status: 429 });
   }
 
   const stream = new ReadableStream({
@@ -108,31 +123,60 @@ export async function GET(
           const elements = await queryOverpass(query, request.signal);
           const parsed = parseOverpassElements(elements);
 
-          // Insert results, skipping duplicates
+          // Insert results, checking cache first
           for (const item of parsed) {
             if (item.osmId && seenOsmIds.has(item.osmId)) continue;
             if (item.osmId) seenOsmIds.add(item.osmId);
 
+            // Check cache for pre-scraped data
+            let cached = null;
+            if (item.osmId) {
+              cached = await getCachedCompany(item.osmId);
+            }
+
+            const email = cached?.email ?? (item.email || null);
+            const emailSource = cached?.emailSource ?? (item.email ? "osm" : "");
+            const allEmails = cached?.allEmails ?? [];
+
             await db.query(
-              `INSERT INTO scout_results (job_id, name, type, email, website, phone, address, lat, lon, town, email_source, osm_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+              `INSERT INTO scout_results (job_id, name, type, email, website, phone, address, lat, lon, town, email_source, all_emails, osm_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13)
                ON CONFLICT DO NOTHING`,
               [
                 jobId,
                 item.name,
                 item.type,
-                item.email || null,
+                email,
                 item.website || null,
                 item.phone || null,
                 item.address || null,
                 item.lat !== null ? String(item.lat) : null,
                 item.lon !== null ? String(item.lon) : null,
                 item.town || null,
-                item.email ? "osm" : "",
+                emailSource,
+                JSON.stringify(allEmails),
                 item.osmId || null,
               ]
             );
             insertedCount++;
+
+            // Cache the raw result (even without email) so we don't re-insert it
+            if (item.osmId) {
+              await cacheScoutResult({
+                osmId: item.osmId,
+                name: item.name,
+                type: item.type,
+                email,
+                website: item.website || null,
+                phone: item.phone || null,
+                address: item.address || null,
+                lat: item.lat !== null ? String(item.lat) : null,
+                lon: item.lon !== null ? String(item.lon) : null,
+                town: item.town || null,
+                emailSource,
+                allEmails,
+              });
+            }
           }
 
           await db.query(
@@ -157,13 +201,14 @@ export async function GET(
           }
         }
 
-        // Optional email scraping
+        // Optional email scraping with cache
         if (job.scrape_emails) {
           const toScrape = await db.query<{
             id: number;
             website: string;
+            osm_id: number | null;
           }>(
-            `SELECT id, website FROM scout_results WHERE job_id = $1 AND (email IS NULL OR email = '') AND website IS NOT NULL AND website != ''`,
+            `SELECT id, website, osm_id FROM scout_results WHERE job_id = $1 AND (email IS NULL OR email = '') AND website IS NOT NULL AND website != ''`,
             [jobId]
           );
 
@@ -171,12 +216,47 @@ export async function GET(
           await db.query(`UPDATE scout_jobs SET total_steps = $1 WHERE id = $2`, [totalScrapeSteps, jobId]);
 
           for (let i = 0; i < toScrape.rows.length; i++) {
-            const { id: resultId, website } = toScrape.rows[i];
-            const emails = await scrapeEmails(website);
+            const { id: resultId, website, osm_id: resultOsmId } = toScrape.rows[i];
+
+            let emails: string[] = [];
+
+            // Check cache first
+            if (resultOsmId) {
+              const cached = await getCachedCompany(resultOsmId);
+              if (cached?.email) {
+                emails = cached.allEmails;
+              }
+            }
+
+            // If not cached, scrape
+            if (emails.length === 0 && website) {
+              emails = await scrapeEmails(website);
+
+              // Update cache with scraped data
+              if (resultOsmId && emails.length > 0) {
+                await cacheScoutResult(
+                  {
+                    osmId: resultOsmId,
+                    name: "",
+                    type: "?",
+                    email: emails[0],
+                    website,
+                    phone: null,
+                    address: null,
+                    lat: null,
+                    lon: null,
+                    town: null,
+                    emailSource: "scrape",
+                    allEmails: emails,
+                  },
+                  new Date()
+                );
+              }
+            }
 
             if (emails.length > 0) {
               await db.query(
-                `UPDATE scout_results SET email = $1, email_source = 'scrape', all_emails = $2 WHERE id = $3`,
+                `UPDATE scout_results SET email = $1, email_source = 'scrape', all_emails = $2::jsonb WHERE id = $3`,
                 [emails[0], JSON.stringify(emails), resultId]
               );
             }
@@ -186,14 +266,17 @@ export async function GET(
               step: totalSteps + i + 1,
               total: totalScrapeSteps,
               found: insertedCount,
-              message: `Scraping ${i + 1}/${toScrape.rows.length}`,
+              message: `Scraping ${i + 1}/${toScrape.rows.length}${emails.length > 0 ? ` — ${emails.length} email(s) trouvé(s)` : ""}`,
             });
 
             if (request.signal.aborted) {
               throw new Error("Aborted");
             }
 
-            if (i < toScrape.rows.length - 1) {
+            // Rate limit: wait 2s between website scrapes to avoid IP ban
+            if (i < toScrape.rows.length - 1 && emails.length === 0) {
+              await sleep(2000);
+            } else if (i < toScrape.rows.length - 1) {
               await sleep(400);
             }
           }

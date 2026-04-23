@@ -4,6 +4,7 @@ import { db } from "@/lib/server/db";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { geocodeTown } from "@/lib/server/scoutNominatim";
 import { logServerEvent } from "@/lib/server/observability";
+import { checkRateLimit } from "@/lib/server/rateLimit";
 import { z } from "zod";
 
 const createJobSchema = z.object({
@@ -30,6 +31,59 @@ export async function POST(request: NextRequest) {
     }
 
     const { query, radius, categories, scrapeEmails } = parsed.data;
+
+    // Rate limit: 5 jobs per hour per user
+    const hourlyLimit = await checkRateLimit({
+      scope: "scout-jobs-hourly",
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+      identifier: String(user.id),
+    });
+    if (!hourlyLimit.allowed) {
+      return NextResponse.json(
+        { error: "Limite atteinte : max 5 recherches par heure." },
+        { status: 429 }
+      );
+    }
+
+    // Rate limit scraping: 1 scrape job per 10 minutes per user
+    if (scrapeEmails) {
+      const scrapeLimit = await checkRateLimit({
+        scope: "scout-scrape",
+        limit: 1,
+        windowMs: 10 * 60 * 1000,
+        identifier: String(user.id),
+      });
+      if (!scrapeLimit.allowed) {
+        return NextResponse.json(
+          { error: "Limite scraping : max 1 recherche avec scraping toutes les 10 min." },
+          { status: 429 }
+        );
+      }
+    }
+
+    // Max 2 running jobs per user
+    const runningUser = await db.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE user_id = $1 AND status IN ('pending', 'running')`,
+      [user.id]
+    );
+    if (Number(runningUser.rows[0].count) >= 2) {
+      return NextResponse.json(
+        { error: "Vous avez déjà 2 recherches en cours. Attendez qu'elles terminent." },
+        { status: 429 }
+      );
+    }
+
+    // Global max 3 running jobs
+    const runningGlobal = await db.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE status IN ('pending', 'running')`
+    );
+    if (Number(runningGlobal.rows[0].count) >= 3) {
+      return NextResponse.json(
+        { error: "Le serveur est occupé (3 recherches en cours). Réessayez dans quelques minutes." },
+        { status: 429 }
+      );
+    }
 
     const geo = await geocodeTown(query);
     if (!geo) {

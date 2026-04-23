@@ -732,3 +732,28 @@ export const scoutResults = pgTable(
     osmIdIdx: index("scout_results_osm_id_idx").on(table.osmId),
   })
 );
+
+export const companyCache = pgTable(
+  "company_cache",
+  {
+    osmId: bigint("osm_id", { mode: "number" }).primaryKey(),
+    name: text("name").notNull(),
+    type: text("type").notNull().default("?"),
+    email: text("email"),
+    website: text("website"),
+    phone: text("phone"),
+    address: text("address"),
+    lat: text("lat"),
+    lon: text("lon"),
+    town: text("town"),
+    emailSource: text("email_source").notNull().default(""),
+    allEmails: jsonb("all_emails").notNull().default(sql`'[]'::jsonb`),
+    scrapedAt: timestamp("scraped_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    websiteIdx: index("company_cache_website_idx").on(table.website),
+    scrapedAtIdx: index("company_cache_scraped_at_idx").on(table.scrapedAt),
+  })
+);
