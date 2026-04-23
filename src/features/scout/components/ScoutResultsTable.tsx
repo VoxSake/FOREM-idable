@@ -103,13 +103,13 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
             <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[22%]">Nom</TableHead>
-                  <TableHead className="w-[12%]">Type</TableHead>
-                  <TableHead className="w-[20%]">Email</TableHead>
-                  <TableHead className="w-[12%]">Téléphone</TableHead>
-                  <TableHead className="w-[10%]">Site</TableHead>
-                  <TableHead className="w-[16%]">Adresse</TableHead>
-                  <TableHead className="w-[8%] text-right">Actions</TableHead>
+                  <TableHead className="w-[24%]">Nom</TableHead>
+                  <TableHead className="w-[10%]">Type</TableHead>
+                  <TableHead className="w-[18%]">Email</TableHead>
+                  <TableHead className="w-[10%]">Téléphone</TableHead>
+                  <TableHead className="w-[8%]">Site</TableHead>
+                  <TableHead className="w-[18%]">Adresse</TableHead>
+                  <TableHead className="w-[12%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -117,7 +117,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                   <TableRow key={r.id}>
                     <TableCell className="truncate" title={r.name}>
                       <span className="font-medium">
-                        {r.name.length > 16 ? `${r.name.slice(0, 16)}…` : r.name}
+                        {r.name.length > 23 ? `${r.name.slice(0, 23)}…` : r.name}
                       </span>
                     </TableCell>
                     <TableCell className="truncate whitespace-nowrap" title={r.type}>{r.type}</TableCell>
@@ -143,7 +143,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                     </TableCell>
                     <TableCell className="truncate" title={r.address ?? undefined}>
                       {r.address ? (
-                        r.address.length > 16 ? `${r.address.slice(0, 16)}…` : r.address
+                        r.address.length > 23 ? `${r.address.slice(0, 23)}…` : r.address
                       ) : "—"}
                     </TableCell>
                     <TableCell className="text-right">
