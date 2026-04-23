@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { History, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScoutJob } from "../scoutSchemas";
@@ -10,6 +10,7 @@ interface ScoutJobHistoryProps {
   activeJobId?: number;
   onSelect: (job: ScoutJob) => void;
   onDelete: (jobId: number) => void;
+  onOpenHistory: () => void;
 }
 
 function formatDate(date: string | null) {
@@ -33,16 +34,25 @@ function statusLabel(status: ScoutJob["status"]) {
   }
 }
 
-export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete }: ScoutJobHistoryProps) {
+export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete, onOpenHistory }: ScoutJobHistoryProps) {
   if (jobs.length === 0) return null;
+
+  const recent = jobs.slice(0, 5);
+  const remaining = Math.max(0, jobs.length - 5);
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base">Historique</CardTitle>
+        {remaining > 0 && (
+          <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onOpenHistory}>
+            <History className="h-3.5 w-3.5" />
+            Voir tout ({remaining})
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-2">
-        {jobs.map((job) => {
+        {recent.map((job) => {
           const status = statusLabel(job.status);
           const isActive = job.id === activeJobId;
           return (
@@ -79,6 +89,12 @@ export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete }: Scout
             </button>
           );
         })}
+        {remaining === 0 && jobs.length > 5 && (
+          <Button type="button" variant="ghost" size="sm" className="w-full text-xs" onClick={onOpenHistory}>
+            <History className="mr-1.5 h-3.5 w-3.5" />
+            Voir tout l&apos;historique
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

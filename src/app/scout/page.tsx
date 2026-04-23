@@ -8,6 +8,7 @@ import { ScoutForm } from "@/features/scout/components/ScoutForm";
 import { ScoutProgressPanel } from "@/features/scout/components/ScoutProgressPanel";
 import { ScoutResultsTable } from "@/features/scout/components/ScoutResultsTable";
 import { ScoutJobHistory } from "@/features/scout/components/ScoutJobHistory";
+import { ScoutJobHistoryDrawer } from "@/features/scout/components/ScoutJobHistoryDrawer";
 import { useScoutPageState } from "@/features/scout/hooks/useScoutPageState";
 import { ScoutResult } from "@/features/scout/scoutSchemas";
 
@@ -73,6 +74,7 @@ export default function ScoutPage() {
             activeJobId={page.activeJob?.id}
             onSelect={(job) => page.loadJobDetail(job.id)}
             onDelete={(jobId) => page.removeJob(jobId)}
+            onOpenHistory={page.openHistory}
           />
         </div>
       </div>
@@ -80,6 +82,15 @@ export default function ScoutPage() {
       {(page.activeJob?.status === "completed" || page.results.length > 0) && (
         <ScoutResultsTable results={page.results} onApply={handleApply} />
       )}
+
+      <ScoutJobHistoryDrawer
+        open={page.isHistoryOpen}
+        onOpenChange={page.closeHistory}
+        jobs={page.jobs}
+        activeJobId={page.activeJob?.id}
+        onSelect={(job) => page.loadJobDetail(job.id)}
+        onDelete={(jobId) => page.removeJob(jobId)}
+      />
     </div>
   );
 }

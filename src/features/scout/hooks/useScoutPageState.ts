@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   createScoutJob,
@@ -18,6 +18,7 @@ export function useScoutPageState() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState<{ step: number; total: number; found: number; message?: string } | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const loadJobs = useCallback(async () => {
     try {
@@ -117,8 +118,11 @@ export function useScoutPageState() {
     isLoading,
     isSubmitting,
     progress,
+    isHistoryOpen,
     startJob,
     loadJobDetail,
     removeJob,
+    openHistory: () => setIsHistoryOpen(true),
+    closeHistory: () => setIsHistoryOpen(false),
   };
 }
