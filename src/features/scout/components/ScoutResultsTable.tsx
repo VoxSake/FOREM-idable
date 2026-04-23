@@ -89,7 +89,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Filtrer..."
-            className="w-48"
+            className="w-full sm:w-48"
           />
           <Button type="button" variant="outline" size="sm" onClick={exportCsv}>
             <Download data-icon="inline-start" />
@@ -115,29 +115,29 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
               <TableBody>
                 {visible.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.name}</TableCell>
-                    <TableCell>{r.type}</TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-0 font-medium">{r.name}</TableCell>
+                    <TableCell className="min-w-0 whitespace-nowrap">{r.type}</TableCell>
+                    <TableCell className="min-w-0">
                       {r.email ? (
-                        <a href={`mailto:${r.email}`} className="text-primary hover:underline">
+                        <a href={`mailto:${r.email}`} className="truncate text-primary hover:underline">
                           {r.email}
                         </a>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>{r.phone || "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-0 whitespace-nowrap">{r.phone || "—"}</TableCell>
+                    <TableCell className="min-w-0">
                       {r.website ? (
-                        <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                          <ExternalLink className="h-3 w-3" />
-                          Site
+                        <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 truncate text-primary hover:underline">
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          <span className="truncate">Site</span>
                         </a>
                       ) : (
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate">{r.address || "—"}</TableCell>
+                    <TableCell className="min-w-0 max-w-[200px] truncate">{r.address || "—"}</TableCell>
                     <TableCell className="text-right">
                       {onApply && (
                         <Button type="button" size="sm" variant="ghost" onClick={() => onApply(r)}>

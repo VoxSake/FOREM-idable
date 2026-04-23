@@ -48,12 +48,12 @@ export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete }: Scout
             <button
               key={job.id}
               onClick={() => onSelect(job)}
-              className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+              className={`flex w-full min-w-0 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
                 isActive ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
               }`}
             >
-              <div className="flex flex-col gap-0.5">
-                <span className="font-medium">{job.query}</span>
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate font-medium">{job.query}</span>
                 <span className="text-xs text-muted-foreground">
                   {job.radius >= 1000 ? `${(job.radius / 1000).toFixed(1)} km` : `${job.radius} m`} · {formatDate(job.createdAt)}
                 </span>

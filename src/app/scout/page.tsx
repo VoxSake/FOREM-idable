@@ -54,7 +54,7 @@ export default function ScoutPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <ScoutForm onSubmit={page.startJob} isLoading={page.isSubmitting} />
 
           {page.progress && (
@@ -71,7 +71,7 @@ export default function ScoutPage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <ScoutJobHistory
             jobs={page.jobs}
             activeJobId={page.activeJob?.id}
