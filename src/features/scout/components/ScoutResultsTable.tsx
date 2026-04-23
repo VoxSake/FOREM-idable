@@ -100,36 +100,38 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
       <CardContent>
         <div className="rounded-xl border">
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>Site web</TableHead>
-                  <TableHead>Adresse</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[22%]">Nom</TableHead>
+                  <TableHead className="w-[12%]">Type</TableHead>
+                  <TableHead className="w-[20%]">Email</TableHead>
+                  <TableHead className="w-[12%]">Téléphone</TableHead>
+                  <TableHead className="w-[10%]">Site</TableHead>
+                  <TableHead className="w-[16%]">Adresse</TableHead>
+                  <TableHead className="w-[8%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {visible.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="min-w-0 font-medium">{r.name}</TableCell>
-                    <TableCell className="min-w-0 whitespace-nowrap">{r.type}</TableCell>
-                    <TableCell className="min-w-0">
+                    <TableCell className="truncate" title={r.name}>
+                      <span className="font-medium">{r.name}</span>
+                    </TableCell>
+                    <TableCell className="truncate whitespace-nowrap" title={r.type}>{r.type}</TableCell>
+                    <TableCell className="truncate" title={r.email ?? undefined}>
                       {r.email ? (
-                        <a href={`mailto:${r.email}`} className="truncate text-primary hover:underline">
+                        <a href={`mailto:${r.email}`} className="text-primary hover:underline">
                           {r.email}
                         </a>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="min-w-0 whitespace-nowrap">{r.phone || "—"}</TableCell>
-                    <TableCell className="min-w-0">
+                    <TableCell className="truncate whitespace-nowrap" title={r.phone ?? undefined}>{r.phone || "—"}</TableCell>
+                    <TableCell className="truncate" title={r.website ?? undefined}>
                       {r.website ? (
-                        <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 truncate text-primary hover:underline">
+                        <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
                           <ExternalLink className="h-3 w-3 shrink-0" />
                           <span className="truncate">Site</span>
                         </a>
@@ -137,7 +139,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="min-w-0 max-w-[200px] truncate">{r.address || "—"}</TableCell>
+                    <TableCell className="truncate" title={r.address ?? undefined}>{r.address || "—"}</TableCell>
                     <TableCell className="text-right">
                       {onApply && (
                         <Button type="button" size="sm" variant="ghost" onClick={() => onApply(r)}>
