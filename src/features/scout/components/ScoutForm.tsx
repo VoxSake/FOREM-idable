@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,13 +18,20 @@ interface ScoutFormProps {
   isLoading: boolean;
 }
 
+interface CitySuggestion {
+  name: string;
+  full: string;
+}
+
 export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
   const [query, setQuery] = useState("");
-  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [citySuggestions, setCitySuggestions] = useState<CitySuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [radius, setRadius] = useState([5000]);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [scrapeEmails, setScrapeEmails] = useState(false);
   const [selectAll, setSelectAll] = useState(true);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const toggleCategory = (key: string) => {
     setSelectedCategories((prev) => {
@@ -47,26 +54,44 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
   useEffect(() => {
     if (!query || query.length < 3) {
       setCitySuggestions([]);
+      setShowSuggestions(false);
       return;
     }
     const timer = setTimeout(() => {
-      fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=be&limit=5`,
-        { headers: { "Accept-Language": "fr" } }
-      )
+      fetch(`/api/scout/autocomplete?q=${encodeURIComponent(query)}`)
         .then((r) => r.json())
-        .then((data) => {
-          if (Array.isArray(data)) {
-            setCitySuggestions(data.map((d: { display_name: string }) => d.display_name));
-          }
+        .then((data: { suggestions?: CitySuggestion[] }) => {
+          const list = data.suggestions ?? [];
+          setCitySuggestions(list);
+          setShowSuggestions(list.length > 0);
         })
-        .catch(() => {});
-    }, 400);
+        .catch(() => {
+          setCitySuggestions([]);
+          setShowSuggestions(false);
+        });
+    }, 300);
     return () => clearTimeout(timer);
   }, [query]);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectCity = (name: string) => {
+    setQuery(name);
+    setShowSuggestions(false);
+    setCitySuggestions([]);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSuggestions(false);
     const categories = selectAll ? undefined : Array.from(selectedCategories);
     onSubmit({ query, radius: radius[0], categories, scrapeEmails });
   };
@@ -85,21 +110,39 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 relative" ref={suggestionsRef}>
               <Label htmlFor="scout-query">Ville</Label>
               <Input
                 id="scout-query"
-                list="scout-city-suggestions"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (e.target.value.length >= 3) setShowSuggestions(true);
+                }}
+                onFocus={() => {
+                  if (query.length >= 3 && citySuggestions.length > 0) setShowSuggestions(true);
+                }}
                 placeholder="Ex: Liège, Bruxelles, Namur..."
+                autoComplete="off"
                 required
               />
-              <datalist id="scout-city-suggestions">
-                {citySuggestions.map((s) => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
+              {showSuggestions && citySuggestions.length > 0 && (
+                <div className="absolute z-50 top-full mt-1 w-full rounded-md border bg-popover shadow-lg">
+                  <ul className="max-h-56 overflow-auto py-1">
+                    {citySuggestions.map((s) => (
+                      <li
+                        key={s.name + s.full}
+                        className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => handleSelectCity(s.name)}
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        <span className="font-medium">{s.name}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">{s.full}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
