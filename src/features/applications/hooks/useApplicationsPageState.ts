@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -84,6 +84,27 @@ export function useApplicationsPageState() {
   const [interviewForm, setInterviewForm] = useState<InterviewFormState>(createEmptyInterviewForm);
   const now = useMemo(() => new Date(), []);
   const coachNoteViews = useCoachNoteViews(user?.id);
+
+  // Pre-fill manual application form from query params (e.g. from Scout)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const company = params.get("company");
+    const url = params.get("url");
+    const location = params.get("location");
+
+    if (company || url || location) {
+      setManualForm((prev) => ({
+        ...prev,
+        company: company ?? prev.company,
+        url: url ?? prev.url,
+        location: location ?? prev.location,
+      }));
+      dialogs.openCreate();
+      // Clean query params so refresh doesn't reopen the dialog
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   const hasUnreadCoachUpdate = useCallback((application: JobApplication) => {
     const latestSharedNoteAt = getLatestSharedCoachNoteAt(application);

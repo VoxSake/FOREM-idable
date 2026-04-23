@@ -139,7 +139,11 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="truncate" title={r.address ?? undefined}>{r.address || "—"}</TableCell>
+                    <TableCell className="truncate" title={r.address ?? undefined}>
+                      {r.address ? (
+                        r.address.length > 16 ? `${r.address.slice(0, 16)}…` : r.address
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="text-right">
                       {onApply && (
                         <Button type="button" size="sm" variant="ghost" onClick={() => onApply(r)}>
