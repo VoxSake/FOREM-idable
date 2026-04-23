@@ -34,7 +34,7 @@ export function ScoutProgressPanel({ step, total, found, message }: ScoutProgres
           </span>
           <span>{found} entreprises trouvées</span>
         </div>
-        {message && <p className="text-xs text-muted-foreground">{message}</p>}
+        {message && <p className="break-words text-xs text-muted-foreground">{message}</p>}
       </CardContent>
     </Card>
   );

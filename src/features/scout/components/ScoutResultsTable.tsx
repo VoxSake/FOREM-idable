@@ -148,7 +148,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
   }
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle>Résultats ({sorted.length})</CardTitle>
         <div className="flex flex-wrap gap-2">
@@ -276,12 +276,12 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
         </div>
 
         {/* Mobile cards */}
-        <div className="flex flex-col gap-3 lg:hidden">
+        <div className="flex flex-col gap-3 overflow-hidden lg:hidden">
           {visible.map((r) => (
-            <div key={r.id} className="overflow-hidden rounded-lg border bg-card p-3 shadow-sm">
+            <div key={r.id} className="min-w-0 overflow-hidden rounded-lg border bg-card p-3 shadow-sm">
               {/* Row 1: Name + type badge + action */}
               <div className="flex min-w-0 items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 overflow-hidden">
                   <h3 className="truncate text-sm font-semibold leading-tight" title={r.name}>
                     {r.name}
                   </h3>
@@ -310,19 +310,19 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                 {r.email && (
                   <a
                     href={`mailto:${r.email}`}
-                    className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                    className="flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
                   >
                     <Mail className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{r.email}</span>
+                    <span className="min-w-0 truncate">{r.email}</span>
                   </a>
                 )}
                 {r.phone && (
                   <a
                     href={`tel:${r.phone}`}
-                    className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                    className="flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
                   >
                     <Phone className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{r.phone}</span>
+                    <span className="min-w-0 truncate">{r.phone}</span>
                   </a>
                 )}
                 {r.website && (
@@ -330,19 +330,19 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                     href={r.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                    className="flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
                   >
                     <ExternalLink className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{r.website.replace(/^https?:\/\//, "")}</span>
+                    <span className="min-w-0 truncate">{r.website.replace(/^https?:\/\//, "")}</span>
                   </a>
                 )}
               </div>
 
               {/* Row 3: Address */}
               {(r.address || r.town) && (
-                <div className="mt-2 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                <div className="mt-2 flex min-w-0 items-center gap-1 overflow-hidden text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{[r.address, r.town].filter(Boolean).join(", ")}</span>
+                  <span className="min-w-0 truncate">{[r.address, r.town].filter(Boolean).join(", ")}</span>
                 </div>
               )}
             </div>

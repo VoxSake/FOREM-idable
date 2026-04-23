@@ -43,7 +43,7 @@ export default function ScoutPage() {
   };
 
   return (
-    <div className="mx-auto flex min-w-0 max-w-6xl flex-col gap-6 px-2 sm:px-0">
+    <div className="mx-auto flex min-w-0 max-w-6xl flex-col gap-6 overflow-x-hidden px-2 sm:px-0">
       <div className="flex flex-col gap-2">
         <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight">
           <MapPin className="text-primary" />
