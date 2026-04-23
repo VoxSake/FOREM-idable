@@ -134,10 +134,11 @@ export async function ensureDatabase() {
   }
 
   await globalThis.__foremIdableMigrationPromise;
+}
 
-  // Start background scout worker after migrations are ready
-  if (process.env.NODE_ENV !== "test") {
-    const { startScoutWorker } = await import("@/lib/server/scoutWorker");
+// Start background scout worker once at server boot
+if (typeof process !== "undefined" && process.env.NODE_ENV !== "test") {
+  import("@/lib/server/scoutWorker").then(({ startScoutWorker }) => {
     startScoutWorker();
-  }
+  }).catch(() => {});
 }

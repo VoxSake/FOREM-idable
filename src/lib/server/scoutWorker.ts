@@ -223,9 +223,27 @@ async function processNextJob(): Promise<void> {
   }
 }
 
-export function startScoutWorker(): void {
+export async function startScoutWorker(): Promise<void> {
   if (workerStarted) return;
   workerStarted = true;
+
+  // Recover jobs that were left 'running' after a crash/restart
+  try {
+    const recovered = await db.query<{ count: string }>(
+      `UPDATE scout_jobs SET status = 'queued' WHERE status = 'running' RETURNING COUNT(*)::text AS count`
+    );
+    const count = Number(recovered.rows[0]?.count ?? 0);
+    if (count > 0) {
+      logServerEvent({
+        category: "scout",
+        action: "worker_recovered_jobs",
+        level: "info",
+        meta: { recoveredCount: count },
+      });
+    }
+  } catch {
+    // ignore recovery errors
+  }
 
   // Run immediately, then every 10 seconds
   processNextJob().catch(() => {});
