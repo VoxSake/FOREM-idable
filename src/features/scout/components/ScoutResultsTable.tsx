@@ -238,21 +238,25 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
     <Card className="w-full">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle>Résultats ({sorted.length})</CardTitle>
-        <div className="flex w-full gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:w-auto sm:flex-wrap sm:justify-end">
+          {/* Filter input */}
           <Input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Filtrer..."
-            className="min-w-0 sm:w-48"
+            className="w-full sm:w-48"
           />
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadCsv("excel")}>
+          {/* Export buttons */}
+          <div className="flex gap-2 sm:w-auto">
+            <Button type="button" variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadCsv("excel")}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
-              Excel
+              <span className="hidden sm:inline">Excel</span>
+              <span className="sm:hidden">XLS</span>
             </Button>
-            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadCsv("csv")}>
+            <Button type="button" variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadCsv("csv")}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
-              CSV
+              <span className="hidden sm:inline">CSV</span>
+              <span className="sm:hidden">CSV</span>
             </Button>
           </div>
         </div>
