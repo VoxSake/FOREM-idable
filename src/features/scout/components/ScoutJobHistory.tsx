@@ -1,6 +1,6 @@
 "use client";
 
-import { History, Trash2 } from "lucide-react";
+import { History, Trash2, Calendar, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,22 @@ function formatDate(date: string | null) {
   });
 }
 
+function formatRelativeTime(date: string | null) {
+  if (!date) return "";
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now.getTime() - then.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "à l'instant";
+  if (diffMins < 60) return `il y a ${diffMins} min`;
+  if (diffHours < 24) return `il y a ${diffHours} h`;
+  if (diffDays < 7) return `il y a ${diffDays} j`;
+  return formatDate(date);
+}
+
 function statusLabel(status: ScoutJob["status"]) {
   switch (status) {
     case "queued": return { text: "En file", variant: "secondary" as const };
@@ -46,9 +62,16 @@ export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete, onOpenH
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base">Historique</CardTitle>
         {remaining > 0 && (
-          <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onOpenHistory}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={onOpenHistory}
+          >
             <History className="h-3.5 w-3.5" />
-            Voir tout ({remaining})
+            <span className="hidden sm:inline">Voir tout ({remaining})</span>
+            <span className="sm:hidden">Voir tout</span>
           </Button>
         )}
       </CardHeader>
@@ -60,33 +83,42 @@ export function ScoutJobHistory({ jobs, activeJobId, onSelect, onDelete, onOpenH
             <button
               key={job.id}
               onClick={() => onSelect(job)}
-              className={`flex w-full min-w-0 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+              className={`group w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
                 isActive ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
               }`}
             >
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="truncate font-medium">{job.query}</span>
-                <span className="text-xs text-muted-foreground">
-                  {job.radius >= 1000 ? `${(job.radius / 1000).toFixed(1)} km` : `${job.radius} m`} · {formatDate(job.createdAt)}
-                </span>
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-col gap-0.5 flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <span className="truncate font-medium">{job.query}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>{job.radius >= 1000 ? `${(job.radius / 1000).toFixed(1)} km` : `${job.radius} m`}</span>
+                    <span>•</span>
+                    <span>{formatRelativeTime(job.createdAt)}</span>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
                   <Badge variant={status.variant} className="rounded px-1.5 py-0.5 text-[10px]">
                     {status.text}
                   </Badge>
-                  {job.status === "completed" && (
-                    <span className="text-xs text-muted-foreground">{job.resultCount} résultats</span>
-                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); onDelete(job.id); }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={(e) => { e.stopPropagation(); onDelete(job.id); }}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              {job.status === "completed" && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {job.resultCount} résultat{job.resultCount !== 1 ? "s" : ""}
+                </div>
+              )}
             </button>
           );
         })}

@@ -11,6 +11,8 @@ import {
   MapPin,
   Phone,
   Send,
+  Eye,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +20,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { LocalPagination } from "@/components/ui/local-pagination";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -48,6 +59,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection } | null>(null);
+  const [selectedResult, setSelectedResult] = useState<ScoutResult | null>(null);
   const deferredSearch = useDeferredValue(search);
 
   const filtered = useMemo(() => {
@@ -139,17 +151,21 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
 
   if (results.length === 0) {
     return (
-      <Empty className="min-h-40 rounded-xl border border-dashed">
-        <EmptyHeader>
-          <EmptyTitle>Aucun résultat.</EmptyTitle>
-          <EmptyDescription>Lancez une recherche pour découvrir des entreprises.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <Card className="min-w-0">
+        <CardContent className="p-8">
+          <Empty className="min-h-40 rounded-xl border border-dashed">
+            <EmptyHeader>
+              <EmptyTitle>Aucun résultat.</EmptyTitle>
+              <EmptyDescription>Lancez une recherche pour découvrir des entreprises.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Card className="min-w-0 overflow-hidden">
+    <Card className="min-w-0">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle>Résultats ({sorted.length})</CardTitle>
         <div className="grid w-full min-w-0 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
@@ -172,75 +188,68 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
         </div>
       </CardHeader>
       <CardContent>
-        {/* Desktop table */}
-        <div className="hidden rounded-xl border lg:block">
-          <div className="overflow-x-auto">
-            <Table className="table-fixed w-full">
+        {/* Desktop table - visible only on lg+ */}
+        <div className="hidden lg:block">
+          <div className="overflow-x-auto rounded-xl border">
+            <Table className="table-fixed w-full min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[26%] cursor-pointer select-none" onClick={() => toggleSort("name")}>
+                  <TableHead className="w-[20%] cursor-pointer select-none" onClick={() => toggleSort("name")}>
                     <span className="inline-flex items-center">
-                      Nom
-                      {sortIcon("name")}
+                      Nom {sortIcon("name")}
                     </span>
                   </TableHead>
                   <TableHead className="w-[12%] cursor-pointer select-none" onClick={() => toggleSort("type")}>
                     <span className="inline-flex items-center">
-                      Type
-                      {sortIcon("type")}
+                      Type {sortIcon("type")}
                     </span>
                   </TableHead>
-                  <TableHead className="w-[20%] cursor-pointer select-none" onClick={() => toggleSort("email")}>
+                  <TableHead className="w-[18%] cursor-pointer select-none" onClick={() => toggleSort("email")}>
                     <span className="inline-flex items-center">
-                      Email
-                      {sortIcon("email")}
+                      Email {sortIcon("email")}
                     </span>
                   </TableHead>
                   <TableHead className="w-[12%] cursor-pointer select-none" onClick={() => toggleSort("phone")}>
                     <span className="inline-flex items-center">
-                      Tél.
-                      {sortIcon("phone")}
+                      Tél. {sortIcon("phone")}
                     </span>
                   </TableHead>
-                  <TableHead className="w-[10%] cursor-pointer select-none" onClick={() => toggleSort("website")}>
+                  <TableHead className="w-[12%] cursor-pointer select-none" onClick={() => toggleSort("website")}>
                     <span className="inline-flex items-center">
-                      Site
-                      {sortIcon("website")}
+                      Site {sortIcon("website")}
                     </span>
                   </TableHead>
-                  <TableHead className="w-[14%] cursor-pointer select-none" onClick={() => toggleSort("address")}>
+                  <TableHead className="w-[16%] cursor-pointer select-none" onClick={() => toggleSort("address")}>
                     <span className="inline-flex items-center">
-                      Adresse
-                      {sortIcon("address")}
+                      Adresse {sortIcon("address")}
                     </span>
                   </TableHead>
-                  <TableHead className="w-[6%] text-right">Action</TableHead>
+                  <TableHead className="w-[10%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {visible.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="truncate cursor-help" title={r.name}>
-                      <span className="font-medium">
-                        {r.name.length > 25 ? `${r.name.slice(0, 25)}…` : r.name}
-                      </span>
+                  <TableRow key={r.id} className="hover:bg-muted/50">
+                    <TableCell className="truncate" title={r.name}>
+                      <span className="font-medium">{r.name}</span>
                     </TableCell>
-                    <TableCell className="truncate whitespace-nowrap cursor-help" title={r.type}>
-                      {r.type}
+                    <TableCell className="truncate whitespace-nowrap" title={r.type}>
+                      <Badge variant="secondary" className="text-xs">{r.type}</Badge>
                     </TableCell>
-                    <TableCell className="truncate cursor-help" title={r.email ?? undefined}>
+                    <TableCell className="truncate" title={r.email ?? undefined}>
                       {r.email ? (
-                        <a href={`mailto:${r.email}`} className="text-primary hover:underline">
-                          {r.email.length > 22 ? `${r.email.slice(0, 22)}…` : r.email}
+                        <a href={`mailto:${r.email}`} className="text-primary hover:underline flex items-center gap-1">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{r.email}</span>
                         </a>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="truncate whitespace-nowrap cursor-help" title={r.phone ?? undefined}>
+                    <TableCell className="truncate whitespace-nowrap" title={r.phone ?? undefined}>
                       {r.phone || "—"}
                     </TableCell>
-                    <TableCell className="truncate cursor-help" title={r.website ?? undefined}>
+                    <TableCell className="truncate" title={r.website ?? undefined}>
                       {r.website ? (
                         <a href={r.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
                           <ExternalLink className="h-3 w-3 shrink-0" />
@@ -250,24 +259,114 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="truncate cursor-help" title={r.address ?? undefined}>
-                      {r.address ? (
-                        r.address.length > 16 ? `${r.address.slice(0, 16)}…` : r.address
-                      ) : "—"}
+                    <TableCell className="truncate" title={r.address ?? undefined}>
+                      {r.address || "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {onApply && (
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          title="Ajouter comme candidature"
-                          onClick={() => onApply(r)}
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <div className="flex items-center justify-end gap-1">
+                        <Sheet>
+                          <SheetTrigger asChild>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              title="Voir détails"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </SheetTrigger>
+                          <SheetContent side="right" className="w-[400px] sm:w-[500px]">
+                            <SheetHeader>
+                              <SheetTitle className="text-lg">{r.name}</SheetTitle>
+                              <SheetDescription>{r.type}</SheetDescription>
+                            </SheetHeader>
+                            <div className="mt-6 space-y-4">
+                              {r.email && (
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Email</p>
+                                  <a href={`mailto:${r.email}`} className="flex items-center gap-2 text-primary hover:underline">
+                                    <Mail className="h-4 w-4" />
+                                    {r.email}
+                                  </a>
+                                </div>
+                              )}
+                              {r.phone && (
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Téléphone</p>
+                                  <a href={`tel:${r.phone}`} className="flex items-center gap-2 text-primary hover:underline">
+                                    <Phone className="h-4 w-4" />
+                                    {r.phone}
+                                  </a>
+                                </div>
+                              )}
+                              {r.website && (
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Site web</p>
+                                  <a href={r.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline">
+                                    <ExternalLink className="h-4 w-4" />
+                                    {r.website}
+                                  </a>
+                                </div>
+                              )}
+                              {r.address && (
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Adresse</p>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="h-4 w-4" />
+                                    {r.address}
+                                  </div>
+                                </div>
+                              )}
+                              {r.town && (
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Ville</p>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="h-4 w-4" />
+                                    {r.town}
+                                  </div>
+                                </div>
+                              )}
+                              <Separator className="my-4" />
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Source</p>
+                                <Badge variant="outline" className="text-xs">
+                                  {r.emailSource || "OpenStreetMap"}
+                                </Badge>
+                              </div>
+                            </div>
+                            {onApply && (
+                              <div className="mt-6">
+                                <Button
+                                  className="w-full"
+                                  onClick={() => {
+                                    onApply(r);
+                                    const trigger = document.querySelector('[data-radix-popover-content-trigger]');
+                                    if (trigger) {
+                                      (trigger as HTMLElement).click();
+                                    }
+                                  }}
+                                >
+                                  <Send className="mr-2 h-4 w-4" />
+                                  Ajouter à mes candidatures
+                                </Button>
+                              </div>
+                            )}
+                          </SheetContent>
+                        </Sheet>
+                        {onApply && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            title="Ajouter comme candidature"
+                            onClick={() => onApply(r)}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -276,80 +375,168 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
           </div>
         </div>
 
-        {/* Mobile cards */}
-        <div className="flex flex-col gap-3 overflow-hidden lg:hidden">
+        {/* Mobile cards - visible on lg and below */}
+        <div className="flex flex-col gap-3 lg:hidden">
           {visible.map((r) => (
-            <div key={r.id} className="min-w-0 overflow-hidden rounded-lg border bg-card p-3 shadow-sm">
-              {/* Row 1: Name + type badge + action */}
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <h3 className="truncate text-sm font-semibold leading-tight" title={r.name}>
-                    {r.name}
-                  </h3>
+            <Card key={r.id} className="overflow-hidden">
+              <CardContent className="p-3">
+                {/* Header: Name + Type + Actions */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="truncate text-sm font-semibold">{r.name}</h3>
+                    <Badge variant="secondary" className="mt-1 text-xs">{r.type}</Badge>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          title="Voir détails"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="right" className="w-[400px] sm:w-[500px]">
+                        <SheetHeader>
+                          <SheetTitle className="text-lg">{r.name}</SheetTitle>
+                          <SheetDescription>{r.type}</SheetDescription>
+                        </SheetHeader>
+                        <div className="mt-6 space-y-4">
+                          {r.email && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Email</p>
+                              <a href={`mailto:${r.email}`} className="flex items-center gap-2 text-primary hover:underline">
+                                <Mail className="h-4 w-4" />
+                                {r.email}
+                              </a>
+                            </div>
+                          )}
+                          {r.phone && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Téléphone</p>
+                              <a href={`tel:${r.phone}`} className="flex items-center gap-2 text-primary hover:underline">
+                                <Phone className="h-4 w-4" />
+                                {r.phone}
+                              </a>
+                            </div>
+                          )}
+                          {r.website && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Site web</p>
+                              <a href={r.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline">
+                                <ExternalLink className="h-4 w-4" />
+                                {r.website}
+                              </a>
+                            </div>
+                          )}
+                          {r.address && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Adresse</p>
+                              <div className="flex items-center gap-2 text-sm">
+                                <MapPin className="h-4 w-4" />
+                                {r.address}
+                              </div>
+                            </div>
+                          )}
+                          {r.town && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Ville</p>
+                              <div className="flex items-center gap-2 text-sm">
+                                <MapPin className="h-4 w-4" />
+                                {r.town}
+                              </div>
+                            </div>
+                          )}
+                          <Separator className="my-4" />
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Source</p>
+                            <Badge variant="outline" className="text-xs">
+                              {r.emailSource || "OpenStreetMap"}
+                            </Badge>
+                          </div>
+                        </div>
+                        {onApply && (
+                          <div className="mt-6">
+                            <Button
+                              className="w-full"
+                              onClick={() => onApply(r)}
+                            >
+                              <Send className="mr-2 h-4 w-4" />
+                              Ajouter à mes candidatures
+                            </Button>
+                          </div>
+                        )}
+                      </SheetContent>
+                    </Sheet>
+                    {onApply && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        title="Ajouter comme candidature"
+                        onClick={() => onApply(r)}
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge variant="secondary" className="max-w-32 truncate rounded px-1.5 py-0.5 text-[10px]">
-                    {r.type}
-                  </Badge>
-                  {onApply && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      title="Ajouter comme candidature"
-                      onClick={() => onApply(r)}
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              </div>
 
-              {/* Row 2: Contact chips */}
-              <div className="mt-2.5 flex min-w-0 flex-wrap gap-2">
-                {r.email && (
-                  <a
-                    href={`mailto:${r.email}`}
-                    className="flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-                  >
-                    <Mail className="h-3 w-3 shrink-0" />
-                    <span className="min-w-0 truncate">{r.email}</span>
-                  </a>
+                {/* Contact Info */}
+                {(r.email || r.phone || r.website) && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {r.email && (
+                      <a
+                        href={`mailto:${r.email}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
+                        title={r.email}
+                      >
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate max-w-[120px]">{r.email}</span>
+                      </a>
+                    )}
+                    {r.phone && (
+                      <a
+                        href={`tel:${r.phone}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
+                        title={r.phone}
+                      >
+                        <Phone className="h-3 w-3 shrink-0" />
+                        <span className="truncate max-w-[80px]">{r.phone}</span>
+                      </a>
+                    )}
+                    {r.website && (
+                      <a
+                        href={r.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
+                        title={r.website}
+                      >
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                        <span className="truncate max-w-[100px]">{r.website.replace(/^https?:\/\//, "")}</span>
+                      </a>
+                    )}
+                  </div>
                 )}
-                {r.phone && (
-                  <a
-                    href={`tel:${r.phone}`}
-                    className="flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-                  >
-                    <Phone className="h-3 w-3 shrink-0" />
-                    <span className="min-w-0 truncate">{r.phone}</span>
-                  </a>
-                )}
-                {r.website && (
-                  <a
-                    href={r.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-                  >
-                    <ExternalLink className="h-3 w-3 shrink-0" />
-                    <span className="min-w-0 truncate">{r.website.replace(/^https?:\/\//, "")}</span>
-                  </a>
-                )}
-              </div>
 
-              {/* Row 3: Address */}
-              {(r.address || r.town) && (
-                <div className="mt-2 flex min-w-0 items-center gap-1 overflow-hidden text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3 shrink-0" />
-                  <span className="min-w-0 truncate">{[r.address, r.town].filter(Boolean).join(", ")}</span>
-                </div>
-              )}
-            </div>
+                {/* Address */}
+                {(r.address || r.town) && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">
+                      {[r.address, r.town].filter(Boolean).join(", ")}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
 
+        {/* Pagination */}
         <div className="mt-4">
           <LocalPagination
             currentPage={safePage}

@@ -99,7 +99,7 @@ export function ScoutJobHistoryDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full max-w-full flex-col gap-0 overflow-hidden sm:max-w-lg">
+      <SheetContent side="right" className="flex w-full max-w-full flex-col gap-0 overflow-hidden sm:max-w-lg md:max-w-xl">
         <SheetHeader className="space-y-4 pb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex min-w-0 items-center gap-2 pr-8 text-lg">

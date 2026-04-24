@@ -60,3 +60,4 @@ todo.md
 
 # security audit outputs (confidential, generated locally)
 security-audit/
+.memory/
