@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 interface ApiResponse<T> {
   response: Response;
@@ -57,12 +57,16 @@ export function useAdminResource<T>({
     }
   }, [isAuthorized]);
 
-  return {
-    items,
-    setItems,
-    feedback,
-    setFeedback,
-    isLoading,
-    load,
-  };
+  // Memoize the returned object to ensure stability across renders
+  return useMemo(
+    () => ({
+      items,
+      setItems,
+      feedback,
+      setFeedback,
+      isLoading,
+      load,
+    }),
+    [items, feedback, isLoading, load]
+  );
 }

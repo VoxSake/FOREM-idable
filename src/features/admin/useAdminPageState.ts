@@ -88,16 +88,7 @@ export function useAdminPageState() {
     void legalHoldsState.load();
     void disclosureLogsState.load();
     void auditLogsState.load();
-  }, [
-    admin.isAuthLoading,
-    admin.isAuthorized,
-    apiKeysState,
-    featuredSearchesState,
-    deletionRequestsState,
-    legalHoldsState,
-    disclosureLogsState,
-    auditLogsState,
-  ]);
+  }, [admin.isAuthLoading, admin.isAuthorized]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const revokeApiKey = useCallback(async () => {
     if (!revokeTarget) return false;

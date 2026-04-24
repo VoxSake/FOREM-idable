@@ -127,19 +127,19 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
       const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       triggerDownload(blob, `${filename}.xlsx`);
     } else {
-      // Create a proper CSV file with comma separator
+      // Create a proper CSV file with semicolon separator (compatible with Excel France)
       const csvRows = [
-        headers.join(","),
+        headers.join(";"),
         ...data.map((row) =>
           Object.values(row)
             .map((value) => {
               const str = String(value);
-              if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+              if (str.includes(";") || str.includes('"') || str.includes("\n")) {
                 return `"${str.replace(/"/g, '""')}"`;
               }
               return str;
             })
-            .join(",")
+            .join(";")
         ),
       ];
       const csvContent = csvRows.join("\n");
