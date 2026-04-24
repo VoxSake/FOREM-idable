@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 import {
   ArrowUpDown,
   ChevronDown,
@@ -41,14 +42,6 @@ type SortDirection = "asc" | "desc";
 interface ScoutResultsTableProps {
   results: ScoutResult[];
   onApply?: (result: ScoutResult) => void;
-}
-
-function escapeCsvCell(value: unknown): string {
-  const str = value == null ? "" : String(value);
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
 }
 
 export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) {
@@ -110,29 +103,48 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
     );
   }
 
-  function downloadCsv(format: "excel" | "csv") {
+  function downloadExport(format: "excel" | "csv") {
     const headers = ["Nom", "Type", "Email", "Téléphone", "Site web", "Adresse", "Ville", "Source email"];
-    const rows = sorted.map((r) =>
-      [
-        r.name,
-        r.type,
-        r.email ?? "",
-        r.phone ?? "",
-        r.website ?? "",
-        r.address ?? "",
-        r.town ?? "",
-        r.emailSource,
-      ].map(escapeCsvCell)
-    );
+    const data = sorted.map((r) => ({
+      Nom: r.name,
+      Type: r.type,
+      Email: r.email ?? "",
+      Téléphone: r.phone ?? "",
+      "Site web": r.website ?? "",
+      Adresse: r.address ?? "",
+      Ville: r.town ?? "",
+      "Source email": r.emailSource,
+    }));
+
+    const filename = `scout-resultats-${new Date().toISOString().slice(0, 10)}`;
 
     if (format === "excel") {
-      const content = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
-      const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-      triggerDownload(blob, `scout-resultats-${new Date().toISOString().slice(0, 10)}.csv`);
+      // Create a real XLSX file using SheetJS
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Résultats");
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      triggerDownload(blob, `${filename}.xlsx`);
     } else {
-      const content = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-      const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-      triggerDownload(blob, `scout-resultats-${new Date().toISOString().slice(0, 10)}.csv`);
+      // Create a proper CSV file with comma separator
+      const csvRows = [
+        headers.join(","),
+        ...data.map((row) =>
+          Object.values(row)
+            .map((value) => {
+              const str = String(value);
+              if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+                return `"${str.replace(/"/g, '""')}"`;
+              }
+              return str;
+            })
+            .join(",")
+        ),
+      ];
+      const csvContent = csvRows.join("\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      triggerDownload(blob, `${filename}.csv`);
     }
   }
 
@@ -247,18 +259,18 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
             className="w-full sm:w-48"
           />
           {/* Export buttons */}
-          <div className="flex gap-2 sm:w-auto">
-            <Button type="button" variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadCsv("excel")}>
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Excel</span>
-              <span className="sm:hidden">XLS</span>
-            </Button>
-            <Button type="button" variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadCsv("csv")}>
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              <span className="hidden sm:inline">CSV</span>
-              <span className="sm:hidden">CSV</span>
-            </Button>
-          </div>
+           <div className="flex gap-2 sm:w-auto">
+             <Button type="button" variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadExport("excel")}>
+               <Download className="mr-1.5 h-3.5 w-3.5" />
+               <span className="hidden sm:inline">Excel</span>
+               <span className="sm:hidden">XLSX</span>
+             </Button>
+             <Button type="button" variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadExport("csv")}>
+               <Download className="mr-1.5 h-3.5 w-3.5" />
+               <span className="hidden sm:inline">CSV</span>
+               <span className="sm:hidden">CSV</span>
+             </Button>
+           </div>
         </div>
       </CardHeader>
       <CardContent>
