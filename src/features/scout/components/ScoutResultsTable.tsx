@@ -151,7 +151,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
 
   if (results.length === 0) {
     return (
-      <Card className="min-w-0">
+      <Card className="w-full">
         <CardContent className="p-8">
           <Empty className="min-h-40 rounded-xl border border-dashed">
             <EmptyHeader>
@@ -165,10 +165,10 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
   }
 
   return (
-    <Card className="min-w-0">
+    <Card className="w-full">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle>Résultats ({sorted.length})</CardTitle>
-        <div className="grid w-full min-w-0 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+        <div className="flex w-full gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
           <Input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -189,9 +189,9 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
       </CardHeader>
       <CardContent>
         {/* Desktop table - visible only on lg+ */}
-        <div className="hidden lg:block">
-          <div className="overflow-x-auto rounded-xl border">
-            <Table className="table-fixed w-full min-w-[800px]">
+        <div className="hidden lg:block w-full">
+          <div className="overflow-x-auto rounded-xl border w-full">
+            <Table className="table-fixed w-full min-w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[20%] cursor-pointer select-none" onClick={() => toggleSort("name")}>
