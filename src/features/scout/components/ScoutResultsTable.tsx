@@ -12,7 +12,6 @@ import {
   Phone,
   Send,
   Eye,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,13 +21,10 @@ import { Input } from "@/components/ui/input";
 import { LocalPagination } from "@/components/ui/local-pagination";
 import { Separator } from "@/components/ui/separator";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -59,7 +55,6 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection } | null>(null);
-  const [selectedResult, setSelectedResult] = useState<ScoutResult | null>(null);
   const deferredSearch = useDeferredValue(search);
 
   const filtered = useMemo(() => {
@@ -149,6 +144,81 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
     URL.revokeObjectURL(link.href);
   }
 
+  // Helper component pour afficher les détails dans un popover
+  function ResultDetails({ result }: { result: ScoutResult }) {
+    return (
+      <div className="space-y-3 min-w-[200px]">
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">{result.type}</Badge>
+        </div>
+        {result.email && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Email</p>
+            <a href={`mailto:${result.email}`} className="flex items-center gap-2 text-primary hover:underline text-sm">
+              <Mail className="h-3.5 w-3.5" />
+              {result.email}
+            </a>
+          </div>
+        )}
+        {result.phone && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Téléphone</p>
+            <a href={`tel:${result.phone}`} className="flex items-center gap-2 text-primary hover:underline text-sm">
+              <Phone className="h-3.5 w-3.5" />
+              {result.phone}
+            </a>
+          </div>
+        )}
+        {result.website && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Site web</p>
+            <a href={result.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline text-sm">
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="truncate max-w-[180px]">{result.website.replace(/^https?:\/\//, "")}</span>
+            </a>
+          </div>
+        )}
+        {result.address && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Adresse</p>
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-3.5 w-3.5" />
+              {result.address}
+            </div>
+          </div>
+        )}
+        {result.town && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Ville</p>
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-3.5 w-3.5" />
+              {result.town}
+            </div>
+          </div>
+        )}
+        <Separator className="my-2" />
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Source</p>
+          <Badge variant="outline" className="text-xs">
+            {result.emailSource || "OpenStreetMap"}
+          </Badge>
+        </div>
+        {onApply && (
+          <div className="pt-2">
+            <Button
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => onApply(result)}
+            >
+              <Send className="mr-1.5 h-3.5 w-3.5" />
+              Ajouter à mes candidatures
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (results.length === 0) {
     return (
       <Card className="w-full">
@@ -175,7 +245,7 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
             placeholder="Filtrer..."
             className="min-w-0 sm:w-48"
           />
-          <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex">
+          <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadCsv("excel")}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
               Excel
@@ -264,8 +334,8 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Sheet>
-                          <SheetTrigger asChild>
+                        <Popover>
+                          <PopoverTrigger asChild>
                             <Button
                               type="button"
                               size="icon"
@@ -275,85 +345,11 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                          </SheetTrigger>
-                          <SheetContent side="right" className="w-[400px] sm:w-[500px]">
-                            <SheetHeader>
-                              <SheetTitle className="text-lg">{r.name}</SheetTitle>
-                              <SheetDescription>{r.type}</SheetDescription>
-                            </SheetHeader>
-                            <div className="mt-6 space-y-4">
-                              {r.email && (
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground mb-1">Email</p>
-                                  <a href={`mailto:${r.email}`} className="flex items-center gap-2 text-primary hover:underline">
-                                    <Mail className="h-4 w-4" />
-                                    {r.email}
-                                  </a>
-                                </div>
-                              )}
-                              {r.phone && (
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground mb-1">Téléphone</p>
-                                  <a href={`tel:${r.phone}`} className="flex items-center gap-2 text-primary hover:underline">
-                                    <Phone className="h-4 w-4" />
-                                    {r.phone}
-                                  </a>
-                                </div>
-                              )}
-                              {r.website && (
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground mb-1">Site web</p>
-                                  <a href={r.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline">
-                                    <ExternalLink className="h-4 w-4" />
-                                    {r.website}
-                                  </a>
-                                </div>
-                              )}
-                              {r.address && (
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground mb-1">Adresse</p>
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <MapPin className="h-4 w-4" />
-                                    {r.address}
-                                  </div>
-                                </div>
-                              )}
-                              {r.town && (
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground mb-1">Ville</p>
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <MapPin className="h-4 w-4" />
-                                    {r.town}
-                                  </div>
-                                </div>
-                              )}
-                              <Separator className="my-4" />
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-1">Source</p>
-                                <Badge variant="outline" className="text-xs">
-                                  {r.emailSource || "OpenStreetMap"}
-                                </Badge>
-                              </div>
-                            </div>
-                            {onApply && (
-                              <div className="mt-6">
-                                <Button
-                                  className="w-full"
-                                  onClick={() => {
-                                    onApply(r);
-                                    const trigger = document.querySelector('[data-radix-popover-content-trigger]');
-                                    if (trigger) {
-                                      (trigger as HTMLElement).click();
-                                    }
-                                  }}
-                                >
-                                  <Send className="mr-2 h-4 w-4" />
-                                  Ajouter à mes candidatures
-                                </Button>
-                              </div>
-                            )}
-                          </SheetContent>
-                        </Sheet>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72 p-4" side="bottom" align="end">
+                            <ResultDetails result={r} />
+                          </PopoverContent>
+                        </Popover>
                         {onApply && (
                           <Button
                             type="button"
@@ -387,8 +383,8 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                     <Badge variant="secondary" className="mt-1 text-xs">{r.type}</Badge>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <Sheet>
-                      <SheetTrigger asChild>
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <Button
                           size="icon"
                           variant="ghost"
@@ -397,79 +393,11 @@ export function ScoutResultsTable({ results, onApply }: ScoutResultsTableProps) 
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                      </SheetTrigger>
-                      <SheetContent side="right" className="w-[400px] sm:w-[500px]">
-                        <SheetHeader>
-                          <SheetTitle className="text-lg">{r.name}</SheetTitle>
-                          <SheetDescription>{r.type}</SheetDescription>
-                        </SheetHeader>
-                        <div className="mt-6 space-y-4">
-                          {r.email && (
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Email</p>
-                              <a href={`mailto:${r.email}`} className="flex items-center gap-2 text-primary hover:underline">
-                                <Mail className="h-4 w-4" />
-                                {r.email}
-                              </a>
-                            </div>
-                          )}
-                          {r.phone && (
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Téléphone</p>
-                              <a href={`tel:${r.phone}`} className="flex items-center gap-2 text-primary hover:underline">
-                                <Phone className="h-4 w-4" />
-                                {r.phone}
-                              </a>
-                            </div>
-                          )}
-                          {r.website && (
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Site web</p>
-                              <a href={r.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline">
-                                <ExternalLink className="h-4 w-4" />
-                                {r.website}
-                              </a>
-                            </div>
-                          )}
-                          {r.address && (
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Adresse</p>
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="h-4 w-4" />
-                                {r.address}
-                              </div>
-                            </div>
-                          )}
-                          {r.town && (
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground mb-1">Ville</p>
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="h-4 w-4" />
-                                {r.town}
-                              </div>
-                            </div>
-                          )}
-                          <Separator className="my-4" />
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Source</p>
-                            <Badge variant="outline" className="text-xs">
-                              {r.emailSource || "OpenStreetMap"}
-                            </Badge>
-                          </div>
-                        </div>
-                        {onApply && (
-                          <div className="mt-6">
-                            <Button
-                              className="w-full"
-                              onClick={() => onApply(r)}
-                            >
-                              <Send className="mr-2 h-4 w-4" />
-                              Ajouter à mes candidatures
-                            </Button>
-                          </div>
-                        )}
-                      </SheetContent>
-                    </Sheet>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-3" side="bottom" align="end">
+                        <ResultDetails result={r} />
+                      </PopoverContent>
+                    </Popover>
                     {onApply && (
                       <Button
                         size="icon"
