@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserRound } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
 import { useAccountApiKeys } from "@/hooks/useAccountApiKeys";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
-import { AuthUser } from "@/types/auth";
+
 import {
   ApiKeyFormValues,
   apiKeySchema,
@@ -68,7 +68,7 @@ function AccountPageSkeleton() {
 }
 
 export default function AccountPage() {
-  const { user, isLoading, refresh, setUser } = useAuth();
+  const { user, isLoading } = useAuth();
   const { settings, updateSettings, isLoaded: isSettingsLoaded } = useSettings();
   const profile = useProfileForm();
   const password = usePasswordForm();

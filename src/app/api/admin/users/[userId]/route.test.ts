@@ -33,7 +33,7 @@ vi.mock("@/lib/server/coach", () => ({
 
 vi.mock("@/lib/server/observability", () => ({
   logServerEvent: (...args: unknown[]) => mockLogServerEvent(...args),
-  withRequestContext: (...args: unknown[]) => mockWithRequestContext(...args),
+  withRequestContext: (...args: unknown[]) => (mockWithRequestContext as unknown as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock("@/lib/server/requestOrigin", () => ({

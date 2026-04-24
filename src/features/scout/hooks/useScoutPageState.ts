@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   createScoutJob,
@@ -15,7 +15,7 @@ export function useScoutPageState() {
   const [jobs, setJobs] = useState<ScoutJob[]>([]);
   const [activeJob, setActiveJob] = useState<ScoutJob | null>(null);
   const [results, setResults] = useState<ScoutResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState<{ step: number; total: number; found: number; message?: string } | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);

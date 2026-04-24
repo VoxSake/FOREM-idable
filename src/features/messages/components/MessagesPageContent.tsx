@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DeleteMessageDialog } from "@/features/messages/components/DeleteMessageDialog";
 import { ConversationPanel } from "@/features/messages/components/ConversationPanel";

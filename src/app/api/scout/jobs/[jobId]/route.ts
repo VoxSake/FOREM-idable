@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
-import { db } from "@/lib/server/db";
+import { db, ensureDatabase } from "@/lib/server/db";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { logServerEvent } from "@/lib/server/observability";
 
@@ -20,6 +20,7 @@ export async function GET(
   }
 
   try {
+    await ensureDatabase();
     const jobResult = await db.query<{
       id: number;
       status: string;
@@ -132,6 +133,7 @@ export async function DELETE(
   }
 
   try {
+    await ensureDatabase();
     const check = await db.query<{ user_id: number }>(
       `SELECT user_id FROM scout_jobs WHERE id = $1`,
       [jobId]

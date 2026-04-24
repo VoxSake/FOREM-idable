@@ -8,7 +8,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { ContractTypeSelect } from "@/components/jobs/ContractTypeSelect";
 import { getJobExternalUrl } from "@/features/jobs/utils/jobLinks";
-import { isManualApplication } from "@/features/applications/utils";
 import { JobApplication } from "@/types/application";
 
 interface OfferDetailsSectionProps {

@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto";
 import {
-  formatCoachAuthorName,
   toCoachNoteAuthor,
 } from "@/lib/coachNotes";
 import {

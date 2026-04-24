@@ -54,6 +54,7 @@ export function ScoutForm({ onSubmit, isLoading }: ScoutFormProps) {
 
   useEffect(() => {
     if (!query || query.length < 3) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCitySuggestions([]);
       setShowSuggestions(false);
       return;

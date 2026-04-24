@@ -1,4 +1,4 @@
-import { get, post, patch, put, del } from "@/lib/api/client";
+import { post, patch, put, del } from "@/lib/api/client";
 
 export function createCoachGroup(name: string) {
   return post<{ group?: { id: number }; error?: string }>("/api/coach/groups", { name });

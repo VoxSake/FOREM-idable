@@ -66,8 +66,8 @@ function makeDashboard(overrides: Partial<CoachDashboardData> = {}): CoachDashbo
         createdBy: { id: 1, email: "coach@example.com", firstName: "Coach", lastName: "User" },
         managerCoachId: 1,
         members: [
-          { id: 1, email: "alice@example.com", firstName: "Alice", lastName: "Durand", role: "user" },
-          { id: 2, email: "bob@example.com", firstName: "Bob", lastName: "Martin", role: "user" },
+          { id: 1, email: "alice@example.com", firstName: "Alice", lastName: "Durand", role: "user", lastSeenAt: "2026-01-01T00:00:00.000Z" },
+          { id: 2, email: "bob@example.com", firstName: "Bob", lastName: "Martin", role: "user", lastSeenAt: "2026-01-01T00:00:00.000Z" },
         ],
         coaches: [],
       },

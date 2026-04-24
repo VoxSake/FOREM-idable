@@ -1,7 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Route } from "@playwright/test";
+
+type ConversationFixture = {
+  id: number;
+  type: "group" | "direct";
+  title: string;
+  subtitle: string;
+  unreadCount: number;
+  lastMessageAt: string;
+  lastMessagePreview: string | null;
+  participantCount: number;
+};
 
 test("opens a direct conversation from the messages page contact picker", async ({ page }) => {
-  let conversations = [
+  let conversations: ConversationFixture[] = [
     {
       id: 101,
       type: "group" as const,
@@ -15,7 +26,7 @@ test("opens a direct conversation from the messages page contact picker", async 
   ];
   let createdPayload: { targetUserId: number } | null = null;
 
-  await page.route("**/api/auth/me", async (route) => {
+  await page.route("**/api/auth/me", async (route: Route) => {
     await route.fulfill({
       json: {
         user: {
@@ -29,11 +40,11 @@ test("opens a direct conversation from the messages page contact picker", async 
     });
   });
 
-  await page.route("**/api/applications", async (route) => {
+  await page.route("**/api/applications", async (route: Route) => {
     await route.fulfill({ json: { applications: [] } });
   });
 
-  await page.route("**/api/messages/contacts", async (route) => {
+  await page.route("**/api/messages/contacts", async (route: Route) => {
     await route.fulfill({
       json: {
         contacts: [
@@ -51,7 +62,7 @@ test("opens a direct conversation from the messages page contact picker", async 
     });
   });
 
-  await page.route("**/api/messages/conversations/direct", async (route) => {
+  await page.route("**/api/messages/conversations/direct", async (route: Route) => {
     createdPayload = (await route.request().postDataJSON()) as { targetUserId: number };
     conversations = [
       ...conversations,
@@ -105,7 +116,7 @@ test("opens a direct conversation from the messages page contact picker", async 
     });
   });
 
-  await page.route("**/api/messages/**", async (route) => {
+  await page.route("**/api/messages/**", async (route: Route) => {
     const url = new URL(route.request().url());
 
     if (url.pathname === "/api/messages/conversations") {

@@ -2,11 +2,11 @@
 /**
  * Start script that runs db:migrate only if migrations have never been applied.
  * Uses a lock file in /tmp to avoid running migrations on every container restart.
+ * Designed for Bun runtime.
  */
 
-const { execSync } = require("child_process");
-const fs = require("fs");
-const path = require("path");
+import { execSync } from "child_process";
+import fs from "fs";
 
 const LOCK_FILE = "/tmp/scout-migration-applied.lock";
 
@@ -15,7 +15,7 @@ async function main() {
   if (!fs.existsSync(LOCK_FILE)) {
     console.log("[start] Running database migrations...");
     try {
-      execSync("npx drizzle-kit migrate", {
+      execSync("bun drizzle-kit migrate", {
         stdio: "inherit",
         cwd: process.cwd(),
         timeout: 60000,
@@ -23,7 +23,7 @@ async function main() {
       fs.writeFileSync(LOCK_FILE, new Date().toISOString());
       console.log("[start] Migrations applied successfully.");
     } catch (error) {
-      console.error("[start] Migration failed:", error.message);
+      console.error("[start] Migration failed:", error instanceof Error ? error.message : error);
       // Don't exit - let the app try to start anyway (fail-open for already-migrated DBs)
     }
   } else {
@@ -32,7 +32,7 @@ async function main() {
 
   // Start the Next.js app
   console.log("[start] Starting Next.js...");
-  execSync("npx next start", {
+  execSync("bun next start", {
     stdio: "inherit",
     cwd: process.cwd(),
   });

@@ -92,7 +92,7 @@ function extractEmails(html: string): Set<string> {
 function findContactLinks(html: string, baseUrl: string): string[] {
   const links: string[] = [];
   for (const m of html.matchAll(LINK_CONTACT_REGEX)) {
-    let href = m[1];
+    const href = m[1];
     if (href.startsWith("http")) {
       links.push(href);
     } else if (href.startsWith("/")) {

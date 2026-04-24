@@ -2,14 +2,12 @@
 
 import { Badge } from "@/components/ui/badge";
 import { getComputedPhaseBadge } from "@/features/coach/utils/phaseBadge";
-import { JobApplication } from "@/types/application";
 import { TrackingPhase } from "@/types/coach";
 
 interface CoachPhaseBadgeProps {
   phase: TrackingPhase;
   hasAcceptedStage?: boolean;
   hasAcceptedJob?: boolean;
-  applications?: JobApplication[];
   className?: string;
 }
 
@@ -25,7 +23,6 @@ export function CoachPhaseBadge({
   phase,
   hasAcceptedStage,
   hasAcceptedJob,
-  applications,
   className,
 }: CoachPhaseBadgeProps) {
   const computed = getComputedPhaseBadge(

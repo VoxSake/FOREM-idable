@@ -64,7 +64,7 @@ describe("SearchEngine", () => {
         onSearch={onSearch}
         initialState={{
           keywords: ["dev"],
-          locations: [{ id: "loc1", name: "4000 Liege", type: "Localites" }],
+          locations: [{ id: "loc1", name: "4000 Liege", type: "Localités" }],
           booleanMode: "OR",
         }}
       />
@@ -79,7 +79,7 @@ describe("SearchEngine", () => {
         onSearch={onSearch}
         initialState={{
           keywords: ["designer", "ux"],
-          locations: [{ id: "loc2", name: "Bruxelles", type: "Localites" }],
+          locations: [{ id: "loc2", name: "Bruxelles", type: "Localités" }],
           booleanMode: "AND",
         }}
       />

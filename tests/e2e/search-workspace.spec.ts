@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 test("shows the search workspace and a collapsed recent history for authenticated users", async ({
   page,
@@ -35,11 +35,11 @@ test("shares an offer in direct message from the search table", async ({ page })
 
   await mockSearchWorkspace(page);
 
-  await page.route("**/api/messages/conversations", async (route) => {
+  await page.route("**/api/messages/conversations", async (route: Route) => {
     await route.fulfill({ json: { conversations: [] } });
   });
 
-  await page.route("**/api/messages/contacts", async (route) => {
+  await page.route("**/api/messages/contacts", async (route: Route) => {
     await route.fulfill({
       json: {
         contacts: [
@@ -57,7 +57,7 @@ test("shares an offer in direct message from the search table", async ({ page })
     });
   });
 
-  await page.route("**/api/messages/share/direct", async (route) => {
+  await page.route("**/api/messages/share/direct", async (route: Route) => {
     sharedPayload = (await route.request().postDataJSON()) as {
       targetUserId: number;
       content: string;
@@ -99,8 +99,8 @@ test("shares an offer in direct message from the search table", async ({ page })
   await expect(page.getByText("Offre envoyée en message privé.")).toBeVisible();
 });
 
-async function mockSearchWorkspace(page: Parameters<typeof test>[0]["page"]) {
-  await page.route("**/api/auth/me", async (route) => {
+async function mockSearchWorkspace(page: Page) {
+  await page.route("**/api/auth/me", async (route: Route) => {
     await route.fulfill({
       json: {
         user: {
@@ -114,11 +114,11 @@ async function mockSearchWorkspace(page: Parameters<typeof test>[0]["page"]) {
     });
   });
 
-  await page.route("**/api/applications", async (route) => {
+  await page.route("**/api/applications", async (route: Route) => {
     await route.fulfill({ json: { applications: [] } });
   });
 
-  await page.route("**/api/search-history", async (route) => {
+  await page.route("**/api/search-history", async (route: Route) => {
     await route.fulfill({
       json: {
         history: [
@@ -133,7 +133,7 @@ async function mockSearchWorkspace(page: Parameters<typeof test>[0]["page"]) {
     });
   });
 
-  await page.route("**/api/featured-searches", async (route) => {
+  await page.route("**/api/featured-searches", async (route: Route) => {
     await route.fulfill({
       json: {
         featuredSearches: [
@@ -157,7 +157,7 @@ async function mockSearchWorkspace(page: Parameters<typeof test>[0]["page"]) {
     });
   });
 
-  await page.route("https://www.odwb.be/api/explore/v2.1/**", async (route) => {
+  await page.route("https://www.odwb.be/api/explore/v2.1/**", async (route: Route) => {
     await route.fulfill({
       json: {
         total_count: 2,
@@ -187,7 +187,7 @@ async function mockSearchWorkspace(page: Parameters<typeof test>[0]["page"]) {
     });
   });
 
-  await page.route("**/api/providers/adzuna/search", async (route) => {
+  await page.route("**/api/providers/adzuna/search", async (route: Route) => {
     await route.fulfill({
       json: {
         jobs: [],

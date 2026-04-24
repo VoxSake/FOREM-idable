@@ -1,7 +1,19 @@
 import { expect, test } from "@playwright/test";
 
+type DeletionRequestFixture = {
+  id: number;
+  status: string;
+  reason: string;
+  requestedAt: string;
+  reviewedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  reviewNote: string | null;
+  user: { id: number; email: string; firstName: string; lastName: string; role: string };
+};
+
 test("admin can approve and complete an account deletion request", async ({ page }) => {
-  let deletionRequests = [
+  let deletionRequests: DeletionRequestFixture[] = [
     {
       id: 1,
       status: "pending" as const,
@@ -121,7 +133,7 @@ test("admin can approve and complete an account deletion request", async ({ page
 });
 
 test("admin can reject an account deletion request without breaking the page", async ({ page }) => {
-  let deletionRequests = [
+  let deletionRequests: DeletionRequestFixture[] = [
     {
       id: 1,
       status: "pending" as const,

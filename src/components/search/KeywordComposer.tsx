@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, KeyboardEvent, RefObject } from "react";
+import { KeyboardEvent, RefObject } from "react";
 import { History, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

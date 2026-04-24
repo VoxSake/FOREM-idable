@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getJobExternalUrl, getJobPdfUrl } from "@/features/jobs/utils/jobLinks";
 import { getApplicationStatusBadgeVariant } from "@/lib/cardColors";
-import { cn } from "@/lib/utils";
 import { Job } from "@/types/job";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";

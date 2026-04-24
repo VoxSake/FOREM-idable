@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
-import { db } from "@/lib/server/db";
+import { db, ensureDatabase } from "@/lib/server/db";
 
 const encoder = new TextEncoder();
 
@@ -23,6 +23,7 @@ export async function GET(
     return new Response("Invalid job ID", { status: 400 });
   }
 
+  await ensureDatabase();
   const check = await db.query<{ user_id: number }>(
     `SELECT user_id FROM scout_jobs WHERE id = $1`,
     [jobId]
@@ -38,7 +39,6 @@ export async function GET(
     async start(controller) {
       let lastCompletedSteps = -1;
       let lastResultCount = -1;
-      let lastStatus = "";
 
       try {
         const poll = async () => {

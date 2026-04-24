@@ -91,12 +91,12 @@ export function useAdminPageState() {
   }, [
     admin.isAuthLoading,
     admin.isAuthorized,
-    apiKeysState.load,
-    featuredSearchesState.load,
-    deletionRequestsState.load,
-    legalHoldsState.load,
-    disclosureLogsState.load,
-    auditLogsState.load,
+    apiKeysState,
+    featuredSearchesState,
+    deletionRequestsState,
+    legalHoldsState,
+    disclosureLogsState,
+    auditLogsState,
   ]);
 
   const revokeApiKey = useCallback(async () => {

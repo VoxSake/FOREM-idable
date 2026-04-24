@@ -1,17 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Paths that don't require authentication
-const PUBLIC_PATHS = [
-  "/",
-  "/about",
-  "/privacy",
-  "/api/auth/login",
-  "/api/auth/register",
-  "/api/auth/logout",
-  "/api/auth/forgot-password",
-  "/api/auth/reset-password",
-  "/api/auth/me",
+const PUBLIC_EXACT = ["/", "/about", "/privacy", "/favicon.ico", "/sitemap.xml", "/robots.txt"];
+const PUBLIC_PREFIXES = [
+  "/api/auth/",
   "/api/locations",
   "/api/offers",
   "/api/providers",
@@ -20,16 +12,14 @@ const PUBLIC_PATHS = [
   "/api/pdf",
   "/api/external",
   "/_next",
-  "/favicon.ico",
-  "/sitemap.xml",
-  "/robots.txt",
 ];
 
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  if (PUBLIC_EXACT.includes(pathname)) return true;
+  return PUBLIC_PREFIXES.some((path) => pathname.startsWith(path));
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths without auth check

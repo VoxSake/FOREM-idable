@@ -225,7 +225,7 @@ export function AppSidebar() {
       window.removeEventListener("focus", handleVisibilityChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isLoading, user]);
+  }, [isLoading, user, pathname]);
 
   const messagingNav = useMemo(() => {
     const conversations = messagingConversations ?? [];
@@ -267,7 +267,7 @@ export function AppSidebar() {
       messagesItem,
       ...baseItems.slice(insertionIndex),
     ];
-  }, [messagingNav.hasGroupMessagingAccess, user?.role]);
+  }, [messagingNav.hasGroupMessagingAccess, user]);
 
   return (
     <Sidebar>

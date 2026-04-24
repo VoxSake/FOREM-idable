@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Job } from "@/types/job";
 import {
-  CalendarDays,
   ExternalLink,
   FileText,
   MessagesSquare,

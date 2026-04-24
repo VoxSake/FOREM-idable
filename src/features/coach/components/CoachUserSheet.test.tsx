@@ -118,6 +118,9 @@ function buildUser(application: JobApplication): CoachUserSummary {
     latestActivityAt: "2026-03-10T09:00:00.000Z",
     lastSeenAt: "2026-03-10T09:00:00.000Z",
     lastCoachActionAt: "2026-03-10T09:00:00.000Z",
+    trackingPhase: "job_search",
+    hasAcceptedStage: false,
+    hasAcceptedJob: false,
     applications: [application],
   };
 }

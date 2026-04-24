@@ -3,7 +3,6 @@ import {
   getRelationalApplicationRecordById,
   getRelationalApplicationRecordByUserAndJob,
   listApplicationRecordsFromRelationalStoreByUsers,
-  RelationalApplicationRecord,
   saveApplicationToRelationalStore,
 } from "@/lib/server/applicationStore";
 import {

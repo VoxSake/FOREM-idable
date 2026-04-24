@@ -86,6 +86,9 @@ export function useApplicationsPageState() {
   const coachNoteViews = useCoachNoteViews(user?.id);
 
   // Pre-fill manual application form from query params (e.g. from Scout)
+  // This is a one-shot initialization on mount; disabling the linter rule
+  // that forbids setState inside effects because there is no cleaner
+  // way to synchronise form state with external URL data on first render.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -104,6 +107,7 @@ export function useApplicationsPageState() {
       // Clean query params so refresh doesn't reopen the dialog
       window.history.replaceState({}, "", window.location.pathname);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const hasUnreadCoachUpdate = useCallback((application: JobApplication) => {
@@ -263,12 +267,14 @@ export function useApplicationsPageState() {
     })();
   }, [
     applications,
+    dialogs,
     notifyActionError,
     persistAccepted,
     persistFollowUp,
     persistInProgress,
     persistInterview,
     persistRejected,
+    setInterviewForm,
   ]);
 
   const bulkMutations = useBulkApplicationMutations({

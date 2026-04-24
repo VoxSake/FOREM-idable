@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 type Actor = "user" | "coach";
 
@@ -19,6 +19,7 @@ type Application = {
   appliedAt: string;
   followUpDueAt: string;
   followUpEnabled: boolean;
+  lastFollowUpAt?: string | null;
   status: "in_progress";
   notes: string | null;
   proofs: string | null;
@@ -177,7 +178,7 @@ function buildCoachDashboard(applications: Application[]) {
 }
 
 async function mockCoachSession(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   options: {
     actor?: Actor;
     applications: Application[];
@@ -197,7 +198,7 @@ async function mockCoachSession(
 ) {
   let actor: Actor = options.actor ?? "coach";
 
-  await page.route("**/api/auth/me", async (route) => {
+  await page.route("**/api/auth/me", async (route: Route) => {
     const user =
       actor === "user"
         ? {
@@ -218,7 +219,7 @@ async function mockCoachSession(
     await route.fulfill({ json: { user } });
   });
 
-  await page.route("**/api/coach/dashboard", async (route) => {
+  await page.route("**/api/coach/dashboard", async (route: Route) => {
     await route.fulfill({
       json: {
         dashboard: buildCoachDashboard(options.applications),
@@ -226,7 +227,7 @@ async function mockCoachSession(
     });
   });
 
-  await page.route("**/api/coach/users/1/applications", async (route) => {
+  await page.route("**/api/coach/users/1/applications", async (route: Route) => {
     const request = route.request();
     const body = request.postDataJSON() as {
       jobId: string;
@@ -251,7 +252,7 @@ async function mockCoachSession(
     await route.fulfill({ json: { application: updated } });
   });
 
-  await page.route("**/api/coach/users/1/applications/*", async (route) => {
+  await page.route("**/api/coach/users/1/applications/*", async (route: Route) => {
     const request = route.request();
     const jobId = request.url().split("/").pop() ?? "";
 
@@ -280,7 +281,7 @@ async function mockCoachSession(
 }
 
 async function mockUserApplicationsSession(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   options: {
     applications: Application[];
     onApplicationPatch?: (payload: {
@@ -289,7 +290,7 @@ async function mockUserApplicationsSession(
     }) => Application;
   }
 ) {
-  await page.route("**/api/auth/me", async (route) => {
+  await page.route("**/api/auth/me", async (route: Route) => {
     await route.fulfill({
       json: {
         user: {
@@ -303,7 +304,7 @@ async function mockUserApplicationsSession(
     });
   });
 
-  await page.route("**/api/applications", async (route) => {
+  await page.route("**/api/applications", async (route: Route) => {
     const request = route.request();
 
     if (request.method() === "GET") {
@@ -314,7 +315,7 @@ async function mockUserApplicationsSession(
     await route.fallback();
   });
 
-  await page.route("**/api/applications/*", async (route) => {
+  await page.route("**/api/applications/*", async (route: Route) => {
     const request = route.request();
     const jobId = request.url().split("/").pop() ?? "";
 
@@ -339,7 +340,7 @@ test("user can add a job to tracking and the coach can see it", async ({ page })
   let actor: Actor = "user";
   let applications: Application[] = [];
 
-  await page.route("**/api/auth/me", async (route) => {
+  await page.route("**/api/auth/me", async (route: Route) => {
     const user =
       actor === "user"
         ? {
@@ -360,15 +361,15 @@ test("user can add a job to tracking and the coach can see it", async ({ page })
     await route.fulfill({ json: { user } });
   });
 
-  await page.route("**/api/locations", async (route) => {
+  await page.route("**/api/locations", async (route: Route) => {
     await route.fulfill({ json: { entries: locationEntries } });
   });
 
-  await page.route("**/api/search-history", async (route) => {
+  await page.route("**/api/search-history", async (route: Route) => {
     await route.fulfill({ json: { history: [] } });
   });
 
-  await page.route("https://www.odwb.be/api/explore/**", async (route) => {
+  await page.route("https://www.odwb.be/api/explore/**", async (route: Route) => {
     await route.fulfill({
       json: {
         results: [
@@ -387,11 +388,11 @@ test("user can add a job to tracking and the coach can see it", async ({ page })
     });
   });
 
-  await page.route("**/api/providers/adzuna/search", async (route) => {
+  await page.route("**/api/providers/adzuna/search", async (route: Route) => {
     await route.fulfill({ json: { enabled: false, jobs: [], total: 0 } });
   });
 
-  await page.route("**/api/applications", async (route) => {
+  await page.route("**/api/applications", async (route: Route) => {
     const request = route.request();
 
     if (request.method() === "GET") {
@@ -410,7 +411,7 @@ test("user can add a job to tracking and the coach can see it", async ({ page })
     await route.fallback();
   });
 
-  await page.route("**/api/coach/dashboard", async (route) => {
+  await page.route("**/api/coach/dashboard", async (route: Route) => {
     await route.fulfill({
       json: {
         dashboard: buildCoachDashboard(applications),

@@ -136,8 +136,13 @@ export async function ensureDatabase() {
   await globalThis.__foremIdableMigrationPromise;
 }
 
-// Start background scout worker once at server boot
-if (typeof process !== "undefined" && process.env.NODE_ENV !== "test") {
+// Start background scout worker only when explicitly enabled.
+// Never start during build or test to avoid side effects.
+if (
+  typeof process !== "undefined" &&
+  process.env.NODE_ENV !== "test" &&
+  process.env.SCOUT_WORKER_ENABLED === "1"
+) {
   import("@/lib/server/scoutWorker").then(({ startScoutWorker }) => {
     startScoutWorker();
   }).catch(() => {});

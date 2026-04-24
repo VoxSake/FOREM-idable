@@ -1,5 +1,5 @@
 import { get, post, patch, del } from "@/lib/api/client";
-import { ApiKeySummary, ApiKeyCreateResult } from "@/types/externalApi";
+import { ApiKeySummary } from "@/types/externalApi";
 import { AuthUser } from "@/types/auth";
 import {
   DataExportRequestSummary,

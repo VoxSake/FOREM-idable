@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { MapPin, History } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ import { ScoutResult } from "@/features/scout/scoutSchemas";
 export default function ScoutPage() {
   const { user } = useAuth();
   const page = useScoutPageState();
-  const [appliedResult, setAppliedResult] = useState<ScoutResult | null>(null);
+
 
   if (!user) {
     return (
@@ -34,7 +33,6 @@ export default function ScoutPage() {
   }
 
   const handleApply = (result: ScoutResult) => {
-    setAppliedResult(result);
     const params = new URLSearchParams({
       company: result.name,
       url: result.website ?? "",

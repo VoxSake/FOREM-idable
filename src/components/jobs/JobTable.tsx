@@ -17,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Tooltip,
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";

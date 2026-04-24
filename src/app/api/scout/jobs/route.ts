@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
-import { db } from "@/lib/server/db";
+import { db, ensureDatabase } from "@/lib/server/db";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import { geocodeTown } from "@/lib/server/scoutNominatim";
+import { SCOUT_CATEGORIES } from "@/lib/server/scoutOverpass";
 import { logServerEvent } from "@/lib/server/observability";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 import { z } from "zod";
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    await ensureDatabase();
     const body = await request.json();
     const parsed = createJobSchema.safeParse(body);
     if (!parsed.success) {
@@ -62,9 +64,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Max 2 running jobs per user
+    // Max 2 active jobs per user (queued or running)
     const runningUser = await db.query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE user_id = $1 AND status IN ('pending', 'running')`,
+      `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE user_id = $1 AND status IN ('queued', 'running')`,
       [user.id]
     );
     if (Number(runningUser.rows[0].count) >= 2) {
@@ -74,9 +76,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Global max 3 running jobs
+    // Global max 3 active jobs (queued or running)
     const runningGlobal = await db.query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE status IN ('pending', 'running')`
+      `SELECT COUNT(*)::text AS count FROM scout_jobs WHERE status IN ('queued', 'running')`
     );
     if (Number(runningGlobal.rows[0].count) >= 3) {
       return NextResponse.json(
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Ville introuvable." }, { status: 400 });
     }
 
-    const cats = categories && categories.length > 0 ? categories : Object.keys(require("@/lib/server/scoutOverpass").SCOUT_CATEGORIES);
+    const cats = categories && categories.length > 0 ? categories : Object.keys(SCOUT_CATEGORIES);
 
     const result = await db.query<{ id: number }>(
       `INSERT INTO scout_jobs (user_id, status, query, lat, lon, radius, categories, scrape_emails, total_steps)
@@ -130,6 +132,7 @@ export async function GET() {
   }
 
   try {
+    await ensureDatabase();
     const result = await db.query<{
       id: number;
       status: string;
