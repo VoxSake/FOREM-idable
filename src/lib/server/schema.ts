@@ -68,23 +68,6 @@ export const userFavorites = pgTable(
   })
 );
 
-export const userApplications = pgTable(
-  "user_applications",
-  {
-    userId: bigint("user_id", { mode: "number" })
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    jobId: text("job_id").notNull(),
-    position: integer("position").notNull().default(0),
-    application: jsonb("application").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.jobId] }),
-    userPositionIdx: index("user_applications_user_position_idx").on(table.userId, table.position),
-  })
-);
-
 export const applications = pgTable(
   "applications",
   {
