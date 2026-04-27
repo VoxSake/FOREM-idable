@@ -19,53 +19,43 @@ interface CoachUserActivityMetaProps {
   compact?: boolean;
 }
 
-function ActivityIconWithTooltip({
+function ActivityIcon({
   icon: Icon,
   label,
   relative,
-  absolute,
   className,
+  tooltip,
 }: {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   label: string;
   relative: string;
-  absolute: string;
   className?: string;
+  tooltip?: string;
 }) {
+  const content = (
+    <span className={className}>
+      <Icon className="mr-1 inline-block size-3 shrink-0" aria-hidden="true" />
+      <span className="sr-only">{label}: </span>
+      {relative}
+    </span>
+  );
+
+  if (!tooltip) return content;
+
   return (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <span className={className}>
-            <Icon className="mr-1 inline-block size-3 shrink-0" aria-hidden="true" />
-            <span className="sr-only">{label}: </span>
-            {relative}
-          </span>
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
         <TooltipContent side="top" sideOffset={4}>
-          {label}: {absolute}
+          {tooltip}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
 }
 
-function VerboseLine({
-  label,
-  value,
-  as: Tag = "p",
-  className,
-}: {
-  label: string;
-  value: string;
-  as?: "p" | "span";
-  className?: string;
-}) {
-  return (
-    <Tag className={className}>
-      {label}: {value}
-    </Tag>
-  );
+function buildTooltip(label: string, absolute: string) {
+  return absolute !== "N/A" ? `${label}: ${absolute}` : undefined;
 }
 
 export function CoachUserActivityMeta({
@@ -77,36 +67,33 @@ export function CoachUserActivityMeta({
 }: CoachUserActivityMetaProps) {
   const Tag = as;
 
-  const lastSeenAbsolute = formatCoachDate(user.lastSeenAt, true);
-  const lastSeenRelative = formatRelativeTime(user.lastSeenAt);
+  const lastSeenText = formatRelativeTime(user.lastSeenAt) ?? "N/A";
+  const lastSeenTooltip = buildTooltip("Dernière connexion", formatCoachDate(user.lastSeenAt, true));
+  const isCoach = user.role === "coach" || user.role === "admin";
+  const actionText = formatRelativeTime(isCoach ? user.lastCoachActionAt : user.latestActivityAt) ?? "N/A";
+  const actionLabel = isCoach ? "Dernière action coach" : "Dernière activité";
+  const actionTooltip = buildTooltip(
+    actionLabel,
+    formatCoachDate(isCoach ? user.lastCoachActionAt : user.latestActivityAt, isCoach || undefined)
+  );
 
-  if (compact && lastSeenRelative && lastSeenAbsolute) {
+  if (compact) {
     return (
       <div className={firstItemClassName ?? className}>
-        <ActivityIconWithTooltip
+        <ActivityIcon
           icon={Clock}
           label="Dernière connexion"
-          relative={lastSeenRelative}
-          absolute={lastSeenAbsolute}
+          relative={lastSeenText}
           className={className}
+          tooltip={lastSeenTooltip}
         />
-        {user.role === "coach" || user.role === "admin" ? (
-          <ActivityIconWithTooltip
-            icon={UserCheck}
-            label="Dernière action coach"
-            relative={formatRelativeTime(user.lastCoachActionAt) ?? "N/A"}
-            absolute={formatCoachDate(user.lastCoachActionAt, true)}
-            className={className}
-          />
-        ) : (
-          <ActivityIconWithTooltip
-            icon={Circle}
-            label="Dernière activité"
-            relative={formatRelativeTime(user.latestActivityAt) ?? "N/A"}
-            absolute={formatCoachDate(user.latestActivityAt)}
-            className={className}
-          />
-        )}
+        <ActivityIcon
+          icon={isCoach ? UserCheck : Circle}
+          label={actionLabel}
+          relative={actionText}
+          className={className}
+          tooltip={actionTooltip}
+        />
       </div>
     );
   }
@@ -114,9 +101,9 @@ export function CoachUserActivityMeta({
   return (
     <>
       <Tag className={firstItemClassName ?? className}>
-        Dernière connexion: {lastSeenAbsolute}
+        Dernière connexion: {formatCoachDate(user.lastSeenAt, true)}
       </Tag>
-      {user.role === "coach" || user.role === "admin" ? (
+      {isCoach ? (
         <Tag className={className}>
           Dernière action coach: {formatCoachDate(user.lastCoachActionAt, true)}
         </Tag>
