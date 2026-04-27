@@ -101,7 +101,7 @@ export const CoachGroupMemberCard = React.memo(function CoachGroupMemberCard({
               </DropdownMenu>
             ) : null}
           </div>
-          <p className="break-all text-xs text-muted-foreground">
+          <p className="truncate text-xs text-muted-foreground" title={entry.email}>
             {entry.email}
           </p>
           <p className="break-all text-xs text-muted-foreground">
@@ -111,8 +111,9 @@ export const CoachGroupMemberCard = React.memo(function CoachGroupMemberCard({
           </p>
           <CoachUserActivityMeta
             user={entry}
-            className="text-xs text-muted-foreground"
-            firstItemClassName="mt-1 text-xs text-muted-foreground"
+            compact
+            className="flex items-center gap-3 text-xs text-muted-foreground"
+            firstItemClassName="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"
           />
         </div>
         <div className="grid min-w-0 gap-2 sm:min-w-[250px]">
