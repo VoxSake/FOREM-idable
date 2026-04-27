@@ -58,6 +58,17 @@ src/
 *   **State Management localisé** : Utilisation de hooks `use*PageState` pour concentrer l'état de page.
 *   **Type Safety de bout en bout** : Contrats Front/Back explicites via Zod et TypeScript.
 
+### Décisions d'Architecture
+
+| Décision | Choix | Justification |
+|---|---|---|
+| ORM | **Drizzle** > Prisma | Zero codegen, pas de CLI lourd, schema TypeScript natif, accès SQL brut quand le query builder est limité (CTE, LATERAL, `FOR UPDATE`) |
+| Messagerie temps réel | **SSE + Redis fallback** > WebSockets | Compatible Next.js edge runtime, fallback in-memory en dev/single-instance, Redis Pub/Sub pour la scalabilité horizontale |
+| Architecture | **Feature-first** > Layered | Co-location composants/hooks/utils par domaine, scalabilité sans explosion de fichiers transversaux |
+| Hashage mot de passe | **scrypt natif** > bcrypt/argon2 | Pas de dépendance native (pas de compilation), memory-hard par défaut, `timingSafeEqual` contre les timing attacks |
+| Queries complexes | **SQL brut documenté** > ORM forcé | `messaging.data.ts`, `coach.ts dashboard` utilisent des CTE/LATERAL que Drizzle n'exprime pas proprement — garder le SQL lisible > forcer l'ORM |
+| Validation | **Zod sur toutes les entrées** | Zero `typeof` checks ou `as` casts sur les données utilisateur — chaque route POST/PATCH passe par `readValidatedJson()` |
+
 ---
 
 ## 🛠️ Choix Techniques & Qualité logicielle
@@ -105,10 +116,28 @@ Réservée aux comptes `coach` et `admin` via clés API.
 ## 🚀 Installation & Développement
 
 ### Pré-requis
+*   **Node.js** ≥ 22
+*   **PostgreSQL** ≥ 15
+*   **Redis** (optionnel, pour le rate limiting distribué et le pub/sub messagerie)
+
 ```bash
 cp env.example .env.local
+# Renseigner DATABASE_URL et AUDIT_HASH_SECRET au minimum
 npm install
 ```
+
+### Variables d'environnement essentielles
+
+| Variable | Obligatoire | Rôle |
+|---|---|---|
+| `DATABASE_URL` | Oui | Chaîne de connexion PostgreSQL |
+| `AUDIT_HASH_SECRET` | **Oui** | Clé HMAC pour l'anonymisation RGPD des userId dans les logs (générer avec `openssl rand -hex 32`) |
+| `REDIS_URL` | Non | Redis pour rate limiting distribué et pub/sub messagerie |
+| `APP_BASE_URL` | Oui | Origine publique utilisée par les checks CSRF et les liens email |
+| `RESEND_API_KEY` | Non | API key Resend pour les emails (reset password) |
+| `ADZUNA_ENABLED` | Non | Active le fournisseur d'offres Adzuna (requiert `ADZUNA_APP_ID` + `ADZUNA_APP_KEY`) |
+
+Voir [`env.example`](env.example) pour la liste complète (rétention, branding, analytics).
 
 ### Commandes utiles
 ```bash
@@ -130,6 +159,29 @@ npm run maintenance:purge
 # Production
 npm run build
 npm start
+```
+
+### Déploiement
+
+Le projet est conçu pour fonctionner sur n'importe quel hébergeur Node.js supportant Next.js :
+
+**Option 1 — VPS (Coolify, Docker)**
+```bash
+npm run build
+npm start  # Écoute sur le port configuré (par défaut 3000)
+```
+Prévoir un reverse proxy (Nginx/Caddy) devant le serveur Next.js. Les headers `X-Forwarded-Proto` et `X-Forwarded-For` sont utilisés pour la détection d'origine CSRF et le logging.
+
+**Option 2 — Vercel / Railway**
+Déployer directement depuis le repository. Configurer les variables d'environnement dans le dashboard. Redis peut être omis si le déploiement est mono-instance (fallback in-memory automatique).
+
+**Base de données** : Appliquer les migrations au déploiement :
+```bash
+npm run db:migrate
+```
+Aucun seed n'est requis — le premier compte créé via l'interface de registration reçoit le rôle `user`. Promouvoir manuellement en `admin` via `psql` :
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'votre@email.com';
 ```
 
 ---

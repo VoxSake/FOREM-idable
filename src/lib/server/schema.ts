@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { UserRole } from "@/types/auth";
 
+/** Core user accounts with role-based access control (user / coach / admin). */
 export const users = pgTable("users", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   email: text("email").notNull().unique(),
@@ -27,6 +28,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Session tokens with hashed storage, expiry, and cascade on user deletion. */
 export const sessions = pgTable(
   "sessions",
   {
@@ -43,6 +45,7 @@ export const sessions = pgTable(
   })
 );
 
+/** Per-user job preferences and UI state persisted as JSONB. */
 export const userState = pgTable("user_state", {
   userId: bigint("user_id", { mode: "number" })
     .primaryKey()
@@ -51,6 +54,7 @@ export const userState = pgTable("user_state", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Saved job bookmarks (pre-selection pipeline, distinct from tracked applications). */
 export const userFavorites = pgTable(
   "user_favorites",
   {
@@ -68,6 +72,7 @@ export const userFavorites = pgTable(
   })
 );
 
+/** Tracked job applications with follow-up scheduling, interview details, and soft-delete (archive). */
 export const applications = pgTable(
   "applications",
   {
@@ -101,6 +106,7 @@ export const applications = pgTable(
   })
 );
 
+/** Job metadata (title, company, URL, etc.) for each application. One-to-one with applications. */
 export const applicationJobs = pgTable(
   "application_jobs",
   {
@@ -129,6 +135,7 @@ export const applicationJobs = pgTable(
   })
 );
 
+/** Coach-only private notes (one per application) with contributor tracking. */
 export const applicationPrivateNotes = pgTable(
   "application_private_notes",
   {
@@ -178,6 +185,7 @@ export const applicationPrivateNoteContributors = pgTable(
   })
 );
 
+/** Shared notes visible to multiple coaches on an application. */
 export const applicationSharedNotes = pgTable(
   "application_shared_notes",
   {
@@ -228,6 +236,7 @@ export const applicationSharedNoteContributors = pgTable(
   })
 );
 
+/** Immutable audit events for application lifecycle (status changes, notes, interviews). */
 export const applicationEvents = pgTable(
   "application_events",
   {
@@ -254,6 +263,7 @@ export const applicationEvents = pgTable(
   })
 );
 
+/** Job search session history for autocomplete and recent searches. */
 export const userSearchHistory = pgTable(
   "user_search_history",
   {
@@ -271,6 +281,7 @@ export const userSearchHistory = pgTable(
   })
 );
 
+/** Admin-curated featured searches displayed on the homepage. */
 export const featuredSearches = pgTable(
   "featured_searches",
   {
@@ -290,6 +301,7 @@ export const featuredSearches = pgTable(
   })
 );
 
+/** Per-user settings (theme, analytics consent, cached location data). */
 export const userSettings = pgTable("user_settings", {
   userId: bigint("user_id", { mode: "number" })
     .primaryKey()
@@ -301,6 +313,7 @@ export const userSettings = pgTable("user_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Coach-managed beneficiary groups with optional archiving and manager assignment. */
 export const coachGroups = pgTable(
   "coach_groups",
   {
@@ -322,6 +335,7 @@ export const coachGroups = pgTable(
   })
 );
 
+/** Many-to-many link between coach groups and their beneficiary members. */
 export const coachGroupMembers = pgTable(
   "coach_group_members",
   {
@@ -339,6 +353,7 @@ export const coachGroupMembers = pgTable(
   })
 );
 
+/** Many-to-many link between coach groups and assigned coaches. */
 export const coachGroupCoaches = pgTable(
   "coach_group_coaches",
   {
@@ -356,6 +371,7 @@ export const coachGroupCoaches = pgTable(
   })
 );
 
+/** Historical tracking phase transitions for beneficiary lifecycle audit. */
 export const userTrackingPhases = pgTable(
   "user_tracking_phases",
   {
@@ -375,6 +391,7 @@ export const userTrackingPhases = pgTable(
   })
 );
 
+/** Messaging conversations (group-chat via coachGroupId or 1:1 via direct). */
 export const conversations = pgTable(
   "conversations",
   {
@@ -428,6 +445,7 @@ export const conversationParticipants = pgTable(
   })
 );
 
+/** Messages within a conversation with content sanitization (XSS via escapeHtml). */
 export const conversationMessages = pgTable(
   "conversation_messages",
   {
@@ -454,6 +472,7 @@ export const conversationMessages = pgTable(
   })
 );
 
+/** Read receipts per user per conversation for unread message count. */
 export const conversationReads = pgTable(
   "conversation_reads",
   {
@@ -475,6 +494,7 @@ export const conversationReads = pgTable(
   })
 );
 
+/** HMAC-signed API keys for external partner access (coach/admin only). */
 export const apiKeys = pgTable(
   "api_keys",
   {
@@ -497,6 +517,7 @@ export const apiKeys = pgTable(
   })
 );
 
+/** Time-limited password reset tokens with expiry. */
 export const passwordResetTokens = pgTable(
   "password_reset_tokens",
   {
@@ -514,6 +535,7 @@ export const passwordResetTokens = pgTable(
   })
 );
 
+/** ICS calendar feed subscriptions for coach groups and global calendars. */
 export const calendarSubscriptions = pgTable(
   "calendar_subscriptions",
   {
@@ -542,6 +564,7 @@ export const calendarSubscriptions = pgTable(
   })
 );
 
+/** Audit trail for admin/coach actions, GDPR exports, and security events. */
 export const auditLogs = pgTable(
   "audit_logs",
   {
@@ -567,6 +590,7 @@ export const auditLogs = pgTable(
   })
 );
 
+/** GDPR data export requests with status tracking and expiry. */
 export const dataExportRequests = pgTable(
   "data_export_requests",
   {
@@ -589,6 +613,7 @@ export const dataExportRequests = pgTable(
   })
 );
 
+/** GDPR account deletion requests with admin review workflow. */
 export const accountDeletionRequests = pgTable(
   "account_deletion_requests",
   {
@@ -616,6 +641,7 @@ export const accountDeletionRequests = pgTable(
   })
 );
 
+/** Legal holds blocking deletion/purge for users, conversations, or applications. */
 export const legalHolds = pgTable(
   "legal_holds",
   {
@@ -635,6 +661,7 @@ export const legalHolds = pgTable(
   })
 );
 
+/** Log of authorized data disclosures to authorities (GDPR compliance). */
 export const disclosureLogs = pgTable(
   "disclosure_logs",
   {
@@ -662,6 +689,7 @@ export const disclosureLogs = pgTable(
   })
 );
 
+/** Scout discovery jobs (Overpass API + email scraping) with status tracking. */
 export const scoutJobs = pgTable(
   "scout_jobs",
   {
@@ -689,6 +717,7 @@ export const scoutJobs = pgTable(
   })
 );
 
+/** Scout result rows (discovered companies/emails) linked to a scout job. */
 export const scoutResults = pgTable(
   "scout_results",
   {
@@ -716,6 +745,7 @@ export const scoutResults = pgTable(
   })
 );
 
+/** Cached company contact data from email scraping (deduped by OSM ID). */
 export const companyCache = pgTable(
   "company_cache",
   {
