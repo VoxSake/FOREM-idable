@@ -7,15 +7,15 @@ import {
 } from "@/lib/server/calendarSubscriptions";
 import { canManageCoachGroup, markCoachAction, requireCoachAccess } from "@/lib/server/coach";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
+import {
+  calendarSubscriptionCreateSchema,
+  readValidatedJson,
+} from "@/lib/server/requestSchemas";
 import { CalendarSubscriptionScope } from "@/types/calendar";
-
-function parseScope(value: unknown): CalendarSubscriptionScope | null {
-  return value === "group" || value === "all_groups" ? value : null;
-}
 
 export async function POST(request: NextRequest) {
   return withRequestContext(request, async () => {
-    let body: Record<string, unknown> = {};
+    let body: { scope: CalendarSubscriptionScope; groupId?: number; regenerate?: boolean } = { scope: "all_groups" };
 
     try {
       const forbidden = rejectCrossOriginRequest(request);
@@ -35,21 +35,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-      const scope = parseScope(body.scope);
-      const regenerate = body.regenerate === true;
-      const groupId =
-        typeof body.groupId === "number" ? body.groupId : Number(body.groupId);
+      const parsed = await readValidatedJson(request, calendarSubscriptionCreateSchema);
+      if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 });
+      body = parsed.data;
+      const { scope, groupId, regenerate = false } = body;
 
-      if (!scope) {
-        return NextResponse.json({ error: "Scope invalide." }, { status: 400 });
-      }
-
-      if (scope === "group" && (!Number.isInteger(groupId) || groupId <= 0)) {
-        return NextResponse.json({ error: "Groupe invalide." }, { status: 400 });
-      }
-
-      if (scope === "group" && !(await canManageCoachGroup(actor, groupId))) {
+      if (scope === "group" && groupId !== undefined && !(await canManageCoachGroup(actor, groupId))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
@@ -60,12 +51,12 @@ export async function POST(request: NextRequest) {
       const subscription = regenerate
         ? await regenerateCalendarSubscription({
             scope,
-            groupId: scope === "group" ? groupId : null,
+            groupId: scope === "group" ? (groupId ?? null) : null,
             actorId: actor.id,
           })
         : await createCalendarSubscription({
             scope,
-            groupId: scope === "group" ? groupId : null,
+            groupId: scope === "group" ? (groupId ?? null) : null,
             actorId: actor.id,
           });
 
@@ -73,9 +64,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ subscription });
     } catch (error) {
-      const scope = parseScope(body.scope);
-      const groupId =
-        typeof body.groupId === "number" ? body.groupId : Number(body.groupId);
+      const scope = body.scope;
+      const groupId = body.groupId;
       const message = error instanceof Error ? error.message : "";
 
       logServerEvent({
@@ -83,8 +73,8 @@ export async function POST(request: NextRequest) {
         action: "calendar_subscription_failed",
         level: message === "Group not found" || message === "Invalid group" ? "warn" : "error",
         meta: {
-          scope: scope ?? undefined,
-          groupId: Number.isInteger(groupId) ? groupId : undefined,
+          scope: scope || undefined,
+          groupId: typeof groupId === "number" && groupId > 0 ? groupId : undefined,
           regenerate: body.regenerate === true,
           error: message || "unknown",
         },

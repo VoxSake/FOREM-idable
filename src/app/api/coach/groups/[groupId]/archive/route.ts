@@ -3,6 +3,7 @@ import { requireCoachAccess } from "@/lib/server/coach";
 import { archiveCoachGroup } from "@/lib/server/coachGroups";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { groupArchiveSchema, readValidatedJson } from "@/lib/server/requestSchemas";
 
 function parseGroupId(value: string) {
   const groupId = Number(value);
@@ -25,12 +26,14 @@ export async function PATCH(
 
       const { groupId: rawGroupId } = await context.params;
       const groupId = parseGroupId(rawGroupId);
-      const body = await request.json();
-      const archived = body.archived === true;
 
       if (!groupId) {
         return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
       }
+
+      const parsed = await readValidatedJson(request, groupArchiveSchema);
+      if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 });
+      const { archived } = parsed.data;
 
       await archiveCoachGroup(groupId, archived, user);
       return NextResponse.json({ ok: true });

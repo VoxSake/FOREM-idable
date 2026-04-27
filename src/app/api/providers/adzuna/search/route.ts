@@ -27,8 +27,8 @@ const providerSearchParamsSchema = z
   .object({
     keywords: z.array(z.string()).optional(),
     locations: z.array(locationEntrySchema).optional(),
-    limit: z.number().optional(),
-    offset: z.number().optional(),
+    limit: z.number().min(1).optional().default(50),
+    offset: z.number().min(0).optional().default(0),
     booleanMode: z.enum(["AND", "OR"]).optional(),
   })
   .strict();
@@ -222,11 +222,9 @@ export async function POST(request: NextRequest) {
 
     const body = parsedBody.data;
     const keywords = body.keywords ?? [];
-    const requestedOffset = typeof body.offset === "number" && body.offset > 0 ? body.offset : 0;
-    const requestedLimit = typeof body.limit === "number" && body.limit > 0 ? body.limit : 50;
     const locations: LocationEntry[] = body.locations ?? [];
-    const effectiveOffset = Math.min(requestedOffset, ADZUNA_MAX_RESULTS_WINDOW);
-    const effectiveLimit = Math.min(requestedLimit, ADZUNA_MAX_RESULTS_WINDOW);
+    const effectiveOffset = Math.min(body.offset, ADZUNA_MAX_RESULTS_WINDOW);
+    const effectiveLimit = Math.min(body.limit, ADZUNA_MAX_RESULTS_WINDOW);
     const windowEndExclusive = Math.min(
       effectiveOffset + effectiveLimit,
       ADZUNA_MAX_RESULTS_WINDOW

@@ -16,7 +16,8 @@ interface RequestLogContext {
 const requestContextStore = new AsyncLocalStorage<RequestLogContext>();
 
 function hashUserId(userId: number): string {
-  const secret = process.env.AUDIT_HASH_SECRET || "dev-secret-change-me";
+  const secret = process.env.AUDIT_HASH_SECRET;
+  if (!secret) throw new Error("AUDIT_HASH_SECRET must be set");
   return createHmac("sha256", secret).update(String(userId)).digest("hex").slice(0, 16);
 }
 

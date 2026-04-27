@@ -8,8 +8,8 @@ import {
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
 import {
   searchHistoryArraySchema,
-  searchHistoryEntrySchema,
 } from "@/features/jobs/types/searchHistory";
+import { readValidatedJson, searchHistorySaveSchema } from "@/lib/server/requestSchemas";
 
 export async function GET() {
   try {
@@ -37,14 +37,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const parsed = searchHistoryEntrySchema.safeParse(body?.entry);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Entrée invalide." }, { status: 400 });
-    }
+    const parsed = await readValidatedJson(request, searchHistorySaveSchema);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
     const history = searchHistoryArraySchema.parse(
-      await addSearchHistoryEntryForUser(user.id, parsed.data)
+      await addSearchHistoryEntryForUser(user.id, parsed.data.entry)
     );
     return NextResponse.json({ history });
   } catch {

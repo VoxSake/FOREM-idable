@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createCoachGroup, deleteCoachGroup, requireCoachAccess } from "@/lib/server/coach";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { coachGroupCreateSchema, readValidatedJson } from "@/lib/server/requestSchemas";
 
 export async function POST(request: NextRequest) {
   return withRequestContext(request, async () => {
@@ -14,11 +15,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      const body = await request.json();
-      const name = typeof body.name === "string" ? body.name : "";
-      if (!name.trim()) {
-        return NextResponse.json({ error: "Nom de groupe requis." }, { status: 400 });
-      }
+      const parsed = await readValidatedJson(request, coachGroupCreateSchema);
+      if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 });
+      const { name } = parsed.data;
 
       const group = await createCoachGroup(name, user);
       return NextResponse.json({ group });

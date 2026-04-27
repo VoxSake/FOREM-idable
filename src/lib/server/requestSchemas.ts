@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeContractType } from "@/lib/contractType";
+import { searchHistoryEntrySchema } from "@/features/jobs/types/searchHistory";
 import { Job } from "@/types/job";
 
 export const applicationStatusSchema = z.enum([
@@ -275,6 +276,36 @@ export const coachImportRequestSchema = z
   .object({
     dateFormat: z.enum(["dmy", "mdy"]).optional(),
     rows: z.array(coachImportRowSchema).min(1).max(500, "Impossible d'importer plus de 500 lignes à la fois."),
+  })
+  .strict();
+
+export const coachGroupCreateSchema = z
+  .object({
+    name: z.string().trim().min(1, "Nom de groupe requis.").max(200, "Nom de groupe trop long."),
+  })
+  .strict();
+
+export const calendarSubscriptionCreateSchema = z
+  .object({
+    scope: z.enum(["group", "all_groups"]),
+    groupId: z.number().int().positive().optional(),
+    regenerate: z.boolean().optional(),
+  })
+  .strict()
+  .refine(
+    (data) => data.scope !== "group" || (data.groupId !== undefined && data.groupId > 0),
+    { message: "Identifiant de groupe requis pour un abonnement de groupe.", path: ["groupId"] }
+  );
+
+export const groupArchiveSchema = z
+  .object({
+    archived: z.boolean(),
+  })
+  .strict();
+
+export const searchHistorySaveSchema = z
+  .object({
+    entry: searchHistoryEntrySchema,
   })
   .strict();
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAccess, setCoachGroupManager } from "@/lib/server/coach";
 import { logServerEvent, withRequestContext } from "@/lib/server/observability";
 import { rejectCrossOriginRequest } from "@/lib/server/requestOrigin";
+import { positiveIntegerBodySchema, readValidatedJson } from "@/lib/server/requestSchemas";
 
 function parseGroupId(value: string) {
   const groupId = Number(value);
@@ -24,12 +25,14 @@ export async function PUT(
 
       const { groupId: rawGroupId } = await context.params;
       const groupId = parseGroupId(rawGroupId);
-      const body = await request.json();
-      const userId = typeof body.userId === "number" ? body.userId : Number(body.userId);
 
-      if (!groupId || !Number.isInteger(userId)) {
+      if (!groupId) {
         return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
       }
+
+      const parsed = await readValidatedJson(request, positiveIntegerBodySchema);
+      if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 });
+      const { userId } = parsed.data;
 
       await setCoachGroupManager(groupId, userId, user);
       return NextResponse.json({ ok: true });
